@@ -1,0 +1,1 @@
+LinkTimestamp.o: LinkTimestamp.cc

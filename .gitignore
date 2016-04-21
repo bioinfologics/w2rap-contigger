@@ -1,0 +1,14 @@
+src/**/*.fastq
+src/**/*.fasta
+src/**/*.o
+src/**/*.a
+src/CrossOut
+src/DiscovarDeNovo
+src/FormPath
+src/NhoodInfo
+src/modules/03_clean
+src/modules/04_patching
+src/modules/02_qgraph
+src/modules/01_unipaths
+src/unipaths
+src/libDiscovarDeNovo.a
