@@ -12,8 +12,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 ## Include directories
 include_directories("src/")
 
+## Mac compilation issue
+include_directories("/usr/include/malloc")
+
 ## Link directories
-link_directories("/tgac/software/production/intel_studio/2015.2/x86_64/composerxe/tbb/lib/intel64/gcc4.4")
+#link_directories("/tgac/software/production/intel_studio/2015.2/x86_64/composerxe/tbb/lib/intel64/gcc4.4")
 
 
 ## Set sources variables
@@ -275,9 +278,9 @@ add_executable(05_simplify ${SOURCE_FILES_SIMPLIFY_05})
 add_executable(06_scaffolding ${SOURCE_FILES_SCAFFOLDING_06})
 
 ## Link libraries
-target_link_libraries(01_unipaths libtbbmalloc.so)
-target_link_libraries(02_qgraph libtbbmalloc.so)
-target_link_libraries(03_clean libtbbmalloc.so)
-target_link_libraries(04_patching libtbbmalloc.so)
-target_link_libraries(05_simplify libtbbmalloc.so)
-target_link_libraries(06_scaffolding libtbbmalloc.so)
+#target_link_libraries(01_unipaths libtbbmalloc.so)
+#target_link_libraries(02_qgraph libtbbmalloc.so)
+#target_link_libraries(03_clean libtbbmalloc.so)
+#target_link_libraries(04_patching libtbbmalloc.so)
+#target_link_libraries(05_simplify libtbbmalloc.so)
+#target_link_libraries(06_scaffolding libtbbmalloc.so)
