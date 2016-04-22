@@ -635,7 +635,10 @@ void ExtractReads( const String& sample, const String& species, String reads,
           std::cout << Date( ) << ": using " << all_reads
                << " reads" << std::endl;
           std::cout << Date( ) << ": data extraction complete" 
-               << ", peak mem = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
           std::cout << TimeSince(lclock) << " used extracting reads" << std::endl;
           return;    }
 

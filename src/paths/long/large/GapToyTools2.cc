@@ -361,7 +361,10 @@ void PlaceMore( const HyperBasevector& hb, const vecbasevector& bases,
 {    
      double clock = WallClockTime( );
      std::cout << Date( ) << ": entering PlaceMore, peak mem = "
-          << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
      vec<int64_t> unplaced;
      for ( int64_t id = 0; id < (int64_t) paths2.size( ); id += 2 )
      {    if ( paths2[id].size( ) == 0 && paths2[id+1].size( ) == 0 )
@@ -427,7 +430,10 @@ void PlaceMore( const HyperBasevector& hb, const vecbasevector& bases,
 
                i = j - 1;    }    }
      std::cout << Date( ) << ": placing reads, peak mem = "
-          << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
      qvec qv;
      for ( int i = 0; i < unplaced.isize( ); i++ )
      {    UniqueSort( places[i] );
@@ -689,7 +695,11 @@ void Patch( HyperBasevector& hb, const vec< std::pair<int,int> >& blobs,
                rout << "Inserting patch." << std::endl;    }    }
 
      std::cout << TimeSince(clock) << " used patching"
-          << ", peak mem usage = " << PeakMemUsageGBString( ) << std::endl;    }
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
+}
 
 void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity )

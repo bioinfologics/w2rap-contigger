@@ -127,7 +127,10 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
      vec<HyperBasevector> mhbp( LR.size( ) );
      std::cout << Date( ) << ": now processing " << LR.size( ) << " blobs" << std::endl;
      std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
      double clockp1 = WallClockTime( );
      int nblobs = LR.size( ), dots_printed = 0, nprocessed = 0;
      int lrc = LR.size( );
@@ -541,8 +544,10 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
 
      std::cout << TimeSince(clockp1) << " spent in local assemblies, "
           << "memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
-
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
      // Do the patching.
 
      const vec< std::pair<int,int> > blobs( LR.size( ) );

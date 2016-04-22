@@ -59,9 +59,10 @@ void GenerateLookups( vecbasevector const& trans, HyperBasevector const& hb,
      int n_id1 = hb.EdgeObjectCount();
      vec< triple<kmer<K>,int,int> > kmers_plus;
      MakeKmerLookup0( trans, kmers_plus );
+#ifdef __linux
      std::cout << "after kmers_plus creation, peak mem usage = "
           << PeakMemUsageGBString( ) << std::endl;
-
+#endif
      for ( int64_t i = 0; i < kmers_plus.jsize( ); i++ )
      {    int64_t j;
           for ( j = i + 1; j < kmers_plus.jsize( ); j++ )
@@ -249,8 +250,9 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
           {    std::cout << "BigKHBV EDGE-PATHS:" << std::endl;
                for ( auto const& edge : trace_edges )
                     std::cout << edge << ": " << allx_paths[edge] << std::endl;    }    }
-
+#ifdef __linux
      std::cout << "peak mem usage = " << PeakMemUsageGBString( ) << std::endl;
+#endif
      double clock3 = WallClockTime( );
      TranslatePaths( paths2, hb3, to3, left3 );
      hb = hb3;

@@ -14,7 +14,7 @@
 #include "paths/long/large/AssembleGaps.h"
 #include "paths/long/large/ExtractReads.h"
 #include "paths/long/large/Samples.h"
-
+#include "tclap/CmdLine.h"
 
 int create_unipaths(const String work_dir, const string prefix, const string READS, uint NUM_THREADS, int MAX_MEM_GB){
   /* Create unipaths from the reads 
@@ -61,14 +61,42 @@ int create_unipaths(const String work_dir, const string prefix, const string REA
 }
 
 
-int main(int argc, char *argv[]){
-  // ./unipaths_01 <working_dir> '<read_files_R1.fastq,read_files_R2.fastq>' <prefix> <ncpus> <mem_GB>
-  const String work_dir = argv[1];
-  const string READS = argv[2];
-  const string prefix = argv[3];
-  int ncpus = atoi(argv[4]);
-  int mem_mb = atoi(argv[5]);
-  create_unipaths( work_dir, prefix, READS, ncpus, mem_mb );
+int main(const int argc, const char * argv[]){
+
+  String out_prefix;
+  String read_files;
+  String out_dir;
+  unsigned int threads;
+  int max_mem;
+
+  //========== Command Line Option Parsing ==========
+
+  std::cout<<"Welcome to w2rap-contigger::01_unipaths"<<std::endl;
+  try {
+    TCLAP::CmdLine cmd("", ' ', "0.1 alpha");
+
+    TCLAP::ValueArg<std::string> out_dirArg     ("o","out_dir",     "Output dir path",           true,"","string",cmd);
+    TCLAP::ValueArg<std::string> out_prefixArg     ("p","prefix",     "Prefix for the output files",           true,"","string",cmd);
+
+    TCLAP::ValueArg<std::string> read_filesArg  ("r","read_files",    "Input sequences (reads) files ", true,"","file1.fastq,file2.fastq",cmd);
+    TCLAP::ValueArg<unsigned int>         threadsArg        ("t","threads",        "Number of threads on parallel sections (default: 4)", false,4,"int",cmd);
+    TCLAP::ValueArg<unsigned int>         max_memArg       ("m","max_mem",       "Maximum memory in GB (soft limit, impacts performance, default 10000)", false,10000,"int",cmd);
+
+    cmd.parse( argc, argv );
+
+    // Get the value parsed by each arg.
+    out_dir=out_dirArg.getValue();
+    out_prefix=out_prefixArg.getValue();
+    read_files=read_filesArg.getValue();
+    threads=threadsArg.getValue();
+    max_mem=max_memArg.getValue();
+
+  } catch (TCLAP::ArgException &e)  // catch any exceptions
+  { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; return 1;}
+
+
+
+  create_unipaths( out_dir, out_prefix, read_files, threads, max_mem );
 
   return 0;
 }

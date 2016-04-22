@@ -1464,7 +1464,10 @@ void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
     vec<size_t> readIds;
     std::cout << Date( ) << ": finding interesting reads" << std::endl;
     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
     size_t nKmers = findInterestingReadIds(hbv,paths,reads,&readIds);
     size_t nReads = readIds.size();
     if ( nReads == 0 ) return;
@@ -1473,13 +1476,19 @@ void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
 
     std::cout << Date( ) << ": building dictionary" << std::endl;
     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
     Dict* pDict = new Dict(nKmers);
     Mempool locsAlloc;
     size_t const MAX_MULTIPLICITY = 80;
     std::cout << Date( ) << ": reducing" << std::endl;
     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
 
     {   RMRE rmre(MREReadProc(readIds,reads,locsAlloc,MAX_MULTIPLICITY,pDict));
         rmre.run(nKmers,0ul,nReads,RMRE::VERBOSITY::QUIET);    }
@@ -1488,7 +1497,10 @@ void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
 
     std::cout << Date( ) << ": kmerizing" << std::endl;
     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
     {   EMRE emre(MREEdgeProc(hbv,pDict));
         auto const& edges = hbv.Edges();
         size_t edgeKmers = kmerCount(edges.begin(),edges.end(),KLEN);
@@ -1498,7 +1510,10 @@ void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
 
     std::cout << Date( ) << ": cleaning" << std::endl;
     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
     pDict->remove_if([]( KmerLocs const& kLocs )
                      { return kLocs.getTotalLocs() > MAX_MULTIPLICITY; });
 
@@ -1506,7 +1521,10 @@ void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
 
     std::cout << Date( ) << ": finding uniquely aligning edges" << std::endl;
     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
     EdgeProc proc(hbv,*pDict,reads,quals,paths);
     parallelForBatch(0,hbv.E(),100,proc);
     proc.cleanAmbiguousPlacements(readIds);

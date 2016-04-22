@@ -984,13 +984,19 @@ int64_t MemUsageBytes()
 #endif
 }
 
+#ifdef __linux
 int64_t PeakMemUsageBytes( )
 {    int pid = getpid( );
      int64_t KB = WhiteSpaceFree(
           LineOfOutput( "cat /proc/" + ToString(pid) + "/status | grep VmHWM" ) )
           .Between( ":", "kB" ).Int( );
      return KB * (int64_t) 1000;    }
-
+#else
+int64_t PeakMemUsageBytes( ){
+    std::cout<<"-= Peak Mem usage will be reported as 0 unless you run Linux =-"<<std::endl;
+    return 0;
+}
+#endif
 double PeakMemUsageGB( )
 {    return PeakMemUsageBytes( ) / double( 1024 * 1024 * 1024 );   }
 

@@ -651,8 +651,11 @@ void BAMReader::readBAM( String const& bamFile,
                          vecbvec* pVBV, VecPQVec* pVPQV, vecString* pReadNames )
 {
     std::cout << Date( ) << ": processing " << bamFile << '.' << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( ) 
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
+#ifdef __linux
+          << ", peak = " << PeakMemUsageGBString( )
+#endif
+          << std::endl;
     vecbasevector reads_b;
     VecPQVec reads_q;
     vecString reads_n;
@@ -676,8 +679,11 @@ void BAMReader::readBAM( String const& bamFile,
     {    int64_t len = length_sum / reads_b.size( );
          std::cout << " of mean length " << len << std::endl;    }
     else std::cout << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( ) 
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
+#ifdef __linux
+        << ", peak = " << PeakMemUsageGBString( )
+#endif
+        << std::endl;
     nReads = (nReads + 1ul) & ~1ul;
     if ( !nReads ) return;
     if ( (int64_t) reads_b.size( ) < UINT32_MAX )
@@ -685,8 +691,11 @@ void BAMReader::readBAM( String const& bamFile,
          ParallelSort( readIndices, [&reads_n]( size_t idx1, size_t idx2 )
               { return reads_n[idx1] < reads_n[idx2]; } );
          std::cout << Date( ) << ": reads sorted" << std::endl;
-         std::cout << Date( ) << ": memory in use = " << MemUsageGBString( ) 
-               << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+         std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
+#ifdef __linux
+            << ", peak = " << PeakMemUsageGBString( )
+#endif
+            << std::endl;
          movePairs( nReads, reads_b, reads_q, reads_n, readIndices, 
               mUniquifyNames, pVBV, pVPQV, pReadNames );    }
     else
@@ -694,11 +703,17 @@ void BAMReader::readBAM( String const& bamFile,
          ParallelSort( readIndices, [&reads_n]( size_t idx1, size_t idx2 )
               { return reads_n[idx1] < reads_n[idx2]; } );
          std::cout << Date( ) << ": reads sorted" << std::endl;
-         std::cout << Date( ) << ": memory in use = " << MemUsageGBString( ) 
-               << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+         std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
+#ifdef __linux
+            << ", peak = " << PeakMemUsageGBString( )
+#endif
+            <<std::endl;
          movePairs( nReads, reads_b, reads_q, reads_n, readIndices, 
               mUniquifyNames, pVBV, pVPQV, pReadNames );    }
     std::cout << Date( ) << ": data stashed in output structures" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( ) 
-          << ", peak = " << PeakMemUsageGBString( ) << std::endl;
+    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
+#ifdef __linux
+        << ", peak = " << PeakMemUsageGBString( )
+#endif
+        <<std::endl;
 }

@@ -16,6 +16,7 @@
 #include "paths/long/large/FinalFiles.h"
 #include "paths/long/large/MakeGaps.h"
 #include "paths/long/large/Samples.h"
+#include "tclap/CmdLine.h"
 
 
 int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, int MAX_MEM_GB){
@@ -91,34 +92,45 @@ int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, in
   FinalFiles( hb, inv2, paths2, subsam_names, subsam_starts, work_dir, final_dir, MAX_CELL_PATHS, MAX_DEPTH, ALIGN_TO_GENOME, EVALUATE, EVALUATE_VERBOSE, X, res, SAMPLE, species, fosmids, G, SAVE_FASTA );
                                             
   // Done.
+#ifdef __linux
   std::cout << "peak mem usage = " << PeakMemUsageGBString( ) << ", ";
+#endif
   std::cout << "final checksum = " << hb.CheckSum( ) << std::endl;
                                                     
   return 0;
 }
 
 int main(int argc, const char* argv[]){
-  /*
-  //std::cout << "Arrancando" << std::endl;
-  //const String work_dir = "/tgac/workarea/Research-Groups/RG-Bernardo-Clavijo/wheat/discovar_complete_run/sources/A-team/A-discovar/src/modules/testcase_def";
-  //scaffolding( work_dir, "testrun", 1, 16);
-  bool TEST=False;
-  if (TEST){
-    std::cout << "Arrancando" << std::endl;
-    const String work_dir = "/tgac/workarea/Research-Groups/RG-Bernardo-Clavijo/wheat/discovar_complete_run/sources/A-team/A-discovar/src/modules/testcase_def";
-    scaffolding(work_dir, "testrun", 1, 16);
-  } else {
-    const String work_dir = "/tgac/workarea/Research-Groups/RG-Bernardo-Clavijo/cadenza/discovar_splited";
-    scaffolding(work_dir, "cadenza_2st_run", 64, 6500);
-  }
-  */
+  String out_prefix;
+  String out_dir;
+  unsigned int threads;
+  int max_mem;
 
-  // ./scaffolding /tgac/workarea/Research-Groups/RG-Bernardo-Clavijo/cadenza/discovar_splited prefix 64 1500
-  const String work_dir = argv[1];
-  const string prefix = argv[2];
-  int ncpus = atoi(argv[3]);
-  int mem_mb = atoi(argv[4]);
-  scaffolding( work_dir, prefix, ncpus, mem_mb );
+  //========== Command Line Option Parsing ==========
+
+  std::cout<<"Welcome to w2rap-contigger::06_scaffolding"<<std::endl;
+  try {
+    TCLAP::CmdLine cmd("", ' ', "0.1 alpha");
+
+    TCLAP::ValueArg<std::string> out_dirArg     ("o","out_dir",     "Output dir path",           true,"","string",cmd);
+    TCLAP::ValueArg<std::string> out_prefixArg     ("p","prefix",     "Prefix for the output files",           true,"","string",cmd);
+    TCLAP::ValueArg<unsigned int>         threadsArg        ("t","threads",        "Number of threads on parallel sections (default: 4)", false,4,"int",cmd);
+    TCLAP::ValueArg<unsigned int>         max_memArg       ("m","max_mem",       "Maximum memory in GB (soft limit, impacts performance, default 10000)", false,10000,"int",cmd);
+
+    cmd.parse( argc, argv );
+
+    // Get the value parsed by each arg.
+    out_dir=out_dirArg.getValue();
+    out_prefix=out_prefixArg.getValue();
+    threads=threadsArg.getValue();
+    max_mem=max_memArg.getValue();
+
+  } catch (TCLAP::ArgException &e)  // catch any exceptions
+  { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; return 1;}
+
+
+
+  scaffolding (out_dir, out_prefix, threads, max_mem );
 
   return 0;
 }
