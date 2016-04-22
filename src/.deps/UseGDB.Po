@@ -1,3 +1,0 @@
-UseGDB.o: system/UseGDB.cc system/UseGDB.h
-
-system/UseGDB.h:

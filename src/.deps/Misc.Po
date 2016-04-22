@@ -1,3 +1,0 @@
-Misc.o: Misc.cc Misc.h
-
-Misc.h:
