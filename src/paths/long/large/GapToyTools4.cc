@@ -213,7 +213,8 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
 
      double clock1 = WallClockTime( );
      Validate( hb, inv2, paths2 );
-     const int K = 200;
+     //const int K = 200;
+     int K=hb.K();//TODO: check K effect
      ForceAssertEq( K, hb.K( ) );
      vec<Bool> used;
      hb.Used(used);

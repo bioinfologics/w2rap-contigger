@@ -82,12 +82,30 @@
    M(KmerShapeDefaultType(88), arg);  \
    M(KmerShapeDefaultType(96), arg);  \
    M(KmerShapeDefaultType(100), arg); \
+   M(KmerShapeDefaultType(108), arg); \
+   M(KmerShapeDefaultType(116), arg); \
    M(KmerShapeDefaultType(128), arg); \
+   M(KmerShapeDefaultType(136), arg); \
    M(KmerShapeDefaultType(144), arg); \
+   M(KmerShapeDefaultType(152), arg); \
+   M(KmerShapeDefaultType(160), arg); \
+   M(KmerShapeDefaultType(168), arg); \
+   M(KmerShapeDefaultType(172), arg); \
+   M(KmerShapeDefaultType(180), arg); \
+   M(KmerShapeDefaultType(188), arg); \
    M(KmerShapeDefaultType(192), arg); \
-   M(KmerShapeDefaultType(200), arg)\
+   M(KmerShapeDefaultType(196), arg); \
+   M(KmerShapeDefaultType(200), arg); \
+   M(KmerShapeDefaultType(208), arg); \
+   M(KmerShapeDefaultType(216), arg); \
+   M(KmerShapeDefaultType(224), arg); \
+   M(KmerShapeDefaultType(232), arg); \
+   M(KmerShapeDefaultType(240), arg)\
 
 #define FOR_ALL_KSHAPES_D(M, arg ) \
+   M(KmerShapeDefaultType(260), arg); \
+   M(KmerShapeDefaultType(280), arg); \
+   M(KmerShapeDefaultType(300), arg); \
    M(KmerShapeDefaultType(320), arg); \
    M(KmerShapeDefaultType(368), arg); \
    M(KmerShapeDefaultType(400), arg); \
@@ -167,10 +185,28 @@
    M(88, arg); \
    M(96, arg); \
    M(100, arg); \
+   M(108, arg); \
+   M(116, arg); \
    M(128, arg); \
+   M(136, arg); \
    M(144, arg); \
+   M(152, arg); \
+   M(160, arg); \
+   M(168, arg); \
+   M(172, arg); \
+   M(180, arg); \
+   M(188, arg); \
    M(192, arg); \
+   M(196, arg); \
    M(200, arg); \
+   M(208, arg); \
+   M(216, arg); \
+   M(224, arg); \
+   M(232, arg); \
+   M(240, arg); \
+   M(260, arg); \
+   M(280, arg); \
+   M(300, arg); \
    M(320, arg); \
    M(368, arg); \
    M(400, arg); \

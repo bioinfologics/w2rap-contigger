@@ -42,9 +42,9 @@ int patcher(const String work_dir, const string prefix, uint NUM_THREADS, int MA
 
   //XXX TODO: Load quals
   // Load K=200 HBV and reda paths
-  BinaryReader::readFile( work_dir + "/" + prefix + ".pc.200.hbv", &hb);
-  BinaryReader::readFile( work_dir + "/" + prefix + ".pc.200.inv", &inv2 );
-  paths2.ReadAll( work_dir + "/" + prefix + ".pc.200.paths" );
+  BinaryReader::readFile( work_dir + "/" + prefix + ".pc.large.hbv", &hb);
+  BinaryReader::readFile( work_dir + "/" + prefix + ".pc.large.inv", &inv2 );
+  paths2.ReadAll( work_dir + "/" + prefix + ".pc.large.paths" );
 
   //int nedges = hb.EdgeObkectCount();
 

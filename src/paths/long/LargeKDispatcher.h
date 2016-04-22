@@ -20,8 +20,11 @@
 class BigK
 {
     static int constexpr gK[] =
-    {20, 24, 28, 32, 40, 48, 60, 72, 80, 84, 88, 100, 128, 144, 172, 200, 320, 368, 400, 
-     500, 544, 640, 720, 1000, 1200, 1600, 2000, 4000, 10000};
+    {20,     24,     28,     32,     40,     48,     60,     72,     80,     84,
+     88,     96,     100,    108,    116,    128,    136,    144,    152,    160,    168,
+     172,    180,    188,    196,    200,    208,    216,    224,    232,    240,
+     260,    280,    300,    320,    368,    400,    500,    544,    640,    720,
+     1000,   1200,   1600,   2000,   4000,   10000};
     // Case 1:  DANGER, WILL ROBINSON.  If you add a value to the array, you
     //          must also add another case statement at the end of the switch.
     //          If you forget, you won't get a dispatch on the last K value,
@@ -93,6 +96,24 @@ public:
         case gK[26]: C<gK[26]>()(std::forward<Args>(args)...); break;
         case gK[27]: C<gK[27]>()(std::forward<Args>(args)...); break;
         case gK[28]: C<gK[28]>()(std::forward<Args>(args)...); break;
+        case gK[29]: C<gK[29]>()(std::forward<Args>(args)...); break;
+        case gK[30]: C<gK[30]>()(std::forward<Args>(args)...); break;
+        case gK[31]: C<gK[31]>()(std::forward<Args>(args)...); break;
+        case gK[32]: C<gK[32]>()(std::forward<Args>(args)...); break;
+        case gK[33]: C<gK[33]>()(std::forward<Args>(args)...); break;
+        case gK[34]: C<gK[34]>()(std::forward<Args>(args)...); break;
+        case gK[35]: C<gK[35]>()(std::forward<Args>(args)...); break;
+        case gK[36]: C<gK[36]>()(std::forward<Args>(args)...); break;
+        case gK[37]: C<gK[37]>()(std::forward<Args>(args)...); break;
+        case gK[38]: C<gK[38]>()(std::forward<Args>(args)...); break;
+        case gK[39]: C<gK[39]>()(std::forward<Args>(args)...); break;
+        case gK[40]: C<gK[40]>()(std::forward<Args>(args)...); break;
+        case gK[41]: C<gK[41]>()(std::forward<Args>(args)...); break;
+        case gK[42]: C<gK[42]>()(std::forward<Args>(args)...); break;
+        case gK[43]: C<gK[43]>()(std::forward<Args>(args)...); break;
+        case gK[44]: C<gK[44]>()(std::forward<Args>(args)...); break;
+        case gK[45]: C<gK[45]>()(std::forward<Args>(args)...); break;
+        case gK[46]: C<gK[46]>()(std::forward<Args>(args)...); break;
         default: FatalErr("Illegal value " << k << " for K in BigK dispatcher.");
         }
     }

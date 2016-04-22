@@ -197,7 +197,7 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      Cleanup( hb, inv, paths );    }
      TestInvolution( hb, inv );
      Validate( hb, inv, paths );    
-     std::cout << TimeSince(clock) << " used cleaning 200-mer graph" << std::endl;    }
+     std::cout << TimeSince(clock) << " used cleaning large_k-mer graph" << std::endl;    }
 
 void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,

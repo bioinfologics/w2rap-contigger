@@ -44,9 +44,9 @@ int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREAD
   // Clean (original comment) XXX TODO: porque redeclaration (??) revisar esto!!
   HyperBasevector hb;
   vec<int> inv;
-  BinaryReader::readFile( work_dir + "/"+ file_prefix +".200.hbv", &hb );
-  BinaryReader::readFile( work_dir + "/"+ file_prefix +".200.inv", &inv );
-  ReadPathVec paths( work_dir + "/"+ file_prefix +".200.paths" );
+  BinaryReader::readFile( work_dir + "/"+ file_prefix +".large.hbv", &hb );
+  BinaryReader::readFile( work_dir + "/"+ file_prefix +".large.inv", &inv );
+  ReadPathVec paths( work_dir + "/"+ file_prefix +".large.paths" );
   
   // select the cleaning version (default value in discovar is 2) we always use the Clean200 option !!
   std::cout << "Cleaning!! " << std::endl;
@@ -63,22 +63,22 @@ int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREAD
 
   std::cout << "Writing output files " << std::endl;
   // Write files.
-  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.200.hbv", hb );
-  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.200.hbx", HyperBasevectorX(hb) );
-  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.200.inv", inv );
-  paths.WriteAll( work_dir + "/" + file_prefix + ".pc.200.paths" ); 
+  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.hbv", hb );
+  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.hbx", HyperBasevectorX(hb) );
+  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.inv", inv );
+  paths.WriteAll( work_dir + "/" + file_prefix + ".pc.large.paths" );
 
   vecbasevector edges( hb.EdgeObjectCount( ) );
   for ( int e = 0; e < hb.EdgeObjectCount( ); e++ ){
     edges[e] = hb.EdgeObject(e);
   }
-  edges.WriteAll( work_dir + "/" + file_prefix + ".pc.200.fastb" );
+  edges.WriteAll( work_dir + "/" + file_prefix + ".pc.large.fastb" );
   std::cout << "Done writing output files " << std::endl;
 
   if ( true ) {  // scope paths_index (original comment ???)
     VecULongVec paths_index;
     invert( paths, paths_index, hb.EdgeObjectCount( ) );
-    paths_index.WriteAll( work_dir + "/" + file_prefix + ".pc.200.paths.inv" );
+    paths_index.WriteAll( work_dir + "/" + file_prefix + ".pc.large.paths.inv" );
   }
   
   // Unload quals
