@@ -48,7 +48,7 @@
 
 namespace
 {
-unsigned const K = 60;
+const unsigned K = 60;
 typedef KMer<K> Kmer;
 typedef KMer<K-1> SubKmer;
 typedef KmerDictEntry<K> Entry;
@@ -1307,7 +1307,6 @@ void buildReadQGraph( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
                         bool const VERBOSE )
 {
     //std::cout << Date() << ": loading reads." << std::endl;
-
     Dict* pDict = createDict(reads,quals,minQual,minFreq);
 
     // figure out the complete base sequence of each edge

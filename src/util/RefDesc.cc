@@ -14,7 +14,6 @@
  * \brief Metadata for reference sequences.
  */
 #include "util/RefDesc.h"
-#include "util/MD5.h"
 #include "dna/Bases.h"
 #include "system/Assert.h"
 #include <fstream>

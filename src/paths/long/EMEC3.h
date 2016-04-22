@@ -12,8 +12,6 @@
 #define PATHS_LONG_EMEC3_H_
 
 #include "feudal/BaseVec.h"
-#include "simulation/ReadSimulatorSimpleCore.h"
-#include "simulation/ReferenceIterator.h"
 #include "Qualvector.h"
 #include "dna/Bases.h"
 #include "paths/long/ReadStack.h"

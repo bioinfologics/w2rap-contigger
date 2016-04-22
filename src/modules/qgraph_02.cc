@@ -18,7 +18,7 @@
 
 
 
-int qgraph_builder(const String work_dir, const string file_prefix, uint NUM_THREADS, int MAX_MEM_GB){
+int qgraph_builder(const String work_dir, const string file_prefix, uint small_k, uint large_k, uint NUM_THREADS, int MAX_MEM_GB){
   
     // ********************** Set sys resources ******************
     // Set computational limits (XXX TODO: putin a separate source to import in different code)
@@ -59,10 +59,10 @@ int qgraph_builder(const String work_dir, const string file_prefix, uint NUM_THR
     FixPaths( hbv, paths );
     
     // Save graph kmer 60
-    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.hbv", hbv );
-    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.hbx", HyperBasevectorX(hbv) );
-    edges.WriteAll( work_dir +"/"+ file_prefix +".60.fastb" );
-    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.inv", inv );
+    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".small_K.hbv", hbv );
+    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".small_K.hbx", HyperBasevectorX(hbv) );
+    edges.WriteAll( work_dir +"/"+ file_prefix +".small_K.fastb" );
+    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".small_K.inv", inv );
     
     std::cout << "Done loading " << std::endl;
     
@@ -82,6 +82,7 @@ int qgraph_builder(const String work_dir, const string file_prefix, uint NUM_THR
 int main(int argc, const char* argv[]){
     String out_prefix;
     String out_dir;
+    unsigned int small_K,large_K;
     unsigned int threads;
     int max_mem;
 
@@ -93,6 +94,8 @@ int main(int argc, const char* argv[]){
 
         TCLAP::ValueArg<std::string> out_dirArg     ("o","out_dir",     "Output dir path",           true,"","string",cmd);
         TCLAP::ValueArg<std::string> out_prefixArg     ("p","prefix",     "Prefix for the output files",           true,"","string",cmd);
+        TCLAP::ValueArg<unsigned int>         small_KArg        ("k","small_k",        "Small k (default: 60)", false,60,"int",cmd);
+        TCLAP::ValueArg<unsigned int>         large_KArg        ("K","large_k",        "Large k (default: 200)", false,200,"int",cmd);
         TCLAP::ValueArg<unsigned int>         threadsArg        ("t","threads",        "Number of threads on parallel sections (default: 4)", false,4,"int",cmd);
         TCLAP::ValueArg<unsigned int>         max_memArg       ("m","max_mem",       "Maximum memory in GB (soft limit, impacts performance, default 10000)", false,10000,"int",cmd);
 
@@ -101,6 +104,8 @@ int main(int argc, const char* argv[]){
         // Get the value parsed by each arg.
         out_dir=out_dirArg.getValue();
         out_prefix=out_prefixArg.getValue();
+        small_K=small_KArg.getValue();
+        large_K=large_KArg.getValue();
         threads=threadsArg.getValue();
         max_mem=max_memArg.getValue();
 
@@ -109,7 +114,7 @@ int main(int argc, const char* argv[]){
 
 
 
-    qgraph_builder(out_dir, out_prefix, threads, max_mem );
+    qgraph_builder(out_dir, out_prefix, small_K, large_K, threads, max_mem );
 
     return 0;
 }
