@@ -8,9 +8,12 @@ add_definitions(${CMAKE_CXX_FLAGS})
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "lib")
 
 ## Include directories
 include_directories("src/")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib")
 
 ## Mac compilation issue
 include_directories("/usr/include/malloc")
