@@ -8,12 +8,9 @@ add_definitions(${CMAKE_CXX_FLAGS})
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "lib")
 
 ## Include directories
 include_directories("src/")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib")
 
 ## Mac compilation issue
 include_directories("/usr/include/malloc")
@@ -26,7 +23,7 @@ include_directories("/usr/include/malloc")
 
 ## Set sources variables
 
-add_library(base_libs
+add_library(base_libs OBJECT
         src/Alignment.cc
         src/Basevector.cc
         src/BlockAlign.cc
@@ -157,7 +154,7 @@ add_library(base_libs
         src/system/file/TempFile.cc
         src/util/Logger.cc)
 
-add_library(base_libs2
+add_library(base2_libs OBJECT
         src/fastg/FastgGraph.cc
         src/graphics/BasicGraphics.cc
         src/kmers/kmer_parcels/KmerParcelsBuilder.cc
@@ -275,18 +272,14 @@ SET(SOURCE_FILES_SCAFFOLDING_06 src/modules/scaffolding_06.cc
         src/paths/long/large/Samples.cc)
 
 ## add executables and respective sources
-add_executable(01_unipaths ${SOURCE_FILES_UNIPATH_01})
-target_link_libraries(01_unipaths base_libs)
-add_executable(02_qgraph ${SOURCE_FILES_QGRAPH_02})
-target_link_libraries(02_qgraph base_libs base_libs2)
-add_executable(03_clean ${SOURCE_FILES_CLEAN_03})
-target_link_libraries(03_clean base_libs base_libs2)
-add_executable(04_patching ${SOURCE_FILES_PATCHING_04})
-target_link_libraries(04_patching base_libs base_libs2)
-add_executable(05_simplify ${SOURCE_FILES_SIMPLIFY_05})
-target_link_libraries(05_simplify base_libs base_libs2)
-add_executable(06_scaffolding ${SOURCE_FILES_SCAFFOLDING_06})
-target_link_libraries(06_scaffolding base_libs base_libs2)
+add_executable(01_unipaths ${SOURCE_FILES_UNIPATH_01} $<TARGET_OBJECTS:base_libs>)
+add_executable(02_qgraph ${SOURCE_FILES_QGRAPH_02} $<TARGET_OBJECTS:base_libs>
+$<TARGET_OBJECTS:base2_libs>)
+add_executable(03_clean ${SOURCE_FILES_CLEAN_03} $<TARGET_OBJECTS:base_libs>
+$<TARGET_OBJECTS:base2_libs>)
+add_executable(04_patching ${SOURCE_FILES_PATCHING_04} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
+add_executable(05_simplify ${SOURCE_FILES_SIMPLIFY_05} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
+add_executable(06_scaffolding ${SOURCE_FILES_SCAFFOLDING_06} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
 
 ## Link libraries
 #target_link_libraries(01_unipaths libtbbmalloc.so)
