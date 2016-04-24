@@ -21,7 +21,7 @@ int create_unipaths(const String work_dir, const string prefix, const string REA
    * XXX TODO: Document the function variables */
 
   // Set computational limits (XXX TODO: putin a separate source to import in different code)
-  std::cout << "Set computational resources " << std::endl;
+  //std::cout << "Set computational resources " << std::endl;
   PrintSysInfo();
   SetThreads(NUM_THREADS, False);
   int64_t max_bytes = int64_t(round(MAX_MEM_GB * 1024.0 * 1024.0 * 1024.0));
@@ -30,10 +30,10 @@ int create_unipaths(const String work_dir, const string prefix, const string REA
   // Create directory tree (XXX TODO: Create a program that setups the dir tree)
 
   // Extraxt reads, convert reads to HyperBasevector and paths
-  std::cout << "Object manager " << std::endl;
+  //std::cout << "Object manager " << std::endl;
   vecbvec bases;
   ObjectManager<MasterVec<PQVec>> quals (work_dir + "/frag_reads_orig.qualp"); // XXX TODO: path to frag_reads_orig.qualp // VecPQvec is replaced for MasterVec<PQVec> using directive in feudal/PQvec.h file check
-  std::cout << "Final object manager " << std::endl;
+  //std::cout << "Final object manager " << std::endl;
    
   // Variables to run ExtractReads function
   const string blank_string_arg = "";
@@ -41,7 +41,7 @@ int create_unipaths(const String work_dir, const string prefix, const string REA
   String X = "all";
   String READS_F = READS;
   int ZZ = 0;
-  std::cout << "Start to extract reads " << std::endl;
+  //std::cout << "Start to extract reads " << std::endl;
   vec<String> regions;
   vec<String> subsam_names;
 
@@ -49,7 +49,7 @@ int create_unipaths(const String work_dir, const string prefix, const string REA
   vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
   
   ExtractReads(blank_string_arg, blank_string_arg, READS, blank_string_feudal, -1, regions, work_dir, work_dir, False, False, False, subsam_names, subsam_starts, &bases, quals );
-  std::cout << "Final to extract reads " << std::endl;
+  //std::cout << "Final to extract reads " << std::endl;
 
   BinaryWriter::writeFile( work_dir + "/subsam.starts", subsam_starts );
   BinaryWriter::writeFile( work_dir + "/subsam.names", subsam_names );

@@ -515,14 +515,14 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     vec<int> to_left, to_right;
     hbv.ToLeft(to_left);
     hbv.ToRight(to_right);
-    std::cout << "[GapToyTools3.cc] Remove unneeded vertices toleft beginning: " << to_left.size() << std::endl;
-    std::cout << "[GapToyTools3.cc] Remove unneeded vertices toright beginning: " << to_right.size() << std::endl; 
+    //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toleft beginning: " << to_left.size() << std::endl;
+    //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toright beginning: " << to_right.size() << std::endl;
     // step 1: make a list of vertices to kill
     // o----o----o----o
     // v0   v1   v2   v3
-    time_t rawtime;
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc] Beginning RemoveUnneededVertices2 Step1 for: " << ctime(&rawtime) << std::endl;
+    //time_t rawtime;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc] Beginning RemoveUnneededVertices2 Step1 for: " << ctime(&rawtime) << std::endl;
     for ( int v = 0; v < hbv.N(); ++v )
         if ( hbv.FromSize(v) == 1 && hbv.ToSize(v) == 1
                 && hbv.From(v)[0] != hbv.To(v)[0] 
@@ -531,8 +531,8 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
             vertex_kill[v] = true;
             vertex_queue.push_back(v);
         }
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 vertex_queue has size: "<<vertex_queue.size() <<" - " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 vertex_queue has size: "<<vertex_queue.size() <<" - " << ctime(&rawtime) << std::endl;
     if ( debug ) {
         PRINT( vertex_queue.size() );
         std::cout << "serialno: " << debug_serial << std::endl;
@@ -545,8 +545,8 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     }
 
     // step 2
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step2 for: " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step2 for: " << ctime(&rawtime) << std::endl;
     vec<std::pair<int,int>> bound;
     while ( vertex_queue.size() ) {
         int v = vertex_queue.back();
@@ -594,8 +594,8 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
         }
     }
     if ( debug ) PRINT(bound.size());
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 bound has size: "<<bound.size() <<" - " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 bound has size: "<<bound.size() <<" - " << ctime(&rawtime) << std::endl;
 
     // validate step 2
     if ( debug ) {
@@ -633,8 +633,8 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     vec<int> new_edge_numbers;
     vec<int> to_delete;
     //XXX: boudn.size() is how many new edges we'll need, so we can pre-allocate that.
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step3 for: " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step3 for: " << ctime(&rawtime) << std::endl;
     while ( bound.size() ) {///TODO: we can make the Adds at the end and the paralelise this easily
         auto bounds = bound.back();
         bound.pop_back();
@@ -691,11 +691,11 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
         }
         new_edge_numbers.push_back(new_edge_no);
     }
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step3 edges before deletion: "<<hbv.EdgeObjectCount()<< " - " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step3 edges before deletion: "<<hbv.EdgeObjectCount()<< " - " << ctime(&rawtime) << std::endl;
     hbv.DeleteEdges(to_delete);
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step3 edges after deletion: "<<hbv.EdgeObjectCount()<< " - " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step3 edges after deletion: "<<hbv.EdgeObjectCount()<< " - " << ctime(&rawtime) << std::endl;
 
     if ( debug )
         BinaryWriter::writeFile( debug_fnam_head.str() + ".AFTER.hbv", hbv );
@@ -708,8 +708,8 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
          inv[itr[0]] = itr[1];
          inv[itr[1]] = itr[0];
     }
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 updating paths with new edge numbers: " << ctime(&rawtime) << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 updating paths with new edge numbers: " << ctime(&rawtime) << std::endl;
     // update the read paths for the newly created edges
 #pragma omp parallel for
     for ( int64_t i = 0; i < paths.size(); ++i ) {
@@ -728,12 +728,12 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
 
     //XXX Optimization END
     //XXX: this is PROPERTY VALIDATION IN PRODUCTION! AWESOME!
-    time(&rawtime);
-    std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Begining Validate: " << ctime(&rawtime) << std::endl;
-    Validate( hbv, inv, paths );
-    TestInvolution(hbv, inv);
-    std::cout << "[GapToyTools3.cc] Remove unneeded vertices toleft finishing: " << to_left.size() << std::endl;
-    std::cout << "[GapToyTools3.cc] Remove unneeded vertices toright finishing: " << to_right.size() << std::endl;
+    //time(&rawtime);
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Begining Validate: " << ctime(&rawtime) << std::endl;
+    //Validate( hbv, inv, paths );
+    //TestInvolution(hbv, inv);
+    //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toleft finishing: " << to_left.size() << std::endl;
+    //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toright finishing: " << to_right.size() << std::endl;
 }
 
 void RemoveUnneededVertices( HyperBasevector& hb, vec<int>& inv,
@@ -1131,7 +1131,7 @@ void TestInvolution( const HyperBasevector& hb, const vec<int>& inv )
                     || hb.To(rw).size( ) != hb.From(v).size( ) )
                {    std::cout << "Graph structure is asymmetric.\n" << "Abort." << std::endl;
                     TracebackThisProcess( );    }    }    }     
-     std::cout << "[GapToyTools3.cc] Finishing test involution : " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools3.cc] Finishing test involution : " << ctime(&now) << std::endl;
      }
 
 void FragDist( const HyperBasevector& hb, const vec<int>& inv,

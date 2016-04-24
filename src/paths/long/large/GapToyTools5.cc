@@ -605,7 +605,7 @@ void Tamp( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      // paths index, it might be more efficient to pass the paths index to this
      // module, and have it update the index.
      time_t now = time(0);
-     std::cout << "[GapToyTools5.cc] Begining Tamp: " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools5.cc] Begining Tamp: " << ctime(&now) << std::endl;
      double clock = WallClockTime( );
      VecULongVec paths_index;
      invert( paths, paths_index, hb.EdgeObjectCount( ) );
@@ -769,7 +769,7 @@ void Tamp( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      std::cout << count << " edges tamped down" << std::endl;
      LogTime( clock, "tamping" );
      Cleanup( hb, inv, paths );
-     std::cout << "[GapToyTools5.cc] Finished Tamping: " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools5.cc] Finished Tamping: " << ctime(&now) << std::endl;
 }
 
 

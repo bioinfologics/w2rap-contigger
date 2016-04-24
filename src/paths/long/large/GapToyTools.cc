@@ -1297,10 +1297,10 @@ void LogTime( const double clock, const String& what, const String& work_dir )
 void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 {    
      time_t now = time(0);
-     std::cout << "[GapToyTools.cc] Begining CleanupCore: " << ctime(&now) << std::endl;
-     std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Begining CleanupCore: " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
      double clock2 = WallClockTime( );
      vec<Bool> used;
      hb.Used(used);
@@ -1317,7 +1317,7 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
      inv = inv2;
 
      vec<Bool> to_delete( paths.size( ), False );
-     LogTime( clock2, "cleaning up 2" );
+     //LogTime( clock2, "cleaning up 2" );
      double clock3 = WallClockTime( );
      #pragma omp parallel for
      for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
@@ -1326,18 +1326,18 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
           {    int n = to_new_id[ p[j] ];
                if ( n < 0 ) to_delete[i] = True;
                else p[j] = n;    }    }
-     LogTime( clock3, "cleaning up 3" );
+     //LogTime( clock3, "cleaning up 3" );
      double clock4 = WallClockTime( );
      hb.RemoveDeadEdgeObjects( );
-     LogTime( clock4, "cleaning up 4" );
+     //LogTime( clock4, "cleaning up 4" );
      double clock5 = WallClockTime( );
      hb.RemoveEdgelessVertices( );
-     LogTime( clock5, "cleaning up 5" );    
+     //LogTime( clock5, "cleaning up 5" );
      //hb.Shrink_FromTo(); ## added by us (bj gg), didn't worked so far
-     std::cout << "[GapToyTools.cc] Finishing CleanupCore: " << ctime(&now) << std::endl;
-     std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Finishing CleanupCore: " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
      
      }
 
@@ -1345,10 +1345,10 @@ void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 {    
      // Function timing 
      time_t now = time(0);
-     std::cout << "[GapToyTools.cc] Beginning Cleanup: " << ctime(&now) << std::endl;
-     std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Beginning Cleanup: " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
 
      double sclock = WallClockTime( );
      {    vec<Bool> used;
@@ -1359,7 +1359,7 @@ void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
                          || !used[ paths[i][j] ] )
                     {    paths[i].resize(j);
                          break;    }    }    }    }
-     LogTime( sclock, "Resizing and shrinking paths" );
+     //LogTime( sclock, "Resizing and shrinking paths" );
 
      RemoveUnneededVertices2( hb, inv, paths );
 
@@ -1392,10 +1392,10 @@ void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
        BinaryWriter::writeFile( buffer, paths );
      }
      // Size measurement
-     std::cout << "[GapToyTools.cc] Finished Cleanup: " << ctime(&now) << std::endl;
-     std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Finished Cleanup: " << ctime(&now) << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
+     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
 }
 
 void CleanupLoops( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
