@@ -129,8 +129,8 @@ int simplify(const String work_dir, const string prefix, uint NUM_THREADS, int M
 }
 
 int main(int argc, const char* argv[]){
-  String out_prefix;
-  String out_dir;
+  std::string out_prefix;
+  std::string out_dir;
   unsigned int threads;
   int max_mem;
 

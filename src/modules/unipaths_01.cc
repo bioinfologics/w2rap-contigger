@@ -16,7 +16,7 @@
 #include "paths/long/large/Samples.h"
 #include "tclap/CmdLine.h"
 
-int create_unipaths(const String work_dir, const string prefix, const string READS, uint NUM_THREADS, int MAX_MEM_GB){
+int create_unipaths(const string work_dir, const string prefix, const string READS, uint NUM_THREADS, int MAX_MEM_GB){
   /* Create unipaths from the reads 
    * XXX TODO: Document the function variables */
 
@@ -63,9 +63,9 @@ int create_unipaths(const String work_dir, const string prefix, const string REA
 
 int main(const int argc, const char * argv[]){
 
-  String out_prefix;
-  String read_files;
-  String out_dir;
+  std::string out_prefix;
+  std::string read_files;
+  std::string out_dir;
   unsigned int threads;
   int max_mem;
 
@@ -94,7 +94,16 @@ int main(const int argc, const char * argv[]){
   } catch (TCLAP::ArgException &e)  // catch any exceptions
   { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; return 1;}
 
+  //Check directory exists:
+#include <sys/types.h>
+#include <sys/stat.h>
 
+  struct stat info;
+
+  if( stat( out_dir.c_str(), &info ) != 0 || !( info.st_mode & S_IFDIR )) {
+    std::cout<<"Output directory doesn't exist, or is not a directory: "<<out_dir<<std::endl;
+    return 1;
+  }
 
   create_unipaths( out_dir, out_prefix, read_files, threads, max_mem );
 

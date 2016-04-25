@@ -80,11 +80,13 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
 }
 
 int main(int argc, const char* argv[]){
-    String out_prefix;
-    String out_dir;
+    std::string out_prefix;
+    std::string out_dir;
     unsigned int small_K,large_K;
     unsigned int threads;
     int max_mem;
+    std::vector<unsigned int> allowed_k={80,84,88,96,100,108,116,128,136,144,152,160,168,172,180,188,192,196,200,208,216,224,232,240,260,280,300,320,368,400,440,460,500,544,640};
+
 
     //========== Command Line Option Parsing ==========
 
@@ -95,7 +97,8 @@ int main(int argc, const char* argv[]){
         TCLAP::ValueArg<std::string> out_dirArg     ("o","out_dir",     "Output dir path",           true,"","string",cmd);
         TCLAP::ValueArg<std::string> out_prefixArg     ("p","prefix",     "Prefix for the output files",           true,"","string",cmd);
         //TCLAP::ValueArg<unsigned int>         small_KArg        ("k","small_k",        "Small k (default: 60)", false,60,"int",cmd);
-        TCLAP::ValueArg<unsigned int>         large_KArg        ("K","large_k",        "Large k (default: 200)", false,200,"int",cmd);
+        TCLAP::ValuesConstraint<unsigned int> largeKconst (allowed_k);
+        TCLAP::ValueArg<unsigned int>         large_KArg        ("K","large_k",        "Large k (default: 200)", false,200,&largeKconst,cmd);
         TCLAP::ValueArg<unsigned int>         threadsArg        ("t","threads",        "Number of threads on parallel sections (default: 4)", false,4,"int",cmd);
         TCLAP::ValueArg<unsigned int>         max_memArg       ("m","max_mem",       "Maximum memory in GB (soft limit, impacts performance, default 10000)", false,10000,"int",cmd);
 
@@ -111,6 +114,7 @@ int main(int argc, const char* argv[]){
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; return 1;}
+
 
 
 
