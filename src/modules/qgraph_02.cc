@@ -85,7 +85,7 @@ int main(int argc, const char* argv[]){
     unsigned int small_K,large_K;
     unsigned int threads;
     int max_mem;
-    std::vector<unsigned int> allowed_k={80,84,88,96,100,108,116,128,136,144,152,160,168,172,180,188,192,196,200,208,216,224,232,240,260,280,300,320,368,400,440,460,500,544,640};
+    std::vector<unsigned int> allowed_k={60,64,72,80,84,88,96,100,108,116,128,136,144,152,160,168,172,180,188,192,196,200,208,216,224,232,240,260,280,300,320,368,400,440,460,500,544,640};
 
 
     //========== Command Line Option Parsing ==========
