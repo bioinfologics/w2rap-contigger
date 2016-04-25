@@ -15,12 +15,6 @@ include_directories("src/")
 ## Mac compilation issue
 include_directories("/usr/include/malloc")
 
-
-
-## Link directories
-#link_directories("/tgac/software/production/intel_studio/2015.2/x86_64/composerxe/tbb/lib/intel64/gcc4.4")
-
-
 ## Set sources variables
 
 add_library(base_libs OBJECT
@@ -281,10 +275,20 @@ add_executable(04_patching ${SOURCE_FILES_PATCHING_04} $<TARGET_OBJECTS:base_lib
 add_executable(05_simplify ${SOURCE_FILES_SIMPLIFY_05} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
 add_executable(06_scaffolding ${SOURCE_FILES_SCAFFOLDING_06} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
 
-## Link libraries
-#target_link_libraries(01_unipaths libtbbmalloc.so)
-#target_link_libraries(02_qgraph libtbbmalloc.so)
-#target_link_libraries(03_clean libtbbmalloc.so)
-#target_link_libraries(04_patching libtbbmalloc.so)
-#target_link_libraries(05_simplify libtbbmalloc.so)
-#target_link_libraries(06_scaffolding libtbbmalloc.so)
+if ($MALLOC_LIBRARY)
+    ## MALLOC_LIBRARY, path to libtbbmalloc.so
+    get_filename_component(LIBSO_PATH LIBSO_PATH DIRECTORY)
+    get_filename_component(LIBSO_NAME LIBSO_PATH NAME)
+    MESSAGE($LIBSO_PATH " " $LIBSO_NAME)
+    ## Link directories
+#    link_directories("/tgac/software/production/intel_studio/2015.2/x86_64/composerxe/tbb/lib/intel64/gcc4.4")
+    link_directories($LIBSO_PATH)
+
+    ## Link libraries
+    target_link_libraries(01_unipaths $LIBSO_NAME)
+    target_link_libraries(02_qgraph $LIBSO_NAME)
+    target_link_libraries(03_clean $LIBSO_NAME)
+    target_link_libraries(04_patching $LIBSO_NAME)
+    target_link_libraries(05_simplify $LIBSO_NAME)
+    target_link_libraries(06_scaffolding $LIBSO_NAME)
+endif()
