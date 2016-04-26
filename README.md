@@ -1,5 +1,9 @@
 # w2rap-contigger
 
+An Illumina PE genome contig assembler, can handle large (17Gbp) complex (hexaploid) genomes.
+
+http://bioinfologics.github.io/the-w2rap-contigger/ 
+
 ## Installation
 ### Pre-requisites
 
