@@ -36,10 +36,13 @@ You need to create a new directory for the intermediate and output files, then r
 
 Each step requires the path to the output directory and a prefix. Step 01 also requires a path to the input reads (either a bam file or 2 fastq files separated by a ','). Step 02 accepts an optional -K parameter to change the K of the last stage DBG. All steps accept a -t flag to set the thread count for parallel sections, although not all sections will use all processors.
 
+In most systems (specially most NUMA systems), using thread-local allocation will have a positive impact on performance. We are not aware of cases where it produced a significant negative impact, so we recommend setting the `MALLOC_PER_THREAD=1` variable.
+
 Example run with input bam file:
 
 ```
 mkdir test_k260
+export MALLOC_PER_THREAD=1
 ./01_unipaths -o test_k260 -p example -r example.bam
 ./02_qgraph -o test_k260 -p example -K 260
 ./03_clean -o test_k260 -p example
@@ -53,6 +56,7 @@ Example run with input fastq files:
 
 ```
 mkdir test_k260
+export MALLOC_PER_THREAD=1
 ./01_unipaths -o test_k260 -p example -r example_r1.fastq,example_r2.fastq
 ./02_qgraph -o test_k260 -p example -K 260
 ./03_clean -o test_k260 -p example
