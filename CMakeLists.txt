@@ -14,11 +14,13 @@ if (DEFINED MALLOC_LIBRARY)
     get_filename_component(LIBSO_PATH ${MALLOC_LIBRARY} DIRECTORY)
     get_filename_component(LIBSO_NAME ${MALLOC_LIBRARY} NAME)
 
-
     ## Link directories
-    #include_directories(${LIBSO_PATH})
-    #link_directories(${LIBSO_PATH})
     link_directories(${LIBSO_PATH})
+endif()
+
+if (DEFINED ZLIB_PATH)
+  include_directories("${ZLIB_PATH}/include")
+  link_directories("${ZLIB_PATH}/lib")
 endif()
 
 ## Include directories
@@ -295,4 +297,15 @@ if (DEFINED MALLOC_LIBRARY)
     target_link_libraries(04_patching ${LIBSO_NAME})
     target_link_libraries(05_simplify ${LIBSO_NAME})
     target_link_libraries(06_scaffolding ${LIBSO_NAME})
+endif()
+
+##Zlib link
+if (DEFINED ZLIB_PATH)
+  set(ZLIB libz.so)
+  target_link_libraries(01_unipaths ${ZLIB})
+  target_link_libraries(02_qgraph ${ZLIB})
+  target_link_libraries(03_clean ${ZLIB})
+  target_link_libraries(04_patching ${ZLIB})
+  target_link_libraries(05_simplify ${ZLIB})
+  target_link_libraries(06_scaffolding ${ZLIB})
 endif()
