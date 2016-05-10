@@ -103,9 +103,9 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
      if (logc.STATUS_LOGGING)
      {    ReportPeakMem( "start main correction, " + ToString( use.size( ) )
                + " reads" );    }
-     int batch = (int64_t) use.size( ) / omp_get_max_threads( );
-     batch = Min( 100, Max( 1, batch ) );
-     #pragma omp parallel for schedule(dynamic, batch)
+     //int batch = (int64_t) use.size( ) / omp_get_max_threads( );
+     //batch = Min( 100, Max( 1, batch ) );
+     #pragma omp parallel for schedule(guided)
      for ( int64_t id1x = 0; id1x < (int64_t) use.size( ); id1x++ )
      {    double aclock = WallClockTime( );
           int64_t id1 = use[id1x];
