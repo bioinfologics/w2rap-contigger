@@ -32,33 +32,32 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
      // (c) places are unique sorted.
 
      std::cout << Date( ) << ": constructing places" << std::endl;
-     vec< vec<int> > places;
+     std::vector< std::vector<int> > places;
      places.reserve( paths.size( ) );
 
      const int batch = 10000;
      #pragma omp parallel for
      for ( int64_t m = 0; m < (int64_t) paths.size( ); m += batch )
-     {    vec< vec<int> > placesm;
+     {    std::vector< std::vector<int> > placesm;
           placesm.reserve(batch);
-          vec<int> x, y;
+          std::vector<int> x, y;
           int64_t n = Min( m + batch, (int64_t) paths.size( ) );
           for ( int64_t i = m; i < n; i++ )
           {    x.clear( ), y.clear( );
                for ( int64_t j = 0; j < (int64_t) paths[i].size( ); j++ )
                     x.push_back( paths[i][j] );
                int nkmers = 0;
-               for ( int j = 0; j < x.isize( ); j++ )
+               for ( int j = 0; j < x.size( ); j++ )
                     nkmers += edges[j].isize( ) - ( (int) K - 1 );
                if ( nkmers + ( (int) K - 1 ) < K2 ) continue;
-               for ( int j = x.isize( ) - 1; j >= 0; j-- )
+               for ( int j = x.size( ) - 1; j >= 0; j-- )
                     y.push_back( inv[ x[j] ] );
                placesm.push_back(x<y?x:y);    }
           #pragma omp critical
-          {    places.append(placesm);    }    }
+          {    places.insert(places.end(),placesm.begin(),placesm.end());    }    }
      std::cout << Date( ) << ": sorting places" << std::endl;
      sortInPlaceParallel(places.begin(),places.end());
-     Unique(places);
-     places.shrink_to_fit();
+     places.erase(std::unique(places.begin(),places.end()),places.end());
 
      // Add extended places.
 
@@ -67,7 +66,7 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
           vec<int> to_left, to_right;
           hb.ToLeft(to_left), hb.ToRight(to_right);
           vec<vec<int>> eplaces;
-          for ( int i = 0; i < places.isize( ); i++ )
+          for ( int i = 0; i < places.size( ); i++ )
           {    vec<int> p = places[i];
                int v = to_left[ p.front( ) ], w = to_right[ p.back( ) ];
                while( hb.To(v).solo( ) )
@@ -79,10 +78,10 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
                     if ( !Member( p, e ) ) p.push_back(e);
                     else break;    }
                if ( p.size( ) > places[i].size( ) ) eplaces.push_back(p);    }
-          places.append(eplaces);
+          places.insert(places.end(),eplaces.begin(),eplaces.end());
           std::cout << Date( ) << ": resorting" << std::endl;
           sortInPlaceParallel(places.begin(),places.end());
-          Unique(places);
+          places.erase(std::unique(places.begin(),places.end()),places.end());
           std::cout << Date( ) << ": done extending paths" << std::endl;    }
 
      // Convert places to bases.  For paths of length > 1, we truncate at the
