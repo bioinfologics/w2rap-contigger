@@ -9,18 +9,26 @@ add_definitions(${CMAKE_CXX_FLAGS})
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 
-if (DEFINED MALLOC_LIBRARY)
+set(MALLOC_LIBRARY "" CACHE PATH "Malloc library path")
+
+if (MALLOC_LIBRARY)
     ## MALLOC_LIBRARY, path to libtbbmalloc.so
     get_filename_component(LIBSO_PATH ${MALLOC_LIBRARY} DIRECTORY)
     get_filename_component(LIBSO_NAME ${MALLOC_LIBRARY} NAME)
-
     ## Link directories
     link_directories(${LIBSO_PATH})
 endif()
 
-if (DEFINED ZLIB_PATH)
-  include_directories("${ZLIB_PATH}/include")
-  link_directories("${ZLIB_PATH}/lib")
+#if (DEFINED ZLIB_PATH)
+#  include_directories("${ZLIB_PATH}/include")
+#  link_directories("${ZLIB_PATH}/lib")
+#else()
+#    set(ZLIB_PATH "/usr/lib" CACHE FILEPATH "ZLIB Library path")
+#endif()
+
+find_package(ZLIB)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
 endif()
 
 ## Include directories
@@ -302,10 +310,10 @@ endif()
 ##Zlib link
 if (DEFINED ZLIB_PATH)
   set(ZLIB libz.so)
-  target_link_libraries(01_unipaths ${ZLIB})
-  target_link_libraries(02_qgraph ${ZLIB})
-  target_link_libraries(03_clean ${ZLIB})
-  target_link_libraries(04_patching ${ZLIB})
-  target_link_libraries(05_simplify ${ZLIB})
-  target_link_libraries(06_scaffolding ${ZLIB})
+  target_link_libraries(01_unipaths ${ZLIB_LIBRARIES})
+  target_link_libraries(02_qgraph ${ZLIB_LIBRARIES})
+  target_link_libraries(03_clean ${ZLIB_LIBRARIES})
+  target_link_libraries(04_patching ${ZLIB_LIBRARIES})
+  target_link_libraries(05_simplify ${ZLIB_LIBRARIES})
+  target_link_libraries(06_scaffolding ${ZLIB_LIBRARIES})
 endif()
