@@ -107,10 +107,10 @@ namespace
 
         const size_t BATCH_SIZE=reads.size();// /2+2; //Para evitar malas influencias
 
-        for(auto first_batch_read=0;first_batch_read<reads.size();first_batch_read+=BATCH_SIZE) {
+        for(size_t first_batch_read=0;first_batch_read<reads.size();first_batch_read+=BATCH_SIZE) {
             std::cout<<" Processing first batch of reads "<<first_batch_read<<"-"<<first_batch_read+BATCH_SIZE<<std::endl;
 #pragma omp parallel for schedule (guided, reads.size()/(omp_get_num_threads()*10))
-            for (auto readId = first_batch_read ; readId < std::min(first_batch_read+BATCH_SIZE, reads.size()); readId++) {
+            for (size_t readId = first_batch_read ; readId < std::min(first_batch_read+BATCH_SIZE, reads.size()); readId++) {
                 unsigned len = goodLens[readId];
                 if (len < K + 1) continue;
 
@@ -140,10 +140,10 @@ namespace
 
             //3) Collapse multiple ocurrences of the same kmer (into the same vector, and set last_kmer forward
             std::cout << "Collapsing... " << std::endl;
-            auto next_collapsed_position=0;
+            size_t next_collapsed_position=0;
             auto kc=all_entries[0].getKDef().getContext();
             auto count=all_entries[0].getKDef().getCount();
-            for (auto first_current_k=0,i=1; i<=last_kmer;i++) {
+            for (size_t first_current_k=0,i=1; i<=last_kmer;i++) {
                 if ( i==last_kmer || all_entries[first_current_k] != all_entries[i] ){
                     all_entries[next_collapsed_position]=all_entries[first_current_k];
                     KDef &kDef = all_entries[next_collapsed_position].getKDef();
