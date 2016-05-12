@@ -86,30 +86,6 @@ size_t processorsOnline()
 // number of processors online.
 int configNumThreads( int numThreads )
 {
-    int procsOnline = processorsOnline();
-    if ( numThreads < 1 )
-    {
-        char const* ompEnv = getenv("OMP_THREAD_LIMIT");
-        if ( !ompEnv )
-            numThreads = procsOnline;
-        else
-        {
-            char* end;
-            long ompVal = strtol(ompEnv,&end,10);
-            if ( *end || ompVal < 1 || ompVal > INT_MAX )
-            {
-                std::cout << "Environment variable OMP_THREAD_LIMIT ("
-                          << ompEnv
-                          << " cannot be parsed as a positive integer."
-                          << std::endl;
-                CRD::exit(1);
-            }
-            numThreads = ompVal;
-        }
-    }
-    if ( numThreads > procsOnline )
-        numThreads = procsOnline;
-
     gNumThreads = numThreads;
 
 #if defined(M_ARENA_MAX)

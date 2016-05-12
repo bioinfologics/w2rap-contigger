@@ -87,46 +87,46 @@ void GenerateLookups( vecbasevector const& trans, HyperBasevector const& hb,
 }
 
 
-void GenerateLookupsNaif( vecbasevector const& trans, HyperBasevector const& hb,
-          vec<triple<int,int,int>>& X, Bool debug = False )
-{
-     const int K = 200;
-     typedef Kmer248 Kmer_t;    // must be >= K
-     ForceAssertEq(K, hb.K());
-     int n_id1 = hb.EdgeObjectCount();
-
-     size_t NUM_THREADS = configNumThreads(0);
-
-     KmerAligns p;
-     KernelAllKmerAligns<Kmer_t> kpa( trans, n_id1, K, &p,
-               true /* ignore palindromes */, true /* ignore relative RC */ );
-     naif_kmerize(&kpa, NUM_THREADS, debug);
-
-     // push and pop to avoid double-memory or make naif_kmer use the same
-     // type
-     // -- could just make Unique() also more flexible
-     X.clear();
-     p.ReverseMe();
-     while ( p.size() ) {
-          if ( X.size() == 0 ||
-                    X.back().first != p.back().first ||
-                         X.back().second != p.back().second ||
-                              X.back().third  != p.back().third ) {
-               X.push_back(p.back());
-          }
-          p.pop_back();
-     }
-
-
-#if 0
-     if ( debug ) std::cout << "BEFORE X.size()=" << p.size() << std::endl;
-     Unique(p);
-     if ( debug ) std::cout << "AFTER X.size()=" << p.size() << std::endl;
-
-     X.clear_and_resize(p.size());
-     for ( size_t i = 0; i < p.size(); ++i ) X[i] = p[i];
-#endif
-}
+//void GenerateLookupsNaif( vecbasevector const& trans, HyperBasevector const& hb,
+//          vec<triple<int,int,int>>& X, Bool debug = False )
+//{
+//     const int K = 200;
+//     typedef Kmer248 Kmer_t;    // must be >= K
+//     ForceAssertEq(K, hb.K());
+//     int n_id1 = hb.EdgeObjectCount();
+//
+//     size_t NUM_THREADS = configNumThreads(0);
+//
+//     KmerAligns p;
+//     KernelAllKmerAligns<Kmer_t> kpa( trans, n_id1, K, &p,
+//               true /* ignore palindromes */, true /* ignore relative RC */ );
+//     naif_kmerize(&kpa, NUM_THREADS, debug);
+//
+//     // push and pop to avoid double-memory or make naif_kmer use the same
+//     // type
+//     // -- could just make Unique() also more flexible
+//     X.clear();
+//     p.ReverseMe();
+//     while ( p.size() ) {
+//          if ( X.size() == 0 ||
+//                    X.back().first != p.back().first ||
+//                         X.back().second != p.back().second ||
+//                              X.back().third  != p.back().third ) {
+//               X.push_back(p.back());
+//          }
+//          p.pop_back();
+//     }
+//
+//
+//#if 0
+//     if ( debug ) std::cout << "BEFORE X.size()=" << p.size() << std::endl;
+//     Unique(p);
+//     if ( debug ) std::cout << "AFTER X.size()=" << p.size() << std::endl;
+//
+//     X.clear_and_resize(p.size());
+//     for ( size_t i = 0; i < p.size(); ++i ) X[i] = p[i];
+//#endif
+//}
 
 }; // end of anonymous namespace
 

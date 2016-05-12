@@ -41,14 +41,16 @@ namespace
 
     inline void summarizeEntries( Entry* e1, Entry* e2 )
     {
+        //Goes through the list of kmers (pre-sorted) and aggregates all equal kmers context and counts;
         KMerContext kc;
         size_t count = 0;
-        while ( e2-- != e1 )
+        for (auto it=e1 ; it<e2; it++)
         {
-            KDef const& kDef = e2->getKDef();
+            KDef const& kDef = it->getKDef();
             kc |= kDef.getContext();
-            count += std::max(kDef.getCount(),1ul);
+            count += std::max(kDef.getCount(),1ul);//TODO: if the counts are initialised in 1, we can avoid this.
         }
+
         KDef& kDef = e1->getKDef();
         kDef.setContext(kc);
         kDef.setCount(count);
@@ -69,6 +71,7 @@ namespace
         template <class OItr>
         void map( size_t readId, OItr oItr )
         {
+            //std::cout<<" ----> Map called (readId="<<readId<<")"<<std::endl;
             unsigned len = mGoodLengths[readId];
             if ( len < K+1 ) return;
             Kmer kkk(mReads[readId].begin());
@@ -95,6 +98,7 @@ namespace
 
         void reduce( Entry* e1, Entry* e2 )
         {
+            //std::cout<<" ----> reduce called!!!! (e1:"<<e1->getKDef().getEdgeID() <<","<<e1->getKDef().getEdgeOffset()<<','<<e1->getKDef().getCount() <<" e2:"<<e2->getKDef().getEdgeID() <<")"<<std::endl;
             summarizeEntries(e1,e2);
             if ( e1->getKDef().getCount() >= mMinFreq )
             {
@@ -104,7 +108,11 @@ namespace
         }
 
         Entry* overflow( Entry* e1, Entry* e2 )
-        { if ( e2-e1 > 1 ) summarizeEntries(e1,e2); return e1+1; }
+        {
+
+            if ( e2-e1 > 1 ) summarizeEntries(e1,e2);
+            return e1+1;
+        }
 
     private:
         vecbvec const& mReads;
@@ -124,8 +132,10 @@ namespace
         std::vector<unsigned> goodLens(reads.size()); //TODO: this could be uint16_t?
         auto mQuals=quals.load();
 
+
+        omp_set_num_threads(getConfiguredNumThreads());
         //finds the start of the last good kmer on each read
-#pragma parallel for
+#pragma omp parallel for
         for (auto readId=0;readId<reads.size();readId++){
             qvec mQV;
             mQuals[readId].unpack(&mQV);
@@ -145,7 +155,10 @@ namespace
 
         quals.unload();
 
-        size_t nKmers = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
+        size_t nKmers=0;// = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
+        for (auto l : goodLens){
+            if (l!=0) nKmers+=l-K+1;
+        }
 
         if ( nKmers == 0 )
         {    std::cout << "\nLooks like your input data have almost no good bases.\n"
@@ -154,23 +167,97 @@ namespace
 
         size_t dictSize;
 
+        //1) Kmerize into a big Entry array (parallel for
+        //TODO: allow for batches if needed?
+        std::cout<<"Creating a big entry array of "<<nKmers<<" elements"<<std::endl;
+        std::vector<Entry> all_entries(nKmers); //TODO: compute how much to reserve per batch + total
+        std::atomic_int_fast64_t last_kmer(0);
 
-        if ( true )
-        { // count uniq kmers that occur at minFreq or more
-            std::atomic_size_t nUniqKmers(0);
-            Kmerizer impl(reads,goodLens,minFreq,nullptr,&nUniqKmers);
-            KMRE mre(impl);
-            if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
-                FatalErr("Failed to count unique kmers.  Out of buffer space.  ");
-            dictSize = nUniqKmers;
+        const auto BATCH_SIZE=reads.size();// /2+2; //Para evitar malas influencias
+
+        for(auto first_batch_read=0;first_batch_read<reads.size();first_batch_read+=BATCH_SIZE) {
+            std::cout<<" Processing first batch of reads "<<first_batch_read<<"-"<<first_batch_read+BATCH_SIZE<<std::endl;
+#pragma omp parallel for
+            for (auto readId = first_batch_read ; readId < std::min(first_batch_read+BATCH_SIZE, reads.size()); readId++) {
+                unsigned len = goodLens[readId];
+                if (len < K + 1) continue;
+
+                Kmer kkk(reads[readId].begin());
+                auto itr = reads[readId].begin() + K;
+                auto last = reads[readId].begin() + (len - 1);
+
+                //Insert first kmer
+                KMerContext kc = KMerContext::initialContext(*itr);
+                all_entries[last_kmer++] = kkk.isRev() ? Entry(Kmer(kkk).rc(), kc.rc()) : Entry(kkk, kc);
+
+                while (itr != last) {
+                    unsigned char pred = kkk.front();
+                    kkk.toSuccessor(*itr);
+                    ++itr;
+
+                    kc = KMerContext(pred, *itr);
+                    all_entries[last_kmer++] = kkk.isRev() ? Entry(Kmer(kkk).rc(), kc.rc()) : Entry(kkk, kc);
+                }
+                kc = KMerContext::finalContext(kkk.front());
+                kkk.toSuccessor(*last);
+                all_entries[last_kmer++] = kkk.isRev() ? Entry(Kmer(kkk).rc(), kc.rc()) : Entry(kkk, kc);
+            }
+            //2) Sort Array
+            std::cout << "Sorting " << last_kmer << " elements" << std::endl;
+            auto entry_cmp=std::less<Entry>();
+            std::sort(all_entries.begin(), all_entries.begin() + last_kmer,entry_cmp);
+
+            //3) Collapse multiple ocurrences of the same kmer (into the same vector, and set last_kmer forward
+            std::cout << "Collapsing... " << std::endl;
+            auto next_collapsed_position=0;
+            auto kc=all_entries[0].getKDef().getContext();
+            auto count=all_entries[0].getKDef().getCount();
+            for (auto first_current_k=0,i=1; i<=last_kmer;i++) {
+                if ( i==last_kmer || all_entries[first_current_k] != all_entries[i] ){
+                    all_entries[next_collapsed_position]=all_entries[first_current_k];
+                    KDef &kDef = all_entries[next_collapsed_position].getKDef();
+                    kDef.setContext(kc);
+                    kDef.setCount(count);
+                    next_collapsed_position++;
+                    //Initialise new round
+                    count=all_entries[i].getKDef().getCount();
+                    kc=all_entries[i].getKDef().getContext();
+                    first_current_k=i;
+                } else {
+                    //std::cout<<" Adding coverage to existing kmer!"<<std::endl;
+                    KDef const &kDef = all_entries[i].getKDef();
+                    kc |= kDef.getContext();
+                    count += std::max(kDef.getCount(), 1ul);//TODO: if the counts are initialised in 1, we can avoid this.
+                }
+            }
+            last_kmer=next_collapsed_position;
+
+            std::cout << " ... collapsed into "<< next_collapsed_position << " elements" << std::endl;
         }
 
-        // kmerize reads into dictionary
+        //4) Put stuff into dict
+        all_entries.resize(last_kmer);
+        dictSize=0;
+        for (auto e:all_entries) if (e.getKDef().getCount()>=minFreq) dictSize++;
+
         Dict* pDict = new Dict(dictSize);
-        Kmerizer impl(reads,goodLens,minFreq,pDict,nullptr);
-        KMRE mre(impl);
-        if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
-            FatalErr("Failed to kmerize.  Out of buffer space.  ");
+        for (auto e:all_entries) if (e.getKDef().getCount()>=minFreq) pDict->insertEntry(std::move(e));
+
+//        { // count uniq kmers that occur at minFreq or more
+//            std::atomic_size_t nUniqKmers(0);
+//            Kmerizer impl(reads,goodLens,minFreq,nullptr,&nUniqKmers);
+//            KMRE mre(impl);
+//            if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
+//                FatalErr("Failed to count unique kmers.  Out of buffer space.  ");
+//            dictSize = nUniqKmers;
+//        }
+//
+//        // kmerize reads into dictionary
+//        Dict* pDict = new Dict(dictSize);
+//        Kmerizer impl(reads,goodLens,minFreq,pDict,nullptr);
+//        KMRE mre(impl);
+//        if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
+//            FatalErr("Failed to kmerize.  Out of buffer space.  ");
 
         // some kmers were discarded because they didn't occur often enough to
         // convince us that they were real -- recompute adjacencies to compensate

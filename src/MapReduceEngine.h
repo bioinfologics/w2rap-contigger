@@ -388,11 +388,12 @@ public:
     bool run( size_t nKs, Itr beg, Itr end,
                 VERBOSITY verbose=VERBOSITY::SILENT, double meanUsage=.8 )
     {
-        if ( inParallelSection() )
+        /*if ( inParallelSection() )
         {
+            std::cout<<"So complicated and we run single threaded"<<std::endl;
             runSingleThreaded(nKs,beg,end);
             return true;
-        }
+        }*/
 
         omp_set_num_threads(1);
 
@@ -401,7 +402,9 @@ public:
         size_t const maxMem = MemAvailable(.9);
         size_t const nThreads = getConfiguredNumThreads();
 
-        size_t maxKs = meanUsage*nThreads/(nThreads+1)*maxMem/sizeof(Key);
+        size_t maxKs = meanUsage * nThreads / (nThreads+1) * maxMem / sizeof(Key);
+
+
         if ( !maxKs )
             FatalErr("Insufficient memory.");
 

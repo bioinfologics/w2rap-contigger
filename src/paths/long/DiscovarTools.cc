@@ -477,6 +477,7 @@ void SetThreads( uint& NUM_THREADS, const Bool malloc_per_thread_check ) {
 	          << "computational performance." << std::endl; 
 	     malloc_warning = true;
          }    }
+
     NUM_THREADS = configNumThreads(NUM_THREADS);
     omp_set_num_threads( NUM_THREADS );
 }
