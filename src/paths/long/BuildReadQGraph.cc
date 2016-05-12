@@ -30,6 +30,7 @@
 #include "paths/long/HBVFromEdges.h"
 #include "paths/long/ExtendReadPath.h"
 #include "paths/long/ShortKmerReadPather.h"
+#include <parallel/algorithm>
 
 namespace
 {
@@ -177,7 +178,7 @@ namespace
 
         for(auto first_batch_read=0;first_batch_read<reads.size();first_batch_read+=BATCH_SIZE) {
             std::cout<<" Processing first batch of reads "<<first_batch_read<<"-"<<first_batch_read+BATCH_SIZE<<std::endl;
-#pragma omp parallel for
+#pragma omp parallel for schedule (guided, reads.size()/(omp_get_num_threads()*10))
             for (auto readId = first_batch_read ; readId < std::min(first_batch_read+BATCH_SIZE, reads.size()); readId++) {
                 unsigned len = goodLens[readId];
                 if (len < K + 1) continue;
@@ -204,7 +205,7 @@ namespace
             }
             //2) Sort Array
             std::cout << "Sorting " << last_kmer << " elements" << std::endl;
-            std::sort(all_entries.begin(), all_entries.begin() + last_kmer);
+            __gnu_parallel::sort(all_entries.begin(), all_entries.begin() + last_kmer);
 
             //3) Collapse multiple ocurrences of the same kmer (into the same vector, and set last_kmer forward
             std::cout << "Collapsing... " << std::endl;

@@ -388,12 +388,11 @@ public:
     bool run( size_t nKs, Itr beg, Itr end,
                 VERBOSITY verbose=VERBOSITY::SILENT, double meanUsage=.8 )
     {
-        /*if ( inParallelSection() )
+        if ( inParallelSection() )
         {
-            std::cout<<"So complicated and we run single threaded"<<std::endl;
             runSingleThreaded(nKs,beg,end);
             return true;
-        }*/
+        }
 
         omp_set_num_threads(1);
 
