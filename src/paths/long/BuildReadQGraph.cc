@@ -57,75 +57,6 @@ namespace
         kDef.setCount(count);
     }
 
-    class Kmerizer
-    {
-    public:
-        Kmerizer( vecbvec const& reads, std::vector<unsigned> const& goodLengths,
-                  unsigned minFreq, Dict* pDict, std::atomic_size_t* pTotKmers )
-                : mReads(reads), mGoodLengths(goodLengths), mMinFreq(minFreq),
-                  mpDict(pDict), mpTotKmers(pTotKmers), mNKmers(0)
-        {}
-
-        ~Kmerizer()
-        { if ( mpTotKmers ) *mpTotKmers += mNKmers; }
-
-        template <class OItr>
-        void map( size_t readId, OItr oItr )
-        {
-            //std::cout<<" ----> Map called (readId="<<readId<<")"<<std::endl;
-            unsigned len = mGoodLengths[readId];
-            if ( len < K+1 ) return;
-            Kmer kkk(mReads[readId].begin());
-            auto itr=mReads[readId].begin()+K;
-            auto last=mReads[readId].begin()+(len-1);
-
-            //Insert first kmer
-            KMerContext kc = KMerContext::initialContext(*itr);
-            *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
-
-            while ( itr != last )
-            {
-                unsigned char pred = kkk.front();
-                kkk.toSuccessor(*itr);
-                ++itr;
-
-                kc = KMerContext(pred,*itr);
-                *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
-            }
-            kc = KMerContext::finalContext(kkk.front());
-            kkk.toSuccessor(*last);
-            *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
-        }
-
-        void reduce( Entry* e1, Entry* e2 )
-        {
-            //std::cout<<" ----> reduce called!!!! (e1:"<<e1->getKDef().getEdgeID() <<","<<e1->getKDef().getEdgeOffset()<<','<<e1->getKDef().getCount() <<" e2:"<<e2->getKDef().getEdgeID() <<")"<<std::endl;
-            summarizeEntries(e1,e2);
-            if ( e1->getKDef().getCount() >= mMinFreq )
-            {
-                ++mNKmers;
-                if ( mpDict ) mpDict->insertEntry(std::move(*e1));
-            }
-        }
-
-        Entry* overflow( Entry* e1, Entry* e2 )
-        {
-
-            if ( e2-e1 > 1 ) summarizeEntries(e1,e2);
-            return e1+1;
-        }
-
-    private:
-        vecbvec const& mReads;
-        std::vector<unsigned> const& mGoodLengths;
-        unsigned mMinFreq;
-        Dict* mpDict;
-        std::atomic_size_t* mpTotKmers;
-        size_t mNKmers;
-    };
-    typedef MapReduceEngine<Kmerizer,Entry,Kmer::Hasher> KMRE;
-
-
     Dict* createDict( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
                       unsigned minQual, unsigned minFreq )
     {
@@ -244,26 +175,6 @@ namespace
         for (auto e:all_entries) if (e.getKDef().getCount()>=minFreq) pDict->insertEntry(std::move(e));
         std::cout<< "Dict has "<<dictSize<<" keys"<<std::endl;
 
-//        { // count uniq kmers that occur at minFreq or more
-//            std::atomic_size_t nUniqKmers(0);
-//            Kmerizer impl(reads,goodLens,minFreq,nullptr,&nUniqKmers);
-//            KMRE mre(impl);
-//            if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
-//                FatalErr("Failed to count unique kmers.  Out of buffer space.  ");
-//            dictSize = nUniqKmers;
-//        }
-//
-//        // kmerize reads into dictionary
-//        pDict = new Dict(dictSize);
-//        Kmerizer impl(reads,goodLens,minFreq,pDict,nullptr);
-//        KMRE mre(impl);
-//        if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
-//            FatalErr("Failed to kmerize.  Out of buffer space.  ");
-//        std::cout<< "their dict has "<<dictSize<<" keys"<<std::endl;
-//
-////         some kmers were discarded because they didn't occur often enough to
-////         convince us that they were real -- recompute adjacencies to compensate
-////         for these missing kmers.
         if ( minFreq > 1 )
             pDict->recomputeAdjacencies();
 
