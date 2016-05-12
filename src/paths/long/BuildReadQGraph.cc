@@ -173,7 +173,7 @@ namespace
         std::vector<Entry> all_entries(nKmers); //TODO: compute how much to reserve per batch + total
         std::atomic_int_fast64_t last_kmer(0);
 
-        const auto BATCH_SIZE=reads.size();// /2+2; //Para evitar malas influencias
+        const size_t BATCH_SIZE=reads.size();// /2+2; //Para evitar malas influencias
 
         for(auto first_batch_read=0;first_batch_read<reads.size();first_batch_read+=BATCH_SIZE) {
             std::cout<<" Processing first batch of reads "<<first_batch_read<<"-"<<first_batch_read+BATCH_SIZE<<std::endl;
@@ -204,8 +204,7 @@ namespace
             }
             //2) Sort Array
             std::cout << "Sorting " << last_kmer << " elements" << std::endl;
-            auto entry_cmp=std::less<Entry>();
-            std::sort(all_entries.begin(), all_entries.begin() + last_kmer,entry_cmp);
+            std::sort(all_entries.begin(), all_entries.begin() + last_kmer);
 
             //3) Collapse multiple ocurrences of the same kmer (into the same vector, and set last_kmer forward
             std::cout << "Collapsing... " << std::endl;
@@ -220,7 +219,7 @@ namespace
                     kDef.setCount(count);
                     next_collapsed_position++;
                     //Initialise new round
-                    count=all_entries[i].getKDef().getCount();
+                    count= std::max(all_entries[i].getKDef().getCount(), 1ul);
                     kc=all_entries[i].getKDef().getContext();
                     first_current_k=i;
                 } else {
@@ -242,6 +241,7 @@ namespace
 
         Dict* pDict = new Dict(dictSize);
         for (auto e:all_entries) if (e.getKDef().getCount()>=minFreq) pDict->insertEntry(std::move(e));
+        std::cout<< "Dict has "<<dictSize<<" keys"<<std::endl;
 
 //        { // count uniq kmers that occur at minFreq or more
 //            std::atomic_size_t nUniqKmers(0);
@@ -253,15 +253,16 @@ namespace
 //        }
 //
 //        // kmerize reads into dictionary
-//        Dict* pDict = new Dict(dictSize);
+//        pDict = new Dict(dictSize);
 //        Kmerizer impl(reads,goodLens,minFreq,pDict,nullptr);
 //        KMRE mre(impl);
 //        if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
 //            FatalErr("Failed to kmerize.  Out of buffer space.  ");
-
-        // some kmers were discarded because they didn't occur often enough to
-        // convince us that they were real -- recompute adjacencies to compensate
-        // for these missing kmers.
+//        std::cout<< "their dict has "<<dictSize<<" keys"<<std::endl;
+//
+////         some kmers were discarded because they didn't occur often enough to
+////         convince us that they were real -- recompute adjacencies to compensate
+////         for these missing kmers.
         if ( minFreq > 1 )
             pDict->recomputeAdjacencies();
 
