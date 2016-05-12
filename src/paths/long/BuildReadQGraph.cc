@@ -25,24 +25,9 @@
 #include "dna/Bases.h"
 #include "feudal/BinaryStream.h"
 #include "feudal/VirtualMasterVec.h"
-//#include "kmers/BigKPather.h"
 #include "kmers/ReadPatherDefs.h"
-#include "math/Functions.h"
-#include "paths/KmerBaseBroker.h"
 #include "paths/UnibaseUtils.h"
 #include "paths/long/HBVFromEdges.h"
-#include "paths/long/KmerCount.h"
-#include "system/SortInPlace.h"
-#include "system/SpinLockedData.h"
-#include "system/WorklistN.h"
-#include <algorithm>
-#include <atomic>
-#include <fstream>
-#include <iostream>
-#include <numeric>
-#include <utility>
-#include <vector>
-#include "paths/HyperBasevector.h"
 #include "paths/long/ExtendReadPath.h"
 #include "paths/long/ShortKmerReadPather.h"
 
@@ -53,34 +38,6 @@ namespace
     typedef KMer<K-1> SubKmer;
     typedef KmerDictEntry<K> Entry;
     typedef KmerDict<K> Dict;
-    typedef UnipathGraph<K> Graph;
-    typedef std::vector<std::atomic_size_t> SpectrumBins;
-
-    class GoodLenTailFinder
-    {
-    public:
-        GoodLenTailFinder( VecPQVec const& quals, unsigned minQual,
-                           std::vector<unsigned>* pGoodLens )
-                : mQuals(quals), mMinQual(minQual), mGoodLens(*pGoodLens) {}
-
-        void operator()( size_t readId )
-        { mQuals[readId].unpack(&mQV);
-            unsigned minQual = mMinQual;
-            auto itr = mQV.end();
-            auto beg = mQV.begin();
-            unsigned good = 0;
-            while ( itr != beg )
-                if ( *--itr < minQual ) good = 0;
-                else if ( ++good == K )
-                { mGoodLens[readId] = (itr-beg)+K; return; }
-            mGoodLens[readId] = 0; }
-
-    private:
-        VecPQVec const& mQuals;
-        unsigned mMinQual;
-        std::vector<unsigned>& mGoodLens;
-        qvec mQV;
-    };
 
     inline void summarizeEntries( Entry* e1, Entry* e2 )
     {
@@ -111,26 +68,40 @@ namespace
 
         template <class OItr>
         void map( size_t readId, OItr oItr )
-        { unsigned len = mGoodLengths[readId];
+        {
+            unsigned len = mGoodLengths[readId];
             if ( len < K+1 ) return;
-            auto beg = mReads[readId].begin(), itr=beg+K, last=beg+(len-1);
-            Kmer kkk(beg);
+            Kmer kkk(mReads[readId].begin());
+            auto itr=mReads[readId].begin()+K;
+            auto last=mReads[readId].begin()+(len-1);
+
+            //Insert first kmer
             KMerContext kc = KMerContext::initialContext(*itr);
             *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
+
             while ( itr != last )
-            { unsigned char pred = kkk.front();
-                kkk.toSuccessor(*itr); ++itr;
+            {
+                unsigned char pred = kkk.front();
+                kkk.toSuccessor(*itr);
+                ++itr;
+
                 kc = KMerContext(pred,*itr);
-                *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc); }
+                *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
+            }
             kc = KMerContext::finalContext(kkk.front());
             kkk.toSuccessor(*last);
-            *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc); }
+            *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
+        }
 
         void reduce( Entry* e1, Entry* e2 )
-        { summarizeEntries(e1,e2);
+        {
+            summarizeEntries(e1,e2);
             if ( e1->getKDef().getCount() >= mMinFreq )
-            { ++mNKmers;
-                if ( mpDict ) mpDict->insertEntry(std::move(*e1)); } }
+            {
+                ++mNKmers;
+                if ( mpDict ) mpDict->insertEntry(std::move(*e1));
+            }
+        }
 
         Entry* overflow( Entry* e1, Entry* e2 )
         { if ( e2-e1 > 1 ) summarizeEntries(e1,e2); return e1+1; }
@@ -145,15 +116,35 @@ namespace
     };
     typedef MapReduceEngine<Kmerizer,Entry,Kmer::Hasher> KMRE;
 
+
     Dict* createDict( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
                       unsigned minQual, unsigned minFreq )
     {
         // figure out how much of the read to kmerize by examining quals
-        //std::cout << Date() << ": processing quals." << std::endl;
-        std::vector<unsigned> goodLens(reads.size());
-        parallelForBatch(0ul,reads.size(),100000,
-                         GoodLenTailFinder(quals.load(),minQual,&goodLens));
+        std::vector<unsigned> goodLens(reads.size()); //TODO: this could be uint16_t?
+        auto mQuals=quals.load();
+
+        //finds the start of the last good kmer on each read
+#pragma parallel for
+        for (auto readId=0;readId<reads.size();readId++){
+            qvec mQV;
+            mQuals[readId].unpack(&mQV);
+            goodLens[readId] = 0;
+            unsigned good=0;
+            for (int i=mQV.size()-1;i>0;i--){
+                if (mQV[i]<minQual) good=0;
+                else {
+                    good++;
+                    if (good == K) {
+                        goodLens[readId] =i+K;
+                        break;
+                    }
+                }
+            }
+        }
+
         quals.unload();
+
         size_t nKmers = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
 
         if ( nKmers == 0 )
@@ -162,6 +153,8 @@ namespace
             Scram(1);    }
 
         size_t dictSize;
+
+
         if ( true )
         { // count uniq kmers that occur at minFreq or more
             std::atomic_size_t nUniqKmers(0);

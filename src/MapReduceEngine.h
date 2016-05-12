@@ -372,9 +372,7 @@ class MapReduceEngine
     };
 
 public:
-    MapReduceEngine( Impl const& impl=Impl(),
-                        Hash const& hasher=Hash(),
-                        Comp const& comparator=Comp() )
+    MapReduceEngine( Impl const& impl=Impl(), Hash const& hasher=Hash(), Comp const& comparator=Comp() )
     : mImpl(impl), mHasher(hasher), mComparator(comparator), mFailed(false)
     {}
 
@@ -520,16 +518,20 @@ private:
       return oItr; }
 
     void reduce( Key* beg, Key* end )
-    { std::sort(beg,end,mComparator);
-      Key* itr = beg;
-      while ( itr != end )
-      { Key* itr2 = itr;
-        while ( ++itr2 != end )
-          if ( mComparator(*itr,*itr2) )
-            break;
-        mImpl.reduce(itr,itr2);
-        itr = itr2; }
-      while ( end != beg ) (--end)->~Key(); }
+    {
+        std::sort(beg,end,mComparator);
+        Key* itr = beg;
+        while ( itr != end )
+        {
+            Key* itr2 = itr;
+            while ( ++itr2 != end )
+                if ( mComparator(*itr,*itr2) )
+                    break;
+            mImpl.reduce(itr,itr2);
+            itr = itr2;
+        }
+        while ( end != beg ) (--end)->~Key();
+    }
 
     static Key* moveKeys( Key* itr, Key* end, Key* oItr )
     { if ( itr == oItr ) return end;
