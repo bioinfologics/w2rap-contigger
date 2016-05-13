@@ -67,7 +67,8 @@ namespace
 
         omp_set_num_threads(getConfiguredNumThreads());
         //finds the start of the last good kmer on each read
-#pragma omp parallel for
+        size_t nKmers=0;// = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
+#pragma omp parallel for reduction(+: nKmers)
         for (auto readId=0;readId<reads.size();readId++){
             qvec mQV;
             mQuals[readId].unpack(&mQV);
@@ -83,15 +84,17 @@ namespace
                     }
                 }
             }
+            if (goodLens[readId] != 0){
+                nKmers+=goodLens[readId]-K+1;
+            }
         }
 
         quals.unload();
-
-        size_t nKmers=0;// = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
+/*  This is now the reduction sum
         for (auto l : goodLens){
             if (l!=0) nKmers+=l-K+1;
         }
-
+*/
         if ( nKmers == 0 )
         {    std::cout << "\nLooks like your input data have almost no good bases.\n"
              << "Giving up.\n" << std::endl;
