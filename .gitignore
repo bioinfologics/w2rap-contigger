@@ -1,3 +1,9 @@
+.project
+.cproject
+cmake_install.cmake
+CMakeFiles
+Makefile
+CMakeCache.txt
 src/**/*.fastq
 src/**/*.fasta
 src/**/*.o
