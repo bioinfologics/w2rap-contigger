@@ -24,9 +24,8 @@
  * \class RefDesc
  * \brief A packet of metadata describing reference sequence.
  */
-class RefDesc
-{
-public:
+class RefDesc {
+  public:
     typedef unsigned long ulong;
     typedef std::string string;
     typedef vec<RefDesc> RefDescVec;
@@ -37,34 +36,41 @@ public:
     RefDesc( string const& samSQLine );
 
     RefDesc( string const& name, unsigned id, string const& uri, ulong length,
-                string const& hash, string const& species, string const& asmID )
-     : mName(name), mId(id), mURI(uri), mLength(length), mHash(hash),
-       mSpecies(species), mAsmID(asmID)
-    {}
+             string const& hash, string const& species, string const& asmID )
+        : mName(name), mId(id), mURI(uri), mLength(length), mHash(hash),
+          mSpecies(species), mAsmID(asmID) {
+    }
 
     RefDesc() : mId(~0u), mLength(0) {}
 
     /// The name of the sequence.  E.g., chr18, or "whole genome".
-    string const& getName() const
-    { return mName; }
+    string const& getName() const {
+        return mName;
+    }
 
-    unsigned getId() const
-    { return mId; }
+    unsigned getId() const {
+        return mId;
+    }
 
-    string const& getURI() const
-    { return mURI; }
+    string const& getURI() const {
+        return mURI;
+    }
 
-    ulong getLength() const
-    { return mLength; }
+    ulong getLength() const {
+        return mLength;
+    }
 
-    string const& getHash() const
-    { return mHash; }
+    string const& getHash() const {
+        return mHash;
+    }
 
-    string const& getSpecies() const
-    { return mSpecies; }
+    string const& getSpecies() const {
+        return mSpecies;
+    }
 
-    string const& getAssemblyID() const
-    { return mAsmID; }
+    string const& getAssemblyID() const {
+        return mAsmID;
+    }
 
     /// Read a FASTA file to build the dictionary
     static RefDescVec readFASTA( string const& fastaFileName );
@@ -77,13 +83,13 @@ public:
 
     /// Write a dictionary to a file
     static bool writeDict( string const& dictFileName,
-                                RefDescVec const& refDescs,
-                                bool noHD = true );
+                           RefDescVec const& refDescs,
+                           bool noHD = true );
 
     /// Write a dictionary to a stream
     static void writeDict( ostream& os, RefDescVec const& refDescs, bool noHD = false );
 
-private:
+  private:
     static void readDict( istream& is, RefDescVec& vec );
 
     string mName;

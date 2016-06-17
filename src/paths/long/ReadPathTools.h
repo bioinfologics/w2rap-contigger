@@ -18,9 +18,9 @@
 // Validates a single read path against an HBV. Returns false if the path is invalid.
 
 bool ValidateReadPath(const HyperBasevector& hbv, const vec<int>& to_left,
-		      const vec<int>& to_right, const int offset,
-		      const vec<int>& edge_list, String& message,
-		      const int read_length = 0);
+                      const vec<int>& to_right, const int offset,
+                      const vec<int>& edge_list, String& message,
+                      const int read_length = 0);
 
 // Validates all read paths against an HBV. Returns false if any invalid paths are found.
 
@@ -39,8 +39,8 @@ void DisplayReadPath(std::ostream &out, const HyperBasevector& hbv,
                      bool show_mismatch = true, bool show_overlap = true);
 
 void DisplayReadPath(std::ostream &out, const vecbvec& graph_edges, int K,
-		     const int offset, const vec<int>& edge_list,
-		     const BaseVec& seq, const QualVec& quals,
+                     const int offset, const vec<int>& edge_list,
+                     const BaseVec& seq, const QualVec& quals,
                      bool show_edges = false, bool show_ruler = false,
                      bool show_seq = true, bool show_quals = true,
                      bool show_mismatch = true, bool show_overlap = true);

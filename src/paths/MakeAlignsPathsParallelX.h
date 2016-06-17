@@ -31,14 +31,14 @@
 
 
 
-// Central function.  
+// Central function.
 // Parcelize kmers and run the PathingProcessor in parallel.
 
 template<size_t I>
-void MakeAlignsPathsParallelX(const size_t       K, 
-                              const BaseVecVec & bases, 
+void MakeAlignsPathsParallelX(const size_t       K,
+                              const BaseVecVec & bases,
                               VecBitVec        * kmer_chosen,
-                              BMG<I>           * bmg, 
+                              BMG<I>           * bmg,
                               const String     & PARCEL_HEAD,
                               const size_t       NUM_PROCS,
                               const String       CHECKPOINT_HEAD);

@@ -16,17 +16,17 @@
 // ==============================================================================
 // A fixed-size simple c-style 2D array that allocates faster than vec< vec<T> >
 // The elements are uninitialized.
-// 
+//
 // No copy or assignments are allowed yet.
 //
-// Usage: 
+// Usage:
 //      RecArray<int> r(3,4);
 //      r[1][2] = 1;
 //      cout << "nrow=" << r.size1() << " ncol=" << r.size2() << end;
 // ==============================================================================
 template <typename T>
 class RecArray {
-public:
+  public:
     // ctor and dtor
     RecArray( int m, int n ) : m_(m), n_(n)  {
         pt_ = new T* [m];
@@ -40,21 +40,27 @@ public:
             std::fill(pt_[i], pt_[i]+n, val);
         }
     }
-    ~RecArray() { 
+    ~RecArray() {
         for( int i = 0; i < m_ ; i++ ) {
             delete [] pt_[i];
         }
         delete [] pt_;
     }
     // array operations
-    T*& operator[] ( int i ) { return pt_[i]; }
-    int size1() const { return m_; }
-    int size2() const { return n_; }
+    T*& operator[] ( int i ) {
+        return pt_[i];
+    }
+    int size1() const {
+        return m_;
+    }
+    int size2() const {
+        return n_;
+    }
 
-private:
+  private:
     // Disable copy and assign constructors
     RecArray( const RecArray& );
-    RecArray& operator=( const RecArray&); 
+    RecArray& operator=( const RecArray&);
     T ** pt_;
     int m_;
     int n_;
@@ -68,32 +74,32 @@ template<typename T, const T UNDEF>
 class BandedArray {
   public:
 
-    // One row in the banded matrix. Where row[x] returns the actually 
-    // value if lb <= x < ub, otherwise return UNDEF.  
+    // One row in the banded matrix. Where row[x] returns the actually
+    // value if lb <= x < ub, otherwise return UNDEF.
     class Row {
       public:
         Row() :lb_(0), ub_(0) {};
         Row(int lb, int ub, T val) : lb_(lb), ub_(ub), array_(ub-lb, val) { }
 
         // Read, boundaries checked
-        T operator[](int j) const 
-        {
-            if (j >= lb_ && j <  ub_) 
+        T operator[](int j) const {
+            if (j >= lb_ && j <  ub_)
                 return array_[j - lb_];
             else return UNDEF;
         }
 
         // Write, boundaries unchecked !!
-        T& operator[](int j) { return array_[j - lb_]; }
+        T& operator[](int j) {
+            return array_[j - lb_];
+        }
 
       private:
         int lb_, ub_;
         std::vector<T> array_;
     };
 
-    BandedArray(int M, int N, int offset, int bandwidth) 
-        :M_(M), N_(N), offset_(offset), bandwidth_(bandwidth) 
-    {
+    BandedArray(int M, int N, int offset, int bandwidth)
+        :M_(M), N_(N), offset_(offset), bandwidth_(bandwidth) {
         ForceAssertGt(M,0);
         ForceAssertGt(N,0);
         ForceAssertGe(bandwidth, 0);
@@ -105,9 +111,13 @@ class BandedArray {
         }
     }
 
-    const Row& operator[](int i) const { return rows_[i]; }
-    T& Mutable(int i, int j) { return rows_[i][j]; }
-    
+    const Row& operator[](int i) const {
+        return rows_[i];
+    }
+    T& Mutable(int i, int j) {
+        return rows_[i][j];
+    }
+
   private:
     int M_, N_;
     int offset_, bandwidth_;
@@ -121,19 +131,18 @@ class BandedArray {
 
 
 // ==================================================================
-// Smooth an 1-dimensional array of double values using an Gaussian. 
-// 
-// ( The input array is either a vec<double> for normal array,  or 
+// Smooth an 1-dimensional array of double values using an Gaussian.
+//
+// ( The input array is either a vec<double> for normal array,  or
 // a map<int, double> for sparse array )
 
 // =======================================================
 
 template <typename T>
 void SmoothArrayGaussian ( const T& distr, int delta,
-         T & distr_s )
-{
-     distr_s = distr;
-     SmoothArrayGaussian( distr_s, delta ); // Automatic dispatcher 
+                           T & distr_s ) {
+    distr_s = distr;
+    SmoothArrayGaussian( distr_s, delta ); // Automatic dispatcher
 }
 // With normal array input as a vec<int>
 void SmoothArrayGaussian ( vec<double> & distr, int delta );

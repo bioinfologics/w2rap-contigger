@@ -19,17 +19,17 @@
 void GetCells( const HyperEfasta& he, vec<vec<int>>& cells );
 
 void MakeEfastaAssembly( HyperEfasta& he, vec<int>& inv, vec<Bool>& hide,
-     const vec<VariantSignature>& snp_bubbles, const long_heuristics& heur,
-     const long_logging& logc );
+                         const vec<VariantSignature>& snp_bubbles, const long_heuristics& heur,
+                         const long_logging& logc );
 
 void CleanEfasta( HyperEfasta& he, vec<int>& inv, const long_logging& logc );
 
 // FlagEdgesForHiding( he,... ) -- it is intended that he is a HyperBasevector-type
 // object.
 
-template<class H> void FlagEdgesForHiding( 
-     const H& he, const vec<int>& inv, vec<Bool>& hide,
-     const long_logging& logc );
+template<class H> void FlagEdgesForHiding(
+    const H& he, const vec<int>& inv, vec<Bool>& hide,
+    const long_logging& logc );
 
 void CollapseBubbles( HyperEfasta& he );
 

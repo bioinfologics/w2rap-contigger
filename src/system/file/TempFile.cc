@@ -23,35 +23,29 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-temp_file::~temp_file()
-{
-    if ( unlink(mName.c_str()) == -1 )
-    {
+temp_file::~temp_file() {
+    if ( unlink(mName.c_str()) == -1 ) {
         ErrNo err;
         FatalErr("Can't unlink temporary file " << mName << err);
     }
 }
 
-String temp_file::generateName( char const* path )
-{
+String temp_file::generateName( char const* path ) {
     String result(path);
     if ( result.size() < 6 ||
             !std::equal(result.end()-6,result.end(),"XXXXXX") )
         result += "XXXXXX";
     int fd = mkstemp(const_cast<char*>(result.c_str()));
-    if ( fd == -1 )
-    {
+    if ( fd == -1 ) {
         ErrNo err;
         FatalErr("Failed to create temporary file from " << result << err );
     }
-    while ( close(fd) == -1 )
-    {
+    while ( close(fd) == -1 ) {
         ErrNo err;
         if ( err.val() != EINTR )
             FatalErr("Unable to close temporary file " << result << err);
     }
-    if ( chmod(result.c_str(),0664) == -1 )
-    {
+    if ( chmod(result.c_str(),0664) == -1 ) {
         ErrNo err;
         FatalErr("Failed to chmod temporary file " << result << err);
     }

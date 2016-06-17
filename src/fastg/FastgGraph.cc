@@ -15,8 +15,7 @@
 #include "fastg/FastgGraph.h"
 
 #include <fstream>
-namespace fastg
-{
+namespace fastg {
 void
 FastgHeader(std::ostream&os) {
     os << "#FASTG:begin;\n" << "#FASTG:version=1.1;\n";
@@ -35,13 +34,12 @@ fastg_element::addSequence(const basevector& in) {
 
 void
 fastg_element::appendSequence(const basevector& in) {
-    if( graph.EdgeObjectCount()==0){
+    if( graph.EdgeObjectCount()==0) {
         addSequence(in);
-    }
-    else{
-        for(int vv=0;vv<graph.N();++vv){
-            if( graph.Sink(vv)){
-                for(int ee=0;ee<graph.ToSize(vv);++ee){
+    } else {
+        for(int vv=0; vv<graph.N(); ++vv) {
+            if( graph.Sink(vv)) {
+                for(int ee=0; ee<graph.ToSize(vv); ++ee) {
                     graph.EdgeObjectByIndexToMutable(vv,ee).append(in.begin(),in.end());
                 }
             }
@@ -66,8 +64,8 @@ void
 fastg_element::AppendTagTo(String& out) const {
     if (avgGap != invalidGap) {
         out.append(
-                "[" + ::ToString(nCanonicalN) + ":gap:size=("
-                        + ::ToString(avgGap));
+            "[" + ::ToString(nCanonicalN) + ":gap:size=("
+            + ::ToString(avgGap));
         if (minGap != invalidGap && maxGap != invalidGap ) {
             out.append("," + ::ToString(minGap) + ".." + ::ToString(maxGap));
         }
@@ -75,16 +73,16 @@ fastg_element::AppendTagTo(String& out) const {
         if (graph.N() != 0) {
             auto path = getCanonicalDigraphPath();
             String property = getFastgProperties(path);
-            if( property.size() >0){ out.append(","+property); }
+            if( property.size() >0) {
+                out.append(","+property);
+            }
             out.append("|");
             AppendGraphTo(out);
         }
         out.append("]");
-    }
-    else if (graph.EdgeObjectCount() < 2) {
+    } else if (graph.EdgeObjectCount() < 2) {
         return;
-    }
-    else if (graph.N() == 2 * graph.EdgeObjectCount()) {
+    } else if (graph.N() == 2 * graph.EdgeObjectCount()) {
         auto canonical_size = graph.EdgeObject(0).size();
         out.append("[" + ::ToString(canonical_size) + ":alt|");
         out.append(graph.EdgeObject(0).ToString());
@@ -94,8 +92,7 @@ fastg_element::AppendTagTo(String& out) const {
             out.append(graph.EdgeObject(ii).ToString());
         }
         out.append("]");
-    }
-    else {
+    } else {
         auto path = getCanonicalDigraphPath();
         size_t canonical_size = 0;
         for (auto entry : path) {
@@ -103,7 +100,9 @@ fastg_element::AppendTagTo(String& out) const {
         }
         out.append("[" + ::ToString(canonical_size) + ":digraph");
         String property = getFastgProperties(path);
-        if( property.size() >0){ out.append(":"+property); }
+        if( property.size() >0) {
+            out.append(":"+property);
+        }
         out.append("|");
         AppendGraphTo(out);
         out.append("]");
@@ -112,12 +111,12 @@ fastg_element::AppendTagTo(String& out) const {
 ;
 
 String
-fastg_element::getFastgProperties(const vec<int>&path)const{
+fastg_element::getFastgProperties(const vec<int>&path)const {
     String property;
-    if( path.size() > 0){
+    if( path.size() > 0) {
         property.append("path=(");
         property.append(::ToString(path[0]));
-        for(size_t ii=1;ii<path.size();++ii){
+        for(size_t ii=1; ii<path.size(); ++ii) {
             property.append(","+::ToString(path[ii]));
         }
         property.append("),begin=(");
@@ -190,16 +189,16 @@ fastg_element::AppendGraphTo(String& out) const {
             auto ww = graph.From(vv)[ee];
             if (graph.From(ww).size() > 0) {
                 out.append(
-                        ":"
-                                + ::ToString(
-                                        graph.EdgeObjectIndexByIndexFrom(ww,
-                                                0)));
+                    ":"
+                    + ::ToString(
+                        graph.EdgeObjectIndexByIndexFrom(ww,
+                                0)));
                 for (size_t ff = 1; ff < graph.From(ww).size(); ++ff) {
                     out.append(
-                            ","
-                                    + ::ToString(
-                                            graph.EdgeObjectIndexByIndexFrom(ww,
-                                                    ff)));
+                        ","
+                        + ::ToString(
+                            graph.EdgeObjectIndexByIndexFrom(ww,
+                                    ff)));
                 }
             }
             out.append(";");
@@ -212,17 +211,13 @@ void
 fastg_element::AppendCanonicalTo(String& out) const {
     if (avgGap != invalidGap) {
         out.append(nCanonicalN, 'N');
-    }
-    else if (graph.EdgeObjectCount() == 0) {
-      return;
-    }
-    else if (graph.EdgeObjectCount() == 1) {
+    } else if (graph.EdgeObjectCount() == 0) {
+        return;
+    } else if (graph.EdgeObjectCount() == 1) {
         out += graph.EdgeObject(0).ToString();
-    }
-    else if (graph.N() == 2 * graph.EdgeObjectCount()) {
+    } else if (graph.N() == 2 * graph.EdgeObjectCount()) {
         out.append(graph.EdgeObject(0).ToString());
-    }
-    else {
+    } else {
         const auto canonical_path = getCanonicalDigraphPath();
         for (auto entry : canonical_path) {
             out.append(graph.EdgeObject(entry).ToString());
@@ -241,20 +236,19 @@ fastg_element::nFreeR() const {
             for (int ee = 0; ee < graph.ToSize(vv); ++ee) {
                 edge_indices.push_back( std::make_pair(vv,ee));
                 max_overlap = std::min(max_overlap,
-                        (size_t) graph.EdgeObjectByIndexTo(vv, ee).size());
+                                       (size_t) graph.EdgeObjectByIndexTo(vv, ee).size());
             }
         }
     }
-    if( max_overlap == std::numeric_limits<size_t>::max()){
+    if( max_overlap == std::numeric_limits<size_t>::max()) {
         max_overlap=0;
-    }
-    else{
-        for(size_t ii = 0 ;ii<edge_indices.size();++ii){
+    } else {
+        for(size_t ii = 0 ; ii<edge_indices.size(); ++ii) {
             const auto& edge_i=graph.EdgeObjectByIndexTo(edge_indices[ii].first,edge_indices[ii].second);
-            for(size_t jj = ii+1 ;jj<edge_indices.size();++jj){
+            for(size_t jj = ii+1 ; jj<edge_indices.size(); ++jj) {
                 const auto& edge_j=graph.EdgeObjectByIndexTo(edge_indices[jj].first,edge_indices[jj].second);
                 size_t overlap=0;
-                for(overlap=0;overlap<max_overlap && edge_i[edge_i.size()-1-overlap]==edge_j[edge_j.size()-1-overlap];++overlap){}
+                for(overlap=0; overlap<max_overlap && edge_i[edge_i.size()-1-overlap]==edge_j[edge_j.size()-1-overlap]; ++overlap) {}
                 max_overlap=std::min(max_overlap,overlap);
             }
         }
@@ -271,20 +265,19 @@ fastg_element::nFreeL() const {
             for (int ee = 0; ee < graph.FromSize(vv); ++ee) {
                 edge_indices.push_back( std::make_pair(vv,ee));
                 max_overlap = std::min(max_overlap,
-                        (size_t) graph.EdgeObjectByIndexFrom(vv, ee).size());
+                                       (size_t) graph.EdgeObjectByIndexFrom(vv, ee).size());
             }
         }
     }
-    if( max_overlap == std::numeric_limits<size_t>::max()){
+    if( max_overlap == std::numeric_limits<size_t>::max()) {
         max_overlap=0;
-    }
-    else{
-        for(size_t ii = 0 ;ii<edge_indices.size();++ii){
+    } else {
+        for(size_t ii = 0 ; ii<edge_indices.size(); ++ii) {
             const auto& edge_i=graph.EdgeObjectByIndexFrom(edge_indices[ii].first,edge_indices[ii].second);
-            for(size_t jj = ii+1 ;jj<edge_indices.size();++jj){
+            for(size_t jj = ii+1 ; jj<edge_indices.size(); ++jj) {
                 const auto& edge_j=graph.EdgeObjectByIndexFrom(edge_indices[jj].first,edge_indices[jj].second);
                 size_t overlap=0;
-                for(overlap=0;overlap<max_overlap && edge_i[overlap]==edge_j[overlap];++overlap){}
+                for(overlap=0; overlap<max_overlap && edge_i[overlap]==edge_j[overlap]; ++overlap) {}
                 max_overlap=std::min(max_overlap,overlap);
             }
         }
@@ -343,15 +336,15 @@ fastg_element::TrimL(size_t n) {
 }
 
 bool
-fastg_element::isEqual(const fastg_element&other)const{
+fastg_element::isEqual(const fastg_element&other)const {
     return getGap()==other.getGap() && EqualExceptEdgeObjectOrder(graph,other.getGraph());
 }
 bool
-operator==(const fastg_element&left,const fastg_element&right){
+operator==(const fastg_element&left,const fastg_element&right) {
     return left.isEqual(right);
 }
 bool
-operator!=(const fastg_element&left,const fastg_element&right){
+operator!=(const fastg_element&left,const fastg_element&right) {
     return !(left==right);
 }
 
@@ -366,22 +359,20 @@ fastg_sequence::assign(const efasta&in) {
             entries.push_back(fastg_element());
             entries.back().addSequence(basevector(in.substr(begin)));
             begin = end;
-        }
-        else {
+        } else {
             if (begin < end) {
                 entries.push_back(fastg_element());
                 entries.back().addSequence(
-                        basevector(in.substr(begin, end - begin)));
+                    basevector(in.substr(begin, end - begin)));
             }
             begin = end;
             if (in[begin] != '{') {
                 std::cout << "WARNING: fastg_element::operator= sees character "
-                        << in[begin]
-                        << " outside of controlled efasta region. Terminating conversion."
-                        << std::endl;
+                          << in[begin]
+                          << " outside of controlled efasta region. Terminating conversion."
+                          << std::endl;
                 return *this;
-            }
-            else {
+            } else {
                 end = in.find_first_of("}", begin + 1);
                 if (end == efasta::npos) {
                     std::cout
@@ -391,7 +382,7 @@ fastg_sequence::assign(const efasta&in) {
                 }
                 entries.push_back(fastg_element());
                 SpecialEfastaTag2Graph(entries.back().getGraph(),
-                        in.substr(begin, end + 1 - begin));
+                                       in.substr(begin, end + 1 - begin));
 //                if( entries.back().getGraph().EdgeObjectCount() > 1 && entries.back().getGraph().EdgeObjectCount()*2 != entries.back().getGraph().N()){
 //                    entries.back().setGap(10,-2,100);
 //                }
@@ -403,19 +394,18 @@ fastg_sequence::assign(const efasta&in) {
 }
 
 void
-fastg_sequence::Compact(){
-    if( entries.size() < 2 ){
+fastg_sequence::Compact() {
+    if( entries.size() < 2 ) {
         return;
     }
-    for( auto itr=entries.begin(); itr!=entries.end() && std::next(itr) != entries.end();){
+    for( auto itr=entries.begin(); itr!=entries.end() && std::next(itr) != entries.end();) {
         auto next=std::next(itr);
-        if( (*itr).isSequence() && (*next).isSequence()){
-            if( (*next).getGraph().EdgeObjectCount() == 1){
+        if( (*itr).isSequence() && (*next).isSequence()) {
+            if( (*next).getGraph().EdgeObjectCount() == 1) {
                 (*itr).appendSequence((*next).getGraph().EdgeObject(0));
             }
             entries.erase(next);
-        }
-        else{
+        } else {
             ++itr;
         }
     }
@@ -456,44 +446,46 @@ size_t
 fastg_sequence::nFreeR() const {
     return entries.back().nFreeR();
 }
- basevector fastg_sequence::TrimL(size_t n){
- return entries.front().TrimL(n);
- }
+basevector fastg_sequence::TrimL(size_t n) {
+    return entries.front().TrimL(n);
+}
 
 basevector
 fastg_sequence::TrimR(size_t n) {
     return entries.back().TrimR(n);
 }
 bool
-fastg_sequence::isEqual(const fastg_sequence&that)const{
+fastg_sequence::isEqual(const fastg_sequence&that)const {
     auto itr_this = entries.begin();
     auto itr_that = that.entries.begin();
     auto end_this = entries.end();
     auto end_that = that.entries.end();
 
-    while( itr_this!=end_this && itr_that!=end_that){
-        if( (*itr_this).isEmpty() ){
+    while( itr_this!=end_this && itr_that!=end_that) {
+        if( (*itr_this).isEmpty() ) {
             ++itr_this;
-        }
-        else if( (*itr_that).isEmpty() ){
+        } else if( (*itr_that).isEmpty() ) {
             ++itr_that;
-        }
-        else{
+        } else {
             if( *itr_this!=*itr_that ) return false;
             ++itr_this;
             ++itr_that;
         }
     }
-    for(;itr_this!=end_this;++itr_this){ if( !(*itr_this).isEmpty() ) return false; }
-    for(;itr_that!=end_that;++itr_that){ if( !(*itr_that).isEmpty() ) return false; }
+    for(; itr_this!=end_this; ++itr_this) {
+        if( !(*itr_this).isEmpty() ) return false;
+    }
+    for(; itr_that!=end_that; ++itr_that) {
+        if( !(*itr_that).isEmpty() ) return false;
+    }
     return true;
 }
 bool
-operator==(const fastg_sequence&left,const fastg_sequence&right){
+operator==(const fastg_sequence&left,const fastg_sequence&right) {
     return left.isEqual(right);
 }
 bool
-operator!=(const fastg_sequence&left,const fastg_sequence&right){
+operator!=(const fastg_sequence&left,const fastg_sequence&right) {
     return !(left==right);
 }
 
@@ -504,7 +496,7 @@ fastg_graph::fastg_graph(const HyperBasevector&in) {
         edges[ii] = in.EdgeObject(ii);
     }
     base_t::Initialize(in.From(), in.To(), vec<fastg_k>(in.N(), in.K()),
-            edges, in.ToEdgeObj(), in.FromEdgeObj());
+                       edges, in.ToEdgeObj(), in.FromEdgeObj());
     MakeK1();
 }
 
@@ -516,7 +508,7 @@ fastg_graph::fastg_graph(const HyperEfasta&in) {
     }
 
     base_t::Initialize(in.From(), in.To(), vec<fastg_k>(in.N(), in.K()),
-            edges, in.ToEdgeObj(), in.FromEdgeObj());
+                       edges, in.ToEdgeObj(), in.FromEdgeObj());
     MakeK1();
 }
 void
@@ -542,8 +534,8 @@ fastg_graph::MakeK1() {
                 tmp = EdgeObjectByIndexToMutable(vv, ii).TrimR(to_trim);
                 if (tmp.size() != to_trim) {
                     std::cout << "WARNING: fastg_graph::MakeK1 trimmed "
-                            << tmp.size() << " instead of " << k_minus_1
-                            << std::endl;
+                              << tmp.size() << " instead of " << k_minus_1
+                              << std::endl;
                 }
             }
         }
@@ -562,23 +554,23 @@ fastg_graph::MakeK1() {
                 tmp = EdgeObjectByIndexFromMutable(vv, ii).TrimL(to_trim);
                 if (tmp.size() != to_trim) {
                     std::cout << "WARNING: fastg_graph::MakeK1 trimmed "
-                            << tmp.size() << " instead of " << k_minus_1
-                            << std::endl;
+                              << tmp.size() << " instead of " << k_minus_1
+                              << std::endl;
                 }
             }
         }
         VertMutable(vv) -= to_trim;
     }
     for (int vv = 0; vv < N(); ++vv) {
-        if( Vert(vv)!=1){
+        if( Vert(vv)!=1) {
             std::cout << "WARNING: fastg_graph::MakeK1: vertex " << vv << " has K="<<Vert(vv) << std::endl;;
         }
     }
 }
 void
-fastg_graph::Compact(){
+fastg_graph::Compact() {
     std::cout << "compacting" << std::endl;
-    for( auto& entry: EdgesMutable()){
+    for( auto& entry: EdgesMutable()) {
         entry.Compact();
     }
 }
@@ -598,10 +590,10 @@ fastg_graph::Write(std::ostream&os) const {
         }
     }
     String sBuffer;
-    for(decltype(EdgeObjectCount()) ii=0;ii<EdgeObjectCount();++ii){
+    for(decltype(EdgeObjectCount()) ii=0; ii<EdgeObjectCount(); ++ii) {
         auto vv = edge_indices[ii].first;
         auto ee   = edge_indices[ii].second;
-        if( vv==-1 || ee==-1 || ii!=EdgeObjectIndexByIndexFrom(vv,ee)){
+        if( vv==-1 || ee==-1 || ii!=EdgeObjectIndexByIndexFrom(vv,ee)) {
             std::cout<< "WARNING: fastg_graph::Write - edge logging not consistent. Edge " << ii << " not written."<< std::endl;
             continue;
         }
@@ -637,33 +629,33 @@ fastg_graph::Write(std::ostream&os) const {
     std::cout << "dups: " << nDup << std::endl;
     */
 
-/*
-    for (int vv = 0; vv < N(); ++vv) {
-        const int nEdges = From(vv).size();
-        for (int ee = 0; ee < nEdges; ++ee) {
-            auto edge_index = EdgeObjectIndexByIndexFrom(vv, ee);
-            os << ">" << edge_index;
-            auto ww = From(vv)[ee];
-            if (From(ww).size() > 0) {
-                os << ":" << EdgeObjectIndexByIndexFrom(ww, 0);
-                for (size_t ff = 1; ff < From(ww).size(); ++ff) {
-                    os << "," << EdgeObjectIndexByIndexFrom(ww, ff);
+    /*
+        for (int vv = 0; vv < N(); ++vv) {
+            const int nEdges = From(vv).size();
+            for (int ee = 0; ee < nEdges; ++ee) {
+                auto edge_index = EdgeObjectIndexByIndexFrom(vv, ee);
+                os << ">" << edge_index;
+                auto ww = From(vv)[ee];
+                if (From(ww).size() > 0) {
+                    os << ":" << EdgeObjectIndexByIndexFrom(ww, 0);
+                    for (size_t ff = 1; ff < From(ww).size(); ++ff) {
+                        os << "," << EdgeObjectIndexByIndexFrom(ww, ff);
+                    }
                 }
-            }
-            os << ";\n";
-            sBuffer.clear();
-            EdgeObjectByIndexFrom(vv, ee).AppendTo(sBuffer);
-            for (size_t ii = 0; ii < sBuffer.size(); ++ii) {
-                os << sBuffer[ii];
-                if (ii % 80 == 79) {
+                os << ";\n";
+                sBuffer.clear();
+                EdgeObjectByIndexFrom(vv, ee).AppendTo(sBuffer);
+                for (size_t ii = 0; ii < sBuffer.size(); ++ii) {
+                    os << sBuffer[ii];
+                    if (ii % 80 == 79) {
+                        os << '\n';
+                    }
+                }
+                if (sBuffer.size() % 80 != 0)
                     os << '\n';
-                }
             }
-            if (sBuffer.size() % 80 != 0)
-                os << '\n';
         }
-    }
-*/
+    */
     FastgFooter(os);
 }
 
@@ -675,11 +667,11 @@ fastg_vertex_graph::fastg_vertex_graph(const digraphE<F>&in, size_t k) {
     for (size_t ii = 0; ii < nVertices; ++ii) {
         AddVertex(fastg_sequence(in.EdgeObject(ii)));
     }
-    for(decltype(in.N()) vv=0;vv<in.N();++vv){
-        for( decltype(in.FromSize(vv)) ee=0;ee<in.FromSize(vv);++ee){
+    for(decltype(in.N()) vv=0; vv<in.N(); ++vv) {
+        for( decltype(in.FromSize(vv)) ee=0; ee<in.FromSize(vv); ++ee) {
             auto edge_index = in.EdgeObjectIndexByIndexFrom(vv,ee);
             auto ww = in.From(vv)[ee];
-            for( decltype(in.FromSize(ww)) ff=0;ff<in.FromSize(ww);++ff){
+            for( decltype(in.FromSize(ww)) ff=0; ff<in.FromSize(ww); ++ff) {
                 auto other_edge_index = in.EdgeObjectIndexByIndexFrom(ww,ff);
                 AddEdge(edge_index,other_edge_index,k);
             }
@@ -695,42 +687,41 @@ fastg_vertex_graph::Write(const String&filename) const {
     out.close();
 }
 void
-fastg_vertex_graph::ConnectedVertices(std::set<int>& left, std::set<int>& edges, std::set<int>&right,int root, bool bOnRight){
+fastg_vertex_graph::ConnectedVertices(std::set<int>& left, std::set<int>& edges, std::set<int>&right,int root, bool bOnRight) {
     left.clear();
     edges.clear();
     right.clear();
 
     std::deque<int> todoL,todoR;
 
-    if(bOnRight){
+    if(bOnRight) {
         right.insert(root);
         todoR.push_back(root);
-    }
-    else{
+    } else {
         left.insert(root);
         todoL.push_back(root);
     }
 
-    for(;!todoL.empty()||!todoR.empty();){
-        while( !todoL.empty()){
+    for(; !todoL.empty()||!todoR.empty();) {
+        while( !todoL.empty()) {
             auto vv = todoL.front();
             todoL.pop_front();
-            for(int ee=0;ee<FromSize(vv);++ee){
+            for(int ee=0; ee<FromSize(vv); ++ee) {
                 auto ww = From(vv)[ee];
                 edges.insert(EdgeObjectIndexByIndexFrom(vv,ee));
-                if( right.find(ww)==right.end()){
+                if( right.find(ww)==right.end()) {
                     todoR.push_back(ww);
                     right.insert(ww);
                 }
             }
         }
-        while( !todoR.empty()){
+        while( !todoR.empty()) {
             auto ww = todoR.front();
             todoR.pop_front();
-            for(int ee=0;ee<ToSize(ww);++ee){
+            for(int ee=0; ee<ToSize(ww); ++ee) {
                 auto vv = To(ww)[ee];
                 edges.insert(EdgeObjectIndexByIndexTo(ww,ee));
-                if( left.find(vv)==left.end()){
+                if( left.find(vv)==left.end()) {
                     todoL.push_back(vv);
                     left.insert(vv);
                 }
@@ -744,71 +735,71 @@ void
 fastg_vertex_graph::MakeK1() {
     basevector tmp;
     std::set<int> left,edges,right;
-    for( int vv=0;vv<N();++vv){
+    for( int vv=0; vv<N(); ++vv) {
         ConnectedVertices(left,edges,right,vv,0);
-        if( left.size()>0 && right.size()>0){
+        if( left.size()>0 && right.size()>0) {
             size_t lock=std::numeric_limits<size_t>::max();
-            for( auto entry: edges){
+            for( auto entry: edges) {
                 if( lock == std::numeric_limits<size_t>::max() ) lock=EdgeObject(entry);
                 if( lock!= EdgeObject(entry)) std::cout << "WARNING: fastg_vertex_graph::MakeK1() - inconsistent K detected" << std::endl;
             }
-            if( lock >1 ){
+            if( lock >1 ) {
                 const auto k_minus_1 = lock-1;
                 size_t to_trim = k_minus_1;
-                for(auto entry:left){
+                for(auto entry:left) {
                     to_trim = std::min(to_trim,Vert(entry).nFreeR());
                 }
-                for(auto entry:left){
+                for(auto entry:left) {
                     tmp=VertMutable(entry).TrimR(to_trim);
                     if (tmp.size() != to_trim) {
                         std::cout << "WARNING: fastg_graph::MakeK1 trimmed "
-                                << tmp.size() << " instead of " << k_minus_1
-                                << std::endl;
+                                  << tmp.size() << " instead of " << k_minus_1
+                                  << std::endl;
                     }
                 }
-                for( auto entry: edges){
+                for( auto entry: edges) {
                     EdgeObjectMutable(entry)-=to_trim;
                 }
             }
         }
     }
-    for( int vv=0;vv<N();++vv){
+    for( int vv=0; vv<N(); ++vv) {
         ConnectedVertices(left,edges,right,vv,1);
-        if( left.size()>0 && right.size()>0){
+        if( left.size()>0 && right.size()>0) {
             size_t lock=std::numeric_limits<size_t>::max();
-            for( auto entry: edges){
+            for( auto entry: edges) {
                 if( lock == std::numeric_limits<size_t>::max() ) lock=EdgeObject(entry);
                 if( lock!= EdgeObject(entry)) std::cout << "WARNING: fastg_vertex_graph::MakeK1() - inconsistent K detected" << std::endl;
             }
-            if( lock >1 ){
+            if( lock >1 ) {
                 const auto k_minus_1 = lock-1;
                 size_t to_trim = k_minus_1;
-                for(auto entry:right){
+                for(auto entry:right) {
                     to_trim = std::min(to_trim,Vert(entry).nFreeL());
                 }
-                for(auto entry:right){
+                for(auto entry:right) {
                     tmp=VertMutable(entry).TrimL(to_trim);
                     if (tmp.size() != to_trim) {
                         std::cout << "WARNING: fastg_graph::MakeK1 trimmed "
-                                << tmp.size() << " instead of " << k_minus_1
-                                << std::endl;
+                                  << tmp.size() << " instead of " << k_minus_1
+                                  << std::endl;
                     }
                 }
-                for( auto entry: edges){
+                for( auto entry: edges) {
                     EdgeObjectMutable(entry)-=to_trim;
                 }
             }
         }
     }
     for (int ee = 0; ee < EdgeObjectCount(); ++ee) {
-        if( EdgeObject(ee)!=1){
+        if( EdgeObject(ee)!=1) {
             std::cout << "WARNING: fastg_graph::MakeK1: vertex " << ee << " has K="<<EdgeObject(ee) << std::endl;;
         }
     }
 }
 
 void
-fastg_vertex_graph::Compact(){
+fastg_vertex_graph::Compact() {
     RemoveDuplicatedVertices();
     /*
     for( auto& entry: VertMutable()){
@@ -817,19 +808,19 @@ fastg_vertex_graph::Compact(){
     */
 }
 void
-fastg_vertex_graph::RemoveDuplicatedVertices(){
+fastg_vertex_graph::RemoveDuplicatedVertices() {
     std::set< decltype(N())> to_delete;
-    for(decltype(N()) vv=0; vv<N(); ++vv){
-        if( to_delete.find(vv)==to_delete.end()){
+    for(decltype(N()) vv=0; vv<N(); ++vv) {
+        if( to_delete.find(vv)==to_delete.end()) {
             const auto& from_list = From(vv);
-            for( size_t ee=0;ee<from_list.size();++ee){
+            for( size_t ee=0; ee<from_list.size(); ++ee) {
                 const auto& ww = from_list[ee];
                 if( vv==ww || to_delete.find(ww)!=to_delete.end()) continue;
-                for( size_t ff=ee+1;ff<from_list.size();++ff){
+                for( size_t ff=ee+1; ff<from_list.size(); ++ff) {
                     const auto xx = from_list[ff];
                     if( vv==xx || ww==xx || to_delete.find(xx)!=to_delete.end()) continue;
 
-                    if( Vert(ww)==Vert(xx)){
+                    if( Vert(ww)==Vert(xx)) {
                         TransferEdges(xx,ww);
                         to_delete.insert(xx);
                     }
@@ -838,17 +829,17 @@ fastg_vertex_graph::RemoveDuplicatedVertices(){
 
         }
     }
-    for(decltype(N()) ww=0; ww<N(); ++ww){
-        if( to_delete.find(ww)==to_delete.end()){
+    for(decltype(N()) ww=0; ww<N(); ++ww) {
+        if( to_delete.find(ww)==to_delete.end()) {
             const auto& to_list = To(ww);
-            for( size_t ee=0;ee<to_list.size();++ee){
+            for( size_t ee=0; ee<to_list.size(); ++ee) {
                 const auto& vv = to_list[ee];
                 if( vv==ww || to_delete.find(vv)!=to_delete.end()) continue;
-                for( size_t ff=ee+1;ff<to_list.size();++ff){
+                for( size_t ff=ee+1; ff<to_list.size(); ++ff) {
                     const auto uu = to_list[ff];
                     if( vv==uu || ww==uu || to_delete.find(uu)!=to_delete.end()) continue;
 
-                    if( Vert(ww)==Vert(uu)){
+                    if( Vert(ww)==Vert(uu)) {
                         TransferEdges(uu,vv);
                         to_delete.insert(uu);
                     }
@@ -860,7 +851,7 @@ fastg_vertex_graph::RemoveDuplicatedVertices(){
     RemoveDuplicateEdges( );
     vec< decltype(N()) > vDel;
     vDel.reserve(to_delete.size());
-    for( auto entry: to_delete){
+    for( auto entry: to_delete) {
         vDel.push_back(entry);
     }
     RemoveVertices(vDel);
@@ -871,7 +862,7 @@ void
 fastg_vertex_graph::Write(std::ostream&os) const {
     FastgHeader(os);
     String sBuffer;
-    for(decltype(EdgeObjectCount()) vv=0;vv<N();++vv){
+    for(decltype(EdgeObjectCount()) vv=0; vv<N(); ++vv) {
         os << ">" << vv;
         if (From(vv).size() > 0) {
             os << ":" << From(vv)[0];
@@ -902,21 +893,21 @@ WriteFastg(const String&filename, const HyperBasevector& graph) {
         fgg.Write(filename);
         vec< vec<String>> edge_labels(fgg.N());
         vec< String> vertex_labels(fgg.N());
-        for(size_t ii=0;ii<edge_labels.size();++ii){
+        for(size_t ii=0; ii<edge_labels.size(); ++ii) {
             vertex_labels[ii]=ToString(ii);
             int nn = fgg.FromSize(ii);
             edge_labels[ii].resize(nn);
-            for(int jj = 0 ; jj < nn ; ++jj){
+            for(int jj = 0 ; jj < nn ; ++jj) {
                 edge_labels[ii][jj] = ToString(fgg.EdgeObjectIndexByIndexFrom(ii,jj));
             }
         }
         Ofstream( dot_out, filename+".dot" );
         fgg.DOT_vl( dot_out, vertex_labels,
-             "",
-             vec< vec<String> >( ),
-             vec<String>( ),
-             vec<vec<String>>(),
-             vec<String>( ) ) ;
+                    "",
+                    vec< vec<String> >( ),
+                    vec<String>( ),
+                    vec<vec<String>>(),
+                    vec<String>( ) ) ;
         dot_out.close();
     }
 }
@@ -928,21 +919,21 @@ WriteFastg(const String&filename, const HyperEfasta& graph) {
         fgg.Write(filename);
         vec< vec<String>> edge_labels(fgg.N());
         vec< String> vertex_labels(fgg.N());
-        for(size_t ii=0;ii<edge_labels.size();++ii){
+        for(size_t ii=0; ii<edge_labels.size(); ++ii) {
             vertex_labels[ii]=ToString(ii);
             int nn = fgg.FromSize(ii);
             edge_labels[ii].resize(nn);
-            for(int jj = 0 ; jj < nn ; ++jj){
+            for(int jj = 0 ; jj < nn ; ++jj) {
                 edge_labels[ii][jj] = ToString(fgg.EdgeObjectIndexByIndexFrom(ii,jj));
             }
         }
         Ofstream( dot_out, filename+".dot" );
         fgg.DOT_vl( dot_out, vertex_labels,
-             "",
-             vec< vec<String> >( ),
-             vec<String>( ),
-             vec<vec<String>>(),
-             vec<String>( ) ) ;
+                    "",
+                    vec< vec<String> >( ),
+                    vec<String>( ),
+                    vec<vec<String>>(),
+                    vec<String>( ) ) ;
         dot_out.close();
     }
 #if 0
@@ -951,11 +942,11 @@ WriteFastg(const String&filename, const HyperEfasta& graph) {
     fgg.Write(filename);
     vec< vec<String>> edge_labels(fgg.N());
     vec< String> vertex_labels(fgg.N());
-    for(size_t ii=0;ii<edge_labels.size();++ii){
+    for(size_t ii=0; ii<edge_labels.size(); ++ii) {
         vertex_labels[ii]=ToString(ii);
         int nn = fgg.FromSize(ii);
         edge_labels[ii].resize(nn);
-        for(int jj = 0 ; jj < nn ; ++jj){
+        for(int jj = 0 ; jj < nn ; ++jj) {
             edge_labels[ii][jj] = ToString(fgg.EdgeObjectIndexByIndexFrom(ii,jj));
         }
     }
@@ -976,10 +967,10 @@ WriteFastg(const String&filename, const HyperEfasta& graph) {
 #include "graph/DigraphTemplate.h"
 template void
 digraphVE<fastg::fastg_k, fastg::fastg_sequence>::Initialize(
-        const vec<vec<int> >& from, const vec<vec<int> >& to,
-        const vec<fastg::fastg_k>& verts,
-        const vec<fastg::fastg_sequence>& edges, const vec<vec<int> >& to_edge_obj,
-        const vec<vec<int> >& from_edge_obj);
+    const vec<vec<int> >& from, const vec<vec<int> >& to,
+    const vec<fastg::fastg_k>& verts,
+    const vec<fastg::fastg_sequence>& edges, const vec<vec<int> >& to_edge_obj,
+    const vec<vec<int> >& from_edge_obj);
 template void
 digraphVE<fastg::fastg_sequence,fastg::fastg_k>::AddVertex( const fastg::fastg_sequence& v );
 

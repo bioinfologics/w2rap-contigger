@@ -14,6 +14,6 @@
 #include "Qualvector.h"
 
 void PreCorrectOldNew( vecbasevector* bases, vecqualvector const& quals0,
-     const vec<int>& trace_ids );
+                       const vec<int>& trace_ids );
 
 #endif

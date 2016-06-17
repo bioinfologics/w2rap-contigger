@@ -46,17 +46,16 @@
 /// You can read a performance statistics log using an ifstream and operator>>,
 /// but I don't know why you'd want to.
 ///
-class PerfStat
-{
+class PerfStat {
     typedef std::istream istream;
     typedef std::ostream ostream;
     typedef std::string string;
 
-public:
+  public:
     PerfStat() : mVal(0.) {}
 
     PerfStat( string const& name, string const& gloss, long double val )
-    : mName(name), mGloss(gloss), mVal(val) {}
+        : mName(name), mGloss(gloss), mVal(val) {}
 
     // compiler-supplied copying and destructor is OK
 
@@ -65,7 +64,7 @@ public:
 
     static ostream& log();
 
-private:
+  private:
     string mName;
     string mGloss;
     long double mVal;
@@ -79,7 +78,7 @@ private:
 // ...
 // std::cout << "whatever" << std::endl;
 // ...
-// 
+//
 // PerfStat::log() << PerfStatBlockStop();
 //
 std::string PerfStatBlockStart(const std::string & block_name);

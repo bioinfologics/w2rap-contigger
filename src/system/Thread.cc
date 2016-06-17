@@ -17,18 +17,15 @@
 #include <unistd.h>
 #include <omp.h>
 
-int getTid()
-{
+int getTid() {
     return syscall(SYS_gettid);
 }
 
-bool isMainThread()
-{
+bool isMainThread() {
     static int gPid = getpid();
     return getTid()==gPid;
 }
 
-bool inParallelSection()
-{
+bool inParallelSection() {
     return !isMainThread() || omp_in_parallel();
 }

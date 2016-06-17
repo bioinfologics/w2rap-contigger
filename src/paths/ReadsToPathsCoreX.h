@@ -41,9 +41,9 @@
 //   The alternative is to keep a sorted copy, but that doubles
 //   the memory for 'bvv' unecessarily.
 
-void ReadsToPathsCoreY(BaseVecVec          & bvv, 
-                       const size_t          K, 
-                       vecKmerPath         & paths, 
+void ReadsToPathsCoreY(BaseVecVec          & bvv,
+                       const size_t          K,
+                       vecKmerPath         & paths,
                        const String        & PARCEL_DIR = "",
                        const size_t          NUM_THREADS = 1,
                        const String          CHECKPOINT = "",
@@ -55,9 +55,9 @@ void ReadsToPathsCoreY(BaseVecVec          & bvv,
 
 // These versions of ReadsToPathsCoreY generate paths_rc and pathsdb as well.
 
-void ReadsToPathsCoreY(BaseVecVec          & bvv, 
-                       const size_t          K, 
-                       vecKmerPath         & paths, 
+void ReadsToPathsCoreY(BaseVecVec          & bvv,
+                       const size_t          K,
+                       vecKmerPath         & paths,
                        vecKmerPath         & paths_rc,
                        vec<tagged_rpint>   & pathsdb,
                        const String        & PARCEL_DIR = "",
@@ -67,11 +67,11 @@ void ReadsToPathsCoreY(BaseVecVec          & bvv,
 
 
 
-void ReadsToPathsCoreY(BaseVecVec            & bvv, 
-                       const size_t            K, 
-                       vecKmerPath           & paths, 
+void ReadsToPathsCoreY(BaseVecVec            & bvv,
+                       const size_t            K,
+                       vecKmerPath           & paths,
                        vecKmerPath           & paths_rc,
-                       vec<big_tagged_rpint> & pathsdb, 
+                       vec<big_tagged_rpint> & pathsdb,
                        const String          & PARCEL_DIR = "",
                        const size_t            NUM_THREADS = 1,
                        const String            CHECKPOINT = "",

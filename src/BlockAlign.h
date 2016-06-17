@@ -27,35 +27,39 @@
  * have the same size as the alignment.
  */
 class block_align {
-  
-public:
 
-  block_align( ) { }
-  
-  block_align( const align *al, const vec<int> *mut = 0 );
-  
-  block_align( const look_align_plus *hit );
-  
-  void SetFromAlign( const align *al, const vec<int> *mut = 0 );
-  
-  void SetFromLookAlign( const look_align_plus *hit );
-  
-  size_t size( ) const { return blocks_.size( ); }
-  
-  const block &operator[] ( int ii ) const { return blocks_[ii]; }
-  
-  
-private:
-  
-  void Setup( const align *al, const vec<int> *mut = 0 );
-  
-  
-private:
-  
-  vec<block> blocks_;
-  
+  public:
+
+    block_align( ) { }
+
+    block_align( const align *al, const vec<int> *mut = 0 );
+
+    block_align( const look_align_plus *hit );
+
+    void SetFromAlign( const align *al, const vec<int> *mut = 0 );
+
+    void SetFromLookAlign( const look_align_plus *hit );
+
+    size_t size( ) const {
+        return blocks_.size( );
+    }
+
+    const block &operator[] ( int ii ) const {
+        return blocks_[ii];
+    }
+
+
+  private:
+
+    void Setup( const align *al, const vec<int> *mut = 0 );
+
+
+  private:
+
+    vec<block> blocks_;
+
 };
-  
+
 
 
 #endif

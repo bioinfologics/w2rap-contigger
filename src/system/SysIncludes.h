@@ -12,7 +12,7 @@
 // -----------------------------------------------------------------------------
 
 // This file is for common system includes, not includes of STL files
-// (in general).  The main purpose of having this file is to centralize 
+// (in general).  The main purpose of having this file is to centralize
 // platform-specific content.  There is no need to put all system includes here.
 
 // -----------------------------------------------------------------------------

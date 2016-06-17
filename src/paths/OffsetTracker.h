@@ -20,76 +20,88 @@
 
 // Offset where both superseqs are explicit.
 class ExplicitOffset {
- public:
-  ExplicitOffset() {}
-  
-  ExplicitOffset( int from, int to, int amount, int source = 0 )
-    : m_from( from ), m_to( to ), m_amt( amount ), m_source( source ) 
-  {}
-  
-  int GetFrom() const { return m_from; }
-  int GetTo() const { return m_to; }
-  int GetAmount() const { return m_amt; }
-  int GetSource() const { return m_source; }
-  
-  bool operator< ( const ExplicitOffset& other ) const {
-    return ( m_to < other.m_to ||
-             m_to == other.m_to && ( m_from < other.m_from ||
-                                     m_from == other.m_from && m_amt < other.m_amt ) );
-  }
-  
-  bool operator== ( const ExplicitOffset& other ) const {
-    return ( m_from == other.m_from &&
-             m_to == other.m_to &&
-             m_amt == other.m_amt );
-  }
+  public:
+    ExplicitOffset() {}
 
-  struct OrderByDecreasingAmount : public std::binary_function<ExplicitOffset,ExplicitOffset,bool> {
-    bool operator() ( const ExplicitOffset& lhs, const ExplicitOffset& rhs ) const {
-      return ( lhs.GetAmount() > rhs.GetAmount() );
+    ExplicitOffset( int from, int to, int amount, int source = 0 )
+        : m_from( from ), m_to( to ), m_amt( amount ), m_source( source ) {
     }
-  };
 
-  struct OrderByIncreasingAmount : public std::binary_function<ExplicitOffset,ExplicitOffset,bool> {
-    bool operator() ( const ExplicitOffset& lhs, const ExplicitOffset& rhs ) const {
-      return ( lhs.GetAmount() < rhs.GetAmount() );
+    int GetFrom() const {
+        return m_from;
     }
-  };
+    int GetTo() const {
+        return m_to;
+    }
+    int GetAmount() const {
+        return m_amt;
+    }
+    int GetSource() const {
+        return m_source;
+    }
 
- private:
-  // TODO: potentially dangerous truncation of index
-  int m_from;
-  int m_to;
-  int m_amt;
-  int m_source;
+    bool operator< ( const ExplicitOffset& other ) const {
+        return ( m_to < other.m_to ||
+                 m_to == other.m_to && ( m_from < other.m_from ||
+                                         m_from == other.m_from && m_amt < other.m_amt ) );
+    }
+
+    bool operator== ( const ExplicitOffset& other ) const {
+        return ( m_from == other.m_from &&
+                 m_to == other.m_to &&
+                 m_amt == other.m_amt );
+    }
+
+    struct OrderByDecreasingAmount : public std::binary_function<ExplicitOffset,ExplicitOffset,bool> {
+        bool operator() ( const ExplicitOffset& lhs, const ExplicitOffset& rhs ) const {
+            return ( lhs.GetAmount() > rhs.GetAmount() );
+        }
+    };
+
+    struct OrderByIncreasingAmount : public std::binary_function<ExplicitOffset,ExplicitOffset,bool> {
+        bool operator() ( const ExplicitOffset& lhs, const ExplicitOffset& rhs ) const {
+            return ( lhs.GetAmount() < rhs.GetAmount() );
+        }
+    };
+
+  private:
+    // TODO: potentially dangerous truncation of index
+    int m_from;
+    int m_to;
+    int m_amt;
+    int m_source;
 };
 
 
 // Offset where "to" superseq is implicit.
 class ImplicitOffset {
- public:
-  ImplicitOffset() {}
-  ImplicitOffset( int from, int amount )
-    : m_from( from ), m_amt( amount ) {}
+  public:
+    ImplicitOffset() {}
+    ImplicitOffset( int from, int amount )
+        : m_from( from ), m_amt( amount ) {}
 
-  int GetFrom() const { return m_from; }
-  int GetAmount() const { return m_amt; }
-
-  bool operator< ( const ImplicitOffset& other ) const {
-    return ( m_from < other.m_from ||
-             m_from == other.m_from && m_amt < other.m_amt );
-  }
-
-  struct OrderByFrom : public std::binary_function<ImplicitOffset,ImplicitOffset,bool> {
-    bool operator() ( const ImplicitOffset& lhs, const ImplicitOffset& rhs ) const {
-      return ( lhs.GetFrom() < rhs.GetFrom() );
+    int GetFrom() const {
+        return m_from;
     }
-  };
+    int GetAmount() const {
+        return m_amt;
+    }
 
- private:
-  // TODO: potentially dangerous truncation of index
-  int m_from;
-  int m_amt;
+    bool operator< ( const ImplicitOffset& other ) const {
+        return ( m_from < other.m_from ||
+                 m_from == other.m_from && m_amt < other.m_amt );
+    }
+
+    struct OrderByFrom : public std::binary_function<ImplicitOffset,ImplicitOffset,bool> {
+        bool operator() ( const ImplicitOffset& lhs, const ImplicitOffset& rhs ) const {
+            return ( lhs.GetFrom() < rhs.GetFrom() );
+        }
+    };
+
+  private:
+    // TODO: potentially dangerous truncation of index
+    int m_from;
+    int m_amt;
 };
 
 TRIVIALLY_SERIALIZABLE(ImplicitOffset);
@@ -99,82 +111,90 @@ extern template class SmallVec< ImplicitOffset, MempoolAllocator<ImplicitOffset>
 extern template class OuterVec<ImplicitOffsetVec>;
 
 class MutableOffsetTracker {
- public:
-  MutableOffsetTracker() {}
-  
-  MutableOffsetTracker( const int size )
-    : m_offsets( size ) {}
+  public:
+    MutableOffsetTracker() {}
 
-  MutableOffsetTracker( const vecUnipathSeq& unipathSeqs,
-                        const MuxGraph& inverseMuxGraph,
-                        const int firstSuperSeq,
-                        const vec<int>& maxOffsets );
+    MutableOffsetTracker( const int size )
+        : m_offsets( size ) {}
 
-  int size() const { return m_offsets.size(); }
+    MutableOffsetTracker( const vecUnipathSeq& unipathSeqs,
+                          const MuxGraph& inverseMuxGraph,
+                          const int firstSuperSeq,
+                          const vec<int>& maxOffsets );
 
-  void resize( const int size ) { m_offsets.resize( size ); }
+    int size() const {
+        return m_offsets.size();
+    }
 
-  bool Add( int from, int to, int offsetAmount ) {
-    std::pair<std::set<ImplicitOffset>::iterator,bool> result =
-      m_offsets[ to ].insert( ImplicitOffset( from, offsetAmount ) );
-    return result.second;
-  }
+    void resize( const int size ) {
+        m_offsets.resize( size );
+    }
 
-  bool Add( const ExplicitOffset& offset ) {
-    std::pair<std::set<ImplicitOffset>::iterator,bool> result =
-      m_offsets[ offset.GetTo() ].insert( ImplicitOffset( offset.GetFrom(), offset.GetAmount() ) );
-    return result.second;
-  }
+    bool Add( int from, int to, int offsetAmount ) {
+        std::pair<std::set<ImplicitOffset>::iterator,bool> result =
+            m_offsets[ to ].insert( ImplicitOffset( from, offsetAmount ) );
+        return result.second;
+    }
 
-  const StdSet<ImplicitOffset>& GetOffsetsTo( const int to ) const {
-    return m_offsets[ to ];
-  }
+    bool Add( const ExplicitOffset& offset ) {
+        std::pair<std::set<ImplicitOffset>::iterator,bool> result =
+            m_offsets[ offset.GetTo() ].insert( ImplicitOffset( offset.GetFrom(), offset.GetAmount() ) );
+        return result.second;
+    }
 
- private:
-  vec< StdSet<ImplicitOffset> > m_offsets;
+    const StdSet<ImplicitOffset>& GetOffsetsTo( const int to ) const {
+        return m_offsets[ to ];
+    }
+
+  private:
+    vec< StdSet<ImplicitOffset> > m_offsets;
 };
 
 
 class OffsetTracker {
- public:
-  OffsetTracker() {}
-  
-  OffsetTracker( const int size )
-    : m_offsets( size ) {}
+  public:
+    OffsetTracker() {}
 
-  OffsetTracker( const MutableOffsetTracker& mutableTracker );
+    OffsetTracker( const int size )
+        : m_offsets( size ) {}
 
-  void ConvertFrom( const MutableOffsetTracker& mutableTracker );
+    OffsetTracker( const MutableOffsetTracker& mutableTracker );
 
-  int size() const { return m_offsets.size(); }
+    void ConvertFrom( const MutableOffsetTracker& mutableTracker );
 
-  void resize( const int size ) { m_offsets.resize( size ); }
+    int size() const {
+        return m_offsets.size();
+    }
 
-  const ImplicitOffsetVec& GetOffsetsTo( const int to ) const {
-    return m_offsets[ to ];
-  }
+    void resize( const int size ) {
+        m_offsets.resize( size );
+    }
 
-  typedef std::pair<ImplicitOffsetVec::const_iterator,
-               ImplicitOffsetVec::const_iterator> Range;
+    const ImplicitOffsetVec& GetOffsetsTo( const int to ) const {
+        return m_offsets[ to ];
+    }
 
-  Range
-  GetOffsetsToFrom( const int to, const int from ) const {
-    return equal_range( m_offsets[to].begin(), m_offsets[to].end(),
-                        ImplicitOffset( from, 0 ), ImplicitOffset::OrderByFrom() );
-  }
+    typedef std::pair<ImplicitOffsetVec::const_iterator,
+            ImplicitOffsetVec::const_iterator> Range;
 
-  void Write( const String& filename ) const {
-    m_offsets.WriteAll( filename );
-  }
+    Range
+    GetOffsetsToFrom( const int to, const int from ) const {
+        return equal_range( m_offsets[to].begin(), m_offsets[to].end(),
+                            ImplicitOffset( from, 0 ), ImplicitOffset::OrderByFrom() );
+    }
 
-  void Read( const String& filename ) {
-    m_offsets.ReadAll( filename );
-  }
+    void Write( const String& filename ) const {
+        m_offsets.WriteAll( filename );
+    }
 
-  friend class OffsetTrackerBuilder;
+    void Read( const String& filename ) {
+        m_offsets.ReadAll( filename );
+    }
 
- private:
-  VecImplicitOffsetVec m_offsets;
+    friend class OffsetTrackerBuilder;
+
+  private:
+    VecImplicitOffsetVec m_offsets;
 };
 
 #endif

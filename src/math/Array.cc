@@ -19,18 +19,17 @@ vec<double> GaussianKernal( int delta, int width_n_delta ) {
         kernal[i] = exp( - x * x / double( 2 * delta * delta ) );
     }
     double total = Sum( kernal );
-    for ( int i = 0; i < kernal.isize(); i++ ) 
+    for ( int i = 0; i < kernal.isize(); i++ )
         kernal[i] /= total;
     return kernal;
 }
 
-void SmoothArrayGaussian ( vec<double> & distr, int delta )
-{
+void SmoothArrayGaussian ( vec<double> & distr, int delta ) {
     vec<double> kernal = GaussianKernal( delta, 4 );
     int center = (kernal.size() - 1) /2;
     // smoothed array
     vec<double> distr_s( distr.size(), 0 );
-    for ( int i = 0; i < distr.isize(); i++ ) 
+    for ( int i = 0; i < distr.isize(); i++ )
         for ( int k = 0; k < kernal.isize(); k++ ) {
             int x = i + k - center;
             if ( x < 0 || x >= distr.isize() ) continue;
@@ -39,18 +38,17 @@ void SmoothArrayGaussian ( vec<double> & distr, int delta )
     swap(distr, distr_s);
 }
 
-void SmoothArrayGaussian ( StdMap<int, double> & distr, int delta )
-{
+void SmoothArrayGaussian ( StdMap<int, double> & distr, int delta ) {
     vec<double> kernal = GaussianKernal( delta );
     int center = (kernal.size() - 1) /2;
-     // smoothed array
-     StdMap<int, double> distr_s;
-     for ( map<int, double>::iterator it = distr.begin(); 
-               it != distr.end(); it++ )
-          for ( int k = 0; k < kernal.isize(); k++ ) {
-               int x = it->first  + k - center;
-               distr_s[x] += it->second * kernal[k];
-          }
-     swap(distr, distr_s);
+    // smoothed array
+    StdMap<int, double> distr_s;
+    for ( map<int, double>::iterator it = distr.begin();
+            it != distr.end(); it++ )
+        for ( int k = 0; k < kernal.isize(); k++ ) {
+            int x = it->first  + k - center;
+            distr_s[x] += it->second * kernal[k];
+        }
+    swap(distr, distr_s);
 }
 

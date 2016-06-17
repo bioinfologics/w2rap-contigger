@@ -6,7 +6,7 @@
 //   Institute is not responsible for its use, misuse, or functionality.     //
 ///////////////////////////////////////////////////////////////////////////////
 
-// MakeBlocks. This takes as input K, some reads, and some kmer aligns of the 
+// MakeBlocks. This takes as input K, some reads, and some kmer aligns of the
 // reads with id >= 1 to read 0.  It produces as output "blocks", sequences that
 // are supposed to be true sequences for the genome underlying the read.  These may
 // overlap by up to K-1.
@@ -20,19 +20,19 @@
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/ultra/ThreadedBlocks.h"
 
-template<int K> void MakeBlocks( 
-     const int ec,                            // read id
-     const vecbasevector& reads,
-     const vec< vec< std::pair<int,int> > >& a,    // kmer aligns to read 0
-     threaded_blocks& tb,                     // output
-     const basevector& gread0,                // true genomic sequence for read 0
-                                              // and flanking region
-     const vec<basevector>& gkmers,
-     const int gid,
-     const int gstart,
-     std::ostream& out,                            // for logging
-     const Bool FILTER_BAD_BLOCKS,
-     const long_logging_control& log_control,
-     const long_logging& logc );
+template<int K> void MakeBlocks(
+    const int ec,                            // read id
+    const vecbasevector& reads,
+    const vec< vec< std::pair<int,int> > >& a,    // kmer aligns to read 0
+    threaded_blocks& tb,                     // output
+    const basevector& gread0,                // true genomic sequence for read 0
+    // and flanking region
+    const vec<basevector>& gkmers,
+    const int gid,
+    const int gstart,
+    std::ostream& out,                            // for logging
+    const Bool FILTER_BAD_BLOCKS,
+    const long_logging_control& log_control,
+    const long_logging& logc );
 
 #endif

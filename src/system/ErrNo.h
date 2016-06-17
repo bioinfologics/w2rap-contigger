@@ -18,9 +18,8 @@
 #include <ostream>
 #include <string>
 
-class ErrNo
-{
-public:
+class ErrNo {
+  public:
     /// initialized with current value of errno global
     ErrNo();
 
@@ -30,15 +29,18 @@ public:
     // compiler-supplied copying and destructor are OK
 
     /// the value of the stored errno
-    int val() const { return mErrNo; }
+    int val() const {
+        return mErrNo;
+    }
 
     /// thread-safe method to produce the text associated with the errno
     std::string text() const;
 
-    friend std::ostream& operator<<( std::ostream& os, ErrNo const& errNo )
-    { return os << errNo.text(); }
+    friend std::ostream& operator<<( std::ostream& os, ErrNo const& errNo ) {
+        return os << errNo.text();
+    }
 
-private:
+  private:
     int mErrNo;
 };
 

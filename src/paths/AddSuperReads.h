@@ -29,14 +29,14 @@
 #include "paths/OffsetTracker.h"
 #include "paths/SubsumptionList.h"
 
-void AddSuperReads( const vecKmerPath& pathsFw, 
-                    const vecKmerPath& pathsRc, 
+void AddSuperReads( const vecKmerPath& pathsFw,
+                    const vecKmerPath& pathsRc,
                     const vec<read_pairing>& pairs,
-                    const int K, 
-                    const int MAXSEP, 
+                    const int K,
+                    const int MAXSEP,
                     const Float sdMult,
-                    vecKmerPath& allPathsFw, 
+                    vecKmerPath& allPathsFw,
                     vecKmerPath& allPathsRc,
-                    MuxGraph& allMuxes, 
+                    MuxGraph& allMuxes,
                     SubsumptionList& allSubs,
                     OffsetTracker* pTracker );

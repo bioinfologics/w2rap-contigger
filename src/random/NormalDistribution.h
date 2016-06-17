@@ -1,5 +1,5 @@
 // Copyright (c) 2000-2003 Whitehead Institute for Biomedical Research
-// 
+//
 
 
 
@@ -61,10 +61,10 @@ float NormalDistributionIntegral( float alpha, float mu, float sigma );
  *  it returns true and fills X with a value depending on U, and V.
  *  Otherwise (i.e. if the point does not belong to the region)
  *  it returns false. The idea is that we can deduce a normally
- *  distributed random sequence from two given uniformly distributed 
+ *  distributed random sequence from two given uniformly distributed
  *  and independent random sequences U_n and V_n.
- * 
- * Remark 1: if X_m is normally distributed with mean 0 and standard 
+ *
+ * Remark 1: if X_m is normally distributed with mean 0 and standard
  *  deviation 1, then (mu + sigma*X_m) is normally distributed with
  *  mean mu and standard deviation sigma.
  *
@@ -77,12 +77,12 @@ float NormalDistributionIntegral( float alpha, float mu, float sigma );
 bool NormalDeviate( double U, double V, double &X );
 
 /// Given intervals of lengths len1 and len2, whose left ends
-/// are separated (left2-left1) by distance sep_mean +- sep_sd, 
+/// are separated (left2-left1) by distance sep_mean +- sep_sd,
 /// what is the probability that they overlap?
-inline float IntervalOverlapProbability( int len1, int len2, 
-					 int sep_mean, float sep_sd ) {
-  return ( NormalDistributionIntegral( len1, sep_mean, sep_sd ) +
-	   NormalDistributionIntegral( len2, -sep_mean, sep_sd ) - 1 );
+inline float IntervalOverlapProbability( int len1, int len2,
+        int sep_mean, float sep_sd ) {
+    return ( NormalDistributionIntegral( len1, sep_mean, sep_sd ) +
+             NormalDistributionIntegral( len2, -sep_mean, sep_sd ) - 1 );
 }
 
 #endif

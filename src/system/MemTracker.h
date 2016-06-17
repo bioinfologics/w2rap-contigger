@@ -47,10 +47,10 @@ get_memory_usage();
 #include <memory>
 #include <string>
 
-void * 
+void *
 operator new ( size_t size, const char *file, const int line ) throw();
 
-void * 
+void *
 operator new[] ( size_t size, const char *file, const int line ) throw();
 
 // This macro allows calls to operator new to contain debugging info.

@@ -20,9 +20,8 @@
 #include "system/file/File.h"
 
 /// Class for reading and creating symbolic links.
-class SymLink : public File
-{
-public:
+class SymLink : public File {
+  public:
     /// Default constructor refers to empty nonsense path.
     SymLink() {}
     SymLink( char const* path ) : File(path) {}
@@ -30,12 +29,14 @@ public:
     /// Construct from something with a c_str() member (like string or String)
     template <class C>
     explicit SymLink( C const& path,
-                            char const* (C::*)() const = &C::c_str )
-    : File(path.c_str()) {}
+                      char const* (C::*)() const = &C::c_str )
+        : File(path.c_str()) {}
 
     // compiler-supplied copying and destructor are OK
 
-    bool isValid() const { return isLink() && stat()!=0; }
+    bool isValid() const {
+        return isLink() && stat()!=0;
+    }
 
     /// Read the target of the symlink.
     File target() const;

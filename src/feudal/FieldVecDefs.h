@@ -14,8 +14,7 @@
 
 template <int N, class A>
 void FieldVec<N,A>::init( size_type last,
-                          value_type exemplar )
-{
+                          value_type exemplar ) {
     Assert(!(exemplar&~VAL_MASK));
 
     size_type first = size();
@@ -26,8 +25,7 @@ void FieldVec<N,A>::init( size_type last,
         setValue(first++, exemplar);
 
     // if there's more to do after filling a ragged initial byte
-    if ( first != last )
-    {
+    if ( first != last ) {
         // replicate the exemplar bit pattern throughout the byte
         if ( N == 1 )
             exemplar |= exemplar << 1;
@@ -42,18 +40,15 @@ void FieldVec<N,A>::init( size_type last,
 }
 
 template <int N, class A>
-void FieldVec<N,A>::realloc( size_t nElements )
-{
+void FieldVec<N,A>::realloc( size_t nElements ) {
     //ForceAssertLe(nElements,max_size()); ## Disabled assertion, Tim (2015-07-05)
     A& alloc = allocator();
     pointer elements = 0;
     size_type newSize = physicalSize(nElements);
-    if ( newSize )
-    {
+    if ( newSize ) {
         elements = alloc.allocate(newSize, 0);
         size_type curSize = physicalSize(size());
-        if( curSize )
-        {
+        if( curSize ) {
             memcpy(elements, data(), curSize);
         }
     }
@@ -64,8 +59,7 @@ void FieldVec<N,A>::realloc( size_t nElements )
 
 // called to accomplish a swap when allocators are unequal
 template <int N, class A>
-void FieldVec<N,A>::exchange( FieldVec& that )
-{
+void FieldVec<N,A>::exchange( FieldVec& that ) {
     using std::swap;
 
     // make sure there's adequate space in the shorter vector
@@ -77,20 +71,17 @@ void FieldVec<N,A>::exchange( FieldVec& that )
     pointer end = src1 + physicalSize(std::min(size(),that.size()));
 
     // swap the places where we both have bytes
-    while ( src1 != end )
-    {
+    while ( src1 != end ) {
         swap(*src1++,*src2++);
     }
 
     // copy the bytes in this not matched by bytes in that
     size_type len;
-    if ( (len = dataEnd() - src1) )
-    {
+    if ( (len = dataEnd() - src1) ) {
         memcpy(src2,src1,len);
     }
     // copy the bytes in that not matched by bytes in this
-    else if ( (len = that.dataEnd() - src2) )
-    {
+    else if ( (len = that.dataEnd() - src2) ) {
         memcpy(src1,src2,len);
     }
 
@@ -99,8 +90,7 @@ void FieldVec<N,A>::exchange( FieldVec& that )
 }
 
 template <int N, class A>
-void FieldVec<N,A>::checkN()
-{
+void FieldVec<N,A>::checkN() {
     STATIC_ASSERT( N==1 || N==2 || N==4 );
 }
 

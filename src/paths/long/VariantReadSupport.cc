@@ -24,12 +24,12 @@
 #include "paths/long/EvalByReads.h"
 
 namespace {
-void CalcLengthProbSimple(vec<double>&vOut,const double dProbIns_len, const double dProbDel_len, const uint64_t org_length){
+void CalcLengthProbSimple(vec<double>&vOut,const double dProbIns_len, const double dProbDel_len, const uint64_t org_length) {
     const double dProbIns=dProbIns_len;
     const double dProbDel=dProbDel_len;
     const double dProbNor=1.-dProbIns-dProbDel;
     ForceAssert(   dProbNor >=0.0 && dProbIns >=0.0 && dProbDel >=0.0
-                && dProbNor <=1.0 && dProbIns <=1.0 && dProbDel <=1.0 );
+                   && dProbNor <=1.0 && dProbIns <=1.0 && dProbDel <=1.0 );
 
     vOut.clear();
     vOut.resize( 2*org_length+1 , 0.0);
@@ -37,12 +37,12 @@ void CalcLengthProbSimple(vec<double>&vOut,const double dProbIns_len, const doub
     if( org_length >0) vOut[org_length-1] = dProbDel;
     vOut[org_length+1] = dProbIns;
 }
-void CalcLengthProb(vec<double>&vOut,const double dProbIns_len, const double dProbDel_len, const uint64_t org_length){
+void CalcLengthProb(vec<double>&vOut,const double dProbIns_len, const double dProbDel_len, const uint64_t org_length) {
     const double dProbIns=dProbIns_len/double(org_length);
     const double dProbDel=dProbDel_len/double(org_length);
     const double dProbNor=1.-dProbIns-dProbDel;
     ForceAssert(   dProbNor >=0.0 && dProbIns >=0.0 && dProbDel >=0.0
-                && dProbNor <=1.0 && dProbIns <=1.0 && dProbDel <=1.0 );
+                   && dProbNor <=1.0 && dProbIns <=1.0 && dProbDel <=1.0 );
 
     vOut.clear();
     vOut.resize( 2*org_length+1 , 0.0);
@@ -51,17 +51,17 @@ void CalcLengthProb(vec<double>&vOut,const double dProbIns_len, const double dPr
     double dNextZeroCol = pow(dProbNor,double(org_length));
     const uint64_t nRow=org_length+1;
     const uint64_t nCol=org_length+1;
-    for( uint64_t row = 0 ; row < nRow ; ++row){
+    for( uint64_t row = 0 ; row < nRow ; ++row) {
         double dColValue = dNextZeroCol ;
         dNextZeroCol *= dProbIns / dProbNor * ( org_length - row ) / (row+1.0) ;
-        for( uint64_t col = 0 ; col < nCol ; ++col){
+        for( uint64_t col = 0 ; col < nCol ; ++col) {
             vOut[org_length + row - col] += dColValue;
             dColValue *= dProbDel / dProbNor * ( org_length - row - col) / (col+1.0) ;
         }
     }
 };
 
-void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>>& n_q_len){
+void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>>& n_q_len) {
     const int verbosity=0;
     const double minQ=2.0;
     const uint64_t nFlavors = n_q_len.size();
@@ -70,26 +70,33 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
     ForceAssert(nFlavors>0);
     if(verbosity>0) std::cout.precision(5);
     uint64_t max_n=0;
-    for( auto& entry: n_q_len){
-        if( std::get<1>(entry) < minQ ){ std::get<0>(entry)=0; }
-        else{ max_n=std::max(std::get<0>(entry),max_n); }
+    for( auto& entry: n_q_len) {
+        if( std::get<1>(entry) < minQ ) {
+            std::get<0>(entry)=0;
+        } else {
+            max_n=std::max(std::get<0>(entry),max_n);
+        }
     }
-    if(max_n>3){
-        for( auto& entry: n_q_len){
-            if( std::get<0>(entry) == 1 ){ std::get<1>(entry)=std::min(std::get<1>(entry),0.); }
+    if(max_n>3) {
+        for( auto& entry: n_q_len) {
+            if( std::get<0>(entry) == 1 ) {
+                std::get<1>(entry)=std::min(std::get<1>(entry),0.);
+            }
         }
     }
     Sort(n_q_len,std::greater<std::tuple<uint64_t,double,uint64_t>>());
 
     if(verbosity>0) std::cout<<"in coming, reads:"<< std::endl;
-    if(verbosity>0) for(const auto& entry:n_q_len){ std:: cout << std::get<0>(entry) << " " << std::get<1>(entry) << " " << std::get<2>(entry) << std::endl; }
+    if(verbosity>0) for(const auto& entry:n_q_len) {
+            std:: cout << std::get<0>(entry) << " " << std::get<1>(entry) << " " << std::get<2>(entry) << std::endl;
+        }
 
     vec<vec<double>> vvdLengthProbs(nFlavors);
     vec<double> p_from_q(nFlavors);
     uint64_t nReads=0;
 
     if (std::get<0>(n_q_len[0]) ==0) return;
-    for(uint64_t ff=0;ff<nFlavors;++ff){
+    for(uint64_t ff=0; ff<nFlavors; ++ff) {
         uint64_t length = std::get<2>(n_q_len[ff]);
         uint64_t nread_loc = std::get<0>(n_q_len[ff]);
         nReads+=nread_loc;
@@ -102,7 +109,9 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
     }
 
     if(verbosity>0) std::cout<<"after init, reads:"<< std::endl;
-    if(verbosity>0) for(const auto& entry:n_q_len){ std:: cout << std::get<0>(entry) << " " << std::get<1>(entry) << " " << std::get<2>(entry) << std::endl; }
+    if(verbosity>0) for(const auto& entry:n_q_len) {
+            std:: cout << std::get<0>(entry) << " " << std::get<1>(entry) << " " << std::get<2>(entry) << std::endl;
+        }
     if( nReads==0 ) return;
     vec<long double> P_o_gt(nFlavors*nFlavors,0.0);
     vec<long double> P_gt_o(nFlavors*nFlavors,0.0);
@@ -110,28 +119,32 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
     uint64_t nGT = nFlavors*(nFlavors+1)/2;
 
     long double dTmp=0;
-    for( uint64_t row=0;row<nFlavors;++row){
-        for( uint64_t col=0;col<nFlavors;++col){
+    for( uint64_t row=0; row<nFlavors; ++row) {
+        for( uint64_t col=0; col<nFlavors; ++col) {
             long double& dLoc = eta_gt[ row*nFlavors+col ];
             dLoc=1.0;
-            for(size_t ff=0;ff<nFlavors;++ff){
-                if( ff==row || ff==col){ dLoc*=p_from_q[ff]; }
-                else                   { dLoc*=1.0-p_from_q[ff]; }
+            for(size_t ff=0; ff<nFlavors; ++ff) {
+                if( ff==row || ff==col) {
+                    dLoc*=p_from_q[ff];
+                } else                   {
+                    dLoc*=1.0-p_from_q[ff];
+                }
             }
-            if( col >= row ){ dTmp += dLoc; }
+            if( col >= row ) {
+                dTmp += dLoc;
+            }
         }
     }
-    if( dTmp < std::numeric_limits<long double>::epsilon() * 10){
-        for( uint64_t row=0;row<nFlavors;++row){
-            for( uint64_t col=0;col<nFlavors;++col){
+    if( dTmp < std::numeric_limits<long double>::epsilon() * 10) {
+        for( uint64_t row=0; row<nFlavors; ++row) {
+            for( uint64_t col=0; col<nFlavors; ++col) {
                 eta_gt[ row*nFlavors+col ] = 1.0/(long double)(nGT);
             }
         }
-    }
-    else{
+    } else {
         dTmp = (1.0-dTmp) / (long double)(nGT);
-        for( uint64_t row=0;row<nFlavors;++row){
-            for( uint64_t col=0;col<nFlavors;++col){
+        for( uint64_t row=0; row<nFlavors; ++row) {
+            for( uint64_t col=0; col<nFlavors; ++col) {
                 long double& dLoc = eta_gt[ row*nFlavors+col ];
                 dLoc+=dTmp;
                 dLoc*=dTrustOfGapFreeAlignmentPrior;
@@ -140,10 +153,10 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
             }
         }
     }
-    if(verbosity>0){
+    if(verbosity>0) {
         std::cout << "prior: " << std::endl;
-        for( uint64_t row=0;row<nFlavors;++row){
-            for( uint64_t col=0;col<nFlavors;++col){
+        for( uint64_t row=0; row<nFlavors; ++row) {
+            for( uint64_t col=0; col<nFlavors; ++col) {
                 std::cout << eta_gt[row*nFlavors+col] << " ";
             }
             std::cout << std::endl;
@@ -154,37 +167,43 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
 
     long double dFactor = 1.0;
     //prevent underflow
-    for( size_t ll = std::get<0>(n_q_len[0])+1 ; ll <= nReads ; ++ll){ dFactor *= ll; }
-    for(uint64_t ff=1;ff<nFlavors;++ff){
-        for( size_t ll = 2 ; ll <= std::get<0>(n_q_len[ff]) ; ++ll){ dFactor /= (long double)(ll); }
+    for( size_t ll = std::get<0>(n_q_len[0])+1 ; ll <= nReads ; ++ll) {
+        dFactor *= ll;
     }
-    if( dFactor==std::numeric_limits<long double>::infinity() || std::isnan(dFactor) ){ dFactor=1.0; }
+    for(uint64_t ff=1; ff<nFlavors; ++ff) {
+        for( size_t ll = 2 ; ll <= std::get<0>(n_q_len[ff]) ; ++ll) {
+            dFactor /= (long double)(ll);
+        }
+    }
+    if( dFactor==std::numeric_limits<long double>::infinity() || std::isnan(dFactor) ) {
+        dFactor=1.0;
+    }
     if(verbosity>0) std::cout << "dFactor " << dFactor << std::endl;
 
     long double dDenom=0.0;
-    for( uint64_t row=0;row<nFlavors;++row){
-        for( uint64_t col=row;col<nFlavors;++col){
+    for( uint64_t row=0; row<nFlavors; ++row) {
+        for( uint64_t col=row; col<nFlavors; ++col) {
             long double& dLoc = P_o_gt[ row*nFlavors+col ];
             dLoc = dFactor*eta_gt[row*nFlavors+col];
             if(verbosity>0) std::cout << row << " " << col << " " << dLoc << std::endl;
-            for( size_t li=0;li<nFlavors;++li){
+            for( size_t li=0; li<nFlavors; ++li) {
                 const auto& length = std::get<2>(n_q_len[li]);
                 const auto& n = std::get<0>(n_q_len[li]);
-                if(n!=0){
-                    if(verbosity){
+                if(n!=0) {
+                    if(verbosity) {
                         std::cout << row << " " << col << " " << li << " (" << length << "," << n << ") "
                                   << ((length<vvdLengthProbs[row].size())?  vvdLengthProbs[row][length] : 0.0) << " "
                                   << ((length<vvdLengthProbs[col].size())?  vvdLengthProbs[col][length] : 0.0) << " "
                                   << pow(0.5*( ((length<vvdLengthProbs[row].size())?  vvdLengthProbs[row][length] : 0.0)
-                                              +((length<vvdLengthProbs[col].size())?  vvdLengthProbs[col][length] : 0.0)
+                                               +((length<vvdLengthProbs[col].size())?  vvdLengthProbs[col][length] : 0.0)
                                              )
-                                        , double(n)
-                                  )<<std::endl;;
+                                         , double(n)
+                                        )<<std::endl;;
                     }
                     dLoc *=pow(0.5*( ((length<vvdLengthProbs[row].size())?  vvdLengthProbs[row][length] : 0.0)
-                                    +((length<vvdLengthProbs[col].size())?  vvdLengthProbs[col][length] : 0.0)
+                                     +((length<vvdLengthProbs[col].size())?  vvdLengthProbs[col][length] : 0.0)
                                    )
-                              , double(n)
+                               , double(n)
                               );
                 }
             }
@@ -195,9 +214,9 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
     if(verbosity>0) std::cout <<"denom: " << dDenom<< std::endl;
     if( dDenom < std::numeric_limits<long double>::epsilon() * 100 || std::isnan(dDenom)) return;
     ForceAssert(dDenom>0);
-    if(verbosity>0){
-        for( uint64_t row=0;row<nFlavors;++row){
-            for( uint64_t col=0;col<nFlavors;++col){
+    if(verbosity>0) {
+        for( uint64_t row=0; row<nFlavors; ++row) {
+            for( uint64_t col=0; col<nFlavors; ++col) {
                 std::cout << P_o_gt[row*nFlavors+col] << " ";
             }
             std::cout << std::endl;
@@ -205,18 +224,18 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
         std::cout << std::endl;
     }
     double dTotal=0.0;
-    for( uint64_t row=0;row<nFlavors;++row){
+    for( uint64_t row=0; row<nFlavors; ++row) {
         P_gt_o[ row*nFlavors+row] = P_o_gt[ row*nFlavors+row] / dDenom;
         dTotal+=P_gt_o[ row*nFlavors+row];
-        for( uint64_t col=row+1;col<nFlavors;++col){
+        for( uint64_t col=row+1; col<nFlavors; ++col) {
             P_gt_o[ row*nFlavors+col] = P_o_gt[ row*nFlavors+col] / dDenom;
             dTotal+=P_gt_o[ row*nFlavors+col];
             P_gt_o[ col*nFlavors+row] = P_gt_o[ row*nFlavors+col];
         }
     }
-    if(verbosity>0){
-        for( uint64_t row=0;row<nFlavors;++row){
-            for( uint64_t col=0;col<nFlavors;++col){
+    if(verbosity>0) {
+        for( uint64_t row=0; row<nFlavors; ++row) {
+            for( uint64_t col=0; col<nFlavors; ++col) {
                 std::cout << P_gt_o[row*nFlavors+col] << " ";
                 ForceAssert( P_gt_o[ col*nFlavors+row] == P_gt_o[ row*nFlavors+col] );
             }
@@ -227,8 +246,10 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
 //    ForceAssert ( fabs(dTotal-1.0) < 10*std::numeric_limits<double>::epsilon());
     ForceAssert ( dTotal > -10*std::numeric_limits<float>::epsilon());
     ForceAssert ( dTotal < 1.0+10*std::numeric_limits<float>::epsilon());
-    for( auto& entry:P_gt_o){ entry /= dTotal; }
-    for( uint64_t ff=0;ff<nFlavors;++ff){
+    for( auto& entry:P_gt_o) {
+        entry /= dTotal;
+    }
+    for( uint64_t ff=0; ff<nFlavors; ++ff) {
         const auto itr = P_gt_o.begin() + ff*nFlavors;
         double p=std::accumulate(itr,itr+nFlavors,0.0);
 
@@ -236,13 +257,13 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
         double p0=std::accumulate(itr0,itr0+nFlavors,0.0);
 
 //        if( p<p0 ){
-            double q = -10.0 * log10(1.0-p);
-            if ( q < minQ) q=0;
-            if ( q == std::numeric_limits<double>::infinity() ) q = std::numeric_limits<double>::max();
-            std::get<1>(n_q_len[ff]) = q;
+        double q = -10.0 * log10(1.0-p);
+        if ( q < minQ) q=0;
+        if ( q == std::numeric_limits<double>::infinity() ) q = std::numeric_limits<double>::max();
+        std::get<1>(n_q_len[ff]) = q;
 //        }
 
-        if(verbosity>0){
+        if(verbosity>0) {
             std::cout << std::get<0>(n_q_len[ff]) << " "
                       << std::get<1>(n_q_len[ff]) << " "
                       << std::get<2>(n_q_len[ff]) << " "
@@ -251,14 +272,14 @@ void ComputeHomopolymerProb_AT_Diploid( vec<std::tuple<uint64_t,double,uint64_t>
     }
 };
 
-void AdjustHomopolymerProb(unsigned char baseval, std::unordered_map< uint64_t , vec<std::tuple<uint64_t,double,int>>>& length_lookup){
+void AdjustHomopolymerProb(unsigned char baseval, std::unordered_map< uint64_t , vec<std::tuple<uint64_t,double,int>>>& length_lookup) {
     vec<std::tuple<uint64_t,double,uint64_t>> n_q_len;
     uint64_t max_length=0;
     uint64_t nReads=0;
-    for( const auto&len_entry: length_lookup){
+    for( const auto&len_entry: length_lookup) {
         uint64_t count=0;
         double qsum=0.0;
-        for(const auto& var_entry: len_entry.second){
+        for(const auto& var_entry: len_entry.second) {
             count+=std::get<2>(var_entry);
             qsum+=std::get<1>(var_entry);
         }
@@ -266,23 +287,24 @@ void AdjustHomopolymerProb(unsigned char baseval, std::unordered_map< uint64_t ,
         max_length = std::max(max_length,len_entry.first);
         nReads+=count;
     }
-    if( baseval == Base::char2Val('A') || baseval==Base::char2Val('T')){ // if it's a A/T homopolymer
+    if( baseval == Base::char2Val('A') || baseval==Base::char2Val('T')) { // if it's a A/T homopolymer
         const uint64_t critical_length = 10; // this seems to be where we want to draw the line as discussed in the meeting
         if ( max_length < critical_length || nReads ==0) return;
         ComputeHomopolymerProb_AT_Diploid( n_q_len);
-    }
-    else{
+    } else {
         return ;
     }
-    for(auto entry: n_q_len){
+    for(auto entry: n_q_len) {
         auto loc_length = std::get<2>(entry);
         auto loc_q = std::get<1>(entry);
-        for( auto& var_entry: length_lookup[loc_length]){ std::get<1>(var_entry)= std::min( std::get<1>(var_entry), loc_q); }
+        for( auto& var_entry: length_lookup[loc_length]) {
+            std::get<1>(var_entry)= std::min( std::get<1>(var_entry), loc_q);
+        }
     }
 }
 void RemoveDanglingCalls( std::map<Variant, vec<std::pair<double,double>>>& probs
-                        , const vec<VariantCallGroup>& vcall_groups
-                        ){
+                          , const vec<VariantCallGroup>& vcall_groups
+                        ) {
     const double dHighQ=20;
     const double dLowQ=4;
     const int64_t critical_factor=4;
@@ -291,13 +313,13 @@ void RemoveDanglingCalls( std::map<Variant, vec<std::pair<double,double>>>& prob
     size_t nSamples = (*probs.begin()).second.size();
     if(nSamples ==0 ) return;
 
-    for( const VariantCallGroup& vgroup: vcall_groups){
+    for( const VariantCallGroup& vgroup: vcall_groups) {
         std::map<Variant, std::set<int>> variant_branches;
         const auto& vcalls=vgroup.GetVariantCalls();
 
         const size_t nBranches = vcalls.size();
         for (size_t branch = 0; branch < nBranches; branch++) {
-            for (const VariantCall& x: vcalls[branch]){
+            for (const VariantCall& x: vcalls[branch]) {
                 variant_branches[x.variant].insert(branch);
             }
         }
@@ -324,44 +346,47 @@ void RemoveDanglingCalls( std::map<Variant, vec<std::pair<double,double>>>& prob
 
             vec<int> ref_list,alt_list;
             for (size_t branch = 0; branch < nBranches; branch++) {
-                if(pathids.find(branch)!=pathids.end()){
+                if(pathids.find(branch)!=pathids.end()) {
                     alt_list.push_back(branch);
-                }
-                else{
+                } else {
                     ref_list.push_back(branch);
                 }
             }
             auto p_itr = probs.find(var);
             if(p_itr==probs.end())continue;
-            for (size_t sample = 0; sample < nSamples; sample++){ //for each sample
+            for (size_t sample = 0; sample < nSamples; sample++) { //for each sample
                 double p_ref = p_itr->second[sample].first;
-                if(p_ref >= dLowQ){
-                    for( auto entry: ref_list){
+                if(p_ref >= dLowQ) {
+                    for( auto entry: ref_list) {
                         ++appearance[entry][sample];
                     }
-                    if(ref_list.size()==1 && p_ref >= dHighQ){
+                    if(ref_list.size()==1 && p_ref >= dHighQ) {
                         ++must_be_there[ref_list.front()][sample];
                         hinges[ref_list.front()][sample][var].first=true;
                     }
                 }
                 double p_alt = p_itr->second[sample].second;
-                if(p_itr->second[sample].second >= dLowQ){
-                    for( auto entry: alt_list){
+                if(p_itr->second[sample].second >= dLowQ) {
+                    for( auto entry: alt_list) {
                         ++appearance[entry][sample];
                     }
-                    if(alt_list.size()==1 && p_alt >= dHighQ){
+                    if(alt_list.size()==1 && p_alt >= dHighQ) {
                         ++must_be_there[alt_list.front()][sample];
                         hinges[alt_list.front()][sample][var].second=true;
                     }
                 }
             }
         }
-        for(size_t branch=0;branch<nBranches;++branch){
-            for(size_t sample=0;sample<nSamples;++sample){
-                if( must_be_there[branch][sample] && appearance[branch][sample] * critical_factor < variant_branches.size()){
-                    for( auto itr=hinges[branch][sample].begin() ; itr!=hinges[branch][sample].end(); ++itr){
-                        if( (*itr).second.first ){ probs[(*itr).first][sample].first=0; }
-                        if( (*itr).second.second ){ probs[(*itr).first][sample].second=0; }
+        for(size_t branch=0; branch<nBranches; ++branch) {
+            for(size_t sample=0; sample<nSamples; ++sample) {
+                if( must_be_there[branch][sample] && appearance[branch][sample] * critical_factor < variant_branches.size()) {
+                    for( auto itr=hinges[branch][sample].begin() ; itr!=hinges[branch][sample].end(); ++itr) {
+                        if( (*itr).second.first ) {
+                            probs[(*itr).first][sample].first=0;
+                        }
+                        if( (*itr).second.second ) {
+                            probs[(*itr).first][sample].second=0;
+                        }
                     }
                 }
             }
@@ -370,8 +395,8 @@ void RemoveDanglingCalls( std::map<Variant, vec<std::pair<double,double>>>& prob
 }
 
 void FillInZeroProbAccordingToGroup( std::map<Variant, vec<std::pair<double,double>>>& probs
-                                   , const vec<VariantCallGroup>& vcall_groups
-                                   ){
+                                     , const vec<VariantCallGroup>& vcall_groups
+                                   ) {
     const double dHighQ=20;
     const double dLowQ=4;
 
@@ -379,78 +404,90 @@ void FillInZeroProbAccordingToGroup( std::map<Variant, vec<std::pair<double,doub
     size_t nSamples = (*probs.begin()).second.size();
     if(nSamples ==0 ) return;
 
-    for( const VariantCallGroup& vgroup: vcall_groups){
+    for( const VariantCallGroup& vgroup: vcall_groups) {
         std::map<Variant, std::set<int>> variant_branches;
         const auto& vcalls=vgroup.GetVariantCalls();
-        
+
         const size_t nBranches = vcalls.size();
         for (size_t branch = 0; branch < nBranches; branch++) {
-            for (const VariantCall& x: vcalls[branch]){
+            for (const VariantCall& x: vcalls[branch]) {
                 variant_branches[x.variant].insert(branch);
             }
         }
-        vec<Variant> v_list;v_list.reserve(variant_branches.size());
-        for(const auto&entry:variant_branches){ v_list.push_back(entry.first); }
-        Sort(v_list ,[](const Variant&L,const Variant&R){ if(L.gid!=R.gid) return L.gid<R.gid;if(L.pos!=R.pos) return L.pos<R.pos; return L.ref.size()<R.ref.size();});
+        vec<Variant> v_list;
+        v_list.reserve(variant_branches.size());
+        for(const auto&entry:variant_branches) {
+            v_list.push_back(entry.first);
+        }
+        Sort(v_list ,[](const Variant&L,const Variant&R) {
+            if(L.gid!=R.gid) return L.gid<R.gid;
+            if(L.pos!=R.pos) return L.pos<R.pos;
+            return L.ref.size()<R.ref.size();
+        });
         ForceAssert(v_list.size()==variant_branches.size());
-        
+
         if( v_list.size() == 0) continue;
         vec<vec<Variant>> var_clusters;
         int64_t back=std::numeric_limits<int64_t>::min();
-        for( const Variant& var: v_list){
+        for( const Variant& var: v_list) {
             if( back < var.pos) var_clusters.push_back(vec<Variant>());
             var_clusters.back().push_back(var);
             back = std::max(back, int64_t(var.pos+var.ref.size()-1));
         }
-        
+
         vec<vec<double>> max_branch_q(nBranches,vec<double>(nSamples,0));
         vec<vec<size_t>> appearance(nBranches,vec<size_t>(nSamples,0));
         vec<vec<size_t>> must_be_there(nBranches,vec<size_t>(nSamples,0));
-        vec<vec<int>> cluster_ref_lists;cluster_ref_lists.resize(var_clusters.size());
-        
-        for( const auto& cluster:var_clusters){
+        vec<vec<int>> cluster_ref_lists;
+        cluster_ref_lists.resize(var_clusters.size());
+
+        for( const auto& cluster:var_clusters) {
             std::set<int> cluster_alts;
-            for(const auto& var: cluster){
+            for(const auto& var: cluster) {
                 const std::set<int>& pathids = variant_branches[var];
-                for(size_t branch=0;branch<nBranches;++branch){
-                    if(pathids.find(branch)!=pathids.end()){
+                for(size_t branch=0; branch<nBranches; ++branch) {
+                    if(pathids.find(branch)!=pathids.end()) {
                         cluster_alts.insert(branch);
                     }
                 }
             }
             cluster_ref_lists.push_back(vec<int>());
             cluster_ref_lists.back().reserve(nBranches-cluster_alts.size());
-            for(size_t branch=0;branch<nBranches;++branch){ if(cluster_alts.find(branch)==cluster_alts.end()){ cluster_ref_lists.back().push_back(branch); } }
+            for(size_t branch=0; branch<nBranches; ++branch) {
+                if(cluster_alts.find(branch)==cluster_alts.end()) {
+                    cluster_ref_lists.back().push_back(branch);
+                }
+            }
             const vec<int>& cluster_ref_list=cluster_ref_lists.back();
-            
-            for(const auto& var: cluster){
+
+            for(const auto& var: cluster) {
                 auto p_itr = probs.find(var);
                 if(p_itr==probs.end())continue;
-                
+
                 vec<int> alt_list;
                 const std::set<int>& pathids = variant_branches[var];
-                for(size_t branch=0;branch<nBranches;++branch){
-                    if(pathids.find(branch)!=pathids.end()){
+                for(size_t branch=0; branch<nBranches; ++branch) {
+                    if(pathids.find(branch)!=pathids.end()) {
                         alt_list.push_back(branch);
                     }
                 }
-                for (size_t sample = 0; sample < nSamples; sample++){
+                for (size_t sample = 0; sample < nSamples; sample++) {
                     double p_ref = p_itr->second[sample].first;
-                    if(p_ref >= dLowQ){
-                        for( auto entry: cluster_ref_list){
+                    if(p_ref >= dLowQ) {
+                        for( auto entry: cluster_ref_list) {
                             ++appearance[entry][sample];
                         }
-                        if(cluster_ref_list.size()==1 && p_ref >= dHighQ){
+                        if(cluster_ref_list.size()==1 && p_ref >= dHighQ) {
                             max_branch_q[cluster_ref_list.front()][sample] = std::max(max_branch_q[cluster_ref_list.front()][sample],p_ref);
                             ++must_be_there[cluster_ref_list.front()][sample];
                         }
                     }
                     double p_alt = p_itr->second[sample].second;
-                    if(p_itr->second[sample].second >= dLowQ){
-                        for( auto entry: alt_list){
+                    if(p_itr->second[sample].second >= dLowQ) {
+                        for( auto entry: alt_list) {
                             ++appearance[entry][sample];
                         }
-                        if(alt_list.size()==1 && p_alt >= dHighQ){
+                        if(alt_list.size()==1 && p_alt >= dHighQ) {
                             max_branch_q[alt_list.front()][sample] = std::max(max_branch_q[alt_list.front()][sample],p_alt);
                             ++must_be_there[alt_list.front()][sample];
                         }
@@ -459,35 +496,34 @@ void FillInZeroProbAccordingToGroup( std::map<Variant, vec<std::pair<double,doub
             }
         }
 
-        for( size_t cc=0 ; cc < var_clusters.size() ; ++cc){
+        for( size_t cc=0 ; cc < var_clusters.size() ; ++cc) {
             const auto& cluster=var_clusters[cc];
             const vec<int>& cluster_ref_list=cluster_ref_lists[cc];
-            for(const auto& var: cluster){
+            for(const auto& var: cluster) {
                 const std::set<int>& pathids = variant_branches[var];
-    
+
                 vector<bool> bvAlt(nBranches,false);
                 for (size_t k = 0; k < vcalls.size(); k++) {
                     bvAlt[k] = pathids.find(k)!=pathids.end();
                 }
                 auto p_itr = probs.find(var);
                 if(p_itr==probs.end())continue;
-                
-                for (size_t sample = 0; sample < nSamples; sample++){
-                    for(size_t branch=0;branch<nBranches;++branch){
+
+                for (size_t sample = 0; sample < nSamples; sample++) {
+                    for(size_t branch=0; branch<nBranches; ++branch) {
                         ForceAssert( appearance[branch][sample] <= variant_branches.size());
                         if(    must_be_there[branch][sample]
-                            && (    //appearance[branch][sample] * 4 >= variant_branches.size() * 3
-    //                              ||
-                                  appearance[branch][sample] + 1 >= variant_branches.size()
-                               )
-                          ){
-                            if(bvAlt[branch]){
-                                if((*p_itr).second[sample].second<dLowQ){
+                                && (    //appearance[branch][sample] * 4 >= variant_branches.size() * 3
+                                    //                              ||
+                                    appearance[branch][sample] + 1 >= variant_branches.size()
+                                )
+                          ) {
+                            if(bvAlt[branch]) {
+                                if((*p_itr).second[sample].second<dLowQ) {
                                     (*p_itr).second[sample].second = std::max((*p_itr).second[sample].second , max_branch_q[branch][sample]);
                                 }
-                            }
-                            else{
-                                if((*p_itr).second[sample].first<dLowQ && (cluster.size()==1||Member(cluster_ref_list,int(branch)))){
+                            } else {
+                                if((*p_itr).second[sample].first<dLowQ && (cluster.size()==1||Member(cluster_ref_list,int(branch)))) {
                                     (*p_itr).second[sample].first = std::max((*p_itr).second[sample].first , max_branch_q[branch][sample]);
                                 }
                             }
@@ -499,8 +535,7 @@ void FillInZeroProbAccordingToGroup( std::map<Variant, vec<std::pair<double,doub
     }
 }
 
-void DumpGraph(const String filename, const HyperBasevector& hb) 
-{
+void DumpGraph(const String filename, const HyperBasevector& hb) {
     vec<String> edge_names2(hb.EdgeObjectCount());
     vec<double> lengths2( hb.EdgeObjectCount( ) );
     for (size_t i = 0; i < edge_names2.size(); ++i) {
@@ -509,16 +544,17 @@ void DumpGraph(const String filename, const HyperBasevector& hb)
     }
     std::ofstream dout(filename);
     hb.PrettyDOT( dout, lengths2, HyperBasevector::edge_label_info(
-                HyperBasevector::edge_label_info::DIRECT, &edge_names2 ) );
+                      HyperBasevector::edge_label_info::DIRECT, &edge_names2 ) );
 }
 
 // Extend the reference edge of the K=1 HyperBasevector.
 void ExtendedBasevector(const HyperBasevector& hb, int edge, int ext_max,
-        basevector& edge_extended, int& len_extended_left) 
-{
+                        basevector& edge_extended, int& len_extended_left) {
     ForceAssertEq(hb.K(), 1);
-    vec<int> to_left; hb.ToLeft(to_left);
-    vec<int> to_right; hb.ToRight(to_right);
+    vec<int> to_left;
+    hb.ToLeft(to_left);
+    vec<int> to_right;
+    hb.ToRight(to_right);
 
     vec<int> edges = {edge};
 
@@ -544,30 +580,29 @@ void ExtendedBasevector(const HyperBasevector& hb, int edge, int ext_max,
     int trim_right = std::max(0, ext_right - ext_max);
     len_extended_left = ext_left - trim_left;
     edge_extended = basevector(edges_to_bases.begin() + trim_left,
-                          edges_to_bases.end() - trim_right);
+                               edges_to_bases.end() - trim_right);
 }
 
 
 void PrintReadSupports(const HyperBasevector& bubble_graph,
-        const vecbasevector& bases,
-        const vec<int> sample_ids,
-        vec<std::tuple<int,int,read_place>> edge_rid_place) 
-{
+                       const vecbasevector& bases,
+                       const vec<int> sample_ids,
+                       vec<std::tuple<int,int,read_place>> edge_rid_place) {
     if (edge_rid_place.empty()) return;
-    vec<int> to_left; bubble_graph.ToLeft(to_left);
+    vec<int> to_left;
+    bubble_graph.ToLeft(to_left);
 
-    auto CompareByEdgeSampleRead = 
-        [&sample_ids](const std::tuple<int,int,read_place>& a, const std::tuple<int,int,read_place>&b)
-        {   
-            int e, rid, e2, rid2;
-            std::tie(e, rid, std::ignore) = a;
-            std::tie(e2, rid2, std::ignore) = b;
-            int sample = sample_ids[rid];
-            int sample2 = sample_ids[rid2];
-            return std::tie(e, sample, rid) < std::tie(e2, sample2, rid2);
-        };
+    auto CompareByEdgeSampleRead =
+    [&sample_ids](const std::tuple<int,int,read_place>& a, const std::tuple<int,int,read_place>&b) {
+        int e, rid, e2, rid2;
+        std::tie(e, rid, std::ignore) = a;
+        std::tie(e2, rid2, std::ignore) = b;
+        int sample = sample_ids[rid];
+        int sample2 = sample_ids[rid2];
+        return std::tie(e, sample, rid) < std::tie(e2, sample2, rid2);
+    };
     sort(edge_rid_place.begin(), edge_rid_place.end(),
-            CompareByEdgeSampleRead);
+         CompareByEdgeSampleRead);
 
     vec<int> shifts(edge_rid_place.size(), 0);
     for (size_t i = 0; i < edge_rid_place.size(); i++) {
@@ -586,26 +621,26 @@ void PrintReadSupports(const HyperBasevector& bubble_graph,
     for (size_t i = 0; i < edge_rid_place.size(); i++) {
         int e = std::get<0>(edge_rid_place[i]);
         size_t j = i+1;
-        while (j < edge_rid_place.size() && 
+        while (j < edge_rid_place.size() &&
                 std::get<0>(edge_rid_place[j]) == e ) j++;
 
         tb.SetRawLine();
-        tb << " ======================================== Edge " << e 
-            << " ======================================= " << EndRow<TextTable>;
+        tb << " ======================================== Edge " << e
+           << " ======================================= " << EndRow<TextTable>;
 
         // the reference segments +/- 100
         const int VarRefExtMax = 100;
         int node_left = to_left[e];
         int e_ref = bubble_graph.EdgeObjectIndexByIndexFrom(node_left,
-                bubble_graph.FromSize(node_left)-1);
+                    bubble_graph.FromSize(node_left)-1);
         basevector ref_seg;
         int ext_len = 0;
-        ExtendedBasevector(bubble_graph, e_ref, std::min(VarRefExtMax, -min_shift), 
-                ref_seg , ext_len);
+        ExtendedBasevector(bubble_graph, e_ref, std::min(VarRefExtMax, -min_shift),
+                           ref_seg , ext_len);
         ForceAssertLe(ext_len, -min_shift);
 
         tb << "REF extended" << Tab<TextTable> << String(-ext_len-min_shift, ' ') << ref_seg << EndRow<TextTable>;
-        // the variant 
+        // the variant
         tb << "ALT" << Tab<TextTable> << String(-min_shift, ' ') << bubble_graph.EdgeObject(e) << EndRow<TextTable>;
         tb << "REF" << Tab<TextTable> << String(-min_shift, ' ') << bubble_graph.EdgeObject(e_ref) << EndRow<TextTable>;
         // the reads
@@ -614,10 +649,10 @@ void PrintReadSupports(const HyperBasevector& bubble_graph,
             const read_place& rp = std::get<2>(edge_rid_place[k]);
             basevector read = bases[rid];
             int sample = sample_ids[rid];
-            if (!rp.Fw()) 
+            if (!rp.Fw())
                 read.ReverseComplement();
-            tb << sample << ":" << rid << (rp.Fw() ? "+":"-" ) 
-                << " q " << rp.Qsum()/1000 << Tab<TextTable>;
+            tb << sample << ":" << rid << (rp.Fw() ? "+":"-" )
+               << " q " << rp.Qsum()/1000 << Tab<TextTable>;
             tb << String(shifts[k] - min_shift, ' ') << read << EndRow<TextTable>;
         }
         i = j - 1;
@@ -626,24 +661,23 @@ void PrintReadSupports(const HyperBasevector& bubble_graph,
 }
 
 // Extension of variant edges to avoid the following read placement artificats:
-//             C  
+//             C
 // ATATATATATAT   CGCGTAGT
 //             ATC
 // Read ATATATATATATCCGCGTAGT.. should support two edges equally well. However
 // because we seed the read with 12mers , it will not thread through the bottom
 // edge. This happens for tandem repeats. It can happen on both sides.
-// 
+//
 // We fix the problem by extend the two edges on both side up to the base
 // they diverge.
-    
-void ExtendTandemRepeatEdges(HyperBasevector& hb, int verbosity = 1) 
-{
+
+void ExtendTandemRepeatEdges(HyperBasevector& hb, int verbosity = 1) {
     ForceAssertEq(hb.K(), 1);
     for (int node = 0; node < hb.N(); node++) {
         if (hb.FromSize(node) <= 1) continue;
         if (hb.ToSize(node) != 1) continue;
         int node2 = hb.From(node)[0];
-        for (int j = 0; j < hb.FromSize(node); j++) 
+        for (int j = 0; j < hb.FromSize(node); j++)
             ForceAssertEq(hb.From(node)[j], node2);
         if (hb.FromSize(node2) != 1) continue;
 
@@ -700,13 +734,13 @@ void ExtendTandemRepeatEdges(HyperBasevector& hb, int verbosity = 1)
         if (max_ext_right == 0 && max_ext_left == 0) continue;
 
         if (verbosity >= 1) {
-            std::cout << "Extension for all edges between " << head_edge << " and " 
-                << tail_edge << " are found " << std::endl;
+            std::cout << "Extension for all edges between " << head_edge << " and "
+                      << tail_edge << " are found " << std::endl;
             std::cout << "ext_left= " << max_ext_left << " ext_right= " << max_ext_right
-                << " for edges ";
+                      << " for edges ";
             edges.Println(std::cout);
         }
-        if (max_ext_left > 0) 
+        if (max_ext_left > 0)
             hb.EdgeObjectMutable(head_edge) = basevector(head.begin(), head.end() - max_ext_left);
         if (max_ext_right > 0)
             hb.EdgeObjectMutable(tail_edge) = basevector(tail.begin()+max_ext_right, tail.end());
@@ -720,8 +754,7 @@ void ExtendTandemRepeatEdges(HyperBasevector& hb, int verbosity = 1)
 }
 
 void ConnectLastTwoVertices(HyperBasevector& graph, std::map<int,vec<int>>& edge_to_varid,
-        const basevector& edge, const vec<int>& vids) 
-{
+                            const basevector& edge, const vec<int>& vids) {
     graph.AddEdge(graph.N()-2, graph.N()-1, edge);
     edge_to_varid[graph.EdgeObjectCount()-1] = vids;
 }
@@ -736,12 +769,11 @@ void ConnectLastTwoVertices(HyperBasevector& graph, std::map<int,vec<int>>& edge
 //     {prob_ref, prob_var} .. from reads in sample1
 //     .... }
 void FindVariantProb(const ReadOriginTracker* p_read_tracker,
-        const vec<VariantCallGroup>& vcall_groups,
-        const vecbasevector& Gplus, 
-        const vec<int>& Gplus_ext, 
-        std::map<Variant, vec<std::pair<double,double>>>& probs,
-        const long_logging* logc) 
-{
+                     const vec<VariantCallGroup>& vcall_groups,
+                     const vecbasevector& Gplus,
+                     const vec<int>& Gplus_ext,
+                     std::map<Variant, vec<std::pair<double,double>>>& probs,
+                     const long_logging* logc) {
     int verbosity = logc->verb["REFTRACE_VARIANTS"];
     bool bSafeFindPlaces = logc->REFTRACE_VARIANTS_LIMIT_K1_EFFORT;
     bool bMinorPhaseReconstruction = logc->REFTRACE_VARIANTS_MINOR_PHASE_RECONSTRUCTION;
@@ -751,7 +783,7 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
     if (logc->SHOW_READS_ON_VARIANT != -1)
         vids_to_show_supports.push_back(logc->SHOW_READS_ON_VARIANT - 1);
 
-    if (verbosity >= 1) 
+    if (verbosity >= 1)
         std::cout << Date() << ": Finding probabilities for each variant" << std::endl;
 
     const vecbasevector& bases = p_read_tracker->Reads();
@@ -772,14 +804,16 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
     vec<Variant> vars;
     for (auto& x: var_group_branch) vars.push_back(x.first);
     vec<Variant> vars_ext(vars); // in Gplus
-    for (auto& x: vars_ext) { x.pos += Gplus_ext[x.gid]; }
+    for (auto& x: vars_ext) {
+        x.pos += Gplus_ext[x.gid];
+    }
 
     //collect homopolymers
     enum { HOMO_BASE, HOMO_FRONT, HOMO_BACK, HOMO_LEN, HOMO_VIDX};
     typedef std::tuple<unsigned char, uint64_t,uint64_t,uint64_t, uint64_t> homopolymer_t;
     vec<homopolymer_t> homo_collection;
     const uint64_t homopolymer_critical_length=3;
-    for(size_t vid=0;vid<vars.size();++vid){
+    for(size_t vid=0; vid<vars.size(); ++vid) {
         const Variant& variant = vars[vid];
         const auto& ref = variant.ref;
         const auto& alt = variant.alt;
@@ -787,55 +821,55 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
         const auto& genome = Gplus[v_gid];
         const uint64_t v_start= variant.pos + Gplus_ext[v_gid];
 
-        if( ref.size() > alt.size() ){ // deletion
+        if( ref.size() > alt.size() ) { // deletion
             //            ForceAssert( alt.size() == 1);
             //            ForceAssert( alt[0] == ref[0] );
             //            ForceAssert( ref[0] == Base::val2Char(genome[v_start]));
             unsigned char baseval = Base::char2Val(ref[1]);
-            size_t cc=2; for( ; cc<ref.size() && ref[cc]==ref[cc-1]; ++cc) {};
-            if( cc==ref.size()){
+            size_t cc=2;
+            for( ; cc<ref.size() && ref[cc]==ref[cc-1]; ++cc) {};
+            if( cc==ref.size()) {
                 uint64_t front=v_start+1;
                 uint64_t back =v_start+1;
-                for( ; back+1 < genome.size() && genome[back] == genome[back+1] ; ++back){ }
-                for( ; front > 0 && genome[front] == genome[front-1] ; --front){ }
+                for( ; back+1 < genome.size() && genome[back] == genome[back+1] ; ++back) { }
+                for( ; front > 0 && genome[front] == genome[front-1] ; --front) { }
                 const uint64_t nDeleted = ref.size()-alt.size();
-                if( back - front +1 >= homopolymer_critical_length + nDeleted){
+                if( back - front +1 >= homopolymer_critical_length + nDeleted) {
                     if(verbosity>0) std::cout << "deletion with homopolymer of " << Base::val2Char(baseval) << " from  " << back-front+1 << " to " << back-front + 1 - nDeleted << std::endl;
                     homo_collection.push_back( std::make_tuple(baseval,front,back,back-front+1-nDeleted,vid));
                 }
             }
         }//deletion
-        else if( ref.size() < alt.size() ){ //insertion
+        else if( ref.size() < alt.size() ) { //insertion
             //            ForceAssert( ref.size() == 1);
             //            ForceAssert( alt[0] == ref[0] );
             //            ForceAssert( ref[0] == Base::val2Char(genome[v_start]));
             unsigned char baseval = Base::char2Val(alt[1]);
             uint64_t nInserted=1;
-            for(;nInserted+1<alt.size()&&alt[nInserted+1]==alt[nInserted];++nInserted){};
-            if(nInserted+1==alt.size()){
+            for(; nInserted+1<alt.size()&&alt[nInserted+1]==alt[nInserted]; ++nInserted) {};
+            if(nInserted+1==alt.size()) {
                 uint64_t front=std::numeric_limits<uint64_t>::max();
                 uint64_t back=std::numeric_limits<uint64_t>::max();
-                if( genome[v_start+1] == baseval){
+                if( genome[v_start+1] == baseval) {
                     front=v_start+1;
                     back=v_start+1;
-                    for( ; back+1 < genome.size() && genome[back] == genome[back+1] ; ++back){ }
+                    for( ; back+1 < genome.size() && genome[back] == genome[back+1] ; ++back) { }
                 }
-                if( genome[v_start] == baseval){
+                if( genome[v_start] == baseval) {
                     front=v_start;
-                    if(back==std::numeric_limits<uint64_t>::max()){
+                    if(back==std::numeric_limits<uint64_t>::max()) {
                         back=v_start;
                     }
-                    for( ; front > 0 && genome[front] == genome[front-1] ; --front){ }
+                    for( ; front > 0 && genome[front] == genome[front-1] ; --front) { }
                 }
                 // std::cout << front << " " << back << std::endl;
                 if(   front!=std::numeric_limits<uint64_t>::max()
                         && back!=std::numeric_limits<uint64_t>::max()
                         && back-front+1+nInserted >= homopolymer_critical_length
-                  ){
+                  ) {
                     homo_collection.push_back( std::make_tuple(baseval,front,back,back-front+1+nInserted,vid));
                     if(verbosity>0) std::cout << "insertion with homopolymer of " << Base::val2Char(baseval) << " from  " << back-front+1 << " to " << back-front + 1 + nInserted << std::endl;
-                }
-                else if( back == std::numeric_limits<uint64_t> :: max() && nInserted > homopolymer_critical_length){
+                } else if( back == std::numeric_limits<uint64_t> :: max() && nInserted > homopolymer_critical_length) {
                     homo_collection.push_back( std::make_tuple(baseval,v_start,v_start,nInserted,vid));
                     if(verbosity>0) std::cout << "insertion with homopolymer of " << Base::val2Char(baseval) << " from  " << 0 << " to " << nInserted << std::endl;
                 }
@@ -847,66 +881,66 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
     typedef std::unordered_map<uint64_t, homopolymer_info_t> homopolymer_log_t;
     homopolymer_log_t homopolymer_log;
     vec< vec<std::pair<uint64_t,uint64_t>> > homopolymer_groups;
-    for( size_t cc=0;cc<homo_collection.size();){
+    for( size_t cc=0; cc<homo_collection.size();) {
         auto end = cc+1;
         homopolymer_groups.push_back(vec<std::pair<uint64_t,uint64_t> >());
         homopolymer_log[std::get<HOMO_VIDX>(homo_collection[cc])]=homopolymer_info_t();
         homopolymer_groups.back().push_back(std::make_pair(std::get<HOMO_VIDX>(homo_collection[cc]),cc) );
-        if(verbosity>0){
+        if(verbosity>0) {
             std::cout << "homopolymer of " << Base::val2Char(std::get<HOMO_BASE>(homo_collection[cc])) << " "
-                << std::get<HOMO_FRONT> (homo_collection[cc]) << " "
-                << std::get<HOMO_BACK> (homo_collection[cc]) - std::get<HOMO_FRONT> (homo_collection[cc]) + 1 << " "
-                << std::get<HOMO_LEN> (homo_collection[cc]) << " "
-                << std::get<HOMO_VIDX> (homo_collection[cc]) << " "
-                << std::endl;
+                      << std::get<HOMO_FRONT> (homo_collection[cc]) << " "
+                      << std::get<HOMO_BACK> (homo_collection[cc]) - std::get<HOMO_FRONT> (homo_collection[cc]) + 1 << " "
+                      << std::get<HOMO_LEN> (homo_collection[cc]) << " "
+                      << std::get<HOMO_VIDX> (homo_collection[cc]) << " "
+                      << std::endl;
         }
         for(;   end < homo_collection.size()
                 && std::get<HOMO_BASE>(homo_collection[end]) == std::get<HOMO_BASE>(homo_collection[cc])
                 && std::get<HOMO_FRONT>(homo_collection[end]) == std::get<HOMO_FRONT>(homo_collection[cc])
                 && std::get<HOMO_BACK>(homo_collection[end]) == std::get<HOMO_BACK>(homo_collection[cc])
-                ;++end){
+                ; ++end) {
             homopolymer_log[std::get<HOMO_VIDX>(homo_collection[end])]=homopolymer_info_t();
             homopolymer_groups.back().push_back(std::make_pair(std::get<HOMO_VIDX>(homo_collection[end]),end) );
-            if(verbosity > 0){
+            if(verbosity > 0) {
                 std::cout << "homopolymer of " << Base::val2Char(std::get<HOMO_BASE>(homo_collection[end])) << " "
-                    << std::get<HOMO_FRONT> (homo_collection[end]) << " "
-                    << std::get<HOMO_BACK> (homo_collection[end]) - std::get<HOMO_FRONT> (homo_collection[end]) + 1 << " "
-                    << std::get<HOMO_LEN> (homo_collection[end]) << " "
-                    << std::get<HOMO_VIDX> (homo_collection[end]) << " "
-                    << std::endl;
+                          << std::get<HOMO_FRONT> (homo_collection[end]) << " "
+                          << std::get<HOMO_BACK> (homo_collection[end]) - std::get<HOMO_FRONT> (homo_collection[end]) + 1 << " "
+                          << std::get<HOMO_LEN> (homo_collection[end]) << " "
+                          << std::get<HOMO_VIDX> (homo_collection[end]) << " "
+                          << std::endl;
             }
         }
         if(verbosity>0)std::cout<<" ----- " << std::endl;
         cc=end;
     }
 
-    vec<std::tuple<int,int,int,int,int>> overlapping_vars; 
+    vec<std::tuple<int,int,int,int,int>> overlapping_vars;
     vec<int> vars_to_overlaps(vars_ext.size(), -1);
     for (size_t i = 0; i < vars_ext.size(); i++) {
         int g = vars_ext[i].gid;
         int start = vars_ext[i].pos;
         int end = start + vars_ext[i].ref.size();
         size_t i2 = i+1;
-        while (i2 < vars_ext.size() && vars_ext[i2].gid == g && 
+        while (i2 < vars_ext.size() && vars_ext[i2].gid == g &&
                 vars_ext[i2].pos < end) {
             end = std::max(end, vars_ext[i2].pos + (int)vars_ext[i2].ref.size());
             start = std::min(start, vars_ext[i2].pos);
             i2++;
         }
         overlapping_vars.push(i, i2, g, start, end);
-        for (size_t k = i; k < i2; k++) 
+        for (size_t k = i; k < i2; k++)
             vars_to_overlaps[k] = overlapping_vars.size()-1;
         i = i2 - 1;
     }
 
-    vec<std::tuple<int,int,int,int,int>> clusters; 
+    vec<std::tuple<int,int,int,int,int>> clusters;
     // Heuristics for cluster separation.
     // effectively MinClusterSep cannot be larger than  MaxClusterSpan
     const int MaxClusterSpan = 20;
-    const int MinClusterSep = 30; 
+    const int MinClusterSep = 30;
     // Check if variants from i to j appears more than once
     auto HasDupVars = [&](int i, int j) {
-        for (int k = i; k < j; k++) 
+        for (int k = i; k < j; k++)
             if (var_group_branch[vars[k]].size() > 1) return true;
         return false;
     };
@@ -921,12 +955,12 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
             int next_index1, next_index2, next_g, next_end;
             std::tie(next_index1, next_index2, next_g, std::ignore, next_end) = overlapping_vars[i2];
             bool next_has_dup= HasDupVars(next_index1, next_index2);
-            if (next_g == g && next_end < end + MinClusterSep 
+            if (next_g == g && next_end < end + MinClusterSep
                     && !next_has_dup && end - start < MaxClusterSpan) {
                 index2 = next_index2;
                 end = next_end;
                 i2++;
-            } else 
+            } else
                 break;
         }
         clusters.push(index1, index2, g, start, end);
@@ -939,7 +973,7 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
         int index1, index2, g, start, end;
         std::tie(index1, index2, g, start, end) = clusters[i];
         std::map<int,std::map<int,vec<int>>> grouped; // separate by groupid branchid
-        for (int k = index1; k < index2; k++) 
+        for (int k = index1; k < index2; k++)
             for (auto& x: var_group_branch[vars[k]])
                 grouped[x.first][x.second].push_back(k);
 
@@ -952,43 +986,41 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
                 const auto& tail=(*it2).second;
                 vec<vec<int>> expanded_copy;
                 expanded_copy.reserve(expanded.size()*2);
-                for( const auto& head : expanded){
-                    if(head.size()==0){
+                for( const auto& head : expanded) {
+                    if(head.size()==0) {
                         expanded_copy.push_back(tail);
-                    }
-                    else if(       vars_ext[head.back()].pos+int64_t(vars_ext[head.back()].ref.size())-1
-                               <   vars_ext[tail.front()].pos
-                            || vars_ext[head.back()].gid!=vars_ext[tail.front()].gid
-                           ){
+                    } else if(       vars_ext[head.back()].pos+int64_t(vars_ext[head.back()].ref.size())-1
+                                     <   vars_ext[tail.front()].pos
+                                     || vars_ext[head.back()].gid!=vars_ext[tail.front()].gid
+                             ) {
                         expanded_copy.push_back(head);
                         expanded_copy.back().append(tail);
-                    }
-                    else{
-std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant clustering approach, patching with extra bubbles." << std::endl;
+                    } else {
+                        std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant clustering approach, patching with extra bubbles." << std::endl;
 //The current clustering approach assumes that one v-group's v-calls would span a locus which does not overlap with that of another v-group.
 //This is not true as of Sept 4, 2013 and would lead to down-stream crashing/undefined behavior.
 //Here is the point-of-no-return leading to those crashes, and the following is a patch,
 // designed according to the no-change-of-results requirement established on Sept 4, 2013.
                         int64_t head_back=head.size()-1;
                         for(;   head_back>=0
-                             &&    vars_ext[head[head_back]].pos+int64_t(vars_ext[head[head_back]].ref.size())-1
+                                &&    vars_ext[head[head_back]].pos+int64_t(vars_ext[head[head_back]].ref.size())-1
                                 >= vars_ext[tail[0]].pos
-                            ;--head_back
-                           ){}
+                                ; --head_back
+                           ) {}
                         expanded_copy.push_back(head);
                         expanded_copy.back().resize(head_back+1);
                         expanded_copy.back().append(tail);
 
                         size_t tail_front=0;
                         for(;   tail_front<tail.size()
-                             &&    vars_ext[head.back()].pos+int64_t(vars_ext[head.back()].ref.size())-1
+                                &&    vars_ext[head.back()].pos+int64_t(vars_ext[head.back()].ref.size())-1
                                 >= vars_ext[tail[tail_front]].pos
-                            ;++tail_front
-                           ){}
+                                ; ++tail_front
+                           ) {}
                         expanded_copy.push_back(head);
                         expanded_copy.back().insert(expanded_copy.back().end()
-                                                   ,tail.begin()+tail_front
-                                                   ,tail.end());
+                                                    ,tail.begin()+tail_front
+                                                    ,tail.end());
                     }
                 }//head
                 expanded_new.append(expanded_copy);
@@ -1047,18 +1079,18 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
         // add preceding edge if necessary
         if (g != prev_g) {
             variant_graph.AddVertices(1);
-            if (start > 0) { 
+            if (start > 0) {
                 basevector ref_edge(Gplus[g], 0, start);
                 variant_graph.AddVertices(1);
                 ConnectLastTwoVertices(variant_graph, edge_to_varid, ref_edge, vec<int>());
             }
-        } 
+        }
 
         // Add the variant edge, also add the reference
         variant_graph.AddVertices(1);
         for (size_t j = 0; j < cluster_seq[cid].size(); j++) {
-            ConnectLastTwoVertices(variant_graph, edge_to_varid, 
-                    cluster_seq[cid][j], cluster_paths[cid][j]);
+            ConnectLastTwoVertices(variant_graph, edge_to_varid,
+                                   cluster_seq[cid][j], cluster_paths[cid][j]);
         }
         basevector ref_edge(Gplus[g], start, end - start);
         ConnectLastTwoVertices(variant_graph, edge_to_varid, ref_edge, vec<int>());
@@ -1078,10 +1110,12 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
         }
     }
     std::map<int,vec<int>> edge_to_varid_plus(edge_to_varid);
-    for (auto& x: edge_to_varid_plus) 
-        for_each(x.second.begin(), x.second.end(), [](int& x){x++;});
+    for (auto& x: edge_to_varid_plus)
+        for_each(x.second.begin(), x.second.end(), [](int& x) {
+        x++;
+    });
 
-    if (verbosity >= 1) 
+    if (verbosity >= 1)
         DumpGraph("vgroup.dot", variant_graph);
 
     ExtendTandemRepeatEdges(variant_graph, verbosity);
@@ -1089,14 +1123,14 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
     if (verbosity >= 3)
         for (int e = 0; e < variant_graph.EdgeObjectCount(); e++) {
             std::cout << "e= " << e << " vid= " << edge_to_varid[e]
-                << " : " << variant_graph.EdgeObject(e) << std::endl;
+                      << " : " << variant_graph.EdgeObject(e) << std::endl;
         }
-    
-    
+
+
     vec<int> homopolymer_edges,bayo_tmp;
     for (int e = 0; e < variant_graph.EdgeObjectCount(); e++) {
-        for( auto vid: edge_to_varid[e]){
-            if( homopolymer_log.find(vid)!=homopolymer_log.end()){
+        for( auto vid: edge_to_varid[e]) {
+            if( homopolymer_log.find(vid)!=homopolymer_log.end()) {
                 homopolymer_edges.push_back(e);
                 break;
             }
@@ -1106,24 +1140,25 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
 
     vec<int> edges_to_show_supports(vids_to_show_supports.size());
     if (!vids_to_show_supports.empty()) {
-        for (size_t i = 0; i < vids_to_show_supports.size(); i++) 
+        for (size_t i = 0; i < vids_to_show_supports.size(); i++)
             for (int e = 0; e < variant_graph.EdgeObjectCount(); e++)
                 if (Member(edge_to_varid[e], vids_to_show_supports[i]))
                     edges_to_show_supports[i] = e;
         std::cout << "Looking for support for the following variants" << std::endl;
         for (size_t i = 0; i < edges_to_show_supports.size(); i++) {
-            std::cout << "vid= " << vids_to_show_supports[i] 
-                << " edge= " << edges_to_show_supports[i] << std::endl;
+            std::cout << "vid= " << vids_to_show_supports[i]
+                      << " edge= " << edges_to_show_supports[i] << std::endl;
         }
         // Always add the ref edge for each variant
         vec<int> edges_to_show_supports2;
-        vec<int> to_left; variant_graph.ToLeft(to_left);
+        vec<int> to_left;
+        variant_graph.ToLeft(to_left);
         for (int e: edges_to_show_supports) {
             int node_left = to_left[e];
             edges_to_show_supports2.push_back(e);
             for (int i = 0; i < variant_graph.FromSize(node_left); i++)
                 edges_to_show_supports2.push_back(variant_graph.
-                        EdgeObjectIndexByIndexFrom(node_left,i));
+                                                  EdgeObjectIndexByIndexFrom(node_left,i));
         }
         swap(edges_to_show_supports2, edges_to_show_supports);
     }
@@ -1131,12 +1166,12 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
     vec< vec< std::pair<int,int> > > home_index; // pair of (rid, qsum)
     vec<std::tuple<int,int,read_place>> edge_rid_place;
     FindReadHomesBest(bases, quals, variant_graph, &home_index,
-            edges_to_show_supports, &edge_rid_place,
-            verbosity,bSafeFindPlaces);
+                      edges_to_show_supports, &edge_rid_place,
+                      verbosity,bSafeFindPlaces);
 
     if (!edge_rid_place.empty()) {
         vec<int> sample_ids(bases.size(), -1);
-        for (size_t i = 0; i < sample_ids.size(); i++) 
+        for (size_t i = 0; i < sample_ids.size(); i++)
             sample_ids[i] = p_read_tracker->getSampleID(i);
         PrintReadSupports(variant_graph, bases, sample_ids, edge_rid_place);
     }
@@ -1146,9 +1181,9 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
     for (int n1 = 0; n1 < variant_graph.N(); n1++) {
         if (variant_graph.From(n1).size() <= 1) continue;
         vec<int> branches(variant_graph.From(n1).size());
-        for (size_t j = 0; j < variant_graph.From(n1).size(); j++) 
+        for (size_t j = 0; j < variant_graph.From(n1).size(); j++)
             branches[j] = variant_graph.EdgeObjectIndexByIndexFrom(n1,j);
-        
+
         bool bHasHomoPolymer=false;
         size_t nbranches = branches.size();
         const int qgood = 4;
@@ -1172,9 +1207,9 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
                     else if (rdir == ReadOriginTracker::MINUS)
                         nreads_by_strand[j][sample_id].second++;
                     if (verbosity >= 2) {
-                        std::cout << "add read_" << rid << " (" 
-                            << sample_id << ") to edge " << e 
-                            << " qsum= " << x.second/1000 << std::endl;
+                        std::cout << "add read_" << rid << " ("
+                                  << sample_id << ") to edge " << e
+                                  << " qsum= " << x.second/1000 << std::endl;
                     }
                 }
             }
@@ -1183,7 +1218,7 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
             std::cout << "branch: " << std::endl;
             for (size_t j = 0; j < branches.size(); j++) {
                 int e = branches[j];
-                if (j == branches.size() -1) 
+                if (j == branches.size() -1)
                     std::cout << "reference ";
                 else
                     std::cout << "vid = " << edge_to_varid_plus[e];
@@ -1195,7 +1230,7 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
         }
         // Doe not call if there are nread <=2 && q <= 40 while all other
         // branches have 5 times ore more qsum.
-        if(!bHasHomoPolymer){
+        if(!bHasHomoPolymer) {
             const int WeakSupport = 2, WeakQSum = 40;
             const int StrongQsumFactor = 5;
             for (int sample = 0; sample < nsamples; sample++) {
@@ -1210,20 +1245,20 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
                 }
                 if (weak.empty()) continue;
                 size_t ngood = 0, nzero = 0;
-                for (size_t j = 0; j < branches.size(); j++) 
+                for (size_t j = 0; j < branches.size(); j++)
                     if (qsum[j][sample] >= StrongQsumFactor * max_weak_support)
                         ngood++;
-                    else if (nreads[j][sample] == 0) 
+                    else if (nreads[j][sample] == 0)
                         nzero++;
                 if (weak.size() + ngood + nzero == branches.size() && ngood > 0) {
                     for (int j: weak) {
                         qsum[j][sample] = 0.;
                         if (verbosity >= 2 && nreads[j][sample] != 0)
                             std::cout << "Disable branch " << j << " for sample " << sample
-                                << " vid = " << edge_to_varid_plus[branches[j]]
-                                << " nread= " << nreads[j][sample]
-                                << " qsum= " << qsum[j][sample]
-                                << std::endl;
+                                      << " vid = " << edge_to_varid_plus[branches[j]]
+                                      << " nread= " << nreads[j][sample]
+                                      << " qsum= " << qsum[j][sample]
+                                      << std::endl;
                     }
                 }
             }
@@ -1239,9 +1274,9 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
             for (int k = 0; k < branches.isize(); k++) {
                 bool overlap = false;
                 bool hasvid = false;
-                for (int vid2: edge_to_varid[branches[k]]) 
+                for (int vid2: edge_to_varid[branches[k]])
                     if (vid2 == vid) {
-                        hasvid = true; 
+                        hasvid = true;
                         break;
                     } else if (vars_to_overlaps[vid2] == vars_to_overlaps[vid]) {
                         overlap = true;
@@ -1252,8 +1287,7 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
                     nreads_var += nreads[k][sample];
                     nreads_var_plus +=  nreads_by_strand[k][sample].first;
                     nreads_var_minus +=  nreads_by_strand[k][sample].second;
-                }
-                else if (!overlap) {
+                } else if (!overlap) {
                     qsum_ref += qsum[k][sample];
                     nreads_ref += nreads[k][sample];
                     nreads_ref_plus +=  nreads_by_strand[k][sample].first;
@@ -1261,8 +1295,8 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
                 }
             }
             return std::make_tuple(qsum_ref, qsum_var, nreads_ref, nreads_var,
-                    nreads_ref_plus, nreads_ref_minus,
-                    nreads_var_plus, nreads_var_minus);
+                                   nreads_ref_plus, nreads_ref_minus,
+                                   nreads_var_plus, nreads_var_minus);
         };
         std::set<int> vids;
         for (size_t j = 0; j < branches.size()-1; j++)
@@ -1285,18 +1319,18 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
                 std::get<3>(read_support_by_strand[vid][sample]) += std::get<7>(ans);
             }
             auto itr=homopolymer_log.find(vid);
-            if( itr!=homopolymer_log.end()){
+            if( itr!=homopolymer_log.end()) {
                 auto& entry = (*itr).second;
                 entry.resize(nsamples);
                 for (int sample = 0; sample < nsamples; sample++) {
                     auto ans = QsumRef(vid, sample);
                     entry[sample] = std::make_tuple(std::get<0>(ans), std::get<1>(ans),
-                           std::get<2>(ans), std::get<3>(ans));
+                                                    std::get<2>(ans), std::get<3>(ans));
                 }
             }
         }
     }
-    for ( const auto& group: homopolymer_groups){
+    for ( const auto& group: homopolymer_groups) {
         if( group.size()==0) continue;
         const auto first_indices = group.front();
         const unsigned char baseval = std::get<HOMO_BASE> (homo_collection[first_indices.second]);
@@ -1304,27 +1338,27 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
 
 //        if(verbosity>0)std::cout << "group of " << std::get<HOMO_FRONT> (homo_collection[first_indices.second]) << std::endl;
 
-        for(int sample=0;sample<nsamples;sample++){
+        for(int sample=0; sample<nsamples; sample++) {
             std::unordered_map< uint64_t , vec<std::tuple<uint64_t,double,int>>> length_lookup;
 
 
             length_lookup[reference_length].push_back( std::make_tuple(std::numeric_limits<uint64_t>::max()
-                        ,std::get<0>(homopolymer_log[first_indices.first][sample])
-                        ,std::get<2>(homopolymer_log[first_indices.first][sample])
-                        ));
-            for( const auto& entry: group){
+                    ,std::get<0>(homopolymer_log[first_indices.first][sample])
+                    ,std::get<2>(homopolymer_log[first_indices.first][sample])
+                                                                      ));
+            for( const auto& entry: group) {
                 auto length = std::get<HOMO_LEN> (homo_collection[entry.second]);
                 auto vid = entry.first;
-                if( std::get<2>(length_lookup[reference_length][0]) >  std::get<2>(homopolymer_log[vid][sample]) ){
+                if( std::get<2>(length_lookup[reference_length][0]) >  std::get<2>(homopolymer_log[vid][sample]) ) {
                     length_lookup[reference_length][0]= std::make_tuple(vid
-                            ,std::get<0>(homopolymer_log[vid][sample])
-                            ,std::get<2>(homopolymer_log[vid][sample])
-                            );
+                                                        ,std::get<0>(homopolymer_log[vid][sample])
+                                                        ,std::get<2>(homopolymer_log[vid][sample])
+                                                                       );
                 }
                 length_lookup[length].push_back( std::make_tuple(vid
-                            ,std::get<1>(homopolymer_log[vid][sample])
-                            ,std::get<3>(homopolymer_log[vid][sample])
-                            ));
+                                                 ,std::get<1>(homopolymer_log[vid][sample])
+                                                 ,std::get<3>(homopolymer_log[vid][sample])
+                                                                ));
             }
 
             AdjustHomopolymerProb(baseval,length_lookup);
@@ -1332,11 +1366,11 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
 
             double ref_prob = std::get<1>(length_lookup[reference_length][0]);
 
-            for( const auto&len_entry: length_lookup){
-                for(const auto& var_entry: len_entry.second){
+            for( const auto&len_entry: length_lookup) {
+                for(const auto& var_entry: len_entry.second) {
                     const auto& vid  = std::get<0>(var_entry);
                     const auto& prob = std::get<1>(var_entry);
-                    if( vid != std::numeric_limits<uint64_t>::max()){
+                    if( vid != std::numeric_limits<uint64_t>::max()) {
                         probs[vars[vid]][sample]=std::make_pair(ref_prob,prob);
                     }
                 }
@@ -1347,27 +1381,27 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
     }
 
     // set q=3 for one read supported variant
-    for( const auto& entry: read_support_count){
+    for( const auto& entry: read_support_count) {
         const auto& vid = entry.first;
         const vec<std::pair<uint64_t,uint64_t>> & log=entry.second;
-        for(size_t sample=0;sample<log.size();++sample){
-            if( log[sample].first ==1){
-                if( probs[vars[vid]][sample].first > 0.){
-                probs[vars[vid]][sample].first = std::min( 3.0 , probs[vars[vid]][sample].first );
-                if(verbosity>0) std::cout<<"WARNING: 1-read filter: zero'ing P-ref of sample "<<sample << " of variant with vid " << vid << " REF=" << vars[vid].ref << " ALT="<<vars[vid].alt<< std::endl;
+        for(size_t sample=0; sample<log.size(); ++sample) {
+            if( log[sample].first ==1) {
+                if( probs[vars[vid]][sample].first > 0.) {
+                    probs[vars[vid]][sample].first = std::min( 3.0 , probs[vars[vid]][sample].first );
+                    if(verbosity>0) std::cout<<"WARNING: 1-read filter: zero'ing P-ref of sample "<<sample << " of variant with vid " << vid << " REF=" << vars[vid].ref << " ALT="<<vars[vid].alt<< std::endl;
                 }
             }
-            if( log[sample].second ==1){
-                if( probs[vars[vid]][sample].second > 0.){
-                probs[vars[vid]][sample].second = std::min( 3.0 , probs[vars[vid]][sample].second );
-                if(verbosity>0) std::cout<<"WARNING: 1-read filter: zero'ing P-alt of sample "<<sample << " of variant with vid " << vid << " REF=" << vars[vid].ref << " ALT="<<vars[vid].alt<< std::endl;
+            if( log[sample].second ==1) {
+                if( probs[vars[vid]][sample].second > 0.) {
+                    probs[vars[vid]][sample].second = std::min( 3.0 , probs[vars[vid]][sample].second );
+                    if(verbosity>0) std::cout<<"WARNING: 1-read filter: zero'ing P-alt of sample "<<sample << " of variant with vid " << vid << " REF=" << vars[vid].ref << " ALT="<<vars[vid].alt<< std::endl;
                 }
             }
         }
     }
 
-    // print strand support 
-    if (verbosity >= 1){
+    // print strand support
+    if (verbosity >= 1) {
         // only variants on double-banch bubble are considered
         std::set<Variant> var_on_double_edges;
         for (size_t grpid = 0; grpid < vcall_groups.size(); grpid++) {
@@ -1387,15 +1421,15 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
             int vid = find(vars.begin(), vars.end(), *it) - vars.begin();
             auto overlap = overlapping_vars[vars_to_overlaps[vid]];
             bool overlap_with_other = (std::get<1>(overlap) - std::get<0>(overlap)) > 1;
-            if (appear_both_branch || overlap_with_other) 
+            if (appear_both_branch || overlap_with_other)
                 var_on_double_edges.erase(it++);
             else
                 ++it;
         }
 
         TextTable tb;
-        tb << "VID" << Tab<TextTable> << "+Ref" << Tab<TextTable> << "-Ref" << Tab<TextTable> << "+Var" << Tab<TextTable> 
-            << "-Var" << Tab<TextTable> << "Strand_Bias" << EndRow<TextTable>;
+        tb << "VID" << Tab<TextTable> << "+Ref" << Tab<TextTable> << "-Ref" << Tab<TextTable> << "+Var" << Tab<TextTable>
+           << "-Var" << Tab<TextTable> << "Strand_Bias" << EndRow<TextTable>;
         tb << DoubleLine;
         for (size_t vid = 0; vid < vars.size(); vid++) {
             Variant var = vars[vid];
@@ -1439,7 +1473,7 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
         }
         if (DetectSingleEdge) {
             std::cout << "Overiding probability for " << var_on_single_edges.size()
-                << " variants found on single edges" << std::endl;
+                      << " variants found on single edges" << std::endl;
         }
         for (auto it = probs.begin(); it != probs.end(); ++it) {
             if (var_on_single_edges.find(it->first) != var_on_single_edges.end())
@@ -1448,8 +1482,7 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
         }
     }
 
-    if( bMinorPhaseReconstruction )
-    {
+    if( bMinorPhaseReconstruction ) {
         RemoveDanglingCalls( probs, vcall_groups);
         FillInZeroProbAccordingToGroup( probs, vcall_groups);
 //std::cout << "----------------------------------------------------------------" << std::endl;
@@ -1461,13 +1494,12 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
 // Performe gapless alignment of reads to hyperbasevector and report the
 // preference of reads aligned to each edge as calculated by qualsum difference
 // between best in-edge placement and best out-edge placement.
-void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals, 
-        const HyperBasevector& bubble_graph,
-        vec< vec< std::pair<int,int> > >* homes_index,
-        vec<int> edges_to_show_supports,
-        vec<std::tuple<int,int,read_place>>* edge_rid_place,
-        int verbosity, const bool bSafeFindPlaces)
-{
+void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
+                       const HyperBasevector& bubble_graph,
+                       vec< vec< std::pair<int,int> > >* homes_index,
+                       vec<int> edges_to_show_supports,
+                       vec<std::tuple<int,int,read_place>>* edge_rid_place,
+                       int verbosity, const bool bSafeFindPlaces) {
     if (verbosity >= 1)
         std::cout << Date() << ": Finding placements of " << bases.size() << " reads " << std::endl;
 
@@ -1475,8 +1507,10 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
     const int L = 12;
     const int infinity = 1000000000;
 
-    vec<int> to_left; bubble_graph.ToLeft(to_left);
-    vec<int> to_right; bubble_graph.ToRight(to_right);
+    vec<int> to_left;
+    bubble_graph.ToLeft(to_left);
+    vec<int> to_right;
+    bubble_graph.ToRight(to_right);
 
     HyperBasevector hb_fw(bubble_graph), hb_rc(bubble_graph);
     hb_rc.Reverse( );
@@ -1495,11 +1529,10 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
     const int min_qual = 1;
     const double prox = 50 * 1000;
     uint64_t nTerminated=0;
-    if( verbosity >= 1){
-        if( bSafeFindPlaces ){
+    if( verbosity >= 1) {
+        if( bSafeFindPlaces ) {
             std::cout << "FindPlaces being safe" << std::endl;
-        }
-        else{
+        } else {
             std::cout << "FindPlaces being unsafe" << std::endl;
         }
     }
@@ -1509,27 +1542,26 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
         if ( bases[id].isize( ) < L ) continue;
         int n = KmerId( bases[id], L, 0 );
         int qual_sum = infinity;
-        if( bSafeFindPlaces ){
+        if( bSafeFindPlaces ) {
             const uint64_t maxNSteps=5000000;
             auto tmp = SafeFindPlaces( bases[id], quals[id], n, hb_fw, hb_rc, to_right_fw,
-                                     to_right_rc, locs_fw, locs_rc, PLACES2[id], qual_sum,
-                                     maxNSteps,
-                                     min_qual, prox );
-            if(tmp>0){
+                                       to_right_rc, locs_fw, locs_rc, PLACES2[id], qual_sum,
+                                       maxNSteps,
+                                       min_qual, prox );
+            if(tmp>0) {
                 ++nTerminated;
             }
-        }
-        else{
+        } else {
             FindPlaces( bases[id], quals[id], n, hb_fw, hb_rc, to_right_fw,
-               to_right_rc, locs_fw, locs_rc, PLACES2[id], qual_sum, min_qual, prox );
+                        to_right_rc, locs_fw, locs_rc, PLACES2[id], qual_sum, min_qual, prox );
         }
     }
 
-    if( nTerminated > 0){
-/*
-        std::cout << "\nWARNING: " + ToString(nTerminated) + "/" + ToString(bases.size())
-                  + " reads have not been aligned to the K=1 bubble graph to avoid exponentially long run time.\n" << std::endl;
-*/
+    if( nTerminated > 0) {
+        /*
+                std::cout << "\nWARNING: " + ToString(nTerminated) + "/" + ToString(bases.size())
+                          + " reads have not been aligned to the K=1 bubble graph to avoid exponentially long run time.\n" << std::endl;
+        */
     }
 
     // Find out the best placement for each edge
@@ -1552,7 +1584,7 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
                     best_qsums_loc[e] = std::min(best_qsums_loc[e], PLACES2[id][j].Qsum());
         #pragma omp critical
         {
-            for( size_t edge=0;edge<best_qsums.size();++edge){
+            for( size_t edge=0; edge<best_qsums.size(); ++edge) {
                 best_qsums[edge] = std::min(best_qsums_loc[edge], best_qsums[edge]);
             }
         }
@@ -1560,19 +1592,19 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
 
     if (verbosity>=2) {
         const int MaxPlacementToDisplay = 1000;
-        for (size_t id = 0; id < bases.size(); id++ ) {   
+        for (size_t id = 0; id < bases.size(); id++ ) {
             std::cout << "read_" << id << std::endl;
             for ( int j = 0; j < PLACES2[id].isize( ); j++ ) {
                 if (j >= MaxPlacementToDisplay) {
-                    std::cout << "... " << PLACES2[id].isize() - j 
-                        << " more std::ignored ..." << std::endl;
+                    std::cout << "... " << PLACES2[id].isize() - j
+                              << " more std::ignored ..." << std::endl;
                     break;
                 }
                 vec<int> v;
                 for ( int l = 0; l < PLACES2[id][j].N( ); l++ )
                     v.push_back( PLACES2[id][j].E(l) );
-                std::cout << "    p=" << PLACES2[id][j].P() 
-                    << " q= " <<  PLACES2[id][j].Qsum() << " ";
+                std::cout << "    p=" << PLACES2[id][j].P()
+                          << " q= " <<  PLACES2[id][j].Qsum() << " ";
                 v.Println(std::cout);
             }
         }
@@ -1590,12 +1622,12 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
     vec< vec< std::pair<int,double>>> homes( bases.size( ) );
     vec<int> ids(bases.size(), vec<int>::IDENTITY);
     vec<int> nplaces(bases.size(), 0);
-    for (size_t i = 0; i < PLACES2.size(); i++) 
+    for (size_t i = 0; i < PLACES2.size(); i++)
         nplaces[i] = PLACES2[i].size();
     ReverseSortSync(nplaces, ids);
-    
+
     #pragma omp parallel for schedule (dynamic, 1)
-    for (size_t idx = 0; idx < ids.size(); idx++ ) {   
+    for (size_t idx = 0; idx < ids.size(); idx++ ) {
         int id = ids[idx];
         vec<int> v;
         for ( int j = 0; j < PLACES2[id].isize( ); j++ )
@@ -1625,11 +1657,10 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
                         if (e2 == e) {
                             if (qsum < q1) {
                                 q1 = qsum;
-                                if (to_show_read_support) 
+                                if (to_show_read_support)
                                     best_placement = j;
                             }
-                        }
-                        else
+                        } else
                             q2 = Min( q2, qsum );
                     }
                 }
@@ -1641,18 +1672,18 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
                 //double prob2 = pow(10.0, -dq/1e4) + 0.25* q1/dq/bases[id].size();
                 //prob2 = std::min(1.0, prob2);
                 //double dq2 = -log(prob2)/log(10.0)*1e4;
-                //homes[id].push( e, dq2 );    
+                //homes[id].push( e, dq2 );
                 //#pragma omp critical
-                //std::cout << "dq= " << q2 - q1 << " dq2= " << dq2 
-                //    << " prob2= " << prob2 
+                //std::cout << "dq= " << q2 - q1 << " dq2= " << dq2
+                //    << " prob2= " << prob2
                 //    << " q1= " << q1 << " q2= " << q2 << std::endl;
-                homes[id].push( e, q2 - q1 );    
+                homes[id].push( e, q2 - q1 );
                 if (best_placement != -1) {
                     #pragma omp critical
                     edge_rid_place->push(e, id, PLACES2[id][best_placement]);
                 }
             }
-        }    
+        }
     }
 
     homes_index->clear_and_resize(bubble_graph.EdgeObjectCount());
@@ -1662,7 +1693,7 @@ void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals,
 
     if (verbosity>=2) {
         vec<int> nreads( bubble_graph.EdgeObjectCount(), 0);
-        for (size_t id = 0; id < bases.size(); id++ ) 
+        for (size_t id = 0; id < bases.size(); id++ )
             for ( int j = 0; j < PLACES2[id].isize( ); j++ )
                 for ( int l = 0; l < PLACES2[id][j].N( ); l++ )
                     nreads[ PLACES2[id][j].E(l) ]++;

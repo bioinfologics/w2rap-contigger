@@ -1,5 +1,5 @@
 // Copyright (c) 2000-2003 Whitehead Institute for Biomedical Research
-// 
+//
 
 
 #ifndef COMMON
@@ -12,7 +12,7 @@
 //
 // The following are our standard output streams
 //
-extern std::ofstream cnull; 
+extern std::ofstream cnull;
 extern std::ofstream cloga;
 extern std::ofstream clogs;
 extern std::ofstream permanent_file;

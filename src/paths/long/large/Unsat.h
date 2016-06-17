@@ -13,8 +13,8 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
 
-void Unsat( const HyperBasevector& hb, const vec<int>& inv, 
-     const ReadPathVec& paths, vec< vec< std::pair<int,int> > >& xs,
-     const String& work_dir, const int A2V );
+void Unsat( const HyperBasevector& hb, const vec<int>& inv,
+            const ReadPathVec& paths, vec< vec< std::pair<int,int> > >& xs,
+            const String& work_dir, const int A2V );
 
 #endif

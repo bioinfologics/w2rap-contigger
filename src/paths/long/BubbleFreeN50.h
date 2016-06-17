@@ -18,9 +18,8 @@
 #define BUBBLEFREEN50_H_
 #include "paths/HyperBasevector.h"
 
-class BubbleFreeN50
-{
-public:
+class BubbleFreeN50 {
+  public:
     explicit BubbleFreeN50( HyperBasevector const& hbv, int min_len = 0 ) {
         vec<int> new_edges( hbv.EdgeObjectCount( ) );
         for ( int e = 0; e < hbv.EdgeObjectCount( ); e++ )
@@ -36,7 +35,7 @@ public:
         vec<int> to_delete;
         to_delete.reserve(size_graph.N());
 
-#pragma omp for
+        #pragma omp for
         for ( int vi = 0; vi < size_graph.N(); ++vi ) {
             if ( size_graph.FromSize(vi) == 2 &&
                     size_graph.From(vi)[0] == size_graph.From(vi)[1] ) {
@@ -44,7 +43,7 @@ public:
                 int iedge0 = size_graph.EdgeObjectIndexByIndexFrom(vi,1);
                 int iedge1 = size_graph.EdgeObjectIndexByIndexFrom(vi,0);
                 int sum = size_graph.EdgeObject(iedge0) +
-                        size_graph.EdgeObject(iedge1);
+                          size_graph.EdgeObject(iedge1);
 
                 // change edge 0, delete edge 1
                 size_graph.EdgeObjectMutable(iedge0) = sum / 2;
@@ -60,7 +59,7 @@ public:
             if ( size_graph.From(i).size() == 1 && size_graph.To(i).size() == 1 &&
                     size_graph.From(i)[0] != i ) {
                 size_graph.JoinEdges(i, size_graph.EdgeObjectByIndexTo(i,0) +
-                        size_graph.EdgeObjectByIndexFrom(i,0) );
+                                     size_graph.EdgeObjectByIndexFrom(i,0) );
             }
         }
 
@@ -80,12 +79,20 @@ public:
         mPostN50 = N50( size_graph.Edges() ) + hbv.K( ) - 1;
     }
 
-    int PreN50() { return mPreN50; }
-    int PostN50() { return mPostN50; }
-    size_t PreNEdges() { return mPreNEdges; }
-    size_t PostNedges() { return mPostNEdges; }
+    int PreN50() {
+        return mPreN50;
+    }
+    int PostN50() {
+        return mPostN50;
+    }
+    size_t PreNEdges() {
+        return mPreNEdges;
+    }
+    size_t PostNedges() {
+        return mPostNEdges;
+    }
 
-private:
+  private:
     int mPreN50;
     int mPostN50;
     size_t mPreNEdges;

@@ -18,12 +18,12 @@ typedef VecIntVec vecUnipathSeq;
 
 inline
 std::ostream& operator<< ( std::ostream& out, const UnipathSeq& unipathSeq ) {
-  for ( UnipathSeq::size_type i = 0; i < unipathSeq.size(); ++i ) {
-    if ( i > 0 ) 
-      out << ".";
-    out << BaseAlpha( unipathSeq[i] );
-  }
-  return out;
+    for ( UnipathSeq::size_type i = 0; i < unipathSeq.size(); ++i ) {
+        if ( i > 0 )
+            out << ".";
+        out << BaseAlpha( unipathSeq[i] );
+    }
+    return out;
 }
 
 // Given a set of unipaths, convert the given UnipathSeq to a KmerPath.

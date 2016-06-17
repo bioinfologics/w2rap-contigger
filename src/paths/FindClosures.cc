@@ -26,68 +26,67 @@ void FindClosures( const vec<pp_pair>& ppp,
                    vec< HyperKmerPath >& closures,
                    vec<Bool>& fail,
                    const unsigned int max_pseudo_closures,
-                   const unsigned int max_closures )
-{
-  fail.resize_and_set( ppp.size( ), False );
-  vec<int> L( h.EdgeObjectCount( ) );
-  for ( int i = 0; i < L.isize( ); i++ )
-    L[i] = h.EdgeLength(i);
-  vecKmerPath paths;
-  vec<read_pairing> pairs;
-  for ( int i = 0; i < ppp.isize( ); i++ ) {
-    const pp_pair& p = ppp[i];
-    read_pairing rp;
-    rp.t = other;
-    rp.weight = 1;
-    rp.id1 = paths.size( );
-    static KmerPath x;
-    x.Clear( );
-    for ( int j = 0; j < p.LeftSize( ); j++ )
-      x.Append( h.EdgeObject( p.Left(j) ) );
-    paths.push_back_reserve(x, 0, 2.0);
-    double oldgap = p.Gap( ), olddev = p.Dev( ), m = sdMult;
-    int newgap = int( round(oldgap) ), newdev = int( ceil(olddev) );
-    while(1) {
-      Bool raise = False;
-      if ( !( oldgap - m * olddev >= newgap - int( floor( m * newdev ) ) ) )
-        raise = True;
-      if ( !( oldgap + m * olddev <= newgap + int( ceil( m * newdev ) ) ) )
-        raise = True;
-      if (raise)
-        ++newdev;
-      else
-        break;
+                   const unsigned int max_closures ) {
+    fail.resize_and_set( ppp.size( ), False );
+    vec<int> L( h.EdgeObjectCount( ) );
+    for ( int i = 0; i < L.isize( ); i++ )
+        L[i] = h.EdgeLength(i);
+    vecKmerPath paths;
+    vec<read_pairing> pairs;
+    for ( int i = 0; i < ppp.isize( ); i++ ) {
+        const pp_pair& p = ppp[i];
+        read_pairing rp;
+        rp.t = other;
+        rp.weight = 1;
+        rp.id1 = paths.size( );
+        static KmerPath x;
+        x.Clear( );
+        for ( int j = 0; j < p.LeftSize( ); j++ )
+            x.Append( h.EdgeObject( p.Left(j) ) );
+        paths.push_back_reserve(x, 0, 2.0);
+        double oldgap = p.Gap( ), olddev = p.Dev( ), m = sdMult;
+        int newgap = int( round(oldgap) ), newdev = int( ceil(olddev) );
+        while(1) {
+            Bool raise = False;
+            if ( !( oldgap - m * olddev >= newgap - int( floor( m * newdev ) ) ) )
+                raise = True;
+            if ( !( oldgap + m * olddev <= newgap + int( ceil( m * newdev ) ) ) )
+                raise = True;
+            if (raise)
+                ++newdev;
+            else
+                break;
+        }
+        if ( newdev == 0 ) ++newdev;
+        rp.sep = newgap - h.K( ) + 1;
+        rp.sd = newdev;
+        rp.id2 = paths.size( );
+        x.Clear( );
+        for ( int j = 0; j < p.RightSize( ); j++ )
+            x.Append( h.EdgeObject( p.Right(j) ) );
+        paths.push_back_reserve(x, 0, 2.0);
+        if ( pairs_to_close[i] )
+            pairs.push_back(rp);
     }
-    if ( newdev == 0 ) ++newdev;
-    rp.sep = newgap - h.K( ) + 1;
-    rp.sd = newdev;
-    rp.id2 = paths.size( );
-    x.Clear( );
-    for ( int j = 0; j < p.RightSize( ); j++ )
-      x.Append( h.EdgeObject( p.Right(j) ) );
-    paths.push_back_reserve(x, 0, 2.0);
-    if ( pairs_to_close[i] ) 
-      pairs.push_back(rp);    
-  }
-  cout << "Reserving" << std::endl;
-  int pathsSize = paths.size();
-  for ( size_t i = 0; i < prior_closures.size(); ++i )
-    pathsSize += prior_closures[i].size();
+    cout << "Reserving" << std::endl;
+    int pathsSize = paths.size();
+    for ( size_t i = 0; i < prior_closures.size(); ++i )
+        pathsSize += prior_closures[i].size();
 
-  paths.reserve( pathsSize );
-  cout << "Pushing back" << std::endl;
-  for ( int i = 0; i < prior_closures.isize(); ++i )
-    for ( int j = 0; j < prior_closures[i].isize(); ++j ) {
-      const pp_closure& p = prior_closures[i][j];
-      static KmerPath x;
-      x.Clear();
-      for ( int k = 0; k < p.isize(); ++k )
-        x.Append( h.EdgeObject( p[k] ) );
-      paths.push_back(x);
-    }
-  cout << "Calling FindClosures()" << std::endl;
-  FindClosures( paths, pairs, sdMult, h.K( ), closures, fail, 
-                max_pseudo_closures, max_closures );
+    paths.reserve( pathsSize );
+    cout << "Pushing back" << std::endl;
+    for ( int i = 0; i < prior_closures.isize(); ++i )
+        for ( int j = 0; j < prior_closures[i].isize(); ++j ) {
+            const pp_closure& p = prior_closures[i][j];
+            static KmerPath x;
+            x.Clear();
+            for ( int k = 0; k < p.isize(); ++k )
+                x.Append( h.EdgeObject( p[k] ) );
+            paths.push_back(x);
+        }
+    cout << "Calling FindClosures()" << std::endl;
+    FindClosures( paths, pairs, sdMult, h.K( ), closures, fail,
+                  max_pseudo_closures, max_closures );
 }
 
 
@@ -100,61 +99,59 @@ void PrepareData( const vecKmerPath& paths,
                   vecKmerPath& allPathsRc,
                   MuxGraph& allMuxes,
                   SubsumptionList& allSubs,
-                  OffsetTracker* pOffTracker )
-{
-  const int numInserts = pairs.size();
-  
-  vecKmerPath pathsFw;
-  vecKmerPath pathsRc;
-  
-  vec<bool> isPaired( paths.size(), false );
+                  OffsetTracker* pOffTracker ) {
+    const int numInserts = pairs.size();
 
-  newPairs.reserve( numInserts );
+    vecKmerPath pathsFw;
+    vecKmerPath pathsRc;
 
-  longlong pathsFwRawsize = 0;
-  longlong pathsRcRawsize = 0;
-  int pathsSize = numInserts;
-  for ( int pass = 0; pass < 2; ++pass ) {
-    if ( pass == 1 ) {
-      pathsFw.Reserve( pathsFwRawsize, pathsSize );
-      pathsRc.Reserve( pathsRcRawsize, pathsSize );
-    }
-    for ( int i = 0; i < numInserts; ++i ) {
-      const read_pairing& origPair = pairs[i];
-      if ( pass == 0 ) {
-        pathsFwRawsize += paths[ origPair.id1 ].NSegments();
-        pathsRcRawsize += paths[ origPair.id2 ].NSegments();
-        isPaired[ origPair.id1 ] = true;
-        isPaired[ origPair.id2 ] = true;
-      }
-      else {
-        read_pairing newPair = origPair;
-        newPair.id1 = pathsFw.size(), newPair.id2 = pathsRc.size();
-        pathsFw.push_back( paths[ origPair.id1 ] );
-        pathsRc.push_back( paths[ origPair.id2 ] );
-        newPairs.push_back( newPair );
-      }
-    }
-    if ( pass == 0 ) {
-      for ( size_t i = 0; i < paths.size(); ++i )
-        if ( ! isPaired[i] ) {
-          pathsFwRawsize += paths[i].NSegments();
-          ++pathsSize;
+    vec<bool> isPaired( paths.size(), false );
+
+    newPairs.reserve( numInserts );
+
+    longlong pathsFwRawsize = 0;
+    longlong pathsRcRawsize = 0;
+    int pathsSize = numInserts;
+    for ( int pass = 0; pass < 2; ++pass ) {
+        if ( pass == 1 ) {
+            pathsFw.Reserve( pathsFwRawsize, pathsSize );
+            pathsRc.Reserve( pathsRcRawsize, pathsSize );
         }
-    } else {
-      for ( size_t i = 0; i < paths.size(); ++i )
-        if ( ! isPaired[i] ) {
-          pathsFw.push_back( paths[i] );
-          pathsRc.push_back( KmerPath() );
+        for ( int i = 0; i < numInserts; ++i ) {
+            const read_pairing& origPair = pairs[i];
+            if ( pass == 0 ) {
+                pathsFwRawsize += paths[ origPair.id1 ].NSegments();
+                pathsRcRawsize += paths[ origPair.id2 ].NSegments();
+                isPaired[ origPair.id1 ] = true;
+                isPaired[ origPair.id2 ] = true;
+            } else {
+                read_pairing newPair = origPair;
+                newPair.id1 = pathsFw.size(), newPair.id2 = pathsRc.size();
+                pathsFw.push_back( paths[ origPair.id1 ] );
+                pathsRc.push_back( paths[ origPair.id2 ] );
+                newPairs.push_back( newPair );
+            }
+        }
+        if ( pass == 0 ) {
+            for ( size_t i = 0; i < paths.size(); ++i )
+                if ( ! isPaired[i] ) {
+                    pathsFwRawsize += paths[i].NSegments();
+                    ++pathsSize;
+                }
+        } else {
+            for ( size_t i = 0; i < paths.size(); ++i )
+                if ( ! isPaired[i] ) {
+                    pathsFw.push_back( paths[i] );
+                    pathsRc.push_back( KmerPath() );
+                }
         }
     }
-  }
 
-  const int maxSep = 0; // no max sep
+    const int maxSep = 0; // no max sep
 
-  cout << "Calling AddSuperReads" << std::endl;
-  AddSuperReads( pathsFw, pathsRc, newPairs, K, maxSep, Float(sdMult),
-                 allPathsFw, allPathsRc, allMuxes, allSubs, pOffTracker );
+    cout << "Calling AddSuperReads" << std::endl;
+    AddSuperReads( pathsFw, pathsRc, newPairs, K, maxSep, Float(sdMult),
+                   allPathsFw, allPathsRc, allMuxes, allSubs, pOffTracker );
 }
 
 
@@ -162,63 +159,63 @@ void FindClosures( const vecKmerPath& paths,
                    const vec<read_pairing>& pairs,
                    const double sdMult,
                    const int K,
-                   vec< HyperKmerPath >& closures, 
+                   vec< HyperKmerPath >& closures,
                    vec<Bool>& fail,
                    const unsigned int max_pseudo_closures,
                    const unsigned int max_closures )
 
 {
-  fail.resize_and_set( pairs.size( ), False );
-  const int numInserts = pairs.size();
-  
-  vecKmerPath pathsFw;
-  vecKmerPath pathsRc;
-  vec<read_pairing> newPairs;
-  vecKmerPath allPathsFw, allPathsRc;
-  MuxGraph allMuxes;
-  SubsumptionList allSubs;
+    fail.resize_and_set( pairs.size( ), False );
+    const int numInserts = pairs.size();
 
-  cout << "Calling PrepareData" << std::endl;
-  PrepareData( paths, pairs, sdMult, K,
-               newPairs, allPathsFw, allPathsRc, allMuxes, allSubs, 0 );
+    vecKmerPath pathsFw;
+    vecKmerPath pathsRc;
+    vec<read_pairing> newPairs;
+    vecKmerPath allPathsFw, allPathsRc;
+    MuxGraph allMuxes;
+    SubsumptionList allSubs;
 
-  ReadFillDatabase identityFillDb;
-  vec<int> readLengths( allPathsFw.size() );
-  for ( size_t i = 0; i < allPathsFw.size(); ++i )
-    readLengths[i] = allPathsFw[i].KmerCount();
-  
-  int verbosity = 0;
-  KmerPathMuxSearcher searcher( &allMuxes, &identityFillDb, &allSubs, &readLengths, verbosity );
+    cout << "Calling PrepareData" << std::endl;
+    PrepareData( paths, pairs, sdMult, K,
+                 newPairs, allPathsFw, allPathsRc, allMuxes, allSubs, 0 );
 
-  cout << "Walking " << numInserts << " inserts:" << std::endl;
-  for ( int i = 0; i < numInserts; ++i ) {
-    cout << i << ":";
-    const read_pairing& thePair = newPairs[i];
-    
-    int expLength = readLengths[ thePair.id1 ] + thePair.sep + (K-1);
-    int minLength = expLength - (int)ceil( sdMult * (double)thePair.sd );
-    int maxLength = expLength + (int)ceil( sdMult * (double)thePair.sd );
+    ReadFillDatabase identityFillDb;
+    vec<int> readLengths( allPathsFw.size() );
+    for ( size_t i = 0; i < allPathsFw.size(); ++i )
+        readLengths[i] = allPathsFw[i].KmerCount();
 
-    cout << " walking..." << flush;
-    MuxSearchResult result;
-    searcher.FindClosures( thePair.id2, thePair.id1,
-                           minLength, maxLength,
-                           result );
+    int verbosity = 0;
+    KmerPathMuxSearcher searcher( &allMuxes, &identityFillDb, &allSubs, &readLengths, verbosity );
 
-    cout << " calculating..." << flush;
-    
-    if (result.hit_search_limit) 
-      fail[i] = True;   
-    if ( max_pseudo_closures > 0 && result.num_closures_found > (int) max_pseudo_closures )
-      fail[i] = True;
+    cout << "Walking " << numInserts << " inserts:" << std::endl;
+    for ( int i = 0; i < numInserts; ++i ) {
+        cout << i << ":";
+        const read_pairing& thePair = newPairs[i];
 
-    closures.push_back( HyperKmerPath( K, vec<KmerPath>() ) );
-    if ( ! fail[i] ) {
-      result.WalkGraph( ).MakeHyperKmerPath( &allPathsFw, &allPathsRc, &allSubs, closures.back() );
+        int expLength = readLengths[ thePair.id1 ] + thePair.sep + (K-1);
+        int minLength = expLength - (int)ceil( sdMult * (double)thePair.sd );
+        int maxLength = expLength + (int)ceil( sdMult * (double)thePair.sd );
+
+        cout << " walking..." << flush;
+        MuxSearchResult result;
+        searcher.FindClosures( thePair.id2, thePair.id1,
+                               minLength, maxLength,
+                               result );
+
+        cout << " calculating..." << flush;
+
+        if (result.hit_search_limit)
+            fail[i] = True;
+        if ( max_pseudo_closures > 0 && result.num_closures_found > (int) max_pseudo_closures )
+            fail[i] = True;
+
+        closures.push_back( HyperKmerPath( K, vec<KmerPath>() ) );
+        if ( ! fail[i] ) {
+            result.WalkGraph( ).MakeHyperKmerPath( &allPathsFw, &allPathsRc, &allSubs, closures.back() );
+        }
+
+        cout << " done." << std::endl;
     }
-
-    cout << " done." << std::endl;
-  }
 }
 
 
@@ -226,46 +223,45 @@ void FindClosureLengths( const vecKmerPath& paths,
                          const vec<read_pairing>& pairs,
                          const double sdMult,
                          const int K,
-                         vec< vec<int> >& closureLengths )
-{
-  const int numInserts = pairs.size();
-  
-  vecKmerPath pathsFw;
-  vecKmerPath pathsRc;
-  vec<read_pairing> newPairs;
-  vecKmerPath allPathsFw, allPathsRc;
-  MuxGraph allMuxes;
-  SubsumptionList allSubs;
-  OffsetTracker offTracker;
+                         vec< vec<int> >& closureLengths ) {
+    const int numInserts = pairs.size();
 
-  PrepareData( paths, pairs, sdMult, K,
-               newPairs, allPathsFw, allPathsRc, allMuxes, allSubs, &offTracker );
+    vecKmerPath pathsFw;
+    vecKmerPath pathsRc;
+    vec<read_pairing> newPairs;
+    vecKmerPath allPathsFw, allPathsRc;
+    MuxGraph allMuxes;
+    SubsumptionList allSubs;
+    OffsetTracker offTracker;
 
-  closureLengths.clear();
-  closureLengths.resize( numInserts );
+    PrepareData( paths, pairs, sdMult, K,
+                 newPairs, allPathsFw, allPathsRc, allMuxes, allSubs, &offTracker );
 
-  for ( int i = 0; i < numInserts; ++i ) {
-    int id1 = newPairs[i].id1;
-    int id2 = newPairs[i].id2;
-    
-    vec<Mux> muxes;
-    allMuxes.GetMuxesOf( OrientedKmerPathId( id1, false ), muxes );
-    ForceAssertEq( muxes.size(), 1u );
-    Mux leftMux = muxes.front();
-    int leftSuperId = leftMux.GetPathId().GetId();
-    int leftInset = leftMux.GetNumKmers();
+    closureLengths.clear();
+    closureLengths.resize( numInserts );
 
-    allMuxes.GetMuxesOf( OrientedKmerPathId( id2, true ), muxes );
-    ForceAssertEq( muxes.size(), 1u );
-    Mux rightMux = muxes.front();
-    int rightSuperId = rightMux.GetPathId().GetId();
-    int rightOffset = rightMux.GetNumKmers() + allPathsRc[id2].KmerCount() + (K-1);
+    for ( int i = 0; i < numInserts; ++i ) {
+        int id1 = newPairs[i].id1;
+        int id2 = newPairs[i].id2;
 
-    OffsetTracker::Range range;
-    range = offTracker.GetOffsetsToFrom( rightSuperId, leftSuperId );
+        vec<Mux> muxes;
+        allMuxes.GetMuxesOf( OrientedKmerPathId( id1, false ), muxes );
+        ForceAssertEq( muxes.size(), 1u );
+        Mux leftMux = muxes.front();
+        int leftSuperId = leftMux.GetPathId().GetId();
+        int leftInset = leftMux.GetNumKmers();
 
-    for ( ; range.first != range.second; ++range.first ) {
-      closureLengths[i].push_back( range.first->GetAmount() - leftInset + rightOffset );
+        allMuxes.GetMuxesOf( OrientedKmerPathId( id2, true ), muxes );
+        ForceAssertEq( muxes.size(), 1u );
+        Mux rightMux = muxes.front();
+        int rightSuperId = rightMux.GetPathId().GetId();
+        int rightOffset = rightMux.GetNumKmers() + allPathsRc[id2].KmerCount() + (K-1);
+
+        OffsetTracker::Range range;
+        range = offTracker.GetOffsetsToFrom( rightSuperId, leftSuperId );
+
+        for ( ; range.first != range.second; ++range.first ) {
+            closureLengths[i].push_back( range.first->GetAmount() - leftInset + rightOffset );
+        }
     }
-  }
 }

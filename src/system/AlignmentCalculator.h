@@ -18,27 +18,31 @@
 #include <cstddef>
 
 template <class T>
-class AlignmentCalculator
-{
-    class T0
-    { char mC; T mT; };
-    class T1 : T
-    {
+class AlignmentCalculator {
+    class T0 {
+        char mC;
+        T mT;
+    };
+    class T1 : T {
       public:
-        size_t offset() const
-        { return &mC - reinterpret_cast<char const*>(this); }
+        size_t offset() const {
+            return &mC - reinterpret_cast<char const*>(this);
+        }
       private:
         char mC;
     };
 
-public:
-    static size_t getAlignment()
-    { return sizeof(T0) - sizeof(T); }
-    static size_t getTailPadding()
-    { return sizeof(T)-reinterpret_cast<T1*>(0)->offset(); }
+  public:
+    static size_t getAlignment() {
+        return sizeof(T0) - sizeof(T);
+    }
+    static size_t getTailPadding() {
+        return sizeof(T)-reinterpret_cast<T1*>(0)->offset();
+    }
 };
 
-template <> inline size_t AlignmentCalculator<size_t>::getTailPadding()
-{ return 0; }
+template <> inline size_t AlignmentCalculator<size_t>::getTailPadding() {
+    return 0;
+}
 
 #endif /* ALIGNMENTCALCULATOR_H_ */

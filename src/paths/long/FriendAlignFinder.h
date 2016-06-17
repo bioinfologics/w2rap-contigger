@@ -21,7 +21,7 @@
 // ====================== FriendAlignFinder implementations =============================
 template <int K>
 class FriendAlignFinder : public FriendAlignerImpl {
-public:
+  public:
 
     // Explicitly if a read align is actually valid. Used to removed some
     // false positives.
@@ -30,22 +30,19 @@ public:
         bvec const& read1 = mReads[a.id1];
         bvec read2RC;
         bvec const& read2 = a.rc2 ?
-                read2RC.ReverseComplement(mReads[a.id2]) :
-                mReads[a.id2];
+                            read2RC.ReverseComplement(mReads[a.id2]) :
+                            mReads[a.id2];
         Itr it1 = read1.begin();
         Itr it2 = read2.begin();
-        if ( a.offset > 0 )
-        {
+        if ( a.offset > 0 ) {
             ForceAssertLt(static_cast<unsigned>(a.offset),read1.size());
             it1 += a.offset;
-        }
-        else
-        {
+        } else {
             ForceAssertLt(static_cast<unsigned>(-a.offset),read2.size());
             it2 -= a.offset;
         }
         Itr end = it1 + std::min(std::distance(it1,read1.end()),
-                                    std::distance(it2,read2.end()));
+                                 std::distance(it2,read2.end()));
         bool find_match = false;
         while ( !find_match ) {
             std::pair<Itr,Itr> mis_locs = mismatch( it1, end, it2 );
@@ -82,42 +79,47 @@ public:
     typedef vec<ReadLocOnUnipath> ReadULocVec;
 
     FriendAlignFinder (const vecbvec& reads, const int max_freq = 1000, Bool use_down_sampling = False, int verb = 1 )
-        : mReads(reads), mpDict(NULL), mpGraph(NULL), 
-          mCopyNumberMax( max_freq ), mUseDownSampling(use_down_sampling), mVerbose(verb) 
-    { Init(); }
+        : mReads(reads), mpDict(NULL), mpGraph(NULL),
+          mCopyNumberMax( max_freq ), mUseDownSampling(use_down_sampling), mVerbose(verb) {
+        Init();
+    }
     FriendAlignFinder( const FriendAlignFinder& )=delete;
     FriendAlignFinder& operator= ( const FriendAlignFinder& )=delete;
 
-    virtual ~FriendAlignFinder () { delete mpGraph; delete mpDict; }
+    virtual ~FriendAlignFinder () {
+        delete mpGraph;
+        delete mpDict;
+    }
 
     // Find all alignments of one read
-    virtual void getAligns( size_t readId, Friends* pFriends )
-    { vec<ReadLocOnUnipath> locvec;
-      PathOneRead( readId, &locvec );
-      // Check for bad alignments
-      return GetAlignsOneReadUnsorted( readId, locvec, pFriends ); }
+    virtual void getAligns( size_t readId, Friends* pFriends ) {
+        vec<ReadLocOnUnipath> locvec;
+        PathOneRead( readId, &locvec );
+        // Check for bad alignments
+        return GetAlignsOneReadUnsorted( readId, locvec, pFriends );
+    }
 
-private:
+  private:
 
     void Init( unsigned int coverage = 5, unsigned int nThreads = 0) {
         // ========= build the kmer dictionary  =========
         if ( mVerbose >= 1 )
-             std::cout << Date() << ": creating dictionary" << std::endl;
+            std::cout << Date() << ": creating dictionary" << std::endl;
         size_t dictSize = mReads.SizeSum() / coverage;
         mpDict = new KmerDict<K> ( 5*dictSize/4 );
         mpDict->process(mReads,mVerbose,false,nThreads,100);
         if ( mVerbose >= 1 ) {
             std::cout << Date( ) << ": there are " << mpDict->size()
-                    << " kmers (expected ~" << dictSize << ")" << std::endl;
+                      << " kmers (expected ~" << dictSize << ")" << std::endl;
             ReportMemUsage();
         }
         size_t old_dict_size = mpDict->size();
-        //mpDict->clean( typename KmerDict<K>::BadKmerCountFunctor(2, mCopyNumberMax)); 
+        //mpDict->clean( typename KmerDict<K>::BadKmerCountFunctor(2, mCopyNumberMax));
         // the result seems  better without using mCopyNumberMax at this stage
         mpDict->clean( typename KmerDict<K>::BadKmerCountFunctor(2));
-        if ( mVerbose >= 1 ) 
+        if ( mVerbose >= 1 )
             std::cout << Date() << ": Cleaning bad kmers, keeping " << mpDict->size()
-                           << "(" << ( mpDict->size() * 100 / old_dict_size ) << "%)" << std::endl;
+                      << "(" << ( mpDict->size() * 100 / old_dict_size ) << "%)" << std::endl;
 
         // ========= build the unipath graph    =========
         mpGraph = new UnipathGraph<K>(*mpDict, mVerbose);
@@ -141,7 +143,7 @@ private:
             #pragma omp critical
             {
                 total_locs_deleted += num_locs_deleted;
-                for ( size_t j = 0; j < locvec.size(); ++j ) 
+                for ( size_t j = 0; j < locvec.size(); ++j )
                     mULocs[ locvec[j].uid.val() ].push_back( locvec[j] );
             }
         }
@@ -154,9 +156,9 @@ private:
                 Sort(mULocs[i]);
         }
         uint64_t total = SizeSum( mULocs );
-        if ( mVerbose >= 1 ) 
-            std::cout << Date() << ": Found " << ToStringAddCommas( total ) << " locs" 
-                 << " after deleting " << ToStringAddCommas(total_locs_deleted) << std::endl;
+        if ( mVerbose >= 1 )
+            std::cout << Date() << ": Found " << ToStringAddCommas( total ) << " locs"
+                      << " after deleting " << ToStringAddCommas(total_locs_deleted) << std::endl;
     }
 
     void GetAlignsOneReadUnsorted( size_t read_id,
@@ -176,13 +178,14 @@ private:
                 if ( loc2.rid == loc1.rid ) continue;
                 if ( stop2 <= loc1.start ) continue;
                 if ( loc2.start >= stop1 ) continue;
-                {  // for all cases
+                {
+                    // for all cases
                     Bool rc = loc2.rc ^ loc1.rc;
                     int offset2 = ( loc1.rc ? stop1 - stop2 : loc2.start - loc1.start );
                     simple_align_data a(loc1.rid, loc2.rid, offset2, rc);
                     uniq_aligns.insert( a );
                     //if ( ! ValidateAlign(a) ) {
-                    //    #pragma omp critical 
+                    //    #pragma omp critical
                     //    {
                     //        std::cout << "Could not validate alignment ";
                     //        std::cout << "read1 on " << loc1.start << "," << stop1
@@ -203,12 +206,12 @@ private:
                     simple_align_data a(loc1.rid, loc2.rid, offset2, rc);
                     uniq_aligns.insert( simple_align_data(loc1.rid, loc2.rid, offset2, rc) );
                     //if ( ! ValidateAlign(a) ) {
-                    //    #pragma omp critical 
+                    //    #pragma omp critical
                     //    {
                     //        std::cout << "Could not validate alignment " << a.rc2 << std::endl;
                     //        std::cout << "read1 on " << loc1.start << "," << stop1
-                    //             << " read2(palindrom) on " << loc2.start << "," << stop2 
-                    //             << " reverted to "         << start2p << "," << stop2p 
+                    //             << " read2(palindrom) on " << loc2.start << "," << stop2
+                    //             << " reverted to "         << start2p << "," << stop2p
                     //             << std::endl;
                     //        int ulen = mpGraph->getEdge( loc1.uid ).getLength();
                     //        std::cout << "ulen= " << ulen << std::endl;
@@ -234,23 +237,25 @@ private:
         const bvec& read = mReads[ read_id ];
         int readLen = read.size();
         int nkmers = readLen - K + 1;
-        if ( nkmers < 0 ) return; 
+        if ( nkmers < 0 ) return;
         // pathing
         for ( int rpos = 0; rpos < nkmers; rpos++ ) {
             KMer<K> kmer( read.begin() + rpos );
             KDef const* pDef = mpDict->lookup(kmer);
-            if ( !pDef ) { continue; }
+            if ( !pDef ) {
+                continue;
+            }
             EdgeID edgeID = pDef->getEdgeID();
             const UnipathEdge *pEdge = &mpGraph->getEdge(edgeID);
             KmerID kmerID = pEdge->getKmerID( pDef->getEdgeOffset() );
             bool rc = IsRC( kmer,kmerID );
-            // number of skipped bases from the unipath 
+            // number of skipped bases from the unipath
             int skipped = kmerID.val() - pEdge->getInitialKmerID().val();
             short ustart = ( rc ? skipped - (nkmers-1 - rpos) : skipped - rpos );
             ReadLocOnUnipath the_loc =
-                { edgeID, ustart, static_cast<unsigned>(read_id), rc };
+            { edgeID, ustart, static_cast<unsigned>(read_id), rc };
             locs.insert( the_loc );
-        } 
+        }
         (*loc_vec).assign( locs.begin(), locs.end() );
     }
 
@@ -268,8 +273,7 @@ private:
             if ( ! (*loc_vec)[i].rc ) {
                 rstart = std::max( -(*loc_vec)[i].start, 0 );
                 rstop = std::min( rstart + ulen , nkmers );
-            }
-            else {
+            } else {
                 rstart = std::max( (*loc_vec)[i].start + nkmers - ulen, 0 );
                 rstop = std::min( rstart + ulen , nkmers );
             }
@@ -277,73 +281,75 @@ private:
             seg_lens[i] = ulen;
         }
 
-       // Select the segments, starting from the largest until every 10-base
-       // division in the read has enough coverage. Long unipaths are always
-       // kept.
-       const int kDivisionSize = 10;
-       const int kTargetDivCoverage = 1;
-       const int kGoodUnipathLen = 5;  
+        // Select the segments, starting from the largest until every 10-base
+        // division in the read has enough coverage. Long unipaths are always
+        // kept.
+        const int kDivisionSize = 10;
+        const int kTargetDivCoverage = 1;
+        const int kGoodUnipathLen = 5;
 
-       vec<Bool> todel( nsegs, true);
-       vec<int> seg_indices( nsegs, vec<int>::IDENTITY );
-       ReverseSortSync( seg_lens, seg_indices ); 
+        vec<Bool> todel( nsegs, true);
+        vec<int> seg_indices( nsegs, vec<int>::IDENTITY );
+        ReverseSortSync( seg_lens, seg_indices );
 
-       vec<int> times_covered( (nkmers-1)/kDivisionSize + 1, 0);
-       bool ignore_tail_division = ( times_covered.size() * kDivisionSize - nkmers < 10 ) ;
-       for ( size_t i = 0; i < nsegs; ++i ) {
-           size_t seg_index = seg_indices[i];
-           //// discard redundant segments ( this division it covers all has enough segments )
-           //bool is_redundant = true; 
-           //for( int j =  seg_coverage[seg_index].first / kDivisionSize; 
-           //        j <= (seg_coverage[seg_index].second-1) / kDivisionSize; ++j ) 
-           //    if ( times_covered[j] < kTargetDivCoverage ) {
-           //        is_redundant = false;
-           //        break;
-           //    }
-           //if ( seg_lens[i] < kGoodUnipathLen && ! is_redundant 
-           //        || seg_lens[i] >= kGoodUnipathLen ) {
-               for( int j =  seg_coverage[seg_index].first / kDivisionSize; 
-                       j <= (seg_coverage[seg_index].second-1) / kDivisionSize; ++j ) 
-                   times_covered[j]++;
-               todel[seg_index] = false;
-           //}
-           // Are all divisions covered?
-           bool is_well_covered = true;
-           size_t div_end = ( ignore_tail_division ? times_covered.size() -1 : times_covered.size() );
-           for ( size_t j = 0; j < div_end; ++j ) {
-               if ( times_covered[j] < kTargetDivCoverage) {
-                   is_well_covered = false;
-                   break;
-               }
-           }
-           // exit conditions
-           if ( is_well_covered && seg_lens[i] < kGoodUnipathLen ) { break; }
-       }
-       // return values
-       EraseIf( *loc_vec, todel );
-       return  nsegs - (*loc_vec).size();
+        vec<int> times_covered( (nkmers-1)/kDivisionSize + 1, 0);
+        bool ignore_tail_division = ( times_covered.size() * kDivisionSize - nkmers < 10 ) ;
+        for ( size_t i = 0; i < nsegs; ++i ) {
+            size_t seg_index = seg_indices[i];
+            //// discard redundant segments ( this division it covers all has enough segments )
+            //bool is_redundant = true;
+            //for( int j =  seg_coverage[seg_index].first / kDivisionSize;
+            //        j <= (seg_coverage[seg_index].second-1) / kDivisionSize; ++j )
+            //    if ( times_covered[j] < kTargetDivCoverage ) {
+            //        is_redundant = false;
+            //        break;
+            //    }
+            //if ( seg_lens[i] < kGoodUnipathLen && ! is_redundant
+            //        || seg_lens[i] >= kGoodUnipathLen ) {
+            for( int j =  seg_coverage[seg_index].first / kDivisionSize;
+                    j <= (seg_coverage[seg_index].second-1) / kDivisionSize; ++j )
+                times_covered[j]++;
+            todel[seg_index] = false;
+            //}
+            // Are all divisions covered?
+            bool is_well_covered = true;
+            size_t div_end = ( ignore_tail_division ? times_covered.size() -1 : times_covered.size() );
+            for ( size_t j = 0; j < div_end; ++j ) {
+                if ( times_covered[j] < kTargetDivCoverage) {
+                    is_well_covered = false;
+                    break;
+                }
+            }
+            // exit conditions
+            if ( is_well_covered && seg_lens[i] < kGoodUnipathLen ) {
+                break;
+            }
+        }
+        // return values
+        EraseIf( *loc_vec, todel );
+        return  nsegs - (*loc_vec).size();
     }
 
-    bool IsRC( KMer<K> const& kmer, KmerID const& kmerID ) const { 
+    bool IsRC( KMer<K> const& kmer, KmerID const& kmerID ) const {
         using std::equal;
         HugeBVec::const_iterator seqItr( mpGraph->getBases( kmerID ) );
         bool result = ! equal( kmer.begin(),kmer.end(),seqItr );
         Assert( !result || equal( kmer.rcbegin(),kmer.rcend(),seqItr ) );
-        return result; 
+        return result;
     }
 
     void ReportMemUsage() {
-        std::cout << Date() << ": Peak memory use = " 
-            << PeakMemUsageBytes( ) / 1000000000.0 << std::resetiosflags(std::ios::fixed)
-            << " GB" << std::endl;
+        std::cout << Date() << ": Peak memory use = "
+                  << PeakMemUsageBytes( ) / 1000000000.0 << std::resetiosflags(std::ios::fixed)
+                  << " GB" << std::endl;
     }
 
-private:
+  private:
     const vecbvec          &mReads;
     KmerDict<K>            *mpDict;
     UnipathGraph<K>        *mpGraph;
     vec<ReadULocVec>        mULocs;                  // read path seg on unipaths, indexed by unipaths id
-                                                     // sorted by the starting positon on unipath
+    // sorted by the starting positon on unipath
     int                     mCopyNumberMax;          // Ignore short unipath with high copy number
     Bool                    mUseDownSampling;
     int                     mVerbose;

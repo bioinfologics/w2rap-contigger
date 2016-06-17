@@ -15,18 +15,18 @@
 #include "paths/long/ReadPath.h"
 
 void AnalyzeScores( const HyperBasevectorX& hb, const vec<int>& inv, const int e,
-     const vec<vec<int>>& scores, vec<int>& to_delete, const int zpass, 
-     const int verbosity, const int version );
+                    const vec<vec<int>>& scores, vec<int>& to_delete, const int zpass,
+                    const int verbosity, const int version );
 
 void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
-     const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const Bool REMOVE_TINY );
+               const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
+               const int version, const Bool REMOVE_TINY );
 
 void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
-     const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const Bool REMOVE_TINY );
+                const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
+                const int version, const Bool REMOVE_TINY );
 
 void GetExtensions( const HyperBasevectorX& hb, const int v,
-     const int max_exts, vec<vec<int>>& exts, int& depth );
+                    const int max_exts, vec<vec<int>>& exts, int& depth );
 
 #endif

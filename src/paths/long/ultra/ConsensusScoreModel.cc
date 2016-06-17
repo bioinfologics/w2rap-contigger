@@ -13,16 +13,14 @@
 #include <map>
 
 ConsensusScoreModel::ConsensusScoreModel( double del_rate, double ins_rate, double sub_rate,
-       bool ignore_matching_score, bool score_fast )
-{
-    Init(del_rate, ins_rate, sub_rate, ignore_matching_score, score_fast); 
-    empty = false; 
+        bool ignore_matching_score, bool score_fast ) {
+    Init(del_rate, ins_rate, sub_rate, ignore_matching_score, score_fast);
+    empty = false;
 }
 
 // Initialized the model with parameters
-void ConsensusScoreModel::Init( double del_rate_, double ins_rate_, double sub_rate_, 
-        bool ignore_matching_score, bool score_fast ) 
-{
+void ConsensusScoreModel::Init( double del_rate_, double ins_rate_, double sub_rate_,
+                                bool ignore_matching_score, bool score_fast ) {
     // save the input rate for future  reference
     del_rate = del_rate_;
     ins_rate = ins_rate_;
@@ -67,8 +65,8 @@ void ConsensusScoreModel::PrintScoreMatrix(  const BaseVec& a0, const BaseVec& b
     while ( len_head < M0 && len_head < N0 && a0[len_head] == b0[len_head] ) len_head++;
     int len_tail = 0;
     while ( M0 - len_tail - len_head > 0 && N0 - len_tail - len_head > 0
-            && a0[M0-len_tail -1] == b0[N0- len_tail  -1] ) 
-        len_tail++; 
+            && a0[M0-len_tail -1] == b0[N0- len_tail  -1] )
+        len_tail++;
     // match the middle parts of the two sequences
     BaseVec a( a0, len_head, M0 - len_head - len_tail );
     BaseVec b( b0, len_head, N0 - len_head - len_tail );
@@ -106,19 +104,18 @@ void ConsensusScoreModel::PrintScoreMatrix(  const BaseVec& a0, const BaseVec& b
 // The score of genrating sequence b from sequence a. Lower score corresponds
 // to higher probability. (  = - logP * 100 )
 // Also optionally return the alignment strings.
-// 
+//
 // Matching sequences at head and tail are trimmed before actual alignment.
 // Improve speed by ignoring unecessary DP calculatios
-int ConsensusScoreModel::ScoreFast( const BaseVec& a0, const BaseVec& b0, String* pt_align_a, String* pt_align_b ) const 
-{
+int ConsensusScoreModel::ScoreFast( const BaseVec& a0, const BaseVec& b0, String* pt_align_a, String* pt_align_b ) const {
     int M0 = a0.size(), N0 = b0.size();
     // trim off same head and tail.
     int len_head = 0;
     while ( len_head < M0 && len_head < N0 && a0[len_head] == b0[len_head] ) len_head++;
     int len_tail = 0;
     while ( M0 - len_tail - len_head > 0 && N0 - len_tail - len_head > 0
-            && a0[M0-len_tail -1] == b0[N0- len_tail  -1] ) 
-        len_tail++; 
+            && a0[M0-len_tail -1] == b0[N0- len_tail  -1] )
+        len_tail++;
     // match the middle parts of the two sequences
     BaseVec a( a0, len_head, M0 - len_head - len_tail );
     BaseVec b( b0, len_head, N0 - len_head - len_tail );
@@ -157,32 +154,29 @@ int ConsensusScoreModel::ScoreFast( const BaseVec& a0, const BaseVec& b0, String
         String aa = a.ToString();
         String bb = b.ToString();
         int i = M , j = N ;
-        while ( i > 0 && j > 0 ){
+        while ( i > 0 && j > 0 ) {
             if ( s[i][j] == s[i-1][j-1] + ( a[i-1] == b[j-1] ? U_Score : S_Score ) ) {
                 align_a = aa[i-1] + align_a;
                 align_b = bb[j-1] + align_b;
                 i--, j--;
-            }
-            else if ( s[i][j] == s[i-1][j] + D_Score ) {
+            } else if ( s[i][j] == s[i-1][j] + D_Score ) {
                 align_a = aa[i-1] + align_a;
                 align_b = '-'  + align_b;
                 i--;
-            }
-            else if ( s[i][j] == s[i][j-1] + I_Score ) {
+            } else if ( s[i][j] == s[i][j-1] + I_Score ) {
                 align_a = '-'  + align_a;
                 align_b = bb[j-1] + align_b;
                 j--;
-            }
-            else { 
-                std::cout << "Error at position " << i << " " << j << std::endl; 
+            } else {
+                std::cout << "Error at position " << i << " " << j << std::endl;
                 std::cout << "Score= " << s[M][N] << std::endl;
-                std::cout << "The two sequences are: " << std::endl; 
+                std::cout << "The two sequences are: " << std::endl;
                 std::cout << aa << std::endl;
                 std::cout << bb << std::endl;
                 std::cout << "The matrix: " << std::endl;
                 for ( int ii = 0; ii <= i; ++ii ) {
                     std::cout << "row " << ii << ": ";
-                    for ( int jj = 0; jj <= j; ++jj ) 
+                    for ( int jj = 0; jj <= j; ++jj )
                         if ( s[ii][jj] == infinity )
                             std::cout << -1 << "\t";
                         else
@@ -190,7 +184,7 @@ int ConsensusScoreModel::ScoreFast( const BaseVec& a0, const BaseVec& b0, String
                     std::cout << std::endl;
                 }
                 return s[M][N];
-                //CRD::exit(1); 
+                //CRD::exit(1);
             }
         }
         while ( i > 0 ) {
@@ -220,19 +214,18 @@ int ConsensusScoreModel::ScoreFast( const BaseVec& a0, const BaseVec& b0, String
 // The score of genrating sequence b from sequence a. Lower score corresponds
 // to higher probability. (  = - logP * 100 )
 // Also optionally return the alignment strings.
-// 
+//
 // Matching sequences at head and tail are trimmed before actual alignment.
-int ConsensusScoreModel::ScoreFull( const BaseVec& a0, const BaseVec& b0, String* pt_align_a, String* pt_align_b ) const 
-{
+int ConsensusScoreModel::ScoreFull( const BaseVec& a0, const BaseVec& b0, String* pt_align_a, String* pt_align_b ) const {
     int M0 = a0.size(), N0 = b0.size();
     // trim off same head and tail only  if matching score is zereo
     int len_head = 0;
     int len_tail = 0;
-    if ( U_Score == 0 ) { // 
+    if ( U_Score == 0 ) { //
         while ( len_head < M0 && len_head < N0 && a0[len_head] == b0[len_head] ) len_head++;
         while ( M0 - len_tail - len_head > 0 && N0 - len_tail - len_head > 0
-                && a0[M0-len_tail -1] == b0[N0- len_tail  -1] ) 
-            len_tail++; 
+                && a0[M0-len_tail -1] == b0[N0- len_tail  -1] )
+            len_tail++;
     }
     // match the middle parts of the two sequences
     BaseVec a( a0, len_head, M0 - len_head - len_tail );
@@ -259,24 +252,24 @@ int ConsensusScoreModel::ScoreFull( const BaseVec& a0, const BaseVec& b0, String
         String aa = a.ToString();
         String bb = b.ToString();
         int i = M , j = N ;
-        while ( i > 0 && j > 0 ){
+        while ( i > 0 && j > 0 ) {
             int score = s[i][j];
             if ( score == s[i-1][j-1] + ( a[i-1] == b[j-1] ? U_Score : S_Score ) ) {
                 align_a = aa[i-1] + align_a;
                 align_b = bb[j-1] + align_b;
                 i--, j--;
-            }
-            else if ( score == s[i-1][j] + D_Score ) {
+            } else if ( score == s[i-1][j] + D_Score ) {
                 align_a = aa[i-1] + align_a;
                 align_b = '-'  + align_b;
                 i--;
-            }
-            else if ( score == s[i][j-1] + I_Score ) {
+            } else if ( score == s[i][j-1] + I_Score ) {
                 align_a = '-'  + align_a;
                 align_b = bb[j-1] + align_b;
                 j--;
+            } else {
+                std::cout << "Error at position " << i << " " << j << std::endl;
+                CRD::exit(1);
             }
-            else { std::cout << "Error at position " << i << " " << j << std::endl; CRD::exit(1); }
         }
         while ( i > 0 ) {
             align_a = aa[i-1] + align_a;
@@ -302,8 +295,7 @@ int ConsensusScoreModel::ScoreFull( const BaseVec& a0, const BaseVec& b0, String
 }
 
 // Wrapper of different scoring methods.
-int ConsensusScoreModel::Score( const BaseVec& a0, const BaseVec& b0, String* pt_align_a, String* pt_align_b ) const 
-{
+int ConsensusScoreModel::Score( const BaseVec& a0, const BaseVec& b0, String* pt_align_a, String* pt_align_b ) const {
     if ( m_score_fast )
         return ScoreFast( a0, b0, pt_align_a, pt_align_b );
     else
@@ -313,12 +305,11 @@ int ConsensusScoreModel::Score( const BaseVec& a0, const BaseVec& b0, String* pt
 // The score of genrating the observed set of threads from sequence a. The
 // score is a summation over scores from a to each thread.
 // Also optionally return the edits to t suggested by alignments to other threads.
-int ConsensusScoreModel::Score( const BaseVec& a, const vec<BaseVec>& threads, unsigned int min_vote, 
-        vec< std::pair<int,edit0> >* loc_edits ) const 
-{
+int ConsensusScoreModel::Score( const BaseVec& a, const vec<BaseVec>& threads, unsigned int min_vote,
+                                vec< std::pair<int,edit0> >* loc_edits ) const {
     int score = 0;
     if ( loc_edits == 0 ) { // no edits required
-        for ( size_t i = 0; i < threads.size(); ++i ) 
+        for ( size_t i = 0; i < threads.size(); ++i )
             score += Score( a, threads[i] );
         return score;
     }
@@ -345,11 +336,10 @@ int ConsensusScoreModel::Score( const BaseVec& a, const vec<BaseVec>& threads, u
     return score;
 }
 
-// The probability of generating sequence b from sequence a. 
+// The probability of generating sequence b from sequence a.
 // Degeneracy of generating from alternative alignments are considered.
-// 
-double ConsensusScoreModel::Probability( const BaseVec& a, const BaseVec& b ) const 
-{
+//
+double ConsensusScoreModel::Probability( const BaseVec& a, const BaseVec& b ) const {
     int M = a.size(), N = b.size();
     vec< vec<double> > s(M+1, vec<double>(N+1,0) );
     double pd = del_rate;
@@ -372,13 +362,12 @@ double ConsensusScoreModel::Probability( const BaseVec& a, const BaseVec& b ) co
 }
 
 
-// Obtain the edits from the alignment strings of two sequences. 
+// Obtain the edits from the alignment strings of two sequences.
 // !!! The new edits are ADDED to the existing vector.
-void ConsensusScoreModel::GetEdits( const String & align_a, const String & align_b, vec< std::pair<int,edit0> >* loc_edits ) const 
-{
+void ConsensusScoreModel::GetEdits( const String & align_a, const String & align_b, vec< std::pair<int,edit0> >* loc_edits ) const {
     ForceAssertEq( align_a.size(), align_b.size() );
     int pos = 0;
-    int actual_pos = 0; // actual editing position in sequence a, effectively a counter of none '-' 
+    int actual_pos = 0; // actual editing position in sequence a, effectively a counter of none '-'
     while ( pos < align_a.isize() ) {
         // Deal with insertion first. Preceed until firt none '-' position
         if ( align_a[pos] == '-' ) {
@@ -390,10 +379,10 @@ void ConsensusScoreModel::GetEdits( const String & align_a, const String & align
             if ( pos >= align_a.isize() ) break;
         }
         // other cases
-        if ( align_a[pos] != align_b[pos] ) 
-            if ( align_b[pos] == '-' ) 
+        if ( align_a[pos] != align_b[pos] )
+            if ( align_b[pos] == '-' )
                 loc_edits->push( actual_pos,  edit0( DELETION, 1 ) );
-            else 
+            else
                 loc_edits->push( actual_pos, edit0( SUBSTITUTION, align_b[pos] ) );
         pos++;
         actual_pos++;
@@ -401,18 +390,20 @@ void ConsensusScoreModel::GetEdits( const String & align_a, const String & align
 }
 
 // Constructor
-FastScorer::FastScorer( const ConsensusScoreModel& model, const BaseVec& read0, const vec<BaseVec>& threads ) : 
-    model_(model), read0_(read0), threads_(threads)
-{   Init();   }
+FastScorer::FastScorer( const ConsensusScoreModel& model, const BaseVec& read0, const vec<BaseVec>& threads ) :
+    model_(model), read0_(read0), threads_(threads) {
+    Init();
+}
 
 // Constructor With only one thread, for debug purpose
-FastScorer::FastScorer( const ConsensusScoreModel& model, const BaseVec& read0, const BaseVec& read1 ) : 
-    model_(model), read0_(read0)
-{   threads_.push_back( read1 );
-    Init();   }
+FastScorer::FastScorer( const ConsensusScoreModel& model, const BaseVec& read0, const BaseVec& read1 ) :
+    model_(model), read0_(read0) {
+    threads_.push_back( read1 );
+    Init();
+}
 
-void FastScorer::Init() 
-{   // heuristics
+void FastScorer::Init() {
+    // heuristics
     const int MaxShift = 5;                   // To speedup, elements too far from diagnal will not be scored,
     const double ShiftRatio = 0.2;            // The max shift from diagnal is ( ShiftRatio * i + MaxShift );
     s_forwards_.assign( NThreads(), ScoreMatrixType() );
@@ -434,10 +425,10 @@ void FastScorer::Init()
             int j_lb = Max( 0, j_avg - shift );
             int j_ub = Min( N+1, j_avg + shift );
             ForceAssertLt( j_lb, j_ub );
-            s_forward.push_back( Row( j_lb, j_ub, inf ) ); 
+            s_forward.push_back( Row( j_lb, j_ub, inf ) );
         }
         // first row
-        for ( int j = s_forward[0].lb; j < s_forward[0].ub; ++j ) 
+        for ( int j = s_forward[0].lb; j < s_forward[0].ub; ++j )
             s_forward[0].SetCol( j , model_.I_Score * j );
         for ( int i = 1; i <= M; i++ ) {
             int j_lb = s_forward[i].lb;
@@ -454,15 +445,14 @@ void FastScorer::Init()
                 s_forward[i].SetCol( j, std::min( {sub_score, del_score, ins_score} ) );
             }
         }
-        // disable "bad" threads 
+        // disable "bad" threads
         if ( s_forward[M].GetCol(N) >= inf ) valid_[ithread] = false;
     }
     // Remember that we haven't don't the backward scoring matrix yet
     backward_set_ = false;
 }
 
-void FastScorer::InitBackward() 
-{
+void FastScorer::InitBackward() {
     s_backwards_.resize( NThreads() );
     const int M = read0_.size();
     for( size_t ithread = 0; ithread < threads_.size(); ithread++ ) {
@@ -475,10 +465,10 @@ void FastScorer::InitBackward()
         for ( int i = 0; i <= M; i++ ) {
             int j_lb = s_forwards_[ithread][i].lb;
             int j_ub = s_forwards_[ithread][i].ub;
-            s_backward.push_back( Row( j_lb, j_ub, inf ) ); 
+            s_backward.push_back( Row( j_lb, j_ub, inf ) );
         }
         // last row
-        for ( int j = s_backward[M].lb; j < s_backward[M].ub; ++j ) 
+        for ( int j = s_backward[M].lb; j < s_backward[M].ub; ++j )
             s_backward[M].SetCol( j, model_.I_Score * (N-j) );
         // other rows
         for ( int i = M-1; i >=0; i-- ) {
@@ -507,7 +497,7 @@ int FastScorer::GetScore(int ithread) const {
 
 int FastScorer::GetScore() const {
     int score = 0;
-    for( size_t ithread = 0; ithread < threads_.size(); ithread++ ) 
+    for( size_t ithread = 0; ithread < threads_.size(); ithread++ )
         if ( valid_[ithread] ) score += GetScore(ithread);
     return score;
 }
@@ -529,9 +519,8 @@ void FastScorer::PrintScoreMatrix(int ithread) const {
     }
 }
 
-// Re-score the consensus sequence if an edit is introduced 
-int FastScorer::ScoreEdit( const std::pair<int, edit0> & loc_edit )  
-{
+// Re-score the consensus sequence if an edit is introduced
+int FastScorer::ScoreEdit( const std::pair<int, edit0> & loc_edit ) {
     if ( ! backward_set_ ) InitBackward(); // lazy evaluation
     int score = 0;
     for( size_t ithread = 0; ithread < threads_.size(); ithread++ ) {
@@ -541,40 +530,39 @@ int FastScorer::ScoreEdit( const std::pair<int, edit0> & loc_edit )
     return score;
 }
 
-// Re-score the consensus sequence if an edit is introduced 
+// Re-score the consensus sequence if an edit is introduced
 // Suppose a substitution edit is introduced at position i in the consensus sequence a.
 // Name the new sequence aa, we need to find the optimal alignment between aa and b.
 // We know that all the optimal alignment between aa[0:i-1] and b[0:any j] is not affected.
 // In other words, the rows [0:i] in the forward scoring matrix will be the same.
-// Counting from backward, optimal alignments between aa[i+1,M-1] and b[any j:N-1] 
+// Counting from backward, optimal alignments between aa[i+1,M-1] and b[any j:N-1]
 // are also the same.
-// The optimal alignment between aa and b is the minimum of 
+// The optimal alignment between aa and b is the minimum of
 // optimal alignment aa[0:i] to b[0:j] ) plus alignment aa[i+1:M-1] to b[j+1,N-1] ),
-// for j in [0,N). 
+// for j in [0,N).
 // Only need to calculate one row of the matrix for optimal alignment from aa[0:i] to b[0:j], which
-// can be derived from aa[0:i-1] row. 
-// 
-int FastScorer::ScoreEdit1( int ithread, const std::pair<int, edit0> & loc_edit )  
-{
+// can be derived from aa[0:i-1] row.
+//
+int FastScorer::ScoreEdit1( int ithread, const std::pair<int, edit0> & loc_edit ) {
     if ( ! backward_set_ ) InitBackward();
-    if ( ! valid_[ithread] ) return inf; 
+    if ( ! valid_[ithread] ) return inf;
     const BaseVec& read1 = threads_[ithread];
     const ScoreMatrixType& s_forward = s_forwards_[ithread];
     const ScoreMatrixType& s_backward = s_backwards_[ithread];
     int M = read0_.size(), N = read1.size();
     int pos = loc_edit.first;
     const edit0& e = loc_edit.second;
-    int prev_row = -1, next_row = -1; 
+    int prev_row = -1, next_row = -1;
     BaseVec read2;
-    // Delete n sequences a position pos, forward scoring read0[0:pos-1], and backward scoring 
+    // Delete n sequences a position pos, forward scoring read0[0:pos-1], and backward scoring
     // for read0[pos+n:M-1] are not affected. The inserted sequence is empty.
     if ( e.etype == DELETION ) {
         ForceAssertGe(pos, 0);
         ForceAssertLt(pos, M);
         prev_row = pos;
         next_row = pos + e.n;
-    } 
-    // Insert a sequence a position pos, forward scoring read0[0:pos-1], and backward scoring 
+    }
+    // Insert a sequence a position pos, forward scoring read0[0:pos-1], and backward scoring
     // for read0[pos:M-1] are not affected. The inserted sequence is re-scored.
     else if ( e.etype == INSERTION ) {
         ForceAssertGe(pos, 0);
@@ -583,7 +571,7 @@ int FastScorer::ScoreEdit1( int ithread, const std::pair<int, edit0> & loc_edit 
         next_row = pos;
         read2 = BaseVec( e.seq );
     }
-    // substitute a sequence a position pos, forward scoring read0[0:pos-1], and backward scoring 
+    // substitute a sequence a position pos, forward scoring read0[0:pos-1], and backward scoring
     // for read0[pos+1:M-1] are not affected. The modified sequence is re-scored.
     else if ( e.etype == SUBSTITUTION ) {
         ForceAssertGe(pos, 0);
@@ -591,8 +579,7 @@ int FastScorer::ScoreEdit1( int ithread, const std::pair<int, edit0> & loc_edit 
         prev_row = pos;
         next_row = pos + 1;
         read2 = BaseVec( e.seq );
-    } 
-    else {
+    } else {
         std::cout << "Unknown edit type " << (int) e.etype << " at " << pos<< std::endl;
         CRD::exit(1);
     }
@@ -603,7 +590,7 @@ int FastScorer::ScoreEdit1( int ithread, const std::pair<int, edit0> & loc_edit 
         int j_lb = s2[i].lb;
         int j_ub = s2[i].ub;
         if ( j_lb == 0 ) {
-            s2[i].SetCol( 0, (prev_row+i)* model_.D_Score ); 
+            s2[i].SetCol( 0, (prev_row+i)* model_.D_Score );
             ++j_lb;
         }
         for ( int j = j_lb; j < j_ub; j++ ) {
@@ -617,13 +604,12 @@ int FastScorer::ScoreEdit1( int ithread, const std::pair<int, edit0> & loc_edit 
     int j_lb = s_forward[prev_row].lb;
     int j_ub = s_forward[prev_row].ub;
     int min_score = inf;
-    for( int j = j_lb; j < j_ub; j++ ) 
+    for( int j = j_lb; j < j_ub; j++ )
         min_score = Min( min_score,  s_backward[next_row].GetCol( j ) + s2.back().GetCol(j) );
     return min_score;
 }
 
-void FastScorer::GetAlignString( int ithread, String *pa, String *pb ) const
-{
+void FastScorer::GetAlignString( int ithread, String *pa, String *pb ) const {
     String aa = read0_.ToString();
     String bb = threads_[ithread].ToString();
     const ScoreMatrixType& s = s_forwards_[ithread];
@@ -632,26 +618,28 @@ void FastScorer::GetAlignString( int ithread, String *pa, String *pb ) const
     String::iterator ia = align_a.end();
     String::iterator ib = align_b.end();
     int i = aa.size() , j = bb.size() ;
-    while ( i > 0 && j > 0 ){
+    while ( i > 0 && j > 0 ) {
         int score = s[i].GetCol( j );
-        if ( score >= inf ) { return; }
+        if ( score >= inf ) {
+            return;
+        }
         if ( score == s[i-1].GetCol( j-1 ) + ( aa[i-1] == bb[j-1] ? model_.U_Score : model_.S_Score ) ) {
             *(--ia) = aa[--i];
             *(--ib) = bb[--j];
-        }
-        else if ( score == s[i-1].GetCol( j ) + model_.D_Score ) {
+        } else if ( score == s[i-1].GetCol( j ) + model_.D_Score ) {
             *(--ia) = aa[--i];
             *(--ib) = '-';
-        }
-        else if ( score == s[i].GetCol( j-1 ) + model_.I_Score ) {
+        } else if ( score == s[i].GetCol( j-1 ) + model_.I_Score ) {
             *(--ia) = '-';
             *(--ib) = bb[--j];
+        } else {
+            std::cout << "Error at position " << i << " " << j << std::endl;
+            CRD::exit(1);
         }
-        else { std::cout << "Error at position " << i << " " << j << std::endl; CRD::exit(1); }
     }
     while ( i > 0 ) {
         *(--ia) = aa[--i];
-        *(--ib) = '-'; 
+        *(--ib) = '-';
     }
     while ( j > 0 ) {
         *(--ia) = '-';
@@ -661,16 +649,14 @@ void FastScorer::GetAlignString( int ithread, String *pa, String *pb ) const
     pb->append( ib, align_b.end() );
 }
 
-void FastScorer::GetLocEdit1( int ithread, vec< std::pair<int,edit0> > *p_loc_edits ) const
-{
+void FastScorer::GetLocEdit1( int ithread, vec< std::pair<int,edit0> > *p_loc_edits ) const {
     if ( ! valid_[ithread] ) return;
     String a1, a2;
     GetAlignString( ithread, &a1, &a2 );
     AlignToLocEdits( a1, a2, p_loc_edits );
 }
 
-void FastScorer::GetLocEdits( vec< std::pair<int, edit0> > *p_loc_edits, vec<unsigned int> * p_counts, unsigned int min_vote ) const
-{
+void FastScorer::GetLocEdits( vec< std::pair<int, edit0> > *p_loc_edits, vec<unsigned int> * p_counts, unsigned int min_vote ) const {
     ForceAssert( p_loc_edits != 0 );
     ForceAssert( p_counts != 0 );
     p_loc_edits->clear();
@@ -688,8 +674,8 @@ void FastScorer::GetLocEdits( vec< std::pair<int, edit0> > *p_loc_edits, vec<uns
                 String str = "sub";
                 if ( e.etype == INSERTION ) str = "ins";
                 if ( e.etype == DELETION ) str = "del";
-                std::cout << p << " " << str << " " 
-                    << e.n << " " << e.seq << std::endl;
+                std::cout << p << " " << str << " "
+                          << e.n << " " << e.seq << std::endl;
                 std::cout << "read0= " << read0_.ToString() << std::endl;
                 std::cout << "read1= " << threads_[i].ToString() << std::endl;
                 CRD::exit(1);
@@ -708,15 +694,14 @@ void FastScorer::GetLocEdits( vec< std::pair<int, edit0> > *p_loc_edits, vec<uns
 
 
 // ---------------------------- static constant and methods -----------------------------------------------
-const int FastScorer::inf = 100*1000*1000; 
+const int FastScorer::inf = 100*1000*1000;
 
-void FastScorer::AlignToLocEdits( const String & align_a, const String & align_b, vec< std::pair<int,edit0> >* loc_edits )
-{
+void FastScorer::AlignToLocEdits( const String & align_a, const String & align_b, vec< std::pair<int,edit0> >* loc_edits ) {
     ForceAssertEq( align_a.size(), align_b.size() );
     ForceAssert( loc_edits != 0 );
     loc_edits->clear();
     size_t pos = 0;
-    int actual_pos = 0; // actual editing position in sequence a, effectively a counter of none '-' 
+    int actual_pos = 0; // actual editing position in sequence a, effectively a counter of none '-'
     while ( pos < align_a.size() ) {
         // Deal with insertion first. Preceed until firt none '-' position
         if ( align_a[pos] == '-' ) {
@@ -728,18 +713,17 @@ void FastScorer::AlignToLocEdits( const String & align_a, const String & align_b
             if ( pos >= align_a.size() ) break;
         }
         // other cases
-        if ( align_a[pos] != align_b[pos] ) 
-            if ( align_b[pos] == '-' ) 
+        if ( align_a[pos] != align_b[pos] )
+            if ( align_b[pos] == '-' )
                 loc_edits->push( std::make_pair(actual_pos,  edit0( DELETION, 1 )) );
-            else 
+            else
                 loc_edits->push( std::make_pair(actual_pos, edit0( SUBSTITUTION, align_b[pos] )) );
         pos++;
         actual_pos++;
     }
 }
 
-BaseVec FastScorer::NewSeq( const BaseVec& t, const std::pair<int, edit0>& loc_edit ) 
-{
+BaseVec FastScorer::NewSeq( const BaseVec& t, const std::pair<int, edit0>& loc_edit ) {
     size_t p = loc_edit.first;
     const edit0& e = loc_edit.second;
     BaseVec t2;
@@ -751,20 +735,17 @@ BaseVec FastScorer::NewSeq( const BaseVec& t, const std::pair<int, edit0>& loc_e
         BaseVec b3;
         if ( (size_t) p < t.size() )
             b3.SetToSubOf( t, p, t.size( ) - p );
-        t2 = Cat( b1, b2, b3 );    
-    }
-    else if ( e.etype == DELETION ) {
+        t2 = Cat( b1, b2, b3 );
+    } else if ( e.etype == DELETION ) {
         ForceAssertLe( p + e.n , t.size( ) );
         BaseVec b1( t, 0, p );
         BaseVec b2( t, p + e.n, t.size( ) - ( p + e.n ) );
-        t2 = Cat( b1, b2 );    
-    }
-    else if ( e.etype == SUBSTITUTION ) {
+        t2 = Cat( b1, b2 );
+    } else if ( e.etype == SUBSTITUTION ) {
         ForceAssertLt( p, t.size() );
         t2 = t;
-        t2.Set( p, as_char( e.seq[0] ) );    
-    }
-    else {
+        t2.Set( p, as_char( e.seq[0] ) );
+    } else {
         std::cout << "Unknown edit type " << (int) e.etype << " at " << p << std::endl;
         CRD::exit(1);
     }

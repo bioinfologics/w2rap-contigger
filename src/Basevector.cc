@@ -15,8 +15,7 @@
  */
 #include "Basevector.h"
 
-void ReverseComplement( vecbasevector& vbv )
-{
+void ReverseComplement( vecbasevector& vbv ) {
     vecbvec::iterator end(vbv.end());
     for ( vecbvec::iterator itr(vbv.begin()); itr != end; ++itr )
         itr->ReverseComplement();

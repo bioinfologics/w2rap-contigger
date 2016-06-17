@@ -23,12 +23,12 @@
 #include "paths/KmerPathInterval.h"
 
 void LongReadsToPaths( vecbvec const& reads,
-                            unsigned K, unsigned coverage,
-                            unsigned logLevel, bool useOldLRPMethod,
-                            HyperBasevector* pHBV,
-                            HyperKmerPath* pHKP=nullptr,
-                            vecKmerPath* pPaths=nullptr,
-                            vecKmerPath* pPathsRC=nullptr,
-                            vec<big_tagged_rpint>* pPathsDB=nullptr );
+                       unsigned K, unsigned coverage,
+                       unsigned logLevel, bool useOldLRPMethod,
+                       HyperBasevector* pHBV,
+                       HyperKmerPath* pHKP=nullptr,
+                       vecKmerPath* pPaths=nullptr,
+                       vecKmerPath* pPathsRC=nullptr,
+                       vec<big_tagged_rpint>* pPathsDB=nullptr );
 
 #endif /* PATHS_LONG_LONGREADSTOPATHS_H_ */

@@ -25,41 +25,55 @@
  * \brief A Directory is a type of file that allows listing of its contents.
  *
  */
-class Directory : public File
-{
-public:
-    class const_iterator : public std::iterator<std::input_iterator_tag,File>
-    {
-    public:
+class Directory : public File {
+  public:
+    class const_iterator : public std::iterator<std::input_iterator_tag,File> {
+      public:
         const_iterator() : mpDIR(0), mPos(-1L) {}
 
         explicit const_iterator( std::string const& path );
 
         const_iterator( const_iterator const& that )
-        : mDir(that.mDir), mpDIR(0), mPos(-1L) { *this = that; }
+            : mDir(that.mDir), mpDIR(0), mPos(-1L) {
+            *this = that;
+        }
 
-        ~const_iterator() { if ( mpDIR ) endStream(); }
+        ~const_iterator() {
+            if ( mpDIR ) endStream();
+        }
 
         const_iterator& operator=( const_iterator const& that );
 
-        File operator*() const { return mFile; }
+        File operator*() const {
+            return mFile;
+        }
 
-        File* operator->() { return &mFile; }
+        File* operator->() {
+            return &mFile;
+        }
 
-        const_iterator& operator++() { nextEntry(); return *this; }
+        const_iterator& operator++() {
+            nextEntry();
+            return *this;
+        }
 
-        const_iterator operator++(int)
-        { const_iterator tmp(*this); nextEntry(); return tmp; }
+        const_iterator operator++(int) {
+            const_iterator tmp(*this);
+            nextEntry();
+            return tmp;
+        }
 
         friend bool operator==( const_iterator const& itr1,
-                                const_iterator const& itr2 )
-        { return itr1.mPos == itr2.mPos; }
+                                const_iterator const& itr2 ) {
+            return itr1.mPos == itr2.mPos;
+        }
 
         friend bool operator!=( const_iterator const& itr1,
-                                const_iterator const& itr2 )
-        { return !(itr1 == itr2); }
+                                const_iterator const& itr2 ) {
+            return !(itr1 == itr2);
+        }
 
-    private:
+      private:
         void checkStream();
         void endStream();
         void nextEntry();
@@ -77,13 +91,15 @@ public:
     /// Construct from something with a c_str() member (like string or String)
     template <class C>
     explicit Directory( C const& path,
-                            char const* (C::*)() const = &C::c_str )
-    : File(path.c_str()) {}
+                        char const* (C::*)() const = &C::c_str )
+        : File(path.c_str()) {}
 
     // compiler-supplied copying and destructor are OK
 
     /// Is this an existing directory?
-    bool isValid() const { return isDir(); }
+    bool isValid() const {
+        return isDir();
+    }
 
     /// Create the directory associated with this path, if necessary.
     /// Returns false if the directory already existed.
@@ -97,15 +113,21 @@ public:
     void remove() const;
 
     /// Get a path for some file relative to this directory.
-    File file( std::string filename ) const
-    { return File(toString()+'/'+filename); }
+    File file( std::string filename ) const {
+        return File(toString()+'/'+filename);
+    }
 
     /// Get a path for some sub-directory relative to this directory.
-    Directory subdir( std::string filename ) const
-    { return Directory(toString()+'/'+filename); }
+    Directory subdir( std::string filename ) const {
+        return Directory(toString()+'/'+filename);
+    }
 
-    const_iterator begin() const { return const_iterator(toString()); }
-    const_iterator end() const { return const_iterator(); }
+    const_iterator begin() const {
+        return const_iterator(toString());
+    }
+    const_iterator end() const {
+        return const_iterator();
+    }
 };
 
 #endif /* SYSTEM_FILE_DIRECTORY_H_ */

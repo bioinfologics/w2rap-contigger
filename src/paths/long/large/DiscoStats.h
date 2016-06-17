@@ -13,13 +13,13 @@
 
 class disco_stats {
 
-     public:
+  public:
 
-     double mean_read; // mean read length
-     double mean_qual; // mean base quality
-     double total_bases; // total bases in reads
+    double mean_read; // mean read length
+    double mean_qual; // mean base quality
+    double total_bases; // total bases in reads
 
-     void Compute( const String& work_dir );
+    void Compute( const String& work_dir );
 
 };
 

@@ -12,32 +12,27 @@
 #include <cmath>
 #include <limits>
 
-double Choices(int n, int k)
-{
-  if (k<0)
-    return 0.0;
-  double prod = 1.0;
-  for ( int j = 1; j <= k; ++j )
-    prod *= double(n + 1 - j)/j;
-  return prod;
-}
-  
-double BinomialProb(double p, int n, int k)
-{
-  return Choices(n,k) * pow(p, k) * pow(1.0-p, n-k);
+double Choices(int n, int k) {
+    if (k<0)
+        return 0.0;
+    double prod = 1.0;
+    for ( int j = 1; j <= k; ++j )
+        prod *= double(n + 1 - j)/j;
+    return prod;
 }
 
-namespace
-{
+double BinomialProb(double p, int n, int k) {
+    return Choices(n,k) * pow(p, k) * pow(1.0-p, n-k);
+}
 
-inline double minTerm( double val )
-{
+namespace {
+
+inline double minTerm( double val ) {
     double const MIN_TERM = 2.*std::numeric_limits<double>::min();
     return ( fabs(val) < MIN_TERM ) ? MIN_TERM : val;
 }
 
-double beta_cont_frac( double a, double b, double x )
-{
+double beta_cont_frac( double a, double b, double x ) {
     int const N_ITERATIONS = 300;
     double const EPS = 2.*std::numeric_limits<double>::epsilon();
     int nnn = 0;
@@ -49,8 +44,7 @@ double beta_cont_frac( double a, double b, double x )
     double aPlus1 = a + 1.;
     double aPlusb = a + b;
 
-    while ( ++nnn <= N_ITERATIONS )
-    {
+    while ( ++nnn <= N_ITERATIONS ) {
         double coeff = nnn*(b - nnn)*x/((aLess1 + 2*nnn)*(a + 2*nnn));
         num = minTerm(1. + coeff/num);
         denom = 1./minTerm(1. + coeff*denom);
@@ -70,8 +64,7 @@ double beta_cont_frac( double a, double b, double x )
     return cf;
 }
 
-inline double betaI( double a, double b, double x )
-{
+inline double betaI( double a, double b, double x ) {
     ForceAssertGt(a,0.);
     ForceAssertGt(b,0.);
     ForceAssertGe(x,0.);
@@ -93,7 +86,6 @@ inline double betaI( double a, double b, double x )
 
 }
 
-double BinomialProbCum( double p, int n, int k )
-{
+double BinomialProbCum( double p, int n, int k ) {
     return betaI(n-k,k+1,1.-p);
 }

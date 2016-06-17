@@ -12,12 +12,12 @@
 class VariantCallGroup;
 class HyperBasevector;
 
-void RemoveRepetitiveEdges(vec<VariantCallGroup>& groups, 
-        const vec<size_t>& ref_index, 
-        const vec<size_t>& ref_shift, 
-        const String& ref_m100_file,
-        const HyperBasevector& hbp,
-        const vec<std::pair<int,Bool>>& hbp_to_hb,
-        int verbosity = 0);
+void RemoveRepetitiveEdges(vec<VariantCallGroup>& groups,
+                           const vec<size_t>& ref_index,
+                           const vec<size_t>& ref_shift,
+                           const String& ref_m100_file,
+                           const HyperBasevector& hbp,
+                           const vec<std::pair<int,Bool>>& hbp_to_hb,
+                           int verbosity = 0);
 
 #endif

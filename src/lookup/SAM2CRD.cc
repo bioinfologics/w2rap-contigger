@@ -33,8 +33,7 @@ using std::cerr;
 using std::map;
 using namespace SAM;
 
-namespace
-{
+namespace {
 
 std::string IH_TAG("IH:i");
 std::string NH_TAG("NH:i");
@@ -42,11 +41,9 @@ std::string NM_TAG("NM:i");
 
 enum RecType { UNPAIRED, PAIRED, END1, END2 };
 
-RecType getRecType( Record rec )
-{
+RecType getRecType( Record rec ) {
     RecType result = UNPAIRED;
-    if ( rec.isPaired() )
-    {
+    if ( rec.isPaired() ) {
         if ( rec.isFirstReadOfPair() )
             result = END1;
         else if ( rec.isSecondReadOfPair() )
@@ -60,10 +57,8 @@ RecType getRecType( Record rec )
 typedef std::pair<char const*,RecType> IdMapKey;
 typedef std::pair<uint,uint> IdMapVal; // readId, libId
 
-struct IdMapKeyComp
-{
-    bool operator()( IdMapKey const& key1, IdMapKey const& key2 )
-    {
+struct IdMapKeyComp {
+    bool operator()( IdMapKey const& key1, IdMapKey const& key2 ) {
         int strOrder = strcmp(key1.first,key2.first);
         return strOrder < 0 || strOrder == 0 && key1.second < key2.second;
     }
@@ -76,34 +71,26 @@ typedef map<IdMapKey,IdMapVal,IdMapKeyComp,IdMapAllocator> IdMap;
 }
 
 bool validateReferenceDictionary( SAMFile& sf, vec<String> const& names,
-                                    vecbvec const& refSeqs )
-{
+                                  vecbvec const& refSeqs ) {
     bool result = true;
     Logger& lgr = sf.getLogger();
     size_t nNames = names.size();
-    if ( sf.getReferenceDictionarySize() != nNames )
-    {
+    if ( sf.getReferenceDictionarySize() != nNames ) {
         lgr.log("Header has %ld sequences, but we expected %ld.",
-                            sf.getReferenceDictionarySize(), nNames);
+                sf.getReferenceDictionarySize(), nNames);
         result = false;
     }
-    for ( size_t idx = 0; idx != nNames; ++idx )
-    {
+    for ( size_t idx = 0; idx != nNames; ++idx ) {
         RefDesc const* pRefDesc = sf.getRefDesc(names[idx]);
-        if ( !pRefDesc )
-        {
+        if ( !pRefDesc ) {
             lgr.log("Header has no SQ for %s.",names[idx].c_str());
             result = false;
-        }
-        else
-        {
-            if ( pRefDesc->getId() != idx )
-            {
+        } else {
+            if ( pRefDesc->getId() != idx ) {
                 lgr.log("Header has %s at index %d, but we expected %ld.",
                         names[idx].c_str(), pRefDesc->getId(), idx);
             }
-            if ( pRefDesc->getLength() != refSeqs[idx].size() )
-            {
+            if ( pRefDesc->getLength() != refSeqs[idx].size() ) {
                 lgr.log("Header thinks %s has length %ld, but we expected %d.",
                         names[idx].c_str(), pRefDesc->getLength(),
                         refSeqs[idx].size());
@@ -119,9 +106,8 @@ void SAM2CRD( SAMFile& sf,
               vec<look_align_x>& alns, vec<pairinfo>& readPairs,
               vecString& readnames, vec<Bool>& first_in_pair, vecString& libNames,
               bool mapped_pairs_only,
-	      bool keep_duplicates,
-              bool useOQ, bool pfOnly, bool clip, bool readnames_plus )
-{
+              bool keep_duplicates,
+              bool useOQ, bool pfOnly, bool clip, bool readnames_plus ) {
     seqs.reserve(10000000);
     quals.reserve(10000000);
     alns.reserve(10000000);
@@ -138,22 +124,20 @@ void SAM2CRD( SAMFile& sf,
 
     IdMap::const_iterator pos;
     Record rec;
-    if ( !sf.nextRecord(rec) )
-    {
+    if ( !sf.nextRecord(rec) ) {
         sf.getLogger().log("No sam records.");
         return; // EARLY RETURN!
     }
 
     RNGen rnGen;
-    do
-    {
+    do {
         // Check for reads that are marked as duplicates or non-PF when
         // we've been asked to do so.
         if ( (!keep_duplicates && rec.isDuplicate()) ||
-             (pfOnly && !rec.isPF()) )
+                (pfOnly && !rec.isPF()) )
             continue; // NON-STRUCTURED CODE!
-	if ( mapped_pairs_only && (!rec.isMapped() || !rec.isMateMapped() ) )
-	     continue; // NON-STRUCTURED CODE!
+        if ( mapped_pairs_only && (!rec.isMapped() || !rec.isMateMapped() ) )
+            continue; // NON-STRUCTURED CODE!
 
         if ( clip )
             rec.clipRecord();
@@ -162,20 +146,14 @@ void SAM2CRD( SAMFile& sf,
         uint readId;
 
         IdMap::const_iterator mapEnd = idMap.end();
-        if ( (pos = idMap.find(key)) != mapEnd )
-        {
+        if ( (pos = idMap.find(key)) != mapEnd ) {
             readId = pos->second.first;
-        }
-        else
-        {
-            if ( key.second == PAIRED )
-            {
+        } else {
+            if ( key.second == PAIRED ) {
                 key.second = END1;
-                if ( (pos = idMap.find(key)) != mapEnd )
-                {
+                if ( (pos = idMap.find(key)) != mapEnd ) {
                     key.second = END2;
-                    if ( (pos = idMap.find(key)) != mapEnd )
-                    {
+                    if ( (pos = idMap.find(key)) != mapEnd ) {
                         sf.getLogger().log("Warning: There are more than two alignments for the paired-read query name %s.",rec.getQueryName().c_str());
                         key.second = PAIRED;
                     }
@@ -186,8 +164,7 @@ void SAM2CRD( SAMFile& sf,
             if (readnames_plus) first_in_pair.push_back( rec.isFirstReadOfPair( ) );
 
             readId = nextReadId++;
-            if ( key.second != PAIRED )
-            {
+            if ( key.second != PAIRED ) {
                 key.first = readnames.back().c_str();
                 ReadGroup const* pRG = rec.getReadGroup();
                 string libName = pRG ? pRG->getLibrary() : "unknown";
@@ -195,8 +172,7 @@ void SAM2CRD( SAMFile& sf,
                 uint libId;
                 if ( itr != libNameToLibId.end() )
                     libId = itr->second;
-                else
-                {
+                else {
                     libNames.push_back(libName);
                     libId = libNames.size()-1;
                     libNameToLibId[libName] = libId;
@@ -206,13 +182,13 @@ void SAM2CRD( SAMFile& sf,
 
             std::string const& strSeq = rec.getSequence();
             basevector seq( strSeq.begin(), strSeq.end(),
-                    [&rnGen]( char base )
-                    { return GeneralizedBase::fromChar(base).random(rnGen); });
+            [&rnGen]( char base ) {
+                return GeneralizedBase::fromChar(base).random(rnGen);
+            });
             std::vector<qual_t> const& qualVec =
-                    useOQ ? rec.getBestQuals() : rec.getQualityScores();
+                useOQ ? rec.getBestQuals() : rec.getQualityScores();
             qualvector qual(qualVec.begin(),qualVec.end());
-            if ( rec.isReversed() )
-            {
+            if ( rec.isReversed() ) {
                 seq.ReverseComplement();
                 qual.ReverseMe();
             }
@@ -224,8 +200,7 @@ void SAM2CRD( SAMFile& sf,
             continue; // NON-STRUCTURED CODE!
 
         Alignment aln(rec,sf.getLogger());
-        if ( !aln.size() )
-        {
+        if ( !aln.size() ) {
             sf.getLogger().log("Alignment for query %s has no blocks.  Skipping alignment.",rec.getQueryName().c_str());
             continue; // NON-STRUCTURED CODE!
         }
@@ -234,32 +209,25 @@ void SAM2CRD( SAMFile& sf,
         Convert_Alignment_to_align( aln, laAln );
         uint nIndels = 0;
         for ( int i = 0; i < laAln.Nblocks( ); i++ )
-             nIndels += Abs( laAln.Gaps(i) );
+            nIndels += Abs( laAln.Gaps(i) );
 
         uint nMismatches = 0;
-        if ( rec.hasTag(NM_TAG) )
-        {
+        if ( rec.hasTag(NM_TAG) ) {
             char* parse_end;
             nMismatches = strtol(rec.getTag(NM_TAG)->c_str(), &parse_end, 10);
-            if ( nMismatches < nIndels )
-            {
+            if ( nMismatches < nIndels ) {
                 sf.getLogger().log("Record for query %s has a cigar with %u indels, but NM is only %u.  We'll record 0 mismatches.",rec.getQueryName().c_str(),nIndels,nMismatches);
                 nMismatches = 0;
-            }
-            else
-            {
+            } else {
                 nMismatches -= nIndels;
             }
         }
 
         int nHits = 1;
-        if ( rec.hasTag(NH_TAG) )
-        {
+        if ( rec.hasTag(NH_TAG) ) {
             char* parse_end;
             nHits = strtol(rec.getTag(NH_TAG)->c_str(), &parse_end, 10);
-        }
-        else if ( rec.hasTag(IH_TAG) )
-        {
+        } else if ( rec.hasTag(IH_TAG) ) {
             char* parse_end;
             nHits = strtol(rec.getTag(IH_TAG)->c_str(), &parse_end, 10);
         }
@@ -273,25 +241,18 @@ void SAM2CRD( SAMFile& sf,
                                      nMismatches,
                                      nIndels,
                                      rec.getMapQ() ));
-    }
-    while ( sf.nextRecord(rec) );
+    } while ( sf.nextRecord(rec) );
 
     IdMap::iterator itr = idMap.begin();
     IdMap::iterator end = idMap.end();
-    if ( itr != end )
-    {
+    if ( itr != end ) {
         IdMap::value_type const* pLast = &*itr;
-        while ( ++itr != end )
-        {
+        while ( ++itr != end ) {
             IdMap::value_type const& cur = *itr;
-            if ( !strcmp(cur.first.first,pLast->first.first) )
-            {
-                if ( pLast->first.second == UNPAIRED )
-                {
+            if ( !strcmp(cur.first.first,pLast->first.first) ) {
+                if ( pLast->first.second == UNPAIRED ) {
                     sf.getLogger().log("Records for query %s were marked as both unpaired and paired.  We assumed that these were actually different reads.",pLast->first.first);
-                }
-                else
-                {
+                } else {
                     if ( cur.second.second != pLast->second.second )
                         sf.getLogger().log("Paired records for query %s came from two different libraries.  Choosing one arbitrarily.",pLast->first.first);
                     readPairs.push_back(pairinfo(pLast->second.first,cur.second.first,pLast->second.second));
@@ -303,29 +264,32 @@ void SAM2CRD( SAMFile& sf,
     idMap.clear();
 }
 
-void Convert_Alignment_to_align( const Alignment& aln, align& a )
-{    avector<int> gaps, lengths;
-     bool expectPairwise = false;
-     Block const* end = aln.end();
-     for ( Block const* pBlock = aln.begin(); pBlock != end; ++pBlock )
-     {    switch ( pBlock->getType() )
-          {    case Block::PADDING:
-                    break;
-               case Block::READGAP:
-                    if ( expectPairwise ) lengths.Append(0);
-                    expectPairwise = true;
-                    gaps.Append(pBlock->getLength());
-                    break;
-               case Block::REFGAP:
-                    if ( expectPairwise ) lengths.Append(0);
-                    expectPairwise = true;
-                    gaps.Append(-static_cast<int>(pBlock->getLength()));
-                    break;
-               case Block::PAIRWISE:
-                    if ( !expectPairwise ) gaps.Append(0);
-                    lengths.Append(pBlock->getLength());
-                    expectPairwise = false;
-                    break;    }    }
-     if (expectPairwise) lengths.Append(0);
-     a.Set( aln.getReadStart()-aln.getLeftHardClip(),aln.getRefStart(),
-          gaps,lengths );    }
+void Convert_Alignment_to_align( const Alignment& aln, align& a ) {
+    avector<int> gaps, lengths;
+    bool expectPairwise = false;
+    Block const* end = aln.end();
+    for ( Block const* pBlock = aln.begin(); pBlock != end; ++pBlock ) {
+        switch ( pBlock->getType() ) {
+        case Block::PADDING:
+            break;
+        case Block::READGAP:
+            if ( expectPairwise ) lengths.Append(0);
+            expectPairwise = true;
+            gaps.Append(pBlock->getLength());
+            break;
+        case Block::REFGAP:
+            if ( expectPairwise ) lengths.Append(0);
+            expectPairwise = true;
+            gaps.Append(-static_cast<int>(pBlock->getLength()));
+            break;
+        case Block::PAIRWISE:
+            if ( !expectPairwise ) gaps.Append(0);
+            lengths.Append(pBlock->getLength());
+            expectPairwise = false;
+            break;
+        }
+    }
+    if (expectPairwise) lengths.Append(0);
+    a.Set( aln.getReadStart()-aln.getLeftHardClip(),aln.getRefStart(),
+           gaps,lengths );
+}

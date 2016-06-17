@@ -21,7 +21,7 @@
 
 void kmer_spectrum_compute(const BaseVecVec & bvv,
                            KmerSpectrum     * p_kspec,
-                           const unsigned     VERBOSITY, 
+                           const unsigned     VERBOSITY,
                            const unsigned     NUM_THREADS,
                            const size_t       mem_mean_ceil = 0);
 
@@ -41,10 +41,10 @@ void kmer_bi_spectrum_compute(const BaseVecVec   & bvv,
 
 
 void kmer_spectra_by_quals_compute(const BaseVecVec   & bvv,
-				   const QualVecVec   & qvv,
-				   KmerQualitySpectra * p_kqspec,
-				   const unsigned       VERBOSITY,
-				   const unsigned       NUM_THREADS,
+                                   const QualVecVec   & qvv,
+                                   KmerQualitySpectra * p_kqspec,
+                                   const unsigned       VERBOSITY,
+                                   const unsigned       NUM_THREADS,
                                    const size_t         mem_mean_ceil = 0);
 
 void genome_analysis_report(const KmerSpectrum & kspec,

@@ -24,7 +24,7 @@
 /// Note: It is safe to pass the same vecUnipathSeq object for both the
 /// unipathSeqs and extendedSeqs arguments.
 void ExtendUnipathSeqs( const vecKmerPath& unipaths,
-                        const vecUnipathSeq& unipathSeqs, 
+                        const vecUnipathSeq& unipathSeqs,
                         vecUnipathSeq& extendedSeqs,
                         vec<Mux>& muxes );
 
@@ -32,7 +32,7 @@ void ExtendUnipathSeqs( const vecKmerPath& unipaths,
 /// to extend from the total collection of unipath seqs.
 void ExtendUnipathSeqs( const vecKmerPath& unipaths,
                         const vecUnipathSeq& unipathSeqs,
-                        const vecUnipathSeq& unipathSeqsToExtend, 
+                        const vecUnipathSeq& unipathSeqsToExtend,
                         vecUnipathSeq& extendedSeqs,
                         vec<Mux>& muxes );
 #endif

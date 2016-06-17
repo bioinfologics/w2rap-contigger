@@ -14,7 +14,7 @@
 #include "CoreTools.h"
 
 void Samples( String& species, const String& SAMPLE, String& X, String& EVALUATE,
-     String& SELECT_FRAC, int& READS_TO_USE, const String& DATASET, String& BAM,
-     vec<String>& subsam_names );
+              String& SELECT_FRAC, int& READS_TO_USE, const String& DATASET, String& BAM,
+              vec<String>& subsam_names );
 
 #endif

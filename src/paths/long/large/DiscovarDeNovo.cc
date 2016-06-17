@@ -15,31 +15,31 @@ const char *DOC =
 #include "MainTools.h"
 #include "paths/long/large/GapToyCore.h"
 
-int main(int argc, char *argv[])
-{
-     RunTime();
+int main(int argc, char *argv[]) {
+    RunTime();
 
-     BeginCommandArgumentsNoHeader;
+    BeginCommandArgumentsNoHeader;
 
-     CommandDoc(DOC);
+    CommandDoc(DOC);
 
-     CommandArgument_String_Doc(READS,
-          "Comma-separated list of input files, see manual for details");
-     CommandArgument_String_Doc(OUT_DIR, "name of output directory");
-     CommandArgument_UnsignedInt_OrDefault_Doc(NUM_THREADS,0,
-          "Number of threads.  By default, the number of processors online.");
-     CommandArgument_String_OrDefault_Doc(REFHEAD, "",
-          "use reference sequence REFHEAD.fasta to annotate assembly, and also "
-          "REFHEAD.names if it exists");
-     CommandArgument_Double_OrDefault_Doc(MAX_MEM_GB, 0,
-          "if specified, maximum allowed RAM use in GB; in some cases may be "
-          "exceeded by our code");
-     CommandArgument_Bool_OrDefault_Doc(MEMORY_CHECK, False,
-          "if True, attempt to determine actual available memory and cap "
-          "memory usage accordingly; slow and can cause machine to become "
-          "very sluggish, or can result in process being killed");
-     EndCommandArguments;
+    CommandArgument_String_Doc(READS,
+                               "Comma-separated list of input files, see manual for details");
+    CommandArgument_String_Doc(OUT_DIR, "name of output directory");
+    CommandArgument_UnsignedInt_OrDefault_Doc(NUM_THREADS,0,
+            "Number of threads.  By default, the number of processors online.");
+    CommandArgument_String_OrDefault_Doc(REFHEAD, "",
+                                         "use reference sequence REFHEAD.fasta to annotate assembly, and also "
+                                         "REFHEAD.names if it exists");
+    CommandArgument_Double_OrDefault_Doc(MAX_MEM_GB, 0,
+                                         "if specified, maximum allowed RAM use in GB; in some cases may be "
+                                         "exceeded by our code");
+    CommandArgument_Bool_OrDefault_Doc(MEMORY_CHECK, False,
+                                       "if True, attempt to determine actual available memory and cap "
+                                       "memory usage accordingly; slow and can cause machine to become "
+                                       "very sluggish, or can result in process being killed");
+    EndCommandArguments;
 
-     GapToyCore(argc,argv);
+    GapToyCore(argc,argv);
 
-     Scram(0);    }
+    Scram(0);
+}

@@ -32,23 +32,20 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-namespace
-{
-    pthread_t gMainThread;
-    CRD::HOOKFUNC gOldHook;
+namespace {
+pthread_t gMainThread;
+CRD::HOOKFUNC gOldHook;
 
-    void exitHook( int status )
-    {
-        if ( !pthread_equal(gMainThread,pthread_self()) )
-            pthread_exit( reinterpret_cast<void*>(status) );
-    }
+void exitHook( int status ) {
+    if ( !pthread_equal(gMainThread,pthread_self()) )
+        pthread_exit( reinterpret_cast<void*>(status) );
+}
 }
 
 WorklistParameterizer::WorklistParameterizer( size_t nUnits,
-                                              size_t bytesPerUnit,
-                                              size_t minBatchSize,
-                                              unsigned nThreads )
-{
+        size_t bytesPerUnit,
+        size_t minBatchSize,
+        unsigned nThreads ) {
     if ( nUnits < minBatchSize )
         minBatchSize = nUnits;
 
@@ -72,8 +69,7 @@ WorklistParameterizer::WorklistParameterizer( size_t nUnits,
 
     if ( maxBatches <= nThreads )
         nThreads = minBatches = maxBatches;
-    else
-    {
+    else {
         // round up minBatches to an even divisor of nThreads, subject to
         // remaining less than maxBatches
         size_t nCycles = (minBatches+nThreads-1)/nThreads;
@@ -90,25 +86,20 @@ WorklistParameterizer::WorklistParameterizer( size_t nUnits,
     ForceAssertLe(mNThreads*mBatchSize,maxSimultaneous);
 }
 
-QueueStateManipulator::~QueueStateManipulator()
-{
+QueueStateManipulator::~QueueStateManipulator() {
     size_t size = mQS.getSize();
     bool done = mQS.isDone();
 
-    if ( !mDone && done )
-    {
+    if ( !mDone && done ) {
         mQS.mCondNotEmpty.broadcast();
-    }
-    else if ( size > mSize )
-    {
+    } else if ( size > mSize ) {
         if ( size-mSize == 1 )
             mQS.mCondNotEmpty.signal();
         else
             mQS.mCondNotEmpty.broadcast();
     }
 
-    if ( mSize && !size )
-    {
+    if ( mSize && !size ) {
         mQS.mCondEmpty.broadcast();
     }
 }
@@ -116,50 +107,49 @@ QueueStateManipulator::~QueueStateManipulator()
 // populate_cpu_affinity - parse environment variable GOMP_CPU_AFFINITY and populate mGompCpuAffinity
 //
 
-static void populate_cpu_affinity( std::vector<int>& cpu_list )
-{
+static void populate_cpu_affinity( std::vector<int>& cpu_list ) {
     size_t nprocs = processorsOnline();
     const char *affp= getenv("GOMP_CPU_AFFINITY");
     if ( affp  ) {
-	std::istringstream buff(affp);
-	std::istream_iterator<std::string> item_begin(buff);
-	std::istream_iterator<std::string> item_end;
+        std::istringstream buff(affp);
+        std::istream_iterator<std::string> item_begin(buff);
+        std::istream_iterator<std::string> item_end;
 
-	bool good=false;
-	for ( auto item = item_begin; item != item_end; ++item ) {
-	    size_t start = 0, stop = 0, stride = 1;
-	    good = false;
+        bool good=false;
+        for ( auto item = item_begin; item != item_end; ++item ) {
+            size_t start = 0, stop = 0, stride = 1;
+            good = false;
 
-	    std::istringstream sitem(*item);
-	    if  (!(sitem >> start)) break;		// expect start
-	    if ( sitem.good() ) {
-		if ( sitem.peek() != '-' ) break;	// if more, must be dash (-)
-		sitem.ignore();
-		if (!(sitem >> stop)) break;		// expect stop
-		if ( sitem.good() ) {
-		    if ( sitem.peek() != ':' ) break;	// if more, must be colon (:)
-		    sitem.ignore();
-		    if (!(sitem >> stride)) break;	// expect stride
-		}
-	    }
-	    good = true;
+            std::istringstream sitem(*item);
+            if  (!(sitem >> start)) break;		// expect start
+            if ( sitem.good() ) {
+                if ( sitem.peek() != '-' ) break;	// if more, must be dash (-)
+                sitem.ignore();
+                if (!(sitem >> stop)) break;		// expect stop
+                if ( sitem.good() ) {
+                    if ( sitem.peek() != ':' ) break;	// if more, must be colon (:)
+                    sitem.ignore();
+                    if (!(sitem >> stride)) break;	// expect stride
+                }
+            }
+            good = true;
 
-	    ForceAssertGt(nprocs,0U);
-	    ForceAssertGt(stride,0U);
-	    start = std::min( nprocs-1, start );		// clamp [0,nprocs)
-	    stop = std::min( nprocs-1, stop );
+            ForceAssertGt(nprocs,0U);
+            ForceAssertGt(stride,0U);
+            start = std::min( nprocs-1, start );		// clamp [0,nprocs)
+            stop = std::min( nprocs-1, stop );
 
-	    size_t i = start;
-	    do {
-		cpu_list.push_back(i);
-		i += stride;
-	    } while ( i <= stop );	// test at end, so that if only start is set, we still get one value
-	}
+            size_t i = start;
+            do {
+                cpu_list.push_back(i);
+                i += stride;
+            } while ( i <= stop );	// test at end, so that if only start is set, we still get one value
+        }
 
-	if (!good) {
-	    cpu_list.clear();
-	    std::cout << "Warning: apparent nonsense in GOMP_CPU_AFFINITY: " << affp << std::endl;
-	}
+        if (!good) {
+            cpu_list.clear();
+            std::cout << "Warning: apparent nonsense in GOMP_CPU_AFFINITY: " << affp << std::endl;
+        }
     }
 }
 
@@ -170,15 +160,15 @@ static void populate_cpu_affinity( std::vector<int>& cpu_list )
 //
 void ThreadPool::setThreadAffinity() {
     if ( mGompCpuAffinity.size() ) {
-	size_t procno = mGompCpuAffinity[mNextAffinity];
-	mNextAffinity = ( mNextAffinity + 1 ) % mGompCpuAffinity.size();
+        size_t procno = mGompCpuAffinity[mNextAffinity];
+        mNextAffinity = ( mNextAffinity + 1 ) % mGompCpuAffinity.size();
 
-  //[GONZA] commanted this
+        //[GONZA] commanted this
 #ifndef __APPLE__
-	cpu_set_t cpuset;
-	CPU_ZERO(&cpuset);
-	CPU_SET(procno, &cpuset);
-	checkThreadOp(pthread_attr_setaffinity_np(&mAttr, sizeof(cpuset), &cpuset), "failed setting CPU affinity for threads: ");
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(procno, &cpuset);
+        checkThreadOp(pthread_attr_setaffinity_np(&mAttr, sizeof(cpuset), &cpuset), "failed setting CPU affinity for threads: ");
 #endif
 
     }
@@ -188,22 +178,19 @@ void ThreadPool::setThreadAffinity() {
 ThreadPool::ThreadPool( size_t nThreads, size_t threadStackSize,
                         void* (*threadFunc)(void*), void* threadFuncArg,
                         bool use_gomp_affinity )
-: mThreadFunc(threadFunc), mThreadFuncArg(threadFuncArg),
-  mNThreads(validateNThreads(nThreads)), mThreads(new pthread_t[mNThreads]),
-  mNextAffinity(0), mCondExit(*this), mMonitorInterval(0),
-  mReportRestarts(false)
-{
+    : mThreadFunc(threadFunc), mThreadFuncArg(threadFuncArg),
+      mNThreads(validateNThreads(nThreads)), mThreads(new pthread_t[mNThreads]),
+      mNextAffinity(0), mCondExit(*this), mMonitorInterval(0),
+      mReportRestarts(false) {
     omp_set_num_threads(1);
     checkThreadOp(pthread_attr_init(&mAttr),
                   "ThreadAttr initialization failed: ");
 
     if ( use_gomp_affinity ) populate_cpu_affinity( mGompCpuAffinity );
 
-    if ( !threadStackSize )
-    {
+    if ( !threadStackSize ) {
         struct rlimit rl;
-        if ( getrlimit(RLIMIT_STACK,&rl) )
-        {
+        if ( getrlimit(RLIMIT_STACK,&rl) ) {
             ErrNo err;
             FatalErr("Unable to determine current stack size" << err);
         }
@@ -218,30 +205,25 @@ ThreadPool::ThreadPool( size_t nThreads, size_t threadStackSize,
 
     setThreadAffinity();	// one for the main thread
     pthread_t* pThread = mThreads + mNThreads;
-    while ( pThread-- > mThreads )
-    {
-	setThreadAffinity();
+    while ( pThread-- > mThreads ) {
+        setThreadAffinity();
         checkThreadOp(pthread_create(pThread,&mAttr,threadFunc,threadFuncArg),
                       "Thread creation failed: ");
     }
 }
 
-ThreadPool::~ThreadPool()
-{
+ThreadPool::~ThreadPool() {
     shutdown();
     checkThreadOp(pthread_attr_destroy(&mAttr),
-                    "ThreadAttr destruction failed: ");
+                  "ThreadAttr destruction failed: ");
     omp_set_num_threads(getConfiguredNumThreads());
 }
 
 void ThreadPool::threadDeathMonitor( long newInterval,
-                                     bool reportRestarts )
-{
-    if ( mNThreads )
-    {
+                                     bool reportRestarts ) {
+    if ( mNThreads ) {
         long oldInterval;
-        if ( true )
-        {
+        if ( true ) {
             Locker ml(*this);
 
             oldInterval = mMonitorInterval;
@@ -249,15 +231,12 @@ void ThreadPool::threadDeathMonitor( long newInterval,
             mReportRestarts = reportRestarts;
         }
 
-        if ( !oldInterval && newInterval )
-        {
+        if ( !oldInterval && newInterval ) {
             gMainThread = pthread_self();
             gOldHook = CRD::installExitHook(&exitHook);
             checkThreadOp(pthread_create(&mMonitorThread,0,threadFunc,this),
                           "Can't create ThreadPool monitor: ");
-        }
-        else if ( oldInterval && !newInterval )
-        {
+        } else if ( oldInterval && !newInterval ) {
             mCondExit.signal();
             checkThreadOp(pthread_join(mMonitorThread,0),
                           "ThreadPool monitor join failed: ");
@@ -266,33 +245,28 @@ void ThreadPool::threadDeathMonitor( long newInterval,
     }
 }
 
-size_t ThreadPool::findThreadIndex( pthread_t handle )
-{
+size_t ThreadPool::findThreadIndex( pthread_t handle ) {
     Locker ml(*this);
     pthread_t* pThread = mThreads + mNThreads;
-    while ( pThread-- > mThreads )
-    {
+    while ( pThread-- > mThreads ) {
         if ( pthread_equal(handle,*pThread) )
             return pThread - mThreads;
     }
     FatalErr("Unable to find thread's index.");
 }
 
-void ThreadPool::shutdown()
-{
+void ThreadPool::shutdown() {
     threadDeathMonitor(0);
 
     bool somebodyDied = false;
     pthread_t* pThread = mThreads + mNThreads;
-    while ( pThread-- > mThreads )
-    {
+    while ( pThread-- > mThreads ) {
         void* retVal = 0;
         checkThreadOp(pthread_join(*pThread,&retVal),"Thread join failed: ");
-        if ( reinterpret_cast<long>(retVal) )
-        {
+        if ( reinterpret_cast<long>(retVal) ) {
             std::cout << "Thread #" << (pThread-mThreads)
-                        << " died with a return value of "
-                        << reinterpret_cast<long>(retVal) << std::endl;
+                      << " died with a return value of "
+                      << reinterpret_cast<long>(retVal) << std::endl;
             somebodyDied = true;
         }
     }
@@ -304,11 +278,9 @@ void ThreadPool::shutdown()
     mNThreads = 0;
 }
 
-void ThreadPool::monitorThreads()
-{
+void ThreadPool::monitorThreads() {
     Locker ml(*this);
-    while ( true )
-    {
+    while ( true ) {
         ml.timedWait(mCondExit,mMonitorInterval);
         if ( !mMonitorInterval )
             break;
@@ -316,19 +288,17 @@ void ThreadPool::monitorThreads()
         pthread_t* pThread = mThreads + mNThreads;
         setNextAffinity(0);	// restart the list
         setThreadAffinity();	// one for the main thread
-        while ( pThread-- > mThreads )
-        {
-	    setThreadAffinity();	// jump past each element just in case we re-create the thread
-            if ( pthread_kill(*pThread,0) ==  ESRCH )
-            {
+        while ( pThread-- > mThreads ) {
+            setThreadAffinity();	// jump past each element just in case we re-create the thread
+            if ( pthread_kill(*pThread,0) ==  ESRCH ) {
                 void* retVal;
                 checkThreadOp(pthread_join(*pThread,&retVal),
                               "Can't join to dead thread: ");
                 if ( mReportRestarts )
                     std::cout << "Restarting dead thread #" <<
-                                 (pThread-mThreads) <<
-                                 " which died with a return value of "
-                                 << reinterpret_cast<long>(retVal) << std::endl;
+                              (pThread-mThreads) <<
+                              " which died with a return value of "
+                              << reinterpret_cast<long>(retVal) << std::endl;
                 checkThreadOp(pthread_create(pThread,&mAttr,mThreadFunc,mThreadFuncArg),
                               "Can't create replacement thread: ");
             }
@@ -336,8 +306,7 @@ void ThreadPool::monitorThreads()
     }
 }
 
-size_t ThreadPool::validateNThreads( size_t nThreads )
-{
+size_t ThreadPool::validateNThreads( size_t nThreads ) {
     size_t nProcs = processorsOnline();
     if ( nThreads > 3*nProcs )
         FatalErr("Trying to start a thread pool with " << nThreads <<
@@ -347,15 +316,13 @@ size_t ThreadPool::validateNThreads( size_t nThreads )
     return nThreads;
 }
 
-void* ThreadPool::threadFunc( void* ptr )
-{
+void* ThreadPool::threadFunc( void* ptr ) {
     reinterpret_cast<ThreadPool*>(ptr)->monitorThreads();
     return 0;
 }
 
 
-void ThreadPool::die( int errNo, char const* msg )
-{
+void ThreadPool::die( int errNo, char const* msg ) {
     ErrNo err(errNo);
     FatalErr(msg << err);
 }
@@ -371,55 +338,51 @@ void ThreadPool::die( int errNo, char const* msg )
 
 NaiveThreadPool::NaiveThreadPool(const int num_threads,
                                  const int num_items) :
-  num_threads_(num_threads),
-  num_items_(num_items)
-{
-  item_IDs_ = new int[num_threads];
-  for (int i = 0; i < num_threads; i++)
-    item_IDs_[i] = -1;
+    num_threads_(num_threads),
+    num_items_(num_items) {
+    item_IDs_ = new int[num_threads];
+    for (int i = 0; i < num_threads; i++)
+        item_IDs_[i] = -1;
 
-  thread_IDs_ = new int[num_items];
-  for (int i = 0; i < num_items; i++)
-    thread_IDs_[i] = -1;
+    thread_IDs_ = new int[num_items];
+    for (int i = 0; i < num_items; i++)
+        thread_IDs_[i] = -1;
 }
 
-NaiveThreadPool::~NaiveThreadPool()
-{
-  delete [] item_IDs_;
-  delete [] thread_IDs_;
+NaiveThreadPool::~NaiveThreadPool() {
+    delete [] item_IDs_;
+    delete [] thread_IDs_;
 }
 
 // Obtain a thread_ID and associate it with an item_ID
 //    item_IDs_[thread_ID] gives the item_ID that thread_ID is processing
 //    thread_IDs_[item_ID] gives the thread_ID that processed the item_ID
-int NaiveThreadPool::AssignThread(const int item_ID)
-{
-  Locker lock(*this);
-  int thread_ID = 0;
+int NaiveThreadPool::AssignThread(const int item_ID) {
+    Locker lock(*this);
+    int thread_ID = 0;
 
-  // search list of thread_IDs for one that is available
-  // (i.e., item_IDs_[thread_ID_] == -1)
-  while (thread_ID < num_threads_ && item_IDs_[thread_ID] >= 0)
-    thread_ID++;
+    // search list of thread_IDs for one that is available
+    // (i.e., item_IDs_[thread_ID_] == -1)
+    while (thread_ID < num_threads_ && item_IDs_[thread_ID] >= 0)
+        thread_ID++;
 
-  // if this assert fails something is wrong.
-  // if we ask for a thread then there should be at least one available.
-  ForceAssertLt(thread_ID, num_threads_);
+    // if this assert fails something is wrong.
+    // if we ask for a thread then there should be at least one available.
+    ForceAssertLt(thread_ID, num_threads_);
 
-  item_IDs_[thread_ID] = item_ID;
-  thread_IDs_[item_ID] = thread_ID;
+    item_IDs_[thread_ID] = item_ID;
+    thread_IDs_[item_ID] = thread_ID;
 
-  return thread_ID;
+    return thread_ID;
 }
 
 
-void NaiveThreadPool::UnassignThread(const int item_ID)
-{
-  const int & thread_ID = thread_IDs_[item_ID];
-  if (thread_ID != -1)
-    item_IDs_[thread_ID] = -1;
-  else
-    std::cout << "trying to dissociate unassociated item_ID." << std::endl;
+void NaiveThreadPool::UnassignThread(const int item_ID) {
+    const int & thread_ID = thread_IDs_[item_ID];
+    if (thread_ID != -1)
+        item_IDs_[thread_ID] = -1;
+    else
+        std::cout << "trying to dissociate unassociated item_ID." << std::endl;
 }
 
 
@@ -443,78 +406,72 @@ void NaiveThreadPool::UnassignThread(const int item_ID)
  */
 ThreadBlockLocks::ThreadBlockLocks(const int num_blocks,
                                    const int num_threads) :
-  num_blocks_(num_blocks),
-  num_threads_(num_threads)
-{
-  thread_IDs_ = new int[num_blocks];
-  for (int i = 0; i < num_blocks; i++)
-    thread_IDs_[i] = -1;
+    num_blocks_(num_blocks),
+    num_threads_(num_threads) {
+    thread_IDs_ = new int[num_blocks];
+    for (int i = 0; i < num_blocks; i++)
+        thread_IDs_[i] = -1;
 }
 
-ThreadBlockLocks::~ThreadBlockLocks()
-{
-  delete [] thread_IDs_;
+ThreadBlockLocks::~ThreadBlockLocks() {
+    delete [] thread_IDs_;
 }
 
 // a debug function
-void ThreadBlockLocks::OutputBlocked(const int block_ID, const int thread_ID)
-{
-  std::cout << "blocker("<< block_ID <<"): ";
-  for (int i = 0; i != num_blocks_; i++) {
-    const int & tID = thread_IDs_[i];
-    if (tID < 0) std::cout << " -" << std::endl;
-    else         std::cout << " " << tID << std::endl;
-  }
+void ThreadBlockLocks::OutputBlocked(const int block_ID, const int thread_ID) {
+    std::cout << "blocker("<< block_ID <<"): ";
+    for (int i = 0; i != num_blocks_; i++) {
+        const int & tID = thread_IDs_[i];
+        if (tID < 0) std::cout << " -" << std::endl;
+        else         std::cout << " " << tID << std::endl;
+    }
 }
 
 
 // Locks block_ID, updating thread_IDs vec with the blocking thread_ID.
 // returns the number of tries.
-int ThreadBlockLocks::LockBlock(const int block_ID, const int thread_ID)
-{
-  int tries = 0;
-  while (thread_IDs_[block_ID] != thread_ID) {
-    Locker lock(*this);
-    if (thread_IDs_[block_ID] < 0) // test for availability
-      thread_IDs_[block_ID] = thread_ID;
-    tries++;
-  }
-  return tries;
+int ThreadBlockLocks::LockBlock(const int block_ID, const int thread_ID) {
+    int tries = 0;
+    while (thread_IDs_[block_ID] != thread_ID) {
+        Locker lock(*this);
+        if (thread_IDs_[block_ID] < 0) // test for availability
+            thread_IDs_[block_ID] = thread_ID;
+        tries++;
+    }
+    return tries;
 }
 
 // Locks one block out of several possible in a set,
 // updating thread_IDs vec with the blocking thread_ID.
 // returns the block_ID.
 int ThreadBlockLocks::LockSomeBlock(const std::set<int> & block_IDs,
-                                    const int thread_ID)
-{
-  bool found = false;
+                                    const int thread_ID) {
+    bool found = false;
 
-  std::set<int>::iterator i_block_ID = block_IDs.begin();
-  while (!found) {
+    std::set<int>::iterator i_block_ID = block_IDs.begin();
+    while (!found) {
 
-    if (thread_IDs_[*i_block_ID] < 0) {   // block is not locked
-      Locker lock(*this);
-      if (thread_IDs_[*i_block_ID] < 0) { // test for availability again
-        thread_IDs_[*i_block_ID] = thread_ID;
-        found = true;
-      }
+        if (thread_IDs_[*i_block_ID] < 0) {   // block is not locked
+            Locker lock(*this);
+            if (thread_IDs_[*i_block_ID] < 0) { // test for availability again
+                thread_IDs_[*i_block_ID] = thread_ID;
+                found = true;
+            }
+        }
+
+        if (!found) {
+            i_block_ID++;
+            if (i_block_ID == block_IDs.end())
+                i_block_ID = block_IDs.begin();
+        }
     }
-
-    if (!found) {
-      i_block_ID++;
-      if (i_block_ID == block_IDs.end())
-        i_block_ID = block_IDs.begin();
-    }
-  }
-  return *i_block_ID;
+    return *i_block_ID;
 }
 
 
 // Unlocks block_ID.  Should only be done by the thread that locked the block.
 // If so, there is no need to use mutex_locks.
-void ThreadBlockLocks::UnlockBlock(const int block_ID, const int thread_ID)
-{
-  ForceAssertEq(thread_IDs_[block_ID], thread_ID);
-  thread_IDs_[block_ID] = -1;
+void ThreadBlockLocks::UnlockBlock(const int block_ID, const int thread_ID) {
+    ForceAssertEq(thread_IDs_[block_ID], thread_ID);
+    thread_IDs_[block_ID] = -1;
 }

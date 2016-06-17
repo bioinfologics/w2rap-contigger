@@ -15,79 +15,84 @@
 
 class Mux {
 
-public:
-  Mux()
-    : m_segment( -1 )
-  {}
-
-  Mux( const OrientedKmerPathId& okpi, int segment, int numKmers )
-    : m_pathId   ( okpi ),
-      m_segment  ( segment ),
-      m_numKmers ( numKmers )
-  {}
-
-  OrientedKmerPathId  GetPathId() const { return m_pathId; }
-  void SetPathId( const OrientedKmerPathId& id ) { m_pathId = id; }
-  
-  int  GetSegment() const  { return m_segment; }
-  void SetSegment( const int segment )  { m_segment = segment; }
-  
-  int  GetNumKmers() const { return m_numKmers; }
-  void SetNumKmers( const int numKmers ) { m_numKmers = numKmers; }
-
-  bool operator< ( const Mux& other ) const
-  {
-    return ( m_pathId < other.m_pathId ||
-             m_pathId == other.m_pathId && m_segment < other.m_segment );
-  }
-  
-  bool operator== ( const Mux& other ) const
-  {
-    return ( m_pathId == other.m_pathId && m_segment == other.m_segment ); 
-  }
-
-  friend struct OrderBySegment;
-  struct OrderBySegment : public std::binary_function<Mux,Mux,bool>
-  {
-    bool operator() ( const Mux& lhs, const Mux& rhs ) const
-    {
-      return ( lhs.m_segment < rhs.m_segment ||
-               lhs.m_segment == rhs.m_segment && lhs.m_pathId < rhs.m_pathId );
+  public:
+    Mux()
+        : m_segment( -1 ) {
     }
-  };
 
-  friend std::ostream& operator<< ( std::ostream& out, const Mux& aMux )
-  {
-    return out << aMux.m_pathId << "(s" << aMux.m_segment << ",k" << aMux.m_numKmers << ")";
-  }
+    Mux( const OrientedKmerPathId& okpi, int segment, int numKmers )
+        : m_pathId   ( okpi ),
+          m_segment  ( segment ),
+          m_numKmers ( numKmers ) {
+    }
 
-  void Write( std::ostream& out ) const;
-  void Read( std::istream& in );
+    OrientedKmerPathId  GetPathId() const {
+        return m_pathId;
+    }
+    void SetPathId( const OrientedKmerPathId& id ) {
+        m_pathId = id;
+    }
 
-private:
-  OrientedKmerPathId m_pathId;
-  int m_segment;
-  int m_numKmers;
+    int  GetSegment() const  {
+        return m_segment;
+    }
+    void SetSegment( const int segment )  {
+        m_segment = segment;
+    }
+
+    int  GetNumKmers() const {
+        return m_numKmers;
+    }
+    void SetNumKmers( const int numKmers ) {
+        m_numKmers = numKmers;
+    }
+
+    bool operator< ( const Mux& other ) const {
+        return ( m_pathId < other.m_pathId ||
+                 m_pathId == other.m_pathId && m_segment < other.m_segment );
+    }
+
+    bool operator== ( const Mux& other ) const {
+        return ( m_pathId == other.m_pathId && m_segment == other.m_segment );
+    }
+
+    friend struct OrderBySegment;
+    struct OrderBySegment : public std::binary_function<Mux,Mux,bool> {
+        bool operator() ( const Mux& lhs, const Mux& rhs ) const {
+            return ( lhs.m_segment < rhs.m_segment ||
+                     lhs.m_segment == rhs.m_segment && lhs.m_pathId < rhs.m_pathId );
+        }
+    };
+
+    friend std::ostream& operator<< ( std::ostream& out, const Mux& aMux ) {
+        return out << aMux.m_pathId << "(s" << aMux.m_segment << ",k" << aMux.m_numKmers << ")";
+    }
+
+    void Write( std::ostream& out ) const;
+    void Read( std::istream& in );
+
+  private:
+    OrientedKmerPathId m_pathId;
+    int m_segment;
+    int m_numKmers;
 
 };
 TRIVIALLY_SERIALIZABLE(Mux);
 
 inline
 void
-Mux::Write( std::ostream& out ) const
-{
-  m_pathId.Write( out );
-  BinWrite( out, m_segment );
-  BinWrite( out, m_numKmers );
+Mux::Write( std::ostream& out ) const {
+    m_pathId.Write( out );
+    BinWrite( out, m_segment );
+    BinWrite( out, m_numKmers );
 }
 
 inline
 void
-Mux::Read( std::istream& in )
-{
-  m_pathId.Read( in );
-  BinRead( in, m_segment );
-  BinRead( in, m_numKmers );
+Mux::Read( std::istream& in ) {
+    m_pathId.Read( in );
+    BinRead( in, m_segment );
+    BinRead( in, m_numKmers );
 }
 
 

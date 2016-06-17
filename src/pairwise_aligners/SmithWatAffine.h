@@ -28,54 +28,54 @@
 
 
 unsigned int SmithWatAffine( const basevector& S, const basevector& T,
-			     alignment& a,
-			     bool penalize_left_gap = true,
-			     bool penalize_right_gap = true,
+                             alignment& a,
+                             bool penalize_left_gap = true,
+                             bool penalize_right_gap = true,
                              const int mismatch_penalty = 3,
                              const int gap_open_penalty = 12,
                              const int gap_extend_penalty = 1 );
 
 
 unsigned int SmithWatAffineParallel(
-                             const basevector& S, const basevector& T,
-			     alignment& a,
-			     bool penalize_left_gap = true,
-			     bool penalize_right_gap = true,
-                             const int mismatch_penalty = 3,
-                             const int gap_open_penalty = 12,
-                             const int gap_extend_penalty = 1
-                             );
+    const basevector& S, const basevector& T,
+    alignment& a,
+    bool penalize_left_gap = true,
+    bool penalize_right_gap = true,
+    const int mismatch_penalty = 3,
+    const int gap_open_penalty = 12,
+    const int gap_extend_penalty = 1
+);
 
 // this is r48241's SmithWatAffineParallel, with a slightly different data/thread pattern
 unsigned int SmithWatAffineParallel2(
-                             const basevector& S, const basevector& T,
-			     alignment& a,
-			     bool penalize_left_gap = true,
-			     bool penalize_right_gap = true,
-                             const int mismatch_penalty = 3,
-                             const int gap_open_penalty = 12,
-                             const int gap_extend_penalty = 1
-                             );
+    const basevector& S, const basevector& T,
+    alignment& a,
+    bool penalize_left_gap = true,
+    bool penalize_right_gap = true,
+    const int mismatch_penalty = 3,
+    const int gap_open_penalty = 12,
+    const int gap_extend_penalty = 1
+);
 
 unsigned int SmithWatAffineBanded( const basevector& S, const basevector& T,
-                             int offset, int bandwidth,
-			     align& a, int& nerrors,
-                             const int mismatch_penalty = 3,
-                             const int gap_open_penalty = 12,
-                             const int gap_extend_penalty = 1);
+                                   int offset, int bandwidth,
+                                   align& a, int& nerrors,
+                                   const int mismatch_penalty = 3,
+                                   const int gap_open_penalty = 12,
+                                   const int gap_extend_penalty = 1);
 
 
 typedef unsigned int (*SubAlignFuncPtr)(const basevector&, const basevector&, alignment&, bool, bool, const int, const int, const int);
 unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
-			     alignment& a,
-                             int K = 501,
-			     bool penalize_left_gap = true,
-			     bool penalize_right_gap = true,
-                             const int verbose = 0,
-                             const int mismatch_penalty = 3,
-                             const int gap_open_penalty = 12,
-                             const int gap_extend_penalty = 1,
-                             SubAlignFuncPtr subalign = SmithWatAffineParallel2 );
+                                  alignment& a,
+                                  int K = 501,
+                                  bool penalize_left_gap = true,
+                                  bool penalize_right_gap = true,
+                                  const int verbose = 0,
+                                  const int mismatch_penalty = 3,
+                                  const int gap_open_penalty = 12,
+                                  const int gap_extend_penalty = 1,
+                                  SubAlignFuncPtr subalign = SmithWatAffineParallel2 );
 
 
 #endif

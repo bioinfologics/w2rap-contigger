@@ -20,18 +20,15 @@
 #define ITR Directory::const_iterator
 
 ITR::const_iterator( std::string const& path )
-: mDir(path), mpDIR(opendir(mDir.c_str())), mPos(-1L)
-{
+    : mDir(path), mpDIR(opendir(mDir.c_str())), mPos(-1L) {
     checkStream();
     nextEntry();
 }
 
-ITR& ITR::operator=( const_iterator const& that )
-{
+ITR& ITR::operator=( const_iterator const& that ) {
     endStream();
     mDir = that.mDir;
-    if ( that.mpDIR )
-    {
+    if ( that.mpDIR ) {
         mpDIR = opendir(mDir.c_str());
         checkStream();
         seekdir(mpDIR,that.mPos);
@@ -40,11 +37,9 @@ ITR& ITR::operator=( const_iterator const& that )
     return *this;
 }
 
-void ITR::nextEntry()
-{
+void ITR::nextEntry() {
     mPos = telldir(mpDIR);
-    if ( mPos == -1 )
-    {
+    if ( mPos == -1 ) {
         ErrNo err;
         FatalErr("Can't get directory position for " << mDir << err);
     }
@@ -55,28 +50,22 @@ void ITR::nextEntry()
         mFile = File(mDir+pDirEnt->d_name);
     else if ( !errno ) // at EOF
         endStream();
-    else // error
-    {
+    else { // error
         ErrNo err;
         FatalErr("Can't read directory " << mDir << err);
     }
 }
 
-void ITR::checkStream()
-{
-    if ( !mpDIR )
-    {
+void ITR::checkStream() {
+    if ( !mpDIR ) {
         ErrNo err;
         FatalErr("Can't open directory " << mDir << err);
     }
 }
 
-void ITR::endStream()
-{
-    if ( mpDIR )
-    {
-        if ( closedir(mpDIR) )
-        {
+void ITR::endStream() {
+    if ( mpDIR ) {
+        if ( closedir(mpDIR) ) {
             ErrNo err;
             FatalErr("Can't close directory " << mDir << err);
         }
@@ -85,16 +74,14 @@ void ITR::endStream()
     mPos = -1L;
 }
 
-bool Directory::create( bool recursive, int mode ) const
-{
+bool Directory::create( bool recursive, int mode ) const {
     if ( isValid() )
         return false;
 
     if ( recursive )
         directory().create(true,mode);
 
-    if ( mkdir(toString().c_str(),mode) )
-    {
+    if ( mkdir(toString().c_str(),mode) ) {
         ErrNo err;
         FatalErr("Can't create directory " << toString() << err);
     }
@@ -102,10 +89,8 @@ bool Directory::create( bool recursive, int mode ) const
     return true;
 }
 
-void Directory::remove() const
-{
-    if ( rmdir(toString().c_str()) == -1 )
-    {
+void Directory::remove() const {
+    if ( rmdir(toString().c_str()) == -1 ) {
         ErrNo err;
         FatalErr("Can't remove file " << mPath << err);
     }

@@ -15,14 +15,16 @@
 
 class kmer_count {
 
-     public:
+  public:
 
-     kmer_count( ) { }
-     kmer_count( const int n ) : n(n) { }
+    kmer_count( ) { }
+    kmer_count( const int n ) : n(n) { }
 
-     int N( ) const { return n; }
+    int N( ) const {
+        return n;
+    }
 
-     int n;
+    int n;
 
 };
 

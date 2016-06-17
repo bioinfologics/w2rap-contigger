@@ -21,45 +21,47 @@
 #include "dna/Bases.h"
 #include <unistd.h>
 
-struct Alignment
-{
+struct Alignment {
     Alignment()=default;
     Alignment( uint32_t readId1, uint32_t readId2, int16_t offset,
-                bool isRC )
-    : mReadId1(readId1), mReadId2(readId2), mOffset(offset), mIsRC(isRC) {}
+               bool isRC )
+        : mReadId1(readId1), mReadId2(readId2), mOffset(offset), mIsRC(isRC) {}
 
     uint32_t mReadId1;
     uint32_t mReadId2;
     int16_t mOffset;
     bool mIsRC;
 
-    friend bool operator<( Alignment const& a1, Alignment const& a2 )
-    { if ( a1.mReadId1 < a2.mReadId1 ) return true;
-      if ( a1.mReadId1 > a2.mReadId1 ) return false;
-      if ( a1.mReadId2 < a2.mReadId2 ) return true;
-      if ( a1.mReadId2 > a2.mReadId2 ) return false;
-      if ( a1.mOffset < a2.mOffset ) return true;
-      if ( a1.mOffset > a2.mOffset ) return false;
-      if ( a1.mIsRC < a2.mIsRC ) return true;
-      return false; }
+    friend bool operator<( Alignment const& a1, Alignment const& a2 ) {
+        if ( a1.mReadId1 < a2.mReadId1 ) return true;
+        if ( a1.mReadId1 > a2.mReadId1 ) return false;
+        if ( a1.mReadId2 < a2.mReadId2 ) return true;
+        if ( a1.mReadId2 > a2.mReadId2 ) return false;
+        if ( a1.mOffset < a2.mOffset ) return true;
+        if ( a1.mOffset > a2.mOffset ) return false;
+        if ( a1.mIsRC < a2.mIsRC ) return true;
+        return false;
+    }
 
-    friend bool operator==( Alignment const& a1, Alignment const& a2 )
-    { return a1.mReadId1 == a2.mReadId1 && a1.mReadId2 == a2.mReadId2
-            && a1.mOffset == a2.mOffset && a1.mIsRC == a2.mIsRC; }
+    friend bool operator==( Alignment const& a1, Alignment const& a2 ) {
+        return a1.mReadId1 == a2.mReadId1 && a1.mReadId2 == a2.mReadId2
+               && a1.mOffset == a2.mOffset && a1.mIsRC == a2.mIsRC;
+    }
 };
 
 // functor for comparing based on ReadId2 THEN ReadId1, unlike the default
 // comparison within the Alignment class
 struct R2StrictWeakOrdering {
-    bool operator()( Alignment const& a1, Alignment const& a2 )
-    { if ( a1.mReadId2 < a2.mReadId2 ) return true;
-      if ( a1.mReadId2 > a2.mReadId2 ) return false;
-      if ( a1.mReadId1 < a2.mReadId1 ) return true;
-      if ( a1.mReadId1 > a2.mReadId1 ) return false;
-      if ( a1.mOffset < a2.mOffset ) return true;
-      if ( a1.mOffset > a2.mOffset ) return false;
-      if ( a1.mIsRC < a2.mIsRC ) return true;
-      return false; }
+    bool operator()( Alignment const& a1, Alignment const& a2 ) {
+        if ( a1.mReadId2 < a2.mReadId2 ) return true;
+        if ( a1.mReadId2 > a2.mReadId2 ) return false;
+        if ( a1.mReadId1 < a2.mReadId1 ) return true;
+        if ( a1.mReadId1 > a2.mReadId1 ) return false;
+        if ( a1.mOffset < a2.mOffset ) return true;
+        if ( a1.mOffset > a2.mOffset ) return false;
+        if ( a1.mIsRC < a2.mIsRC ) return true;
+        return false;
+    }
 };
 
 TRIVIALLY_SERIALIZABLE(Alignment);
@@ -69,51 +71,60 @@ TRIVIALLY_SERIALIZABLE(Friend);
 // ---- KmerLCLoc -- a kmer, its location, and the character to the left (LC)
 //
 template <class KMER_t>
-class KmerLcLoc : public KMER_t, public BVLoc
-{
-private:
+class KmerLcLoc : public KMER_t, public BVLoc {
+  private:
     uint8_t _lc_start : 2;
     uint8_t _lc_stop : 2;
     uint8_t _lc_null : 1;
 
-public:
+  public:
     KmerLcLoc(const KMER_t & kmer) : KMER_t(kmer), BVLoc(), _lc_start(0),_lc_stop(0),_lc_null(0) {}
     explicit KmerLcLoc(const unsigned K = 0) : KMER_t(K), BVLoc(), _lc_start(0),_lc_stop(0),_lc_null(0)  {}
 
     friend
-    bool operator < (const KmerLcLoc & a, const KmerLcLoc & b)
-    {
-	// we want kmers group togther, then sorted by LC, then position
-	if (static_cast<const KMER_t &>(a) < static_cast<const KMER_t &>(b)) return true;
-	if (static_cast<const KMER_t &>(b) < static_cast<const KMER_t &>(a)) return false;
-	if ( !a.is_lc_null() &&  b.is_lc_null() ) return true;			// null sorts toward the end
-	if (  a.is_lc_null() && !b.is_lc_null() ) return false;
-	if ( !a.is_lc_null() && !b.is_lc_null() ) {
-	    if ( a.get_lc_start() < b.get_lc_start() ) return true;
-	    if ( a.get_lc_start() > b.get_lc_start() ) return false;
-	    if ( a.get_lc_stop() < b.get_lc_stop() ) return true;
-	    if ( a.get_lc_stop() > b.get_lc_stop() ) return false;
-	}
-	return (static_cast<const BVLoc &>(a) < static_cast<const BVLoc &>(b));
+    bool operator < (const KmerLcLoc & a, const KmerLcLoc & b) {
+        // we want kmers group togther, then sorted by LC, then position
+        if (static_cast<const KMER_t &>(a) < static_cast<const KMER_t &>(b)) return true;
+        if (static_cast<const KMER_t &>(b) < static_cast<const KMER_t &>(a)) return false;
+        if ( !a.is_lc_null() &&  b.is_lc_null() ) return true;			// null sorts toward the end
+        if (  a.is_lc_null() && !b.is_lc_null() ) return false;
+        if ( !a.is_lc_null() && !b.is_lc_null() ) {
+            if ( a.get_lc_start() < b.get_lc_start() ) return true;
+            if ( a.get_lc_start() > b.get_lc_start() ) return false;
+            if ( a.get_lc_stop() < b.get_lc_stop() ) return true;
+            if ( a.get_lc_stop() > b.get_lc_stop() ) return false;
+        }
+        return (static_cast<const BVLoc &>(a) < static_cast<const BVLoc &>(b));
     }
 
-    void set_lc_null() { _lc_null = true; }
-    bool is_lc_null() const { return _lc_null; }
+    void set_lc_null() {
+        _lc_null = true;
+    }
+    bool is_lc_null() const {
+        return _lc_null;
+    }
 
-    void set_lc_start( unsigned char start ) { _lc_start = start; }
-    void set_lc_stop( unsigned char stop ) { _lc_stop = stop; }
+    void set_lc_start( unsigned char start ) {
+        _lc_start = start;
+    }
+    void set_lc_stop( unsigned char stop ) {
+        _lc_stop = stop;
+    }
 
-    unsigned char get_lc_start() const { return _lc_start; }
-    unsigned char get_lc_stop() const { return _lc_stop; }
+    unsigned char get_lc_start() const {
+        return _lc_start;
+    }
+    unsigned char get_lc_stop() const {
+        return _lc_stop;
+    }
 };
 
 
 // ---- KernelFriendFinder -- kmerizes reads into KmerLcLocs
 //
 template <class ELEM_t>
-class KernelFriendFinder
-{
-private:
+class KernelFriendFinder {
+  private:
     const BaseVecVec   & _bvv;
     const size_t         _K;
 
@@ -125,104 +136,108 @@ private:
 
     typedef typename ELEM_t::kmer_type  kmer_type;
 
-public:
+  public:
     typedef KmerLcLoc<kmer_type> rec_type;		// force KmerLcLoc records
 
-    KernelFriendFinder(const BaseVecVec & bvv, 
-                   const size_t       K,
-                   FilesOutput&		fo,
-                   int max_aligns ) :
-	_bvv(bvv), 
-	_K(K), 
-	_aligns(),
-	_lock(),
+    KernelFriendFinder(const BaseVecVec & bvv,
+                       const size_t       K,
+                       FilesOutput&		fo,
+                       int max_aligns ) :
+        _bvv(bvv),
+        _K(K),
+        _aligns(),
+        _lock(),
         _outfiles(fo),
-        _max_aligns(max_aligns)
-	{ ForceAssertGt(max_aligns,0); }
+        _max_aligns(max_aligns) {
+        ForceAssertGt(max_aligns,0);
+    }
 
     // copy constructor for temporary kernels
     explicit KernelFriendFinder(const KernelFriendFinder<ELEM_t> & that) :
-	_bvv(that._bvv),
-	_K(that._K),
-	_aligns(),
-	_lock(),
-	_outfiles(that._outfiles),
-        _max_aligns(that._max_aligns)
-	{}
+        _bvv(that._bvv),
+        _K(that._K),
+        _aligns(),
+        _lock(),
+        _outfiles(that._outfiles),
+        _max_aligns(that._max_aligns) {
+    }
 
     // interface function needed by naif_kmerize()
-    size_t K() const { return _K; }
+    size_t K() const {
+        return _K;
+    }
 
     // interface function needed by naif_kmerize()
-    const BaseVecVec & bases() const { return _bvv; }
+    const BaseVecVec & bases() const {
+        return _bvv;
+    }
 
 
     // interface function needed by naif_kmerize()
-    void parse_base_vec(ParcelBuffer<rec_type> * p_buf, 
-		      const size_t ibv)
-    {
-	ParcelBuffer<rec_type> & parcel_buf = *p_buf;
-	SubKmers<BaseVec, kmer_type> kmer_cur(_K, _bvv[ibv]);
-	while (kmer_cur.not_done()) {
-	    rec_type kmer = kmer_cur.canonical();
+    void parse_base_vec(ParcelBuffer<rec_type> * p_buf,
+                        const size_t ibv) {
+        ParcelBuffer<rec_type> & parcel_buf = *p_buf;
+        SubKmers<BaseVec, kmer_type> kmer_cur(_K, _bvv[ibv]);
+        while (kmer_cur.not_done()) {
+            rec_type kmer = kmer_cur.canonical();
 
-	    if (parcel_buf.in_one_parcel(kmer)) {
+            if (parcel_buf.in_one_parcel(kmer)) {
 
 #if 0
-		// DEBUG
-		std::cout << "---------------------------" << std::endl;
-		std::cout << "KMER=" << kmer.to_string() << std::endl;
-		if ( kmer_cur.is_canonical_fw() ) {
-		    size_t start = kmer_cur.index_start();
-		    size_t stop = kmer_cur.index_stop();
-		    std::cout << "FORW=";
-		    for ( size_t i = start; i < stop; ++i )
-			std::cout <<  Base::val2Char(_bvv[ibv][i]);
-		} else {
-		    size_t start = kmer_cur.index_start();
-		    size_t stop = kmer_cur.index_stop();
-		    std::cout << "BACK=";
-		    for ( size_t i = stop-1; i >= start; --i )
-			std::cout <<  Base::val2Char((3^_bvv[ibv][i]));
-		}
-		std::cout << std::endl;
-		// END OF DEBUG
+                // DEBUG
+                std::cout << "---------------------------" << std::endl;
+                std::cout << "KMER=" << kmer.to_string() << std::endl;
+                if ( kmer_cur.is_canonical_fw() ) {
+                    size_t start = kmer_cur.index_start();
+                    size_t stop = kmer_cur.index_stop();
+                    std::cout << "FORW=";
+                    for ( size_t i = start; i < stop; ++i )
+                        std::cout <<  Base::val2Char(_bvv[ibv][i]);
+                } else {
+                    size_t start = kmer_cur.index_start();
+                    size_t stop = kmer_cur.index_stop();
+                    std::cout << "BACK=";
+                    for ( size_t i = stop-1; i >= start; --i )
+                        std::cout <<  Base::val2Char((3^_bvv[ibv][i]));
+                }
+                std::cout << std::endl;
+                // END OF DEBUG
 #endif
 
-		size_t ib1, ib2;
+                size_t ib1, ib2;
 
-		// set ib to one base before the fw k-mer (if fw is
-		// canonical) or one base before the rc k-mer.
-		size_t blen = _bvv[ibv].size();
+                // set ib to one base before the fw k-mer (if fw is
+                // canonical) or one base before the rc k-mer.
+                size_t blen = _bvv[ibv].size();
 
-		if ( kmer_cur.is_canonical_fw() ) {
-		    ib1 = kmer_cur.index_start();
-		    ib2 = kmer_cur.index_stop();
-		    if ( ib1 == 0 || ib2 >= blen ) kmer.set_lc_null();
-		    else {
-			kmer.set_lc_start( _bvv[ibv][ib1-1] );
-			kmer.set_lc_stop(  _bvv[ibv][ib2] );
-		    }
-		    kmer.set_fw(true);
-		} else {
-		    ib1 = kmer_cur.index_start_reverse();
-		    ib2 = kmer_cur.index_stop_reverse();
+                if ( kmer_cur.is_canonical_fw() ) {
+                    ib1 = kmer_cur.index_start();
+                    ib2 = kmer_cur.index_stop();
+                    if ( ib1 == 0 || ib2 >= blen ) kmer.set_lc_null();
+                    else {
+                        kmer.set_lc_start( _bvv[ibv][ib1-1] );
+                        kmer.set_lc_stop(  _bvv[ibv][ib2] );
+                    }
+                    kmer.set_fw(true);
+                } else {
+                    ib1 = kmer_cur.index_start_reverse();
+                    ib2 = kmer_cur.index_stop_reverse();
 
-		    if ( ib1 == 0 || ib2 >= blen ) kmer.set_lc_null();			// its fine that these limits are for the RC, because we're checking both sides
-		    else {
-			kmer.set_lc_start( 3^(_bvv[ibv][kmer_cur.index_stop()]) );	// stop is the base just after on fw, or just before on rc, as in this case
-			kmer.set_lc_stop(  3^(_bvv[ibv][kmer_cur.index_start()-1]) );
-		    }
+                    if ( ib1 == 0 || ib2 >= blen ) kmer.set_lc_null();			// its fine that these limits are for the RC, because we're checking both sides
+                    else {
+                        kmer.set_lc_start( 3^(_bvv[ibv][kmer_cur.index_stop()]) );	// stop is the base just after on fw, or just before on rc, as in this case
+                        kmer.set_lc_stop(  3^(_bvv[ibv][kmer_cur.index_start()-1]) );
+                    }
 
-		    kmer.set_rc(true);
-		}
+                    kmer.set_rc(true);
+                }
 
-		kmer.set_ibv(ibv);
-		kmer.set_ib(ib1);
-		parcel_buf.add(kmer);
-	    }
-	    kmer_cur.next();          
-	}
+                kmer.set_ibv(ibv);
+                kmer.set_ib(ib1);
+                parcel_buf.add(kmer);
+            }
+            kmer_cur.next();
+        }
     }
 
     // validate_align -- ensure that there's at least a K-base match between the sequences using the given alignment
@@ -258,95 +273,94 @@ public:
 
 
     // interface function needed by naif_kmerize()
-    void summarize(const vec<rec_type> & krecs,  
-		   const size_t i0k,
-		   const size_t i1k)
-    {
+    void summarize(const vec<rec_type> & krecs,
+                   const size_t i0k,
+                   const size_t i1k) {
 //	vec<Alignment> aligns;
 
 #if 0
-	Locker lock2( _outfiles.getLockedData() );
-	std::cout << "KMER=" << krecs[i0k].to_string() << std::endl;
-	for (size_t i = i0k; i < i1k; ++i ) {
-	    std::cout << "XXXX=" << krecs[i].to_string() << "|" << krecs[i].get_lc_char() << "|" << krecs[i].is_rc() << std::endl;
-	    size_t ibv = krecs[i].ibv();
-	    size_t ib  = krecs[i].ib();
-	    BaseVec bv = _bvv[ibv];
+        Locker lock2( _outfiles.getLockedData() );
+        std::cout << "KMER=" << krecs[i0k].to_string() << std::endl;
+        for (size_t i = i0k; i < i1k; ++i ) {
+            std::cout << "XXXX=" << krecs[i].to_string() << "|" << krecs[i].get_lc_char() << "|" << krecs[i].is_rc() << std::endl;
+            size_t ibv = krecs[i].ibv();
+            size_t ib  = krecs[i].ib();
+            BaseVec bv = _bvv[ibv];
 
-	    if ( krecs[i].is_rc() ) bv.ReverseComplement();
+            if ( krecs[i].is_rc() ) bv.ReverseComplement();
 
-	    std::cout << "KMER ";
-	    for ( size_t i = ib; i < ib+_K; ++i )
-		std::cout << Base::val2Char(bv[i]);
-	    std::cout << std::endl;
-	}
-	return;
+            std::cout << "KMER ";
+            for ( size_t i = ib; i < ib+_K; ++i )
+                std::cout << Base::val2Char(bv[i]);
+            std::cout << std::endl;
+        }
+        return;
 #endif
 
-	if ( i1k-i0k > _max_aligns ) return;
-/*
-        // dumb way to count how much output we might generate
-        // for now, silently leaves if we exceed the max.  The thought is:
-        // if there are too many alignments, then this is a pathological k-mer and we can
-        // pick our friends more wisely.
-	int count = 0;
-	for (size_t i = i0k; i != i1k; ++i ) {		// process a single kmer
-	    for ( size_t j = i0k; j != i1k; ++j ) {
-                if ( i == j ) continue;
+        if ( i1k-i0k > _max_aligns ) return;
+        /*
+                // dumb way to count how much output we might generate
+                // for now, silently leaves if we exceed the max.  The thought is:
+                // if there are too many alignments, then this is a pathological k-mer and we can
+                // pick our friends more wisely.
+        	int count = 0;
+        	for (size_t i = i0k; i != i1k; ++i ) {		// process a single kmer
+        	    for ( size_t j = i0k; j != i1k; ++j ) {
+                        if ( i == j ) continue;
 
-	        const rec_type& r1 = krecs[i];
-		const rec_type& r2 = krecs[j];
+        	        const rec_type& r1 = krecs[i];
+        		const rec_type& r2 = krecs[j];
 
-		if ( !r1.is_lc_null() && !r2.is_lc_null()
-			&& r1.get_lc_start() == r2.get_lc_start()
-			&& r1.get_lc_stop() == r2.get_lc_stop() ) continue;
-		if ( ++count > _max_aligns ) return;
-	    }
-	}
-*/
-	for (size_t i = i0k; i != i1k; ++i ) {		// process a single kmer
-	    for ( size_t j = i+1; j != i1k; ++j ) {
+        		if ( !r1.is_lc_null() && !r2.is_lc_null()
+        			&& r1.get_lc_start() == r2.get_lc_start()
+        			&& r1.get_lc_stop() == r2.get_lc_stop() ) continue;
+        		if ( ++count > _max_aligns ) return;
+        	    }
+        	}
+        */
+        for (size_t i = i0k; i != i1k; ++i ) {		// process a single kmer
+            for ( size_t j = i+1; j != i1k; ++j ) {
 
-	        const rec_type& r1 = krecs[i];
-		const rec_type& r2 = krecs[j];
+                const rec_type& r1 = krecs[i];
+                const rec_type& r2 = krecs[j];
                 if ( r1.ibv() == r2.ibv() ) continue;
 
-		if ( !r1.is_lc_null() && !r2.is_lc_null()
-			&& r1.get_lc_start() == r2.get_lc_start()
-			&& r1.get_lc_stop() == r2.get_lc_stop() ) continue;
+                if ( !r1.is_lc_null() && !r2.is_lc_null()
+                        && r1.get_lc_start() == r2.get_lc_start()
+                        && r1.get_lc_stop() == r2.get_lc_stop() ) continue;
 
 //		std::cout << "i=" << i << ", j=" << j << ", r1_lc=" << r1.get_lc_char() << ", r2_lc=" << r2.get_lc_char() << std::endl;
 
-		// okay, we have a valid pair -- emit an alignment for them
-		bool rc = r1.is_rc() ^ r2.is_rc();
-		int offset;
+                // okay, we have a valid pair -- emit an alignment for them
+                bool rc = r1.is_rc() ^ r2.is_rc();
+                int offset;
 
-		if ( !r1.is_rc() )			// the asymmetry is this - only R2 ever gets flipped by the rc flag
-		    offset = r1.ib() - r2.ib();
-		else
-		    offset = r2.ib() - r1.ib();
+                if ( !r1.is_rc() )			// the asymmetry is this - only R2 ever gets flipped by the rc flag
+                    offset = r1.ib() - r2.ib();
+                else
+                    offset = r2.ib() - r1.ib();
 
-		Alignment align( r1.ibv(), r2.ibv(), offset, rc );
+                Alignment align( r1.ibv(), r2.ibv(), offset, rc );
 
 //		std::cout << "r1.is_rc=" << r1.is_rc() << ", r2.is_rc=" << r2.is_rc() << ", rc=" << rc << ", offset=" << offset << ", VALID=" << validate_align( align ) << std::endl;
 
-		_aligns.push_back( align );
-	    }
-	}
+                _aligns.push_back( align );
+            }
+        }
 
 #if 0			// WRITE OUTPUT HERE
-	Locker lock( _outfiles.getLockedData() );
+        Locker lock( _outfiles.getLockedData() );
 #if 0
-	size_t count = 0;
-	for ( auto itr = aligns.begin(); itr != aligns.end(); ++itr ) {
-	    std::cout << "count=" << ++count << std::endl;
-	    ForceAssert( validate_align( *itr ) );
-	}
+        size_t count = 0;
+        for ( auto itr = aligns.begin(); itr != aligns.end(); ++itr ) {
+            std::cout << "count=" << ++count << std::endl;
+            ForceAssert( validate_align( *itr ) );
+        }
 #endif
 
-	// need to write out aligns here
-	auto iter = _outfiles.getIterator<Alignment>(&aligns[0]);
-	std::copy( aligns.begin(), aligns.end(), iter );
+        // need to write out aligns here
+        auto iter = _outfiles.getIterator<Alignment>(&aligns[0]);
+        std::copy( aligns.begin(), aligns.end(), iter );
 #endif
 
     }
@@ -354,13 +368,12 @@ public:
 
     // interface function needed by naif_kmerize()
     void merge(const KernelFriendFinder<ELEM_t> & kernel_tmp,
-	       const size_t i_parcel)
-    {
-	Locker lock(_lock);
-	Locker lock2( _outfiles.getLockedData() );
+               const size_t i_parcel) {
+        Locker lock(_lock);
+        Locker lock2( _outfiles.getLockedData() );
 //	std::cout << std::endl << "MERGE i_parcel=" << i_parcel << ", numaligns=" << kernel_tmp._aligns.size();
-	auto iter = _outfiles.getIterator((Alignment*)nullptr);
-	std::copy( kernel_tmp._aligns.begin(), kernel_tmp._aligns.end(), iter );
+        auto iter = _outfiles.getIterator((Alignment*)nullptr);
+        std::copy( kernel_tmp._aligns.begin(), kernel_tmp._aligns.end(), iter );
 //	for ( auto inItr = kernel_tmp._aligns.begin(); inItr != kernel_tmp._aligns.end(); ++inItr )
 //	    *iter = *inItr;
     }
@@ -371,23 +384,24 @@ public:
 template <class KMER_T>
 class FriendAlignFinderNaif : public FriendAlignerImpl {
 
-public:
+  public:
     FriendAlignFinderNaif( String const& friendsCache, int K, const vecbvec& reads,
-                                const int max_freq, size_t NUM_THREADS = 0 )
-    : mFriendsFile(goNuts(friendsCache,K,reads,max_freq, NUM_THREADS)), mFriends(mFriendsFile)
-    {  unlink(mFriendsFile.c_str());  }
+                           const int max_freq, size_t NUM_THREADS = 0 )
+        : mFriendsFile(goNuts(friendsCache,K,reads,max_freq, NUM_THREADS)), mFriends(mFriendsFile) {
+        unlink(mFriendsFile.c_str());
+    }
 
     FriendAlignFinderNaif( const FriendAlignFinderNaif& ) = delete;
     FriendAlignFinderNaif& operator=( const FriendAlignFinderNaif& ) = delete;
 
     // Find all alignments of one read
-    virtual void getAligns( size_t readId, Friends* pFriends )
-    { *pFriends = mFriends[readId]; }
+    virtual void getAligns( size_t readId, Friends* pFriends ) {
+        *pFriends = mFriends[readId];
+    }
 
-private:
+  private:
     static String goNuts( String const& friendsCache, int K, vecbvec const& reads,
-                            int max_freq, size_t NUM_THREADS = 0 )
-    {
+                          int max_freq, size_t NUM_THREADS = 0 ) {
         String tmpDir(friendsCache.SafeBeforeLast("/"));
         // note about memory usage: we'll double the Alignments in memory and double again to ParallelSort
         FilesOutput fo(tmpDir+"/tmp",String("aligns"),0.2*MemAvailable()/sizeof(Alignment));
@@ -400,10 +414,8 @@ private:
         std::cout << Date() << ": about to convert aligns to friends" << std::endl;
         if ( files.size() == 1 )
             alignsToFriends(files[0],friendsCache,nReads,nFriends);
-        else
-        {
-            for ( auto itr=files.begin(),end=files.end(); itr != end; ++itr )
-            {
+        else {
+            for ( auto itr=files.begin(),end=files.end(); itr != end; ++itr ) {
                 String friendsFile  = itr->ReplaceExtension(".aligns",".friends");
                 alignsToFriends(*itr,friendsFile,nReads,nFriends);
                 *itr = friendsFile;
@@ -414,11 +426,9 @@ private:
                 inputs.push_back(new VirtualMasterVec<SerfVec<Friend>>(*itr));
             IncrementalWriter<SerfVec<Friend>> writer(friendsCache,nReads);
             SerfVec<Friend> readFriends;
-            for ( size_t idx = 0; idx != nReads; ++idx )
-            {
+            for ( size_t idx = 0; idx != nReads; ++idx ) {
                 readFriends.clear();
-                for ( auto itr=inputs.begin(),end=inputs.end();itr!=end;++itr )
-                {
+                for ( auto itr=inputs.begin(),end=inputs.end(); itr!=end; ++itr ) {
                     SerfVec<Friend> someFriends( (**itr)[idx] );
                     readFriends.append(someFriends.begin(),someFriends.end());
                 }
@@ -430,21 +440,20 @@ private:
             for ( auto itr=files.begin(),end=files.end(); itr != end; ++itr )
                 unlink(itr->c_str()) ;
         }
-	std::cout << Date() << ": mean number of friends per read is " << nFriends / nReads << std::endl;
+        std::cout << Date() << ": mean number of friends per read is " << nFriends / nReads << std::endl;
         std::cout << Date() << ": done converting aligns to friends" << std::endl;
         return friendsCache;
     }
 
     static void alignsToFriends( String const& input, String const& output,
-                                    size_t const nReads, size_t& nFriends )
-    {
-	std::cout << Date() << ": alignsToFriends called " << input << " -> " << output
-		<< " for " << nReads << " reads." << std::endl;
+                                 size_t const nReads, size_t& nFriends ) {
+        std::cout << Date() << ": alignsToFriends called " << input << " -> " << output
+                  << " for " << nReads << " reads." << std::endl;
         vec<Alignment> aligns;
         FileReader fr(input);
         size_t sz = fr.getSize();
         ForceAssertEq(sz%sizeof(Alignment),0ul);
-	size_t alloc_size = sz/sizeof(Alignment);
+        size_t alloc_size = sz/sizeof(Alignment);
         std::cout << Date() << ": about to resize for " << alloc_size << std::endl;
         aligns.resize( 2 * alloc_size );
         std::cout << Date() << ": reading in " << sz << " bytes" << std::endl;
@@ -477,10 +486,8 @@ private:
         SerfVec<Friend> friends;
         auto itr = aligns.begin();
         auto end = aligns.end();
-        for ( size_t idx = 0; idx != nReads; ++idx )
-        {
-            while ( itr != end )
-            {
+        for ( size_t idx = 0; idx != nReads; ++idx ) {
+            while ( itr != end ) {
                 if ( itr->mReadId1 != idx )
                     break;
                 friends.push_back(Friend(itr->mReadId2,itr->mOffset,itr->mIsRC));

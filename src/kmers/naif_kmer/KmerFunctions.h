@@ -20,15 +20,21 @@
 
 template <class KMER_t>
 inline
-bool operator<=(const KMER_t & a, const KMER_t & b) { return !(a > b); }
+bool operator<=(const KMER_t & a, const KMER_t & b) {
+    return !(a > b);
+}
 
 template <class KMER_t>
 inline
-bool operator>=(const KMER_t & a, const KMER_t & b) { return !(a < b); }
+bool operator>=(const KMER_t & a, const KMER_t & b) {
+    return !(a < b);
+}
 
 template <class KMER_t>
 inline
-bool operator!=(const KMER_t & a, const KMER_t & b) { return !(a == b); }
+bool operator!=(const KMER_t & a, const KMER_t & b) {
+    return !(a == b);
+}
 
 
 
@@ -37,31 +43,33 @@ bool operator!=(const KMER_t & a, const KMER_t & b) { return !(a == b); }
 
 
 inline
-String stringify_base(const unsigned base, const char * ascii = "ACGT")
-{
-  ForceAssert(base < 4u);
-  return ToString(ascii[base]);
+String stringify_base(const unsigned base, const char * ascii = "ACGT") {
+    ForceAssert(base < 4u);
+    return ToString(ascii[base]);
 }
 
 
 template<class KMER_t>
-inline 
-String stringify_kmer(const KMER_t & kmer, const char * ascii = "ACGT")
-{
-  String s = "";
-  const unsigned K = kmer.size();
-  for (unsigned i = 0; i < K; i++)
-    s += stringify_base(kmer[i], ascii);
-  return s;
+inline
+String stringify_kmer(const KMER_t & kmer, const char * ascii = "ACGT") {
+    String s = "";
+    const unsigned K = kmer.size();
+    for (unsigned i = 0; i < K; i++)
+        s += stringify_base(kmer[i], ascii);
+    return s;
 }
 
 
 inline
-String hieroglyph(const unsigned base) { return stringify_base(base, "^(-."); }
+String hieroglyph(const unsigned base) {
+    return stringify_base(base, "^(-.");
+}
 
 template<class KMER_t>
 inline
-String hieroglyphs(const KMER_t & kmer) { return stringify_kmer(kmer, "^(-."); }
+String hieroglyphs(const KMER_t & kmer) {
+    return stringify_kmer(kmer, "^(-.");
+}
 
 
 
@@ -73,26 +81,24 @@ String hieroglyphs(const KMER_t & kmer) { return stringify_kmer(kmer, "^(-."); }
 
 
 template<class KMER_t>
-inline 
-KMER_t reverse_complement(const KMER_t & kmerFW) 
-{
-  const unsigned K = kmerFW.size();
-  KMER_t kmerRC = kmerFW;          // copy, because KMER_t might have other stuff 
-  for (unsigned i = 0; i != K; i++) 
-    kmerRC.set(K - i - 1, 3u ^ kmerFW[i]);   // set bases from the begining
-  
-  return kmerRC;
+inline
+KMER_t reverse_complement(const KMER_t & kmerFW) {
+    const unsigned K = kmerFW.size();
+    KMER_t kmerRC = kmerFW;          // copy, because KMER_t might have other stuff
+    for (unsigned i = 0; i != K; i++)
+        kmerRC.set(K - i - 1, 3u ^ kmerFW[i]);   // set bases from the begining
+
+    return kmerRC;
 }
 
 
 
 template<class KMER_t>
 inline
-KMER_t canonical(const KMER_t & kmerFW) 
-{
-  const unsigned K = kmerFW.K();
-  const KMER_t kmerRC = reverse_complement(kmerFW); // copy, because KMER_t might have other stuff 
-  return (kmerFW < kmerRC) ? kmerFW : kmerRC;
+KMER_t canonical(const KMER_t & kmerFW) {
+    const unsigned K = kmerFW.K();
+    const KMER_t kmerRC = reverse_complement(kmerFW); // copy, because KMER_t might have other stuff
+    return (kmerFW < kmerRC) ? kmerFW : kmerRC;
 }
 
 
@@ -103,13 +109,12 @@ KMER_t canonical(const KMER_t & kmerFW)
 
 
 template<class KMER_t>
-vec<unsigned> acgt_content(const KMER_t & kmer)
-{
-  vec<unsigned> result(4, 0);
-  const unsigned K = kmer.size();
-  for (unsigned i = 0; i < K; i++)
-    result[kmer[i]]++;
-  return result;
+vec<unsigned> acgt_content(const KMER_t & kmer) {
+    vec<unsigned> result(4, 0);
+    const unsigned K = kmer.size();
+    for (unsigned i = 0; i < K; i++)
+        result[kmer[i]]++;
+    return result;
 }
 
 

@@ -37,9 +37,8 @@
  * offsets and fixed-length data, and then goes back to the start and writes the
  * control block.
  */
-class FeudalFileWriter
-{
-public:
+class FeudalFileWriter {
+  public:
     typedef unsigned int size_type;
     typedef unsigned long offset_type;
 
@@ -51,14 +50,19 @@ public:
 
     ~FeudalFileWriter();
 
-    std::string const& getFilename() const
-    { return mWriter.getFilename(); }
+    std::string const& getFilename() const {
+        return mWriter.getFilename();
+    }
 
     /// number of elements written so far
-    unsigned long getNElements() const { return mOffsets.size()-1; }
+    unsigned long getNElements() const {
+        return mOffsets.size()-1;
+    }
 
     /// Get the writer for variable-length data.
-    BinaryWriter& getWriter() { return mWriter; }
+    BinaryWriter& getWriter() {
+        return mWriter;
+    }
 
     /// Tell us that you've added variable-length data for an element.
     void addElement( void const* fixedLenData );
@@ -70,7 +74,7 @@ public:
 
     void close();
 
-private:
+  private:
     FeudalFileWriter( FeudalFileWriter const& ); // unimplemented -- no copying
     FeudalFileWriter& operator=( FeudalFileWriter const& ); // unimplemented -- no copying
 

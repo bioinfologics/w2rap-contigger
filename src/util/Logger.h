@@ -28,21 +28,21 @@
 #include <string>
 #include <map>
 
-class Logger
-{
-public:
+class Logger {
+  public:
     /// log to the specified stream
     explicit Logger( std::ostream& os,
-                        size_t maxInstances = DFLT_MAX_INSTANCES )
-    : mOS(os), mMaxInstances(maxInstances)
-    {}
+                     size_t maxInstances = DFLT_MAX_INSTANCES )
+        : mOS(os), mMaxInstances(maxInstances) {
+    }
 
     // compiler-supplied copy constructor is OK
     // assignment won't work because of reference
 
     /// flushes pending error messages on its way to oblivion
-    ~Logger()
-    { flush(); }
+    ~Logger() {
+        flush();
+    }
 
     /// log an error message.  sprintf semantics.
     /// the format string really, really has to be a static string.
@@ -52,27 +52,30 @@ public:
     /// flush pending error messages
     void flush();
 
-    class MsgPacket
-    {
-    public:
+    class MsgPacket {
+      public:
         MsgPacket()
-        : mCount(0), mOverflow(false)
-        {}
+            : mCount(0), mOverflow(false) {
+        }
 
         // compiler-supplied copying and destructor are OK
 
-        size_t getCount() const
-        { return mCount; }
+        size_t getCount() const {
+            return mCount;
+        }
 
-        size_t incrementCount()
-        { return mCount += 1; }
+        size_t incrementCount() {
+            return mCount += 1;
+        }
 
-        void setMessage( std::string const& msg )
-        { mMessage = msg; mOverflow = true; }
+        void setMessage( std::string const& msg ) {
+            mMessage = msg;
+            mOverflow = true;
+        }
 
         void flush( std::ostream& os, size_t maxInstances ) const;
 
-    private:
+      private:
         std::string mMessage; // first overflow message
         size_t mCount;
         bool mOverflow;
@@ -80,7 +83,7 @@ public:
 
     static Logger nullLogger();
 
-private:
+  private:
     std::ostream& mOS;
     size_t mMaxInstances;
     std::map<char const*,MsgPacket> mMap;

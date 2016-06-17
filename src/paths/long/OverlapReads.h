@@ -13,19 +13,22 @@
 #include "Basevector.h"
 #include "efasta/EfastaTools.h"
 // The utilities to overlay a small number of efasta reads ( < 100 ) and create
-// a linear assembly. 
+// a linear assembly.
 
-class ReadOverlap{
-public:
+class ReadOverlap {
+  public:
     int rid1, rid2;        // read ids
     int alt1, alt2;        // which alternatives from the two reads
     int overlap;           // how much is the overlap
     ReadOverlap(int r1, int r2, int a1, int a2, int o):
         rid1(r1),rid2(r2),alt1(a1),alt2(a2),overlap(o) {};
-    ReadOverlap(){ rid1=-1; rid2=-1;};
+    ReadOverlap() {
+        rid1=-1;
+        rid2=-1;
+    };
     bool operator== ( const ReadOverlap& r ) const {
         return rid1 == r.rid1 && rid2 == r.rid2 &&
-            alt1 == r.alt1 && alt2 == r.alt2 && overlap == r.overlap ;
+               alt1 == r.alt1 && alt2 == r.alt2 && overlap == r.overlap ;
     }
     friend std::ostream& operator<<( std::ostream& out, const ReadOverlap& r);
 };
@@ -49,18 +52,24 @@ class ReadOverlapGraph {
     ReadOverlapGraph( const vec< vec<basevector> > & reads ) : reads_(reads) {};
 
     // facilitating methods
-    
-    size_t NReads() const { return reads_.size(); }
-    size_t Len(int rid) const { return reads_[rid][0].size(); }
-    size_t Len(int rid, int alt) const { return reads_[rid][alt].size(); }
+
+    size_t NReads() const {
+        return reads_.size();
+    }
+    size_t Len(int rid) const {
+        return reads_[rid][0].size();
+    }
+    size_t Len(int rid, int alt) const {
+        return reads_[rid][alt].size();
+    }
     int PathToLen( const vec<ReadOverlap>& path ) const;
 
     // Read overlap calculation
-    
+
     // If tail b1[len1-overlap:len1) is the same as head b2[0: overlap)
     static bool BaseMatch( const basevector& b1,  const basevector& b2, int overlap );
     // return the overlap between the two reads e1 and e2, so that e1[len1 - overlap: len1)
-    // perfectly overlap with e2[0, overlap). 
+    // perfectly overlap with e2[0, overlap).
     // Todo: multiple overlap values
     static unsigned int Overlap( const basevector& r1, const basevector& r2, unsigned int overlap_lb, unsigned int overlap_ub );
     // Find if there are any overlaps from read 1 to read 2
@@ -83,12 +92,12 @@ class ReadOverlapGraph {
     void GetAssembly( vec<basevector>& assemblies, vec< vec<ReadOverlap> >& paths, int max_outputs = 10) const;
     void LinearAssembly( vec<basevector>& assemblies, vec< vec<ReadOverlap> >& paths) const;
     void PerfectAssembly( vec<basevector>& assembly, vec< vec<ReadOverlap> >& path) const;
-    bool PerfectAssemblyBackward( int i, int j, basevector& assembly, vec< vec<int> >& read_locs, 
+    bool PerfectAssemblyBackward( int i, int j, basevector& assembly, vec< vec<int> >& read_locs,
                                   vec<ReadOverlap>& path ) const;
     bool PerfectAssemblyForward( int i, int j, basevector& assembly, vec< vec<int> >& read_locs,
                                  vec<ReadOverlap>& path ) const;
 
-    // debugging 
+    // debugging
 
     void PrintGraph( std::ostream& out );
   private:
@@ -101,41 +110,64 @@ class ReadOverlapGraph {
 
 
 class SomeReadsAssembler {
-private:
+  private:
     vec< std::pair<int,int> > starts_;     // optional read starts
-    vec< vec<Ambiguity> > ambs_;      // optional ambiguities 
+    vec< vec<Ambiguity> > ambs_;      // optional ambiguities
     int Min_Overlap_ ;                // default min read overlap is 100
     int Min_Assembly_Len_ ;           // default min read overlap is 100
     int Max_Assembly_Num_;
     vec<basevector> assemblies_;      // possible assemblies
     vec< vec<ReadOverlap> > paths_;   // assembly paths
-public:
+  public:
     ReadOverlapGraph graph_;
     SomeReadsAssembler( const vec< vec<basevector> >& reads );
     // set assembly paramters
-    void AddPosConstraints( const vec<std::pair<int,int> >& starts) { starts_ = starts; }
-    void SetMinOverlap(int overlap) { Min_Overlap_ = overlap; }
-    void SetMinAssemblyLen( int len ) { Min_Assembly_Len_ = len; }
-    void SetMaxAssemblyNum( int n ) { Max_Assembly_Num_ = n; }
-    void SetCombineAmbReads( const vec< vec<Ambiguity> >& ambs ) { ambs_ = ambs; }
+    void AddPosConstraints( const vec<std::pair<int,int> >& starts) {
+        starts_ = starts;
+    }
+    void SetMinOverlap(int overlap) {
+        Min_Overlap_ = overlap;
+    }
+    void SetMinAssemblyLen( int len ) {
+        Min_Assembly_Len_ = len;
+    }
+    void SetMaxAssemblyNum( int n ) {
+        Max_Assembly_Num_ = n;
+    }
+    void SetCombineAmbReads( const vec< vec<Ambiguity> >& ambs ) {
+        ambs_ = ambs;
+    }
     void InitGraph() {
         if ( starts_.empty() ) graph_.Init(Min_Overlap_);
         else graph_.Init(Min_Overlap_, &starts_);
         if ( ! ambs_.empty() ) graph_.CombineAmbReads( ambs_ );
     }
     // run assembly
-    void Assembly() { graph_.GetAssembly(assemblies_, paths_, Max_Assembly_Num_); RemoveShortAssembly(); }
+    void Assembly() {
+        graph_.GetAssembly(assemblies_, paths_, Max_Assembly_Num_);
+        RemoveShortAssembly();
+    }
     // Generate assembly from the overlapping read, requires :
     // 1. No loop in the assembly
     // 2. The assembly contains more than 50% of the reads
-    void LinearAssembly() { graph_.LinearAssembly(assemblies_, paths_); RemoveShortAssembly(); }
+    void LinearAssembly() {
+        graph_.LinearAssembly(assemblies_, paths_);
+        RemoveShortAssembly();
+    }
     // Return only if all the reads form a perfect assembly
-    void PerfectAssembly() { graph_.PerfectAssembly(assemblies_,  paths_); RemoveShortAssembly(); }
+    void PerfectAssembly() {
+        graph_.PerfectAssembly(assemblies_,  paths_);
+        RemoveShortAssembly();
+    }
     void RemoveShortAssembly();
     // Retrieving results
-    const vec<basevector>& GetAssemblies() const { return assemblies_; }
+    const vec<basevector>& GetAssemblies() const {
+        return assemblies_;
+    }
     efasta GetEfastaAssembly(int i, size_t start, size_t stop) const;
-    const vec<ReadOverlap>& GetAssemblyPath( int i ) const { return paths_[i]; }
+    const vec<ReadOverlap>& GetAssemblyPath( int i ) const {
+        return paths_[i];
+    }
     // get the sub-path the correspond to the region [start,stop) in the assembly
     vec<ReadOverlap> GetAssemblyPathRegion( int i, int start, int stop ) const;
 };

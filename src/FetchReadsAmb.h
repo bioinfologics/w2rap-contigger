@@ -15,7 +15,7 @@
 
 enum AMB_STYLE {AMB_EQ_ANY_AMBIGUOUS, AMB_EQ_n, AMB_EQ_Nn, AMB_EQ_LOWER_CASE};
 
-void FetchReadsAmb( vecbitvector& b, String fasta_file, 
-     AMB_STYLE amb_style = AMB_EQ_ANY_AMBIGUOUS );
+void FetchReadsAmb( vecbitvector& b, String fasta_file,
+                    AMB_STYLE amb_style = AMB_EQ_ANY_AMBIGUOUS );
 
 #endif

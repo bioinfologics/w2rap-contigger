@@ -18,23 +18,23 @@
 #include "paths/UnipathSeq.h"
 
 class UnipathSeqBuilder {
- public:
-  UnipathSeqBuilder( const vecKmerPath* pUnipaths, 
-                     const KmerPathDatabase* pUnipathDB,
-                     ostream* pLog = 0 );
+  public:
+    UnipathSeqBuilder( const vecKmerPath* pUnipaths,
+                       const KmerPathDatabase* pUnipathDB,
+                       ostream* pLog = 0 );
 
-  void Build( const KmerPath& kmerPath,
-              UnipathSeq& unipathSeq,
-              Mux& theMux ) const;
+    void Build( const KmerPath& kmerPath,
+                UnipathSeq& unipathSeq,
+                Mux& theMux ) const;
 
-  void Build( const vecKmerPath& kmerPaths,
-              vecUnipathSeq& unipathSeqs,
-              vec<Mux>& muxes ) const;
+    void Build( const vecKmerPath& kmerPaths,
+                vecUnipathSeq& unipathSeqs,
+                vec<Mux>& muxes ) const;
 
- private:
-  const vecKmerPath* m_pUnipaths;
-  const KmerPathDatabase* m_pUnipathDB;
-  ostream* m_pLog;
+  private:
+    const vecKmerPath* m_pUnipaths;
+    const KmerPathDatabase* m_pUnipathDB;
+    ostream* m_pLog;
 };
 
 #endif

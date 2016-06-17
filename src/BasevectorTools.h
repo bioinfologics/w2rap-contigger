@@ -26,7 +26,9 @@
  * defined.
  */
 struct ExactBaseMatch {
-  bool operator() (base_t q, base_t t ) const {return q==t; }
+    bool operator() (base_t q, base_t t ) const {
+        return q==t;
+    }
 };
 
 
@@ -41,11 +43,11 @@ struct ExactBaseMatch {
  * defined.
  */
 struct GeneralizedBaseMatch_Char {
-  bool operator() (char q, char t ) const {
-      return GeneralizedBase::isGeneralizedBase(q) &&
-             GeneralizedBase::isGeneralizedBase(t) &&
-             GeneralizedBase::fromChar(q).matches(GeneralizedBase::fromChar(t));
-  }
+    bool operator() (char q, char t ) const {
+        return GeneralizedBase::isGeneralizedBase(q) &&
+               GeneralizedBase::isGeneralizedBase(t) &&
+               GeneralizedBase::fromChar(q).matches(GeneralizedBase::fromChar(t));
+    }
 };
 
 
@@ -124,21 +126,20 @@ struct GeneralizedBaseMatch_Char {
 
 template <class BaseComparator>
 inline int MismatchCount(const basevector &query,
-		      const basevector &target,
-		      unsigned int q_start,
-		      unsigned int t_start,
-		      unsigned int length,
-		      int max_mismatches = 1000 * 1000,
-		      const qualvector * quals = 0,
-		      double expectedQual = 30,
-		      unsigned char minQual = 10
-)
- {
+                         const basevector &target,
+                         unsigned int q_start,
+                         unsigned int t_start,
+                         unsigned int length,
+                         int max_mismatches = 1000 * 1000,
+                         const qualvector * quals = 0,
+                         double expectedQual = 30,
+                         unsigned char minQual = 10
+                        ) {
 
-   return MismatchCount(BaseComparator(),
-			query, target, q_start, t_start, length,
-			max_mismatches, quals, expectedQual, minQual);
- }
+    return MismatchCount(BaseComparator(),
+                         query, target, q_start, t_start, length,
+                         max_mismatches, quals, expectedQual, minQual);
+}
 
 
 /// This is exaclty the same mismatch counter as the other
@@ -152,70 +153,66 @@ inline int MismatchCount(const basevector &query,
 
 template <class BaseComparator>
 int MismatchCount(    const BaseComparator & equal,
-		      const basevector &query,
-		      const basevector &target,
-		      unsigned int q_start,
-		      unsigned int t_start,
-		      unsigned int length,
-		      int max_mismatches = 1000 * 1000,
-		      const qualvector * quals = 0,
-		      double expectedQual = 30,
-		      unsigned char minQual = 10
-)
- {
-   basevector::iterator query_iter = query.Begin(q_start);
-   basevector::iterator target_iter = target.Begin(t_start);
-   const basevector::iterator query_end = query.End();
-  if ( ! quals ) {
-    return MismatchCount(equal,query_iter,query_end,target_iter,max_mismatches);
-  } else {
-    return MismatchScore(equal,query_iter,query_end,target_iter,
-			 quals->begin()+q_start,max_mismatches*expectedQual,expectedQual,minQual);
-  }
+                      const basevector &query,
+                      const basevector &target,
+                      unsigned int q_start,
+                      unsigned int t_start,
+                      unsigned int length,
+                      int max_mismatches = 1000 * 1000,
+                      const qualvector * quals = 0,
+                      double expectedQual = 30,
+                      unsigned char minQual = 10
+                 ) {
+    basevector::iterator query_iter = query.Begin(q_start);
+    basevector::iterator target_iter = target.Begin(t_start);
+    const basevector::iterator query_end = query.End();
+    if ( ! quals ) {
+        return MismatchCount(equal,query_iter,query_end,target_iter,max_mismatches);
+    } else {
+        return MismatchScore(equal,query_iter,query_end,target_iter,
+                             quals->begin()+q_start,max_mismatches*expectedQual,expectedQual,minQual);
+    }
 
 }
 
 
 template < class BaseComparator, class InputIterator1, class InputIterator2 >
 int MismatchCount( BaseComparator equal, InputIterator1 query_iter,
-		      const InputIterator1 & query_end, InputIterator2 target_iter,
-		      int max_mismatches = 1000 * 1000)
-{
+                   const InputIterator1 & query_end, InputIterator2 target_iter,
+                   int max_mismatches = 1000 * 1000) {
     int mismatches = 0; // mismatches discovered so far
-    for ( ; query_iter != query_end; ++query_iter, ++target_iter )
-    {
+    for ( ; query_iter != query_end; ++query_iter, ++target_iter ) {
         // if comparator thinks that the bases "match"
         // go fetch next bases
         if (equal(*query_iter, *target_iter))
             continue;
-        ++mismatches;    
-        if (mismatches > max_mismatches) 
+        ++mismatches;
+        if (mismatches > max_mismatches)
             break;
     }
-   return mismatches;
+    return mismatches;
 }
 
 
 template <class BaseComparator, class QueryIterator>
 int MismatchScore(BaseComparator equal,
-          QueryIterator query_iter,
-		  QueryIterator query_end,
-		  basevector::const_iterator target_iter,
-		  qualvector::const_iterator qual_iter,
-		  double maxBad,
-		  double expectedQual = 30,
-		  unsigned char minQual = 10)
-{
-  float bad = 0;
-  for ( ; query_iter != query_end ;  ++qual_iter, ++query_iter, ++target_iter )  {
-      if (  equal( *query_iter, *target_iter)  ) continue;
-      bad += Max(minQual,(*qual_iter));
-      if ( bad > maxBad ) {
-	bad+=expectedQual;
-	break;
-      }
-  }
-  return int( round(bad/ expectedQual));
+                  QueryIterator query_iter,
+                  QueryIterator query_end,
+                  basevector::const_iterator target_iter,
+                  qualvector::const_iterator qual_iter,
+                  double maxBad,
+                  double expectedQual = 30,
+                  unsigned char minQual = 10) {
+    float bad = 0;
+    for ( ; query_iter != query_end ;  ++qual_iter, ++query_iter, ++target_iter )  {
+        if (  equal( *query_iter, *target_iter)  ) continue;
+        bad += Max(minQual,(*qual_iter));
+        if ( bad > maxBad ) {
+            bad+=expectedQual;
+            break;
+        }
+    }
+    return int( round(bad/ expectedQual));
 }
 
 
@@ -231,12 +228,12 @@ int MismatchScore(BaseComparator equal,
 
 template <class queryiterator, class targetiterator>
 String MismatchString( queryiterator qi, targetiterator ti, int length, char mismatch_symbol='*' ) {
-  String S(length);
-  for ( int i = 0 ; i < length ; i++, ++ti, ++qi) {
-    if ( *ti == *qi ) S[i] = ' ';
-    else S[i] = mismatch_symbol;
-  }
-  return S;
+    String S(length);
+    for ( int i = 0 ; i < length ; i++, ++ti, ++qi) {
+        if ( *ti == *qi ) S[i] = ' ';
+        else S[i] = mismatch_symbol;
+    }
+    return S;
 }
 
 /// Same as MismatchString(queryiterator, targetiterator, int), but prints into
@@ -248,15 +245,14 @@ String MismatchString( queryiterator qi, targetiterator ti, int length, char mis
 /// positions in \c s where \c *qi and \c *ti do not match will be \em always overwritten)
 template <class queryiterator, class targetiterator>
 String & MismatchString( queryiterator qi, targetiterator ti, int length,
-			   String &s, bool overwrite=true, char mismatch_symbol='*') {
-  s.resize(length);
-  for ( int i = 0 ; i < length ; i++, ++ti, ++qi ) {
-    if ( *ti == *qi ) {
-      if (overwrite) s[i] = ' ';
+                         String &s, bool overwrite=true, char mismatch_symbol='*') {
+    s.resize(length);
+    for ( int i = 0 ; i < length ; i++, ++ti, ++qi ) {
+        if ( *ti == *qi ) {
+            if (overwrite) s[i] = ' ';
+        } else s[i] = mismatch_symbol;
     }
-    else s[i] = mismatch_symbol;
-  }
-  return s;
+    return s;
 }
 
 /// Same as MismatchString, but prints the mismatches directly into the
@@ -268,10 +264,10 @@ String & MismatchString( queryiterator qi, targetiterator ti, int length,
 
 template <class queryiterator, class targetiterator>
 void PrintMismatchString( std::ostream & out, queryiterator qi, targetiterator ti, int length ) {
-  for ( int i = 0 ; i < length ; i++, ++ti, ++qi ) {
-    if ( *ti == *qi ) out << ' ';
-    else out << '*';
-  }
+    for ( int i = 0 ; i < length ; i++, ++ti, ++qi ) {
+        if ( *ti == *qi ) out << ' ';
+        else out << '*';
+    }
 }
 
 
@@ -312,139 +308,138 @@ void PrintMismatchString( std::ostream & out, queryiterator qi, targetiterator t
 /// at positions W+1 and above legitimately accessible, they will remain
 /// accessible and the values at those positions will stay unchanged.
 template <class CounterOut>
-  void ComputeWindowGCCounts (CounterOut & GC_counter, ///< GC stats (output)
-			      int W,  ///< window size
-			      const basevector & reference ///< windows are placed on this sequence
-			     )
-{
-      unsigned int contig_size = reference.size();
+void ComputeWindowGCCounts (CounterOut & GC_counter, ///< GC stats (output)
+                            int W,  ///< window size
+                            const basevector & reference ///< windows are placed on this sequence
+                           ) {
+    unsigned int contig_size = reference.size();
 
-     // contig too short to accomodate a single window, nothing to do!
-     if ( contig_size < (unsigned int)W ) return;
+    // contig too short to accomodate a single window, nothing to do!
+    if ( contig_size < (unsigned int)W ) return;
 
-     // Simple (but inefficient) strategy equivalent to what this method
-     // actually does is:
-     // for each position p on the reference r {
-     //    consider window w=r[p,p+W)
-     //    local_gc_count = 0;
-     //    for each base 0...W-1 in the window w {
-     //          if ( base==C or base==G ) local_gc_count++;
-     //    }
-     //    // we just discovered yet another window with local_gc_count gc's:
-     //    GC_counter[local_gc_count]++;
-     // }
-     //
-     // or a similar nested loop for anchored windows, except that
-     // the outer loop would be 'for each anchor position pi'
-     // and GC[local_gc_count] should be incremented by n(pi)
-     // (anchor multiplicity) rather than 1.
-     //
-     // Efficiency considerations (applies to counting all windows on the ref;
-     // does not necessarily apply to counting anchored windows since there
-     // maybe only a few of those):
-     // 1) it is highly inefficient to re-scan the new window w every time:
-     //    consider right-shifting a window along the reference by x
-     //    positions (so far, we actually use only x=1 in this method!!):
-     //    window [p,p+W) ---> new window [p+x,p+x+W). The gc count for the
-     //    new window is equal to the gc count in the old window
-     //    minus the number of GCs among bases [p,p+x) (leftmost in the old
-     //    window) plus the number of GCs among bases [p+W,p+W+x) (rightmost
-     //    in the new window) on the reference. This is an O(x) (compared to
-     //    O(W) required to re-read all the bases in the new window from
-     //    scratch  -  if W=50 and x=1, it's a lot).
-     // 2) switching between accessing old window leftmost bases and new
-     //    window rightmost bases directly on the reference requires direct,
-     //    non-consequtive indexing of the basevector. The alternative
-     //    is to store the required bases locally, then we can make only
-     //    one linear pass through the reference, and for that we can use
-     //    BasevectorIterator, which is much faster than
-     //    basevector::operator[int].
-     // 3) We can not just store the
-     //    leftmost base (i=0) of the current window: after the window shifts,
-     //    the i=1 base of the old window will be the leftmost and we will need
-     //    it too, and so on. At any point, every base at position k in the
-     //    current window will be the leftmost one after k shifts, so we have
-     //    to remember them all for future use once we've read them.
-     //    The leftmost base that gets pushed out of the window
-     //    will never be needed again, so we have to
-     //    remember exactly W bases at each point.
-     // 4) It is unfeasible to keep a
-     //    simple array/vector of the current window sequence: updating it for
-     //    the new window would require left-shifting the sequence and adding
-     //    new base(s) from the reference to the right. Shifting the
-     //    whole sequence is O(W) and we loose all the benefits of reusing
-     //    old window sequence/gc-count. To resolve this problem we use the
-     //    *circular* array - an array of W bases, in which the logical start
-     //    position can be anywhere inside the array. The sequnce represented
-     //    by a circular array A with logical start position s is defined as
-     //    A[s,W) followed by A[0,s) (wrapping over). In such representation,
-     //    physical shift of the array elemenst is not required: when the window
-     //    shifts (by 1), we simply increment the logical start position and
-     //    update the base at the old logical start position with the new
-     //    base form the reference. It is easy to see that {A[s+1,W),A[0,s+1)}
-     //    correctly represents the sequence in the new window, provided A[s]
-     //    is updated with the new window's rightmost base. Updating circular
-     //    array is thus O[1] (update A[s] and increment s), and we can still
-     //    enjoy the benefits of fast sequential access to the reference
-     //    basevector.
+    // Simple (but inefficient) strategy equivalent to what this method
+    // actually does is:
+    // for each position p on the reference r {
+    //    consider window w=r[p,p+W)
+    //    local_gc_count = 0;
+    //    for each base 0...W-1 in the window w {
+    //          if ( base==C or base==G ) local_gc_count++;
+    //    }
+    //    // we just discovered yet another window with local_gc_count gc's:
+    //    GC_counter[local_gc_count]++;
+    // }
+    //
+    // or a similar nested loop for anchored windows, except that
+    // the outer loop would be 'for each anchor position pi'
+    // and GC[local_gc_count] should be incremented by n(pi)
+    // (anchor multiplicity) rather than 1.
+    //
+    // Efficiency considerations (applies to counting all windows on the ref;
+    // does not necessarily apply to counting anchored windows since there
+    // maybe only a few of those):
+    // 1) it is highly inefficient to re-scan the new window w every time:
+    //    consider right-shifting a window along the reference by x
+    //    positions (so far, we actually use only x=1 in this method!!):
+    //    window [p,p+W) ---> new window [p+x,p+x+W). The gc count for the
+    //    new window is equal to the gc count in the old window
+    //    minus the number of GCs among bases [p,p+x) (leftmost in the old
+    //    window) plus the number of GCs among bases [p+W,p+W+x) (rightmost
+    //    in the new window) on the reference. This is an O(x) (compared to
+    //    O(W) required to re-read all the bases in the new window from
+    //    scratch  -  if W=50 and x=1, it's a lot).
+    // 2) switching between accessing old window leftmost bases and new
+    //    window rightmost bases directly on the reference requires direct,
+    //    non-consequtive indexing of the basevector. The alternative
+    //    is to store the required bases locally, then we can make only
+    //    one linear pass through the reference, and for that we can use
+    //    BasevectorIterator, which is much faster than
+    //    basevector::operator[int].
+    // 3) We can not just store the
+    //    leftmost base (i=0) of the current window: after the window shifts,
+    //    the i=1 base of the old window will be the leftmost and we will need
+    //    it too, and so on. At any point, every base at position k in the
+    //    current window will be the leftmost one after k shifts, so we have
+    //    to remember them all for future use once we've read them.
+    //    The leftmost base that gets pushed out of the window
+    //    will never be needed again, so we have to
+    //    remember exactly W bases at each point.
+    // 4) It is unfeasible to keep a
+    //    simple array/vector of the current window sequence: updating it for
+    //    the new window would require left-shifting the sequence and adding
+    //    new base(s) from the reference to the right. Shifting the
+    //    whole sequence is O(W) and we loose all the benefits of reusing
+    //    old window sequence/gc-count. To resolve this problem we use the
+    //    *circular* array - an array of W bases, in which the logical start
+    //    position can be anywhere inside the array. The sequnce represented
+    //    by a circular array A with logical start position s is defined as
+    //    A[s,W) followed by A[0,s) (wrapping over). In such representation,
+    //    physical shift of the array elemenst is not required: when the window
+    //    shifts (by 1), we simply increment the logical start position and
+    //    update the base at the old logical start position with the new
+    //    base form the reference. It is easy to see that {A[s+1,W),A[0,s+1)}
+    //    correctly represents the sequence in the new window, provided A[s]
+    //    is updated with the new window's rightmost base. Updating circular
+    //    array is thus O[1] (update A[s] and increment s), and we can still
+    //    enjoy the benefits of fast sequential access to the reference
+    //    basevector.
 
 
 
 
 //       ForceAssertLe(W,100);
-       base_t * bases = new base_t[W]; // circular array
-       int bases_logical_start = 0; // start of the sequence in the
-                                    // circularly wrapped array 'bases'
+    base_t * bases = new base_t[W]; // circular array
+    int bases_logical_start = 0; // start of the sequence in the
+    // circularly wrapped array 'bases'
 
-       // start iterating from the first position on the contig:
-       basevector::iterator b_iter = reference.Begin();
+    // start iterating from the first position on the contig:
+    basevector::iterator b_iter = reference.Begin();
 
-       int gc = 0 ; // will keep local gc-count within the current window
+    int gc = 0 ; // will keep local gc-count within the current window
 
-       // position of the current window on the contig:
-       unsigned int window_position = 0;
+    // position of the current window on the contig:
+    unsigned int window_position = 0;
 
-       // initialization:
-       // pre-compute gc count in the first window on the contig
-       // and copy bases from the first window into the 'bases' array
-       // (we checked above that contig size >= W, so the loop is safe):
-       for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
-	 base_t base = bases[pos] = *b_iter;
-	 if ( base == BASE_C || base == BASE_G ) gc++;
-       }
+    // initialization:
+    // pre-compute gc count in the first window on the contig
+    // and copy bases from the first window into the 'bases' array
+    // (we checked above that contig size >= W, so the loop is safe):
+    for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
+        base_t base = bases[pos] = *b_iter;
+        if ( base == BASE_C || base == BASE_G ) gc++;
+    }
 
-       // don't forget to count in the gc value observed in the first window:
-       ++GC_counter[gc];
+    // don't forget to count in the gc value observed in the first window:
+    ++GC_counter[gc];
 
-       // now walk through all the (remaining) windows on the contig:
-       for ( window_position++ ; window_position <= contig_size - W ; window_position++, ++b_iter ) {
+    // now walk through all the (remaining) windows on the contig:
+    for ( window_position++ ; window_position <= contig_size - W ; window_position++, ++b_iter ) {
 
-	 // window has just shifted, get the next base -
-	 // the rightmost one in the new window (we already have the others):
-         base_t base = *b_iter;
+        // window has just shifted, get the next base -
+        // the rightmost one in the new window (we already have the others):
+        base_t base = *b_iter;
 
-	 // if a G or C base just moved into the window, increase the gc count
-         if ( base == BASE_C || base == BASE_G ) gc++;
+        // if a G or C base just moved into the window, increase the gc count
+        if ( base == BASE_C || base == BASE_G ) gc++;
 
-	 // the first base in the old window is pushed out;
-	 // if it is G or C, then the gc count in the new window will decrease:
-	 base_t old_base = bases[bases_logical_start];
-	 if ( old_base == BASE_C || old_base == BASE_G ) gc--;
+        // the first base in the old window is pushed out;
+        // if it is G or C, then the gc count in the new window will decrease:
+        base_t old_base = bases[bases_logical_start];
+        if ( old_base == BASE_C || old_base == BASE_G ) gc--;
 
-	 // update circular array so it is synchronised with the new window:
-	 bases[bases_logical_start++] = base;
+        // update circular array so it is synchronised with the new window:
+        bases[bases_logical_start++] = base;
 
-	 // make sure logical start position does not run away:
-	 // wrap around (performing 'if'
-	 // is probably faster than doing %=W, but who knows..)
-	 if ( bases_logical_start >= W ) bases_logical_start -= W;
+        // make sure logical start position does not run away:
+        // wrap around (performing 'if'
+        // is probably faster than doing %=W, but who knows..)
+        if ( bases_logical_start >= W ) bases_logical_start -= W;
 
-	 ++GC_counter[gc]; // count in the occurence of the count on the ref.
+        ++GC_counter[gc]; // count in the occurence of the count on the ref.
 
-       } // end of for ( window_position ) loop
-       // all windows on the contig are counted now
+    } // end of for ( window_position ) loop
+    // all windows on the contig are counted now
 
-       delete [] bases; // free memory!
+    delete [] bases; // free memory!
 }
 
 
@@ -504,111 +499,110 @@ template <class CounterOut>
 /// at positions W+1 and above legitimately accessible, they will remain
 /// accessible and the values at those positions will stay unchanged.
 template <class CounterIn, class CounterOut>
-  void ComputeWindowGCCounts (CounterOut & GC_counter, ///< GC stats (output)
-			      int W,  ///< window size
-			      const basevector & reference, ///< windows are placed on this sequence
-			      const CounterIn & anchor_pos_counts) ///< window positions/multiplicities
-{
-      unsigned int contig_size = reference.size();
+void ComputeWindowGCCounts (CounterOut & GC_counter, ///< GC stats (output)
+                            int W,  ///< window size
+                            const basevector & reference, ///< windows are placed on this sequence
+                            const CounterIn & anchor_pos_counts) { ///< window positions/multiplicities
+    unsigned int contig_size = reference.size();
 
-     // contig too short to accomodate a single window, nothing to do!
-     if ( contig_size < (unsigned int)W ) return;
+    // contig too short to accomodate a single window, nothing to do!
+    if ( contig_size < (unsigned int)W ) return;
 
-     //  see the other implementation for the description of the algorithm!
+    //  see the other implementation for the description of the algorithm!
 
-     // count the total number of anchors (without multiplicities!) requested:
-     unsigned int total_pos_cnt = 0;
+    // count the total number of anchors (without multiplicities!) requested:
+    unsigned int total_pos_cnt = 0;
 
-     for ( unsigned int i = 0 ; i <= contig_size - W ; i++ ) {
-       if ( anchor_pos_counts[i] > 0 ) total_pos_cnt++;
-     }
+    for ( unsigned int i = 0 ; i <= contig_size - W ; i++ ) {
+        if ( anchor_pos_counts[i] > 0 ) total_pos_cnt++;
+    }
 
-     // check how dense, on average, the anchors on the reference are.
-     // if anchors occur on average more often that every W/2 bases,
-     // we will simply scan the whole reference; if the anchors are
-     // far apart ( > W/2 on average ), we will independently read
-     // all bases for each window from the reference. [the W/2 cutoff
-     // is random and not tested for being optimal...]
-     if ( total_pos_cnt < 2*(contig_size/W) ) {
-       // anchors are sparser than one per W/2 bases:
+    // check how dense, on average, the anchors on the reference are.
+    // if anchors occur on average more often that every W/2 bases,
+    // we will simply scan the whole reference; if the anchors are
+    // far apart ( > W/2 on average ), we will independently read
+    // all bases for each window from the reference. [the W/2 cutoff
+    // is random and not tested for being optimal...]
+    if ( total_pos_cnt < 2*(contig_size/W) ) {
+        // anchors are sparser than one per W/2 bases:
 
-       for ( unsigned int window_pos = 0 ; window_pos <= contig_size - W ; window_pos++ ) {
-	 unsigned int n = (unsigned int) anchor_pos_counts[window_pos];
-	 if ( n == 0 ) continue; // no windows anchored at this position
+        for ( unsigned int window_pos = 0 ; window_pos <= contig_size - W ; window_pos++ ) {
+            unsigned int n = (unsigned int) anchor_pos_counts[window_pos];
+            if ( n == 0 ) continue; // no windows anchored at this position
 
-	 unsigned int gc_cnt = 0;
+            unsigned int gc_cnt = 0;
 
-	 // initialize iterator at current position on the reference
-	 basevector::iterator b_iter = reference.Begin(window_pos);
-	 // read all bases for the current window and count gc's:
-	 for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
-	   base_t base = *b_iter;
-	   if ( base == BASE_C || base == BASE_G ) gc_cnt++;
-	 }
-	 GC_counter[gc_cnt]+=n;
-       }
-     } else {
-       // anchor are dense, let's read through the whole reference in one pass
+            // initialize iterator at current position on the reference
+            basevector::iterator b_iter = reference.Begin(window_pos);
+            // read all bases for the current window and count gc's:
+            for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
+                base_t base = *b_iter;
+                if ( base == BASE_C || base == BASE_G ) gc_cnt++;
+            }
+            GC_counter[gc_cnt]+=n;
+        }
+    } else {
+        // anchor are dense, let's read through the whole reference in one pass
 
-       base_t * bases = new base_t[W]; // circular array
-       int bases_logical_start = 0; // start of the sequence in the
-                                    // circularly wrapped array 'bases'
-
+        base_t * bases = new base_t[W]; // circular array
+        int bases_logical_start = 0; // start of the sequence in the
+        // circularly wrapped array 'bases'
 
 
-       // start iterating from the first position on the contig:
-       basevector::iterator b_iter = reference.Begin();
 
-       int gc_cnt = 0 ; // will keep local gc-count within the current window
+        // start iterating from the first position on the contig:
+        basevector::iterator b_iter = reference.Begin();
 
-       // position of the current window on the contig:
-       unsigned int window_position = 0;
+        int gc_cnt = 0 ; // will keep local gc-count within the current window
 
-       // initialization:
-       // pre-compute gc count in the first window on the contig
-       // and copy bases from the first window into the 'bases' array
-       // (we checked above that contig size >= W, so the loop is safe):
-       for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
-	 base_t base = bases[pos] = *b_iter; // get and store current base
-	 if ( base == BASE_C || base == BASE_G ) gc_cnt++; // count Cs and Gs
-       }
-       // now we got gc count in the first window and window bases are stored;
-       // done with initialization!
+        // position of the current window on the contig:
+        unsigned int window_position = 0;
 
-       // don't forget to count in the gc value observed if there is a window
-       // anchored at window_position=0:
-       GC_counter[gc_cnt] += anchor_pos_counts[window_position];
+        // initialization:
+        // pre-compute gc count in the first window on the contig
+        // and copy bases from the first window into the 'bases' array
+        // (we checked above that contig size >= W, so the loop is safe):
+        for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
+            base_t base = bases[pos] = *b_iter; // get and store current base
+            if ( base == BASE_C || base == BASE_G ) gc_cnt++; // count Cs and Gs
+        }
+        // now we got gc count in the first window and window bases are stored;
+        // done with initialization!
 
-       // now walk through all the (remaining) windows on the contig:
-       for ( window_position++ ; window_position <= contig_size - W ; window_position++, ++b_iter ) {
+        // don't forget to count in the gc value observed if there is a window
+        // anchored at window_position=0:
+        GC_counter[gc_cnt] += anchor_pos_counts[window_position];
 
-	 // window has just shifted, so we need to get the next base -
-	 // the rightmost base in the new window (we already have the others):
-         base_t base = *b_iter;
+        // now walk through all the (remaining) windows on the contig:
+        for ( window_position++ ; window_position <= contig_size - W ; window_position++, ++b_iter ) {
 
-	 // if a G or C base just moved into the window, increase the gc count
-         if ( base == BASE_C || base == BASE_G ) gc_cnt++;
+            // window has just shifted, so we need to get the next base -
+            // the rightmost base in the new window (we already have the others):
+            base_t base = *b_iter;
 
-	 // if G or C was on the left of the old window (now pushed out), decrease count:
-	 base_t old_base = bases[bases_logical_start];
-	 if ( old_base == BASE_C || old_base == BASE_G ) gc_cnt--;
+            // if a G or C base just moved into the window, increase the gc count
+            if ( base == BASE_C || base == BASE_G ) gc_cnt++;
 
-	 // update circular array so that it is synchronised with the new window content:
-	 bases[bases_logical_start++] = base;
+            // if G or C was on the left of the old window (now pushed out), decrease count:
+            base_t old_base = bases[bases_logical_start];
+            if ( old_base == BASE_C || old_base == BASE_G ) gc_cnt--;
 
-	 // wrap around logical start position
-	 if ( bases_logical_start >= W ) bases_logical_start -= W;
+            // update circular array so that it is synchronised with the new window content:
+            bases[bases_logical_start++] = base;
 
-	 // if the anchor at the current window position exists,
-	 // count in the current window's gc count with the anchor's
-	 // multiplicity (if there is no anchor at window_position,
-	 // anchor_pos_counts MUST return 0!):
-	 GC_counter[gc_cnt] += anchor_pos_counts[window_position];
-       } // end of for ( window_position ) loop
-       // all windows on the contig are counted now
+            // wrap around logical start position
+            if ( bases_logical_start >= W ) bases_logical_start -= W;
 
-       delete [] bases; // free memory!
-     }
+            // if the anchor at the current window position exists,
+            // count in the current window's gc count with the anchor's
+            // multiplicity (if there is no anchor at window_position,
+            // anchor_pos_counts MUST return 0!):
+            GC_counter[gc_cnt] += anchor_pos_counts[window_position];
+        } // end of for ( window_position ) loop
+        // all windows on the contig are counted now
+
+        delete [] bases; // free memory!
+    }
 }
 
 
@@ -653,58 +647,57 @@ template <class CounterIn, class CounterOut>
 /// at positions W+1 and above legitimately accessible, they will remain
 /// accessible and the values at those positions will stay unchanged.
 template <class CounterIn, class CounterOut>
-  void ComputeWindowGCCounts (CounterOut & GC_counter_ref, ///< GC stats on ref(output)
-			      CounterOut & GC_counter_anchor,
-			      int W,  ///< window size
-			      const basevector & reference, ///< windows are placed on this sequence
-			      const CounterIn & anchor_pos_counts) ///< window positions/multiplicities
-{
-      unsigned int contig_size = reference.size();
+void ComputeWindowGCCounts (CounterOut & GC_counter_ref, ///< GC stats on ref(output)
+                            CounterOut & GC_counter_anchor,
+                            int W,  ///< window size
+                            const basevector & reference, ///< windows are placed on this sequence
+                            const CounterIn & anchor_pos_counts) { ///< window positions/multiplicities
+    unsigned int contig_size = reference.size();
 
-     // contig too short to accomodate a single window, nothing to do!
-     if ( contig_size < (unsigned int)W ) return;
+    // contig too short to accomodate a single window, nothing to do!
+    if ( contig_size < (unsigned int)W ) return;
 
-     // see the comments in the overloaded implementation of the
-     // single counter on the reference for the details of the algorithm
+    // see the comments in the overloaded implementation of the
+    // single counter on the reference for the details of the algorithm
 
-       base_t * bases = new base_t[W]; // circular array
-       int bases_logical_start = 0;
+    base_t * bases = new base_t[W]; // circular array
+    int bases_logical_start = 0;
 
-       // start iterating from the first position on the contig:
-       basevector::const_iterator b_iter = reference.Begin();
+    // start iterating from the first position on the contig:
+    basevector::const_iterator b_iter = reference.Begin();
 
-       int gc = 0 ; // will keep local gc-count within the current window
+    int gc = 0 ; // will keep local gc-count within the current window
 
-       unsigned int window_position = 0;
+    unsigned int window_position = 0;
 
-       for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
-	 base_t base = bases[pos] = *b_iter;
-	 if ( base == BASE_C || base == BASE_G ) gc++;
-       }
+    for ( int pos = 0 ; pos < W ; pos++, ++b_iter ) {
+        base_t base = bases[pos] = *b_iter;
+        if ( base == BASE_C || base == BASE_G ) gc++;
+    }
 
-       // don't forget to count in the gc value observed in the first window:
-       ++GC_counter_ref[gc];
-       GC_counter_anchor[gc]+=anchor_pos_counts[window_position];
+    // don't forget to count in the gc value observed in the first window:
+    ++GC_counter_ref[gc];
+    GC_counter_anchor[gc]+=anchor_pos_counts[window_position];
 
-       // now walk through all the (remaining) windows on the contig:
-       for ( window_position++ ; window_position <= contig_size - W ; window_position++, ++b_iter ) {
+    // now walk through all the (remaining) windows on the contig:
+    for ( window_position++ ; window_position <= contig_size - W ; window_position++, ++b_iter ) {
 
-         base_t base = *b_iter;
-         if ( base == BASE_C || base == BASE_G ) gc++;
+        base_t base = *b_iter;
+        if ( base == BASE_C || base == BASE_G ) gc++;
 
-	 base_t old_base = bases[bases_logical_start];
-	 if ( old_base == BASE_C || old_base == BASE_G ) gc--;
+        base_t old_base = bases[bases_logical_start];
+        if ( old_base == BASE_C || old_base == BASE_G ) gc--;
 
-	 bases[bases_logical_start++] = base;
-	 if ( bases_logical_start >= W ) bases_logical_start -= W;
+        bases[bases_logical_start++] = base;
+        if ( bases_logical_start >= W ) bases_logical_start -= W;
 
-	 ++GC_counter_ref[gc]; // count in the occurence of the count on the ref.
-	 GC_counter_anchor[gc]+=anchor_pos_counts[window_position];
+        ++GC_counter_ref[gc]; // count in the occurence of the count on the ref.
+        GC_counter_anchor[gc]+=anchor_pos_counts[window_position];
 
-       } // end of for ( window_position ) loop
-       // all windows on the contig are counted now
+    } // end of for ( window_position ) loop
+    // all windows on the contig are counted now
 
-       delete [] bases; // free memory!
+    delete [] bases; // free memory!
 }
 
 
@@ -723,21 +716,21 @@ template <class CounterIn, class CounterOut>
 /// each such counter should conform to).
 
 template < class CounterInCollection, class CounterOut >
-  void ComputeWindowGCCounts(CounterOut & GC_counter_ref,
-			     CounterOut & GC_counter_anchor,
-			     int W,
-			     const vecbasevector & reference,
-			     const CounterInCollection & anchor_pos_counts) {
+void ComputeWindowGCCounts(CounterOut & GC_counter_ref,
+                           CounterOut & GC_counter_anchor,
+                           int W,
+                           const vecbasevector & reference,
+                           const CounterInCollection & anchor_pos_counts) {
 
-  for ( size_t i = 0; i < 2*reference.size( ); i++ ) {
-      // if i is even, we will look at the forward strand
-      // of the reference contig reference[i], otherwise
-      // we will count on the reverse strand:
-      basevector RC;
-      if ( i%2 == 1 ) RC.ReverseComplement(reference[i/2]);
-      const basevector & contig = ( i%2 == 0 ? reference[i/2] : RC );
-      ComputeWindowGCCounts(GC_counter_ref, GC_counter_anchor, W, contig, anchor_pos_counts[i]);
-  }
+    for ( size_t i = 0; i < 2*reference.size( ); i++ ) {
+        // if i is even, we will look at the forward strand
+        // of the reference contig reference[i], otherwise
+        // we will count on the reverse strand:
+        basevector RC;
+        if ( i%2 == 1 ) RC.ReverseComplement(reference[i/2]);
+        const basevector & contig = ( i%2 == 0 ? reference[i/2] : RC );
+        ComputeWindowGCCounts(GC_counter_ref, GC_counter_anchor, W, contig, anchor_pos_counts[i]);
+    }
 }
 
 
@@ -757,20 +750,19 @@ template < class CounterInCollection, class CounterOut >
 /// each such counter should conform to).
 
 template <class CounterInCollection, class CounterOut>
-  void ComputeWindowGCCounts (CounterOut & GC_counter, ///< GC stats (output)
-			      int W,  ///< window size
-			      const vecbasevector & reference, ///< windows are placed on this sequence
-			      const CounterInCollection & anchor_pos_counts) ///< window positions/multiplicities
-{
-  for ( int i = 0 ; i < 2*reference.size(); i++ ) {
-      // if i is even, we will look at the forward strand
-      // of the reference contig reference[i], otherwise
-      // we will count on the reverse strand:
-    basevector RC;
-    if ( i%2 == 1 ) RC.ReverseComplement(reference[i/2]);
-    const basevector &contig = ( i%2 == 0 ? reference[i/2] : RC );
-    ComputeWindowGCCounts(GC_counter, W, contig, anchor_pos_counts[i]);
-  }
+void ComputeWindowGCCounts (CounterOut & GC_counter, ///< GC stats (output)
+                            int W,  ///< window size
+                            const vecbasevector & reference, ///< windows are placed on this sequence
+                            const CounterInCollection & anchor_pos_counts) { ///< window positions/multiplicities
+    for ( int i = 0 ; i < 2*reference.size(); i++ ) {
+        // if i is even, we will look at the forward strand
+        // of the reference contig reference[i], otherwise
+        // we will count on the reverse strand:
+        basevector RC;
+        if ( i%2 == 1 ) RC.ReverseComplement(reference[i/2]);
+        const basevector &contig = ( i%2 == 0 ? reference[i/2] : RC );
+        ComputeWindowGCCounts(GC_counter, W, contig, anchor_pos_counts[i]);
+    }
 }
 
 #endif

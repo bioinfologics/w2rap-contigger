@@ -9,7 +9,7 @@
 #include "Basevector.h"
 #include "Qualvector.h"
 
-void RefTraceControl::ReadySampleLookup(){ //ready the pair manager
+void RefTraceControl::ReadySampleLookup() { //ready the pair manager
     if (read_head != "" && reads.empty()) {
         reads.ReadAll(read_head + ".fastb");
         quals.ReadAll(read_head + ".qualb");
@@ -19,29 +19,29 @@ void RefTraceControl::ReadySampleLookup(){ //ready the pair manager
         bPairsManagerInitialized = true;
         ForceAssertEq(reads.size(), quals.size());
         ForceAssertEq(reads.size(), pm.nReads());
-        std::cout << Date() << ": Loaded " << reads.size() << " reads from " << 
-            read_head << std::endl;
+        std::cout << Date() << ": Loaded " << reads.size() << " reads from " <<
+                  read_head << std::endl;
     }
 }
 
-vec<String> RefTraceControl::getSampleList()const{ //get a list of library names
+vec<String> RefTraceControl::getSampleList()const { //get a list of library names
     if( bPairsManagerInitialized) return pm.getLibraryNames();
     else                          return vec<String>();
 };
 
 int RefTraceControl::getSampleID(size_t read_ID)const { //get sample index from a read id
     int out= -1;
-    if(bPairsManagerInitialized) { 
+    if(bPairsManagerInitialized) {
         int pair_id = pm.getPairID(read_ID);
         if (pair_id != -1)
-            out= pm.libraryID(pair_id); 
+            out= pm.libraryID(pair_id);
     }
     return out;
 }
 
 String RefTraceControl::getSampleName(size_t read_ID)const { //get sample name from a read id
     String ans = "UNSPECIFIED";
-    if(bPairsManagerInitialized){ 
+    if(bPairsManagerInitialized) {
         int pair_id = pm.getPairID(read_ID);
         if (pair_id != -1)
             ans = pm.libraryName(pair_id);

@@ -18,39 +18,41 @@ class NhoodInfoEngine;
 
 class nhood_info_state {
 
-     public:
+  public:
 
-     String SEEDS;
-     int DEPTH;
-     Bool EXT;
-     Bool GREEN;
-     Bool BNG;
-     String PURPLE;
-     Bool NEATO;
-     Bool REL;
-     Bool LINENO;
-     Bool SHOW_INV;
-     Bool SHOW_CN;
-     Bool SHOW_ALIGN;
-     Bool COUNT;
-     double FONTSIZE;
-     double SCALE;
-     Bool ALTREF;
-     Bool COV2;
-     double ASPECT;
-     Bool SVG;
-     vec<int> used;
+    String SEEDS;
+    int DEPTH;
+    Bool EXT;
+    Bool GREEN;
+    Bool BNG;
+    String PURPLE;
+    Bool NEATO;
+    Bool REL;
+    Bool LINENO;
+    Bool SHOW_INV;
+    Bool SHOW_CN;
+    Bool SHOW_ALIGN;
+    Bool COUNT;
+    double FONTSIZE;
+    double SCALE;
+    Bool ALTREF;
+    Bool COV2;
+    double ASPECT;
+    Bool SVG;
+    vec<int> used;
 
-     void Initialize( );
-     Bool SetState( const String& line, std::ostream& out, const Bool SERVER,
-          const HyperBasevectorX& hb, const NhoodInfoEngine& engine );
-     void SetUsed( const vec<int>& u ) { used = u; }
+    void Initialize( );
+    Bool SetState( const String& line, std::ostream& out, const Bool SERVER,
+                   const HyperBasevectorX& hb, const NhoodInfoEngine& engine );
+    void SetUsed( const vec<int>& u ) {
+        used = u;
+    }
 
 };
 
 class NhoodInfoEngine {
 
- private:
+  private:
     static const int L = 20;
 
     String dir;
@@ -69,41 +71,49 @@ class NhoodInfoEngine {
 
     class nhood_info_state state;
 
- public:
+  public:
     void Initialize(const String& DIR_IN, const bool SEQ_LOOKUP, const bool EXT,
-         const bool COV2);
+                    const bool COV2);
 
-    Bool HasCounts( ) const { return count.nonempty( ); }
-    const vec<vec<int>>& Count( ) const { return count; }
-    Bool HasLines( ) const { return lines.nonempty( ); }
-    String Dir( ) const { return dir; }
+    Bool HasCounts( ) const {
+        return count.nonempty( );
+    }
+    const vec<vec<int>>& Count( ) const {
+        return count;
+    }
+    Bool HasLines( ) const {
+        return lines.nonempty( );
+    }
+    String Dir( ) const {
+        return dir;
+    }
 
     void SetState(const String& SEEDS,
-		  const int DEPTH,
-		  const bool EXT,
-		  const bool COUNT,
-		  const bool GREEN,
-		  const bool BNG,
-		  const String PURPLE,
-		  const bool NEATO,
-		  const bool REL,
+                  const int DEPTH,
+                  const bool EXT,
+                  const bool COUNT,
+                  const bool GREEN,
+                  const bool BNG,
+                  const String PURPLE,
+                  const bool NEATO,
+                  const bool REL,
                   const bool LINENO,
-		  const bool SHOW_INV,
+                  const bool SHOW_INV,
                   const bool SHOW_CN,
                   const bool SHOW_ALIGN,
-		  const double FONTSIZE,
-		  const double SCALE,
+                  const double FONTSIZE,
+                  const double SCALE,
                   const bool ALTREF,
                   const bool COV2,
                   const double ASPECT,
                   const bool SVG );
 
-    void RunAsClient(const Bool INTERACTIVE, const int DEPTH, 
-		     const String& OUT, const bool PNG, const bool PDF, 
+    void RunAsClient(const Bool INTERACTIVE, const int DEPTH,
+                     const String& OUT, const bool PNG, const bool PDF,
                      const Bool SVG, const int RANDOM_SEED,
-		     const String& SEEDS_MINUS, const Bool LABEL_CONTIGS,
-		     const String DOTEXTRA = "" );
-    
+                     const String& SEEDS_MINUS, const Bool LABEL_CONTIGS,
+                     const String DOTEXTRA = "" );
+
     void RunAsServer(const String& SERVER_DIR, const Bool LABEL_CONTIGS );
 };
 

@@ -17,75 +17,93 @@
 
 template<class T> class matrix {
 
-     public:
+  public:
 
-     int Nrows( ) const { return nrows_; }
-     int Ncols( ) const { return ncols_; }
-     Bool empty() const { return ncols_==0 || nrows_==0;}
-     Bool Square( ) const { return Nrows( ) == Ncols( ); }
+    int Nrows( ) const {
+        return nrows_;
+    }
+    int Ncols( ) const {
+        return ncols_;
+    }
+    Bool empty() const {
+        return ncols_==0 || nrows_==0;
+    }
+    Bool Square( ) const {
+        return Nrows( ) == Ncols( );
+    }
 
-     vec<T>& operator[ ]( int i ) { return entries_[i]; }
-     const vec<T>& operator[ ]( int i ) const { return entries_[i]; }
-     T& operator( )( int i, int j ) { return entries_[i][j]; }
-     const T& operator( )( int i, int j ) const { return entries_[i][j]; }
+    vec<T>& operator[ ]( int i ) {
+        return entries_[i];
+    }
+    const vec<T>& operator[ ]( int i ) const {
+        return entries_[i];
+    }
+    T& operator( )( int i, int j ) {
+        return entries_[i][j];
+    }
+    const T& operator( )( int i, int j ) const {
+        return entries_[i][j];
+    }
 
-     matrix( ) : nrows_(0), ncols_(0) { }
+    matrix( ) : nrows_(0), ncols_(0) { }
 
-     matrix( int r, int c );
-     matrix( int r, int c, const T& t );
+    matrix( int r, int c );
+    matrix( int r, int c, const T& t );
 
-     void Resize( int r, int c );
+    void Resize( int r, int c );
 
-     double Cofactor(int i, int j);
+    double Cofactor(int i, int j);
 
-     void Invert(void);
+    void Invert(void);
 
-     void Transpose( );
+    void Transpose( );
 
-     void Identity(void) {
-		if (Square()) {
-			for (int rc = 0; rc < Nrows(); rc++) {
-				entries_[rc][rc] = 1.0;
-			}
-		}
-     }
+    void Identity(void) {
+        if (Square()) {
+            for (int rc = 0; rc < Nrows(); rc++) {
+                entries_[rc][rc] = 1.0;
+            }
+        }
+    }
 
-     // lu_decompose: Compute the LU decomposition of an n by n invertible matrix 
-     // A using row-oriented partial pivoting.  We find a unit lower triangular 
-     // matrix L, an upper triangular matrix U, and a permutation matrix P such that 
-     // A = PLU.  Upon entry *this is to be A.  Upon exit it is replaced by 
-     // L - I + U.  If in the process of computation it is found that A is not 
-     // invertible, False is returned; otherwise True is returned. 
+    // lu_decompose: Compute the LU decomposition of an n by n invertible matrix
+    // A using row-oriented partial pivoting.  We find a unit lower triangular
+    // matrix L, an upper triangular matrix U, and a permutation matrix P such that
+    // A = PLU.  Upon entry *this is to be A.  Upon exit it is replaced by
+    // L - I + U.  If in the process of computation it is found that A is not
+    // invertible, False is returned; otherwise True is returned.
 
-     Bool lu_decompose(Permutation& P);
+    Bool lu_decompose(Permutation& P);
 
-     // solve_from_lu: Start with an invertible matrix A and a vector
-     // b.  Solve Ax = b for x.  Upon entry *this and P are to be the
-     // LU-decomposition of A coming from lu_decompose.  b.size() and
-     // x.size() must equal Nrows().  The code is based on the code
-     // given in Forsythe and Moler, pp. 59--60.
+    // solve_from_lu: Start with an invertible matrix A and a vector
+    // b.  Solve Ax = b for x.  Upon entry *this and P are to be the
+    // LU-decomposition of A coming from lu_decompose.  b.size() and
+    // x.size() must equal Nrows().  The code is based on the code
+    // given in Forsythe and Moler, pp. 59--60.
 
-     void solve_from_lu( const Permutation& P, const vec<T>& b, vec<T>& x )
-     { x.resize(Nrows()); solve_from_lu(P, &b[0], &x[0]); }
-    
-     // This version should be usable no matter how the data are
-     // stored as long as the elements are consecutive in memory.  The
-     // vectors b and x must, of course, contain Nrows() elements each.
-     void solve_from_lu( const Permutation& P, const T* b, T* x );
+    void solve_from_lu( const Permutation& P, const vec<T>& b, vec<T>& x ) {
+        x.resize(Nrows());
+        solve_from_lu(P, &b[0], &x[0]);
+    }
 
-     void Print( std::ostream& o ) const;
+    // This version should be usable no matter how the data are
+    // stored as long as the elements are consecutive in memory.  The
+    // vectors b and x must, of course, contain Nrows() elements each.
+    void solve_from_lu( const Permutation& P, const T* b, T* x );
 
-     void PrettyPrint( std::ostream& o ) const;
+    void Print( std::ostream& o ) const;
 
-     // Support for a bonehead implementation of inverse.
+    void PrettyPrint( std::ostream& o ) const;
 
-     T Det();
-     void Inverse(matrix<T>& inverse);
-     
-     private:
+    // Support for a bonehead implementation of inverse.
 
-     vec< vec<T> > entries_;
-     int nrows_, ncols_;
+    T Det();
+    void Inverse(matrix<T>& inverse);
+
+  private:
+
+    vec< vec<T> > entries_;
+    int nrows_, ncols_;
 
 };
 
@@ -105,26 +123,26 @@ template<class T> void mul( const matrix<T>& A, const matrix<T>& B, matrix<T>& C
 
 // mulsub( A, x, b, Ax_minus_b ): compute Ax - b, returned as last argument.
 
-template<class T> void mulsub( const matrix<T>& A, const vec<T>& x, 
-     const vec<T>& b, vec<T>& Ax_minus_b );
+template<class T> void mulsub( const matrix<T>& A, const vec<T>& x,
+                               const vec<T>& b, vec<T>& Ax_minus_b );
 
 // Solve: Find the solution x to the matrix equation Ax = b.  While
 // useful for solving a single equation, this function is inefficient
 // if you use the same A many times because it decomposes A every
-// time.  Use the matrix class instead and compute the lu decomposition once. 
+// time.  Use the matrix class instead and compute the lu decomposition once.
 template<class T> void Solve( const matrix<T>& A, const vec<T>& b, vec<T>& x );
 
 // SolveLeastSquares: For the matrix equation Ax = b, find the x that comes
 // closest to solving it.
 
-template<class T> void SolveLeastSquares( 
-     const matrix<T>& A, const vec<T>& b, vec<T>& x );
+template<class T> void SolveLeastSquares(
+    const matrix<T>& A, const vec<T>& b, vec<T>& x );
 
 // BestQuadratic: given vectors x and y of the same size, find the quadratic
 // function f(t) = at^2 + bt + c which comes closest to satisfying the equation
 // yi = f(xi) for each i.
 
 template<class T> void BestQuadratic( const vec<T>& x, const vec<T>& y,
-     T& a, T& b, T& c );
+                                      T& a, T& b, T& c );
 
 #endif

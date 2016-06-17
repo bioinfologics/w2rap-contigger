@@ -25,13 +25,15 @@ const String VecAlignmentPlusHeaderIO::mStrIndexHeader ( "alignment_plus index V
 // of alignments with that id1.
 
 inline
-int SizeOfIndexEntry() { return sizeof(longlong) + sizeof(int); }
+int SizeOfIndexEntry() {
+    return sizeof(longlong) + sizeof(int);
+}
 
 // New alignment format:
 //
 // A header byte contains a set of flags indicating whether certain
 // portions of the alignment have been compressed.
-// 
+//
 // header byte:
 //   bit 0 (0x01): use previous id1
 //   bit 1 (0x02): second sequence is rc
@@ -78,7 +80,7 @@ const int PPE_errors_shift               = 22;
 // This is followed by the score of the align in float form.
 //
 // Next comes the number of blocks in int form.
-// 
+//
 // Each block can be either uncompressed:
 //
 //   gap    (signed int)
@@ -127,1372 +129,1216 @@ const int maxHeaderSize = 1 +                  // header byte
                           sizeof( int );       // numBlocks
 
 const int maxOutputChunkSize = std::max( maxHeaderSize,
-                                    1 +                   // block compression byte
-                                    8 * BLOCK_max_size ); // 8 big blocks
+                               1 +                   // block compression byte
+                               8 * BLOCK_max_size ); // 8 big blocks
 
 
 const int gPageSize = 8192;
 
 
 ReadBuffer::ReadBuffer( const int bufferSize )
-  : mBufferSize( std::max(bufferSize,2*gPageSize) ),
-    mpBufferStart( new unsigned char[ mBufferSize ] ),
-    mpBufferEnd( mpBufferStart + mBufferSize ),
-    mpBufferCursor( mpBufferEnd ),
-    mBufferIsStale( true )
-{
-}  
+    : mBufferSize( std::max(bufferSize,2*gPageSize) ),
+      mpBufferStart( new unsigned char[ mBufferSize ] ),
+      mpBufferEnd( mpBufferStart + mBufferSize ),
+      mpBufferCursor( mpBufferEnd ),
+      mBufferIsStale( true ) {
+}
 
-ReadBuffer::~ReadBuffer()
-{
-  delete [] mpBufferStart;
+ReadBuffer::~ReadBuffer() {
+    delete [] mpBufferStart;
 }
 
 inline
 void
-ReadBuffer::CheckBuffer( const int amountToBuffer )
-{
-  int bytesLeft = mpBufferEnd - mpBufferCursor;
+ReadBuffer::CheckBuffer( const int amountToBuffer ) {
+    int bytesLeft = mpBufferEnd - mpBufferCursor;
 
-  if ( bytesLeft < amountToBuffer )
-  {
-    if ( bytesLeft < 0 )
-    {
-      std::cout << "Unexpected end-of-file." << std::endl;
-      TracebackThisProcess( );
+    if ( bytesLeft < amountToBuffer ) {
+        if ( bytesLeft < 0 ) {
+            std::cout << "Unexpected end-of-file." << std::endl;
+            TracebackThisProcess( );
+        }
+
+        if ( mpIstream->good() ) {
+            if ( amountToBuffer > mBufferSize ) {
+                unsigned char *pNewBufferStart = new unsigned char[amountToBuffer];
+
+                if ( bytesLeft > 0 )
+                    memmove( pNewBufferStart, mpBufferCursor, bytesLeft );
+
+                delete [] mpBufferStart;
+                mpBufferStart = pNewBufferStart;
+            } else {
+                if ( bytesLeft > 0 )
+                    memmove( mpBufferStart, mpBufferCursor, bytesLeft );
+            }
+
+            mpBufferCursor = mpBufferStart;
+            mpBufferEnd = mpBufferStart + bytesLeft;
+
+            std::streamoff bytesToRead = mBufferSize - ( mpBufferEnd - mpBufferStart );
+            std::streampos pageEnd = mpIstream->tellg() + bytesToRead;
+            pageEnd = pageEnd / gPageSize * gPageSize;  // always end on a block edge
+            bytesToRead = pageEnd - mpIstream->tellg();
+
+            mpIstream->read( (char *) mpBufferEnd, bytesToRead );
+            mpBufferEnd += mpIstream->gcount();
+
+            mBufferIsStale = false;
+        }
     }
-
-    if ( mpIstream->good() )
-    {
-      if ( amountToBuffer > mBufferSize )
-      {
-        unsigned char *pNewBufferStart = new unsigned char[amountToBuffer];
-     
-        if ( bytesLeft > 0 )
-          memmove( pNewBufferStart, mpBufferCursor, bytesLeft );
-     
-        delete [] mpBufferStart;
-        mpBufferStart = pNewBufferStart;
-      }
-      else
-      {
-        if ( bytesLeft > 0 )
-          memmove( mpBufferStart, mpBufferCursor, bytesLeft );
-      }
-
-      mpBufferCursor = mpBufferStart;
-      mpBufferEnd = mpBufferStart + bytesLeft;
-
-      std::streamoff bytesToRead = mBufferSize - ( mpBufferEnd - mpBufferStart );
-      std::streampos pageEnd = mpIstream->tellg() + bytesToRead;
-      pageEnd = pageEnd / gPageSize * gPageSize;  // always end on a block edge
-      bytesToRead = pageEnd - mpIstream->tellg();
-
-      mpIstream->read( (char *) mpBufferEnd, bytesToRead );
-      mpBufferEnd += mpIstream->gcount();
-
-      mBufferIsStale = false;
-    }
-  }
 }
 
 inline
 void
-ReadBuffer::JumpTo( std::streampos filePos )
-{
-  // if we've hit the end of the file, we need to reset the eof flag
-  // before getting the file position
-  if ( mpIstream->eof() )
-    mpIstream->clear();
+ReadBuffer::JumpTo( std::streampos filePos ) {
+    // if we've hit the end of the file, we need to reset the eof flag
+    // before getting the file position
+    if ( mpIstream->eof() )
+        mpIstream->clear();
 
-  std::streampos currPos = mpIstream->tellg();
-  
-  // if the desired position is somewhere in the current buffer and
-  // the buffer is not stale (i.e. the current position of the
-  // filestream actually corresponds to the end of the buffer).
-  if ( ! mBufferIsStale && 
-       filePos < currPos &&
-       currPos - filePos <= mpBufferEnd - mpBufferStart )
-  {
-    mpBufferCursor = mpBufferEnd - ( currPos - filePos );
-  }
-  // otherwise, jump to the right spot and mark the buffer as stale
-  else
-  {
-    // empty the buffer
-    mpBufferCursor = mpBufferEnd;
-    // if we're at the end of the file, we need to reset the status of
-    // the stream so that it seeks properly
-    bool atEndOfFile = mpIstream->eof();
-    if ( atEndOfFile )
-      mpIstream->clear();
-    // seek to the correct position
-    mpIstream->seekg( filePos, std::ios::beg );
-    // if we were at the end of the file, the eof bit will be
-    // spuriously set by the seekg, so we clear it
-    if ( atEndOfFile )
-      mpIstream->clear();
-    // mark the buffer as stale
-    mBufferIsStale = true;
-  }
+    std::streampos currPos = mpIstream->tellg();
+
+    // if the desired position is somewhere in the current buffer and
+    // the buffer is not stale (i.e. the current position of the
+    // filestream actually corresponds to the end of the buffer).
+    if ( ! mBufferIsStale &&
+            filePos < currPos &&
+            currPos - filePos <= mpBufferEnd - mpBufferStart ) {
+        mpBufferCursor = mpBufferEnd - ( currPos - filePos );
+    }
+    // otherwise, jump to the right spot and mark the buffer as stale
+    else {
+        // empty the buffer
+        mpBufferCursor = mpBufferEnd;
+        // if we're at the end of the file, we need to reset the status of
+        // the stream so that it seeks properly
+        bool atEndOfFile = mpIstream->eof();
+        if ( atEndOfFile )
+            mpIstream->clear();
+        // seek to the correct position
+        mpIstream->seekg( filePos, std::ios::beg );
+        // if we were at the end of the file, the eof bit will be
+        // spuriously set by the seekg, so we clear it
+        if ( atEndOfFile )
+            mpIstream->clear();
+        // mark the buffer as stale
+        mBufferIsStale = true;
+    }
 }
 
 
 
 
 AlignmentPlusReader::AlignmentPlusReader( ReadBuffer *pReadBuffer )
-  : mpReadBuffer( pReadBuffer ),
-    mLastId1( -1 ),
-    numBlocks( 0 )
-{
-  gaps.Setsize( 65535 );
-  lens.Setsize( 65535 );
+    : mpReadBuffer( pReadBuffer ),
+      mLastId1( -1 ),
+      numBlocks( 0 ) {
+    gaps.Setsize( 65535 );
+    lens.Setsize( 65535 );
 }
 
 VecAlignmentPlusReader::VecAlignmentPlusReader( const String &strVectorFilename,
-                                                const int bufferSize )
-  : mStrVectorFilename( strVectorFilename ),
-    mStrIndexFilename( strVectorFilename + "_index" ),
-    mpDataIn( 0 ),
-    mpIndexIn( 0 ),
-    mDataPtrIsShared( false ),
-    mNumAligns( -1 ),
-    mRequestedId1Start( 0 ),
-    mNumAlignsWithRequestedId1( 0 ),
-    mReadBuffer( bufferSize ),
-    mReader( &mReadBuffer )
-{
+        const int bufferSize )
+    : mStrVectorFilename( strVectorFilename ),
+      mStrIndexFilename( strVectorFilename + "_index" ),
+      mpDataIn( 0 ),
+      mpIndexIn( 0 ),
+      mDataPtrIsShared( false ),
+      mNumAligns( -1 ),
+      mRequestedId1Start( 0 ),
+      mNumAlignsWithRequestedId1( 0 ),
+      mReadBuffer( bufferSize ),
+      mReader( &mReadBuffer ) {
 }
 
 VecAlignmentPlusReader::VecAlignmentPlusReader( std::istream *pVectorIstream,
-                                                const int bufferSize )
-  : mStrVectorFilename( "" ),
-    mStrIndexFilename( "" ),
-    mpDataIn( pVectorIstream ),
-    mpIndexIn( 0 ),
-    mDataPtrIsShared( true ),
-    mNumAligns( -1 ),
-    mRequestedId1Start( 0 ),
-    mNumAlignsWithRequestedId1( 0 ),
-    mReadBuffer( bufferSize ),
-    mReader( &mReadBuffer )
-{
-  mReadBuffer.Attach( mpDataIn );
+        const int bufferSize )
+    : mStrVectorFilename( "" ),
+      mStrIndexFilename( "" ),
+      mpDataIn( pVectorIstream ),
+      mpIndexIn( 0 ),
+      mDataPtrIsShared( true ),
+      mNumAligns( -1 ),
+      mRequestedId1Start( 0 ),
+      mNumAlignsWithRequestedId1( 0 ),
+      mReadBuffer( bufferSize ),
+      mReader( &mReadBuffer ) {
+    mReadBuffer.Attach( mpDataIn );
 
-  if ( ! mHeaderIO.VerifyDataHeader( mpDataIn ) )
-  {
-    std::cout << "File may be in incorrect format." << std::endl;
-    TracebackThisProcess();
-  }
+    if ( ! mHeaderIO.VerifyDataHeader( mpDataIn ) ) {
+        std::cout << "File may be in incorrect format." << std::endl;
+        TracebackThisProcess();
+    }
 }
 
 VecAlignmentPlusWriter::VecAlignmentPlusWriter( const String &strVectorFilename,
-                                                const bool createIndex,
-                                                const int bufferSize )
-  : mStrVectorFilename( strVectorFilename ),
-    mStrIndexFilename( createIndex ? strVectorFilename + "_index" : "" ),
-    mpDataOut( 0 ),
-    mpIndexOut( 0 ),
-    mNumAligns( 0 ),
-    mLastId1( -1 ),
-    mLastId1Start( 0 ),
-    mNumAlignsWithLastId1( 0 ),
-    numBlocks( 0 ),
-    mBufferSize( std::max(bufferSize,2*gPageSize ) ),
-    mpBufferStart( new unsigned char[ mBufferSize ] ),
-    mpBufferEnd( mpBufferStart + mBufferSize ),
-    mpBufferCursor( mpBufferStart )
-{
-  gaps.Setsize( 65535 );
-  lens.Setsize( 65535 );
+        const bool createIndex,
+        const int bufferSize )
+    : mStrVectorFilename( strVectorFilename ),
+      mStrIndexFilename( createIndex ? strVectorFilename + "_index" : "" ),
+      mpDataOut( 0 ),
+      mpIndexOut( 0 ),
+      mNumAligns( 0 ),
+      mLastId1( -1 ),
+      mLastId1Start( 0 ),
+      mNumAlignsWithLastId1( 0 ),
+      numBlocks( 0 ),
+      mBufferSize( std::max(bufferSize,2*gPageSize ) ),
+      mpBufferStart( new unsigned char[ mBufferSize ] ),
+      mpBufferEnd( mpBufferStart + mBufferSize ),
+      mpBufferCursor( mpBufferStart ) {
+    gaps.Setsize( 65535 );
+    lens.Setsize( 65535 );
 }
 
 VecAlignmentPlusWriter::VecAlignmentPlusWriter( std::ostream *pVectorOstream,
-                                                const int bufferSize )
-  : mStrVectorFilename( "" ),
-    mStrIndexFilename( "" ),
-    mpDataOut( pVectorOstream ),
-    mpIndexOut( 0 ),
-    mDataPtrIsShared( true ),
-    mNumAligns( 0 ),
-    mLastId1( -1 ),
-    mLastId1Start( 0 ),
-    mNumAlignsWithLastId1( 0 ),
-    numBlocks( 0 ),
-    mBufferSize( std::max(bufferSize,2*gPageSize ) ),
-    mpBufferStart( new unsigned char[ mBufferSize ] ),
-    mpBufferEnd( mpBufferStart + mBufferSize ),
-    mpBufferCursor( mpBufferStart )
-{
-  mHeaderIO.WriteDataHeader( mpDataOut );
-
-  gaps.Setsize( 65535 );
-  lens.Setsize( 65535 );
-}
-
-VecAlignmentPlusReader::~VecAlignmentPlusReader()
-{
-  if ( ! mDataPtrIsShared )
-    delete mpDataIn;
-
-  delete mpIndexIn;
-}
-
-VecAlignmentPlusWriter::~VecAlignmentPlusWriter()
-{
-  delete [] mpBufferStart;
-  if ( ! mDataPtrIsShared )
-    delete mpDataOut;
-  delete mpIndexOut;
-}
-
-inline
-void
-VecAlignmentPlusWriter::OpenDataFileForWriting()
-{
-  if ( ! mpDataOut )
-  {
-    // This open mode truncates an existing file.
-    mpDataOut = new std::ofstream( mStrVectorFilename.c_str(), std::ios::out | std::ios::binary );
-
-    if ( ! mpDataOut->good() )
-    {
-      std::cout << "Unable to open alignment vector file " 
-           << mStrVectorFilename << " for writing." << std::endl;
-      TracebackThisProcess();
-    }
-
+        const int bufferSize )
+    : mStrVectorFilename( "" ),
+      mStrIndexFilename( "" ),
+      mpDataOut( pVectorOstream ),
+      mpIndexOut( 0 ),
+      mDataPtrIsShared( true ),
+      mNumAligns( 0 ),
+      mLastId1( -1 ),
+      mLastId1Start( 0 ),
+      mNumAlignsWithLastId1( 0 ),
+      numBlocks( 0 ),
+      mBufferSize( std::max(bufferSize,2*gPageSize ) ),
+      mpBufferStart( new unsigned char[ mBufferSize ] ),
+      mpBufferEnd( mpBufferStart + mBufferSize ),
+      mpBufferCursor( mpBufferStart ) {
     mHeaderIO.WriteDataHeader( mpDataOut );
 
-    // Empty the write buffer.
-    mpBufferCursor = mpBufferStart;
-  }
+    gaps.Setsize( 65535 );
+    lens.Setsize( 65535 );
+}
+
+VecAlignmentPlusReader::~VecAlignmentPlusReader() {
+    if ( ! mDataPtrIsShared )
+        delete mpDataIn;
+
+    delete mpIndexIn;
+}
+
+VecAlignmentPlusWriter::~VecAlignmentPlusWriter() {
+    delete [] mpBufferStart;
+    if ( ! mDataPtrIsShared )
+        delete mpDataOut;
+    delete mpIndexOut;
 }
 
 inline
 void
-VecAlignmentPlusWriter::OpenIndexFileForWriting()
-{
-  if ( ! mpIndexOut )
-  {
-    // This open mode truncates an existing file.
-    mpIndexOut = new std::ofstream( mStrIndexFilename.c_str(), std::ios::out | std::ios::binary );
+VecAlignmentPlusWriter::OpenDataFileForWriting() {
+    if ( ! mpDataOut ) {
+        // This open mode truncates an existing file.
+        mpDataOut = new std::ofstream( mStrVectorFilename.c_str(), std::ios::out | std::ios::binary );
 
-    if ( ! mpIndexOut->good() )
-    {
-      std::cout << "Unable to open alignment index file " 
-           << mStrIndexFilename << " for writing." << std::endl;
-      TracebackThisProcess();
+        if ( ! mpDataOut->good() ) {
+            std::cout << "Unable to open alignment vector file "
+                      << mStrVectorFilename << " for writing." << std::endl;
+            TracebackThisProcess();
+        }
+
+        mHeaderIO.WriteDataHeader( mpDataOut );
+
+        // Empty the write buffer.
+        mpBufferCursor = mpBufferStart;
     }
+}
 
-    mHeaderIO.WriteIndexHeader( mpIndexOut );
-  }
+inline
+void
+VecAlignmentPlusWriter::OpenIndexFileForWriting() {
+    if ( ! mpIndexOut ) {
+        // This open mode truncates an existing file.
+        mpIndexOut = new std::ofstream( mStrIndexFilename.c_str(), std::ios::out | std::ios::binary );
+
+        if ( ! mpIndexOut->good() ) {
+            std::cout << "Unable to open alignment index file "
+                      << mStrIndexFilename << " for writing." << std::endl;
+            TracebackThisProcess();
+        }
+
+        mHeaderIO.WriteIndexHeader( mpIndexOut );
+    }
 }
 
 
 inline
 void
-VecAlignmentPlusWriter::OpenDataFileForAppending()
-{
-  if ( ! mpDataOut )
-  {
-    if ( IsRegularFile( mStrVectorFilename.c_str() ) )
-    {
-    // This open mode only allows appending to an existing file.
-      mpDataOut = new std::ofstream( mStrVectorFilename.c_str(), std::ios::out | std::ios::app | std::ios::binary );
+VecAlignmentPlusWriter::OpenDataFileForAppending() {
+    if ( ! mpDataOut ) {
+        if ( IsRegularFile( mStrVectorFilename.c_str() ) ) {
+            // This open mode only allows appending to an existing file.
+            mpDataOut = new std::ofstream( mStrVectorFilename.c_str(), std::ios::out | std::ios::app | std::ios::binary );
 
-      if ( ! mpDataOut->good() )
-      {
-        std::cout << "Unable to open alignment vector file " 
-             << mStrVectorFilename << " for writing." << std::endl;
+            if ( ! mpDataOut->good() ) {
+                std::cout << "Unable to open alignment vector file "
+                          << mStrVectorFilename << " for writing." << std::endl;
+                TracebackThisProcess();
+            }
+
+            // Empty the write buffer.
+            mpBufferCursor = mpBufferStart;
+        } else
+            OpenDataFileForWriting();
+    }
+}
+
+inline
+void
+VecAlignmentPlusWriter::OpenIndexFileForAppending() {
+    if ( ! mpIndexOut ) {
+        if ( IsRegularFile( mStrIndexFilename.c_str() ) ) {
+            // This open mode allows repositioning and subsequent writing
+            // within an existing file.  We may need to overwrite the last
+            // entry in the index, so we need this ability.
+            mpIndexOut = new std::ofstream( mStrIndexFilename.c_str(), std::ios::in | std::ios::out | std::ios::binary );
+
+            if ( ! mpIndexOut->good() ) {
+                std::cout << "Unable to open alignment index file "
+                          << mStrIndexFilename << " for writing." << std::endl;
+                TracebackThisProcess();
+            }
+        } else
+            OpenIndexFileForWriting();
+    }
+}
+
+void
+VecAlignmentPlusWriter::LoadLastId1FromIndex() {
+    if ( IsRegularFile( mStrIndexFilename.c_str() ) ) {
+        std::ifstream indexIn( mStrIndexFilename.c_str(), std::ios::in | std::ios::binary );
+
+        if ( ! indexIn.good() ||
+                ! mHeaderIO.VerifyIndexHeader( &indexIn ) ) {
+            std::cout << "Unrecognized alignment index file format in: " << std::endl;
+            std::cout << mStrIndexFilename << std::endl;
+            std::cout << "Unable to open alignment index file "
+                      << mStrIndexFilename << " for appending." << std::endl;
+            TracebackThisProcess();
+        }
+
+        indexIn.seekg( 0, std::ios::end );
+        int indexSize = indexIn.tellg();
+
+        indexSize -= mHeaderIO.GetIndexHeaderSize();
+        mLastId1 = indexSize / SizeOfIndexEntry() - 1;
+
+        if ( mLastId1 >= 0 ) {
+            indexIn.seekg( -SizeOfIndexEntry(), std::ios::end );
+            indexIn.read( (char *) &mLastId1Start, sizeof( mLastId1Start ) );
+            indexIn.read( (char *) &mNumAlignsWithLastId1, sizeof( mNumAlignsWithLastId1 ) );
+        }
+
+        indexIn.close();
+    } else
+        mLastId1 = -1;
+}
+
+
+void
+VecAlignmentPlusWriter::LoadNumAlignsFromData() {
+    if ( IsRegularFile( mStrVectorFilename.c_str() ) ) {
+        std::ifstream dataIn( mStrVectorFilename.c_str(), std::ios::in | std::ios::binary );
+
+        if ( ! dataIn.good() ||
+                ! mHeaderIO.VerifyDataHeader( &dataIn ) ) {
+            std::cout << "Unrecognized alignment vector file format in: " << std::endl;
+            std::cout << mStrVectorFilename << std::endl;
+            std::cout << "Unable to open alignment vector file "
+                      << mStrVectorFilename << " for appending." << std::endl;
+            TracebackThisProcess();
+        }
+
+        mHeaderIO.ReadNumAlignments( &dataIn, mNumAligns );
+
+        dataIn.close();
+    } else
+        mNumAligns = 0;
+}
+
+
+inline
+void
+VecAlignmentPlusReader::OpenDataFileForReading() {
+    if ( ! mpDataIn ) {
+        mpDataIn = new std::ifstream( mStrVectorFilename.c_str(), std::ios::in | std::ios::binary );
+
+        if ( ! mpDataIn->good() ) {
+            std::cout << "Unable to open alignment vector file "
+                      << mStrVectorFilename << " for reading." << std::endl;
+            TracebackThisProcess();
+        }
+
+        if ( ! mHeaderIO.VerifyDataHeader( mpDataIn ) ) {
+            std::cout << "Unrecognized alignment vector file format in: " << std::endl;
+            std::cout << mStrVectorFilename << std::endl;
+            TracebackThisProcess();
+        }
+
+        // Attach the newly created stream to the read buffer.
+        mReadBuffer.Attach( mpDataIn );
+    }
+}
+
+
+inline
+void
+VecAlignmentPlusReader::OpenIndexFileForReading() {
+    if ( ! mpIndexIn ) {
+        if ( mStrIndexFilename.empty() ) {
+            std::cout << "VecAlignmentPlusReader was initialized without a filename." << std::endl;
+            std::cout << "Alignment index file was not specified." << std::endl;
+            TracebackThisProcess();
+        }
+
+        mpIndexIn = new std::ifstream( mStrIndexFilename.c_str(), std::ios::in | std::ios::binary );
+
+        if ( ! mpIndexIn->good() ) {
+            std::cout << "Unable to open alignment index file "
+                      << mStrIndexFilename << " for reading." << std::endl;
+            TracebackThisProcess();
+        }
+
+        if ( ! mHeaderIO.VerifyIndexHeader( mpIndexIn ) ) {
+            std::cout << "File " << mStrIndexFilename << " may be in incorrect format." << std::endl;
+            TracebackThisProcess();
+        }
+
+        mpIndexIn->seekg( 0, std::ios::end );
+        mIndexSize = mpIndexIn->tellg();
+        mpIndexIn->seekg( 0, std::ios::beg );
+    }
+}
+
+
+void
+VecAlignmentPlusHeaderIO::WriteDataHeader( std::ostream *pDataOut ) {
+    pDataOut->seekp( 0, std::ios::beg );
+    *pDataOut << mStrVectorHeader << std::flush;
+    // Seek past space for numAligns.
+    pDataOut->seekp( sizeof(int), std::ios::cur );
+}
+
+void
+VecAlignmentPlusHeaderIO::WriteIndexHeader( std::ostream *pIndexOut ) {
+    pIndexOut->seekp( 0, std::ios::beg );
+    *pIndexOut << mStrIndexHeader << std::flush;
+}
+
+bool
+VecAlignmentPlusHeaderIO::VerifyDataHeader( std::istream *pDataIn ) {
+    pDataIn->seekg( 0, std::ios::beg );
+
+    char *pHeaderData = new char[ mStrVectorHeader.size() + 1 ];
+    pDataIn->read( pHeaderData, mStrVectorHeader.size() );
+
+    pHeaderData[ mStrVectorHeader.size() ] = 0;
+
+    bool verified = ( 0 == strcmp( pHeaderData, mStrVectorHeader.c_str() ) );
+
+    delete [] pHeaderData;
+
+    return verified;
+}
+
+
+bool
+VecAlignmentPlusHeaderIO::VerifyIndexHeader( std::istream *pIndexIn ) {
+    pIndexIn->seekg( 0, std::ios::beg );
+
+    char *pHeaderData = new char[ mStrIndexHeader.size() + 1 ];
+    pIndexIn->read( pHeaderData, mStrIndexHeader.size() );
+
+    pHeaderData[ mStrIndexHeader.size() ] = 0;
+
+    bool verified = ( 0 == strcmp( pHeaderData, mStrIndexHeader.c_str() ) );
+
+    delete [] pHeaderData;
+
+    return verified;
+}
+
+
+inline
+void
+VecAlignmentPlusHeaderIO::WriteNumAlignments( const String &strDataFilename, const int numAligns ) {
+    std::ofstream dataOut( strDataFilename.c_str(), std::ios::in | std::ios::out | std::ios::binary );
+
+    if ( ! dataOut.good() ) {
+        std::cout << "Unable to open alignment data file "
+                  << strDataFilename << " for writing." << std::endl;
         TracebackThisProcess();
-      }
-
-      // Empty the write buffer.
-      mpBufferCursor = mpBufferStart;
     }
-    else
-      OpenDataFileForWriting();
-  }
+
+    dataOut.seekp( mStrVectorHeader.size(), std::ios::beg );
+    dataOut.write( (char *) &numAligns, sizeof( numAligns ) );
 }
 
 inline
 void
-VecAlignmentPlusWriter::OpenIndexFileForAppending()
-{
-  if ( ! mpIndexOut )
-  {
-    if ( IsRegularFile( mStrIndexFilename.c_str() ) )
-    {
-      // This open mode allows repositioning and subsequent writing
-      // within an existing file.  We may need to overwrite the last
-      // entry in the index, so we need this ability.
-      mpIndexOut = new std::ofstream( mStrIndexFilename.c_str(), std::ios::in | std::ios::out | std::ios::binary );
-
-      if ( ! mpIndexOut->good() )
-      {
-        std::cout << "Unable to open alignment index file " 
-             << mStrIndexFilename << " for writing." << std::endl;
-        TracebackThisProcess();
-      }
-    }
-    else
-      OpenIndexFileForWriting();
-  }
-}
-
-void
-VecAlignmentPlusWriter::LoadLastId1FromIndex()
-{
-  if ( IsRegularFile( mStrIndexFilename.c_str() ) )
-  {
-    std::ifstream indexIn( mStrIndexFilename.c_str(), std::ios::in | std::ios::binary );
-    
-    if ( ! indexIn.good() ||
-         ! mHeaderIO.VerifyIndexHeader( &indexIn ) )
-    {
-      std::cout << "Unrecognized alignment index file format in: " << std::endl;
-      std::cout << mStrIndexFilename << std::endl;
-      std::cout << "Unable to open alignment index file " 
-           << mStrIndexFilename << " for appending." << std::endl;
-      TracebackThisProcess();
-    }
- 
-    indexIn.seekg( 0, std::ios::end );
-    int indexSize = indexIn.tellg();
-    
-    indexSize -= mHeaderIO.GetIndexHeaderSize();
-    mLastId1 = indexSize / SizeOfIndexEntry() - 1;
-
-    if ( mLastId1 >= 0 )
-    {
-      indexIn.seekg( -SizeOfIndexEntry(), std::ios::end );
-      indexIn.read( (char *) &mLastId1Start, sizeof( mLastId1Start ) );
-      indexIn.read( (char *) &mNumAlignsWithLastId1, sizeof( mNumAlignsWithLastId1 ) );
-    }
-
-    indexIn.close();
-  }
-  else
-    mLastId1 = -1;
-}
-
-
-void
-VecAlignmentPlusWriter::LoadNumAlignsFromData()
-{
-  if ( IsRegularFile( mStrVectorFilename.c_str() ) )
-  {
-    std::ifstream dataIn( mStrVectorFilename.c_str(), std::ios::in | std::ios::binary );
-    
-    if ( ! dataIn.good() ||
-         ! mHeaderIO.VerifyDataHeader( &dataIn ) )
-    {
-      std::cout << "Unrecognized alignment vector file format in: " << std::endl;
-      std::cout << mStrVectorFilename << std::endl;
-      std::cout << "Unable to open alignment vector file " 
-           << mStrVectorFilename << " for appending." << std::endl;
-      TracebackThisProcess();
-    }
-
-    mHeaderIO.ReadNumAlignments( &dataIn, mNumAligns );
-
-    dataIn.close();
-  }
-  else
-    mNumAligns = 0;
-}
-      
-
-inline
-void
-VecAlignmentPlusReader::OpenDataFileForReading()
-{
-  if ( ! mpDataIn )
-  {
-    mpDataIn = new std::ifstream( mStrVectorFilename.c_str(), std::ios::in | std::ios::binary );
-    
-    if ( ! mpDataIn->good() )
-    {
-      std::cout << "Unable to open alignment vector file " 
-           << mStrVectorFilename << " for reading." << std::endl;
-      TracebackThisProcess();
-    }
-
-    if ( ! mHeaderIO.VerifyDataHeader( mpDataIn ) )
-    {
-      std::cout << "Unrecognized alignment vector file format in: " << std::endl;
-      std::cout << mStrVectorFilename << std::endl;
-      TracebackThisProcess();
-    }
-
-    // Attach the newly created stream to the read buffer.
-    mReadBuffer.Attach( mpDataIn );
-  }
-}
-
-
-inline
-void
-VecAlignmentPlusReader::OpenIndexFileForReading()
-{
-  if ( ! mpIndexIn )
-  {
-    if ( mStrIndexFilename.empty() )
-    {
-      std::cout << "VecAlignmentPlusReader was initialized without a filename." << std::endl;
-      std::cout << "Alignment index file was not specified." << std::endl;
-      TracebackThisProcess();
-    }
-
-    mpIndexIn = new std::ifstream( mStrIndexFilename.c_str(), std::ios::in | std::ios::binary );
-    
-    if ( ! mpIndexIn->good() )
-    {
-      std::cout << "Unable to open alignment index file " 
-           << mStrIndexFilename << " for reading." << std::endl;
-      TracebackThisProcess();
-    }
-    
-    if ( ! mHeaderIO.VerifyIndexHeader( mpIndexIn ) )
-    {
-      std::cout << "File " << mStrIndexFilename << " may be in incorrect format." << std::endl;
-      TracebackThisProcess();
-    }
-
-    mpIndexIn->seekg( 0, std::ios::end );
-    mIndexSize = mpIndexIn->tellg();
-    mpIndexIn->seekg( 0, std::ios::beg );
-  }
-}
-
-
-void
-VecAlignmentPlusHeaderIO::WriteDataHeader( std::ostream *pDataOut )
-{
-  pDataOut->seekp( 0, std::ios::beg );
-  *pDataOut << mStrVectorHeader << std::flush;
-  // Seek past space for numAligns.
-  pDataOut->seekp( sizeof(int), std::ios::cur );
-}
-
-void
-VecAlignmentPlusHeaderIO::WriteIndexHeader( std::ostream *pIndexOut )
-{
-  pIndexOut->seekp( 0, std::ios::beg );
-  *pIndexOut << mStrIndexHeader << std::flush;
-}
-
-bool
-VecAlignmentPlusHeaderIO::VerifyDataHeader( std::istream *pDataIn )
-{
-  pDataIn->seekg( 0, std::ios::beg );
-
-  char *pHeaderData = new char[ mStrVectorHeader.size() + 1 ];
-  pDataIn->read( pHeaderData, mStrVectorHeader.size() );
-
-  pHeaderData[ mStrVectorHeader.size() ] = 0;
-
-  bool verified = ( 0 == strcmp( pHeaderData, mStrVectorHeader.c_str() ) );
-
-  delete [] pHeaderData;
-
-  return verified;
-}
-
-
-bool
-VecAlignmentPlusHeaderIO::VerifyIndexHeader( std::istream *pIndexIn )
-{
-  pIndexIn->seekg( 0, std::ios::beg );
-
-  char *pHeaderData = new char[ mStrIndexHeader.size() + 1 ];
-  pIndexIn->read( pHeaderData, mStrIndexHeader.size() );
-
-  pHeaderData[ mStrIndexHeader.size() ] = 0;
-
-  bool verified = ( 0 == strcmp( pHeaderData, mStrIndexHeader.c_str() ) );
-
-  delete [] pHeaderData;
-  
-  return verified;
-}
-
-
-inline
-void
-VecAlignmentPlusHeaderIO::WriteNumAlignments( const String &strDataFilename, const int numAligns )
-{
-  std::ofstream dataOut( strDataFilename.c_str(), std::ios::in | std::ios::out | std::ios::binary );
-  
-  if ( ! dataOut.good() )
-  {
-    std::cout << "Unable to open alignment data file " 
-         << strDataFilename << " for writing." << std::endl;
-    TracebackThisProcess();
-  }
-  
-  dataOut.seekp( mStrVectorHeader.size(), std::ios::beg );
-  dataOut.write( (char *) &numAligns, sizeof( numAligns ) );
+VecAlignmentPlusHeaderIO::WriteNumAlignments( std::ostream *pDataOut, const int numAligns ) {
+    pDataOut->seekp( mStrVectorHeader.size(), std::ios::beg );
+    pDataOut->write( (char *) &numAligns, sizeof( numAligns ) );
 }
 
 inline
 void
-VecAlignmentPlusHeaderIO::WriteNumAlignments( std::ostream *pDataOut, const int numAligns )
-{
-  pDataOut->seekp( mStrVectorHeader.size(), std::ios::beg );
-  pDataOut->write( (char *) &numAligns, sizeof( numAligns ) );
-}
-
-inline
-void
-VecAlignmentPlusHeaderIO::ReadNumAlignments( std::istream *pDataIn, int &numAligns )
-{
-  pDataIn->seekg( mStrVectorHeader.size(), std::ios::beg );
-  pDataIn->read( (char *) &numAligns, sizeof( numAligns ) );
+VecAlignmentPlusHeaderIO::ReadNumAlignments( std::istream *pDataIn, int &numAligns ) {
+    pDataIn->seekg( mStrVectorHeader.size(), std::ios::beg );
+    pDataIn->read( (char *) &numAligns, sizeof( numAligns ) );
 }
 
 inline
 int
-VecAlignmentPlusHeaderIO::GetDataHeaderSize()
-{
-  return mStrVectorHeader.size() + sizeof( int );
+VecAlignmentPlusHeaderIO::GetDataHeaderSize() {
+    return mStrVectorHeader.size() + sizeof( int );
 }
 
 inline
 int
-VecAlignmentPlusHeaderIO::GetIndexHeaderSize()
-{
-  return mStrIndexHeader.size();
+VecAlignmentPlusHeaderIO::GetIndexHeaderSize() {
+    return mStrIndexHeader.size();
 }
 
 
 int
-VecAlignmentPlusReader::GetSize()
-{
-  if ( mNumAligns < 0 )
-  {
-    OpenDataFileForReading();
-    
-    mHeaderIO.ReadNumAlignments( mpDataIn, mNumAligns );
-  }
+VecAlignmentPlusReader::GetSize() {
+    if ( mNumAligns < 0 ) {
+        OpenDataFileForReading();
 
-  return mNumAligns;
+        mHeaderIO.ReadNumAlignments( mpDataIn, mNumAligns );
+    }
+
+    return mNumAligns;
 }
 
 inline
 void
-VecAlignmentPlusWriter::UnpackAlignment( const alignment_plus &anAlign )
-{
-  id1 = anAlign.Id1();
-  id2 = anAlign.Id2();
-  rc2 = anAlign.Rc2();
-  score = anAlign.score;
+VecAlignmentPlusWriter::UnpackAlignment( const alignment_plus &anAlign ) {
+    id1 = anAlign.Id1();
+    id2 = anAlign.Id2();
+    rc2 = anAlign.Rc2();
+    score = anAlign.score;
 
-  // We actually call a version of packalign::Unpack() instead of
-  // alignment::Unpack() on anAlign.a so we can specify a non-negative
-  // numBlocks, which prevents unnecessary resizes of the gaps and
-  // lens avectors.  Note that the length member of gaps and lens
-  // should therefore be ignored and numBlocks used instead.
-  const packalign *packalignPtr = &anAlign.a;
-  packalignPtr->Unpack( pos1, pos2, gaps, lens, numBlocks );
-  errors = anAlign.a.Errors();
+    // We actually call a version of packalign::Unpack() instead of
+    // alignment::Unpack() on anAlign.a so we can specify a non-negative
+    // numBlocks, which prevents unnecessary resizes of the gaps and
+    // lens avectors.  Note that the length member of gaps and lens
+    // should therefore be ignored and numBlocks used instead.
+    const packalign *packalignPtr = &anAlign.a;
+    packalignPtr->Unpack( pos1, pos2, gaps, lens, numBlocks );
+    errors = anAlign.a.Errors();
 }
 
 inline
 void
-AlignmentPlusReader::PackAlignment( alignment_plus &anAlign )
-{
-  anAlign.SetId1( id1 );
-  anAlign.SetId2( id2 );
-  anAlign.SetRc2( rc2 );
-  anAlign.score = score;
+AlignmentPlusReader::PackAlignment( alignment_plus &anAlign ) {
+    anAlign.SetId1( id1 );
+    anAlign.SetId2( id2 );
+    anAlign.SetRc2( rc2 );
+    anAlign.score = score;
 
-  anAlign.a.Set( pos1, pos2, errors, gaps, lens, numBlocks );
+    anAlign.a.Set( pos1, pos2, errors, gaps, lens, numBlocks );
 }
 
 inline
 void
-VecAlignmentPlusWriter::WriteIndexEntry()
-{
-  // If mLastId1 is valid, write out its entry.  An index entry is
-  // composed of the position in the data file of the start of the
-  // first alignment with id1 == mLastId1 (8 bytes) and the number of
-  // alignments where id1 == mLastId1 (4 bytes).
-  if ( mNumAlignsWithLastId1 > 0 )
-  {
-    mpIndexOut->write( (char *) &mLastId1Start, sizeof( mLastId1Start ) );
-    mpIndexOut->write( (char *) &mNumAlignsWithLastId1, sizeof( mNumAlignsWithLastId1 ) );
-  }
+VecAlignmentPlusWriter::WriteIndexEntry() {
+    // If mLastId1 is valid, write out its entry.  An index entry is
+    // composed of the position in the data file of the start of the
+    // first alignment with id1 == mLastId1 (8 bytes) and the number of
+    // alignments where id1 == mLastId1 (4 bytes).
+    if ( mNumAlignsWithLastId1 > 0 ) {
+        mpIndexOut->write( (char *) &mLastId1Start, sizeof( mLastId1Start ) );
+        mpIndexOut->write( (char *) &mNumAlignsWithLastId1, sizeof( mNumAlignsWithLastId1 ) );
+    }
 
-  // Reset the values.  The next start is the offset in the file after
-  // the last buffer flush plus the offset in the buffer after the last
-  // value copy.
-  mLastId1Start = mpDataOut->tellp() + std::streamoff( mpBufferCursor - mpBufferStart );
-  mNumAlignsWithLastId1 = 0;
+    // Reset the values.  The next start is the offset in the file after
+    // the last buffer flush plus the offset in the buffer after the last
+    // value copy.
+    mLastId1Start = mpDataOut->tellp() + std::streamoff( mpBufferCursor - mpBufferStart );
+    mNumAlignsWithLastId1 = 0;
 
-  // Write out trivial values for all the id1s between the last one and this one.
-  int missingId1 = mLastId1;
-  for ( ++missingId1; missingId1 < id1; ++missingId1 )
-  {
-    mpIndexOut->write( (char *) &mLastId1Start, sizeof( mLastId1Start ) );
-    mpIndexOut->write( (char *) &mNumAlignsWithLastId1, sizeof( mNumAlignsWithLastId1 ) );
-  }
+    // Write out trivial values for all the id1s between the last one and this one.
+    int missingId1 = mLastId1;
+    for ( ++missingId1; missingId1 < id1; ++missingId1 ) {
+        mpIndexOut->write( (char *) &mLastId1Start, sizeof( mLastId1Start ) );
+        mpIndexOut->write( (char *) &mNumAlignsWithLastId1, sizeof( mNumAlignsWithLastId1 ) );
+    }
 }
 
 inline
 void
-VecAlignmentPlusReader::ReadIndexEntry( const int sequenceId )
-{
-  std::streampos indexPos = 
-    mHeaderIO.GetIndexHeaderSize() + sequenceId * SizeOfIndexEntry();
+VecAlignmentPlusReader::ReadIndexEntry( const int sequenceId ) {
+    std::streampos indexPos =
+        mHeaderIO.GetIndexHeaderSize() + sequenceId * SizeOfIndexEntry();
 
-  if ( indexPos >= mIndexSize )
-  {
-    mRequestedId1Start = mHeaderIO.GetDataHeaderSize();
-    mNumAlignsWithRequestedId1 = 0;
-  }
-  else
-  {
-    mpIndexIn->seekg( indexPos, std::ios::beg );
+    if ( indexPos >= mIndexSize ) {
+        mRequestedId1Start = mHeaderIO.GetDataHeaderSize();
+        mNumAlignsWithRequestedId1 = 0;
+    } else {
+        mpIndexIn->seekg( indexPos, std::ios::beg );
 
-    mpIndexIn->read( (char *) &mRequestedId1Start, sizeof( mRequestedId1Start ) );
-    mpIndexIn->read( (char *) &mNumAlignsWithRequestedId1, sizeof( mNumAlignsWithRequestedId1 ) );
-  }
+        mpIndexIn->read( (char *) &mRequestedId1Start, sizeof( mRequestedId1Start ) );
+        mpIndexIn->read( (char *) &mNumAlignsWithRequestedId1, sizeof( mNumAlignsWithRequestedId1 ) );
+    }
 }
 
 
 inline
 bool
-VecAlignmentPlusWriter::BlockIsPackable( const int gap, const int len )
-{
-  // For a block to be packable, there can be no bits in the length
-  // set outside the storable region, and the bits in the gap outside
-  // the magnitude region must either all be 1 or all be 0.
-  mReverseMaskedGap = gap & BLOCK_gap_sign_bits;
-  return ! ( ( len & BLOCK_len_unpackable_bits ) ||
-             ( mReverseMaskedGap       ) &&
-             ( mReverseMaskedGap       ) != BLOCK_gap_sign_bits );
+VecAlignmentPlusWriter::BlockIsPackable( const int gap, const int len ) {
+    // For a block to be packable, there can be no bits in the length
+    // set outside the storable region, and the bits in the gap outside
+    // the magnitude region must either all be 1 or all be 0.
+    mReverseMaskedGap = gap & BLOCK_gap_sign_bits;
+    return ! ( ( len & BLOCK_len_unpackable_bits ) ||
+               ( mReverseMaskedGap       ) &&
+               ( mReverseMaskedGap       ) != BLOCK_gap_sign_bits );
 }
 
 
 inline
 void
-VecAlignmentPlusWriter::WriteAlignmentHeader()
-{
-  mHeaderByte = HB_all_flags_set;
+VecAlignmentPlusWriter::WriteAlignmentHeader() {
+    mHeaderByte = HB_all_flags_set;
 
-  if ( id1 != mLastId1 )
-    mHeaderByte &= ~HB_use_previous_id1;
-  
-  if ( ! rc2 )
-    mHeaderByte &= ~HB_rc2;
+    if ( id1 != mLastId1 )
+        mHeaderByte &= ~HB_use_previous_id1;
 
-  // If any of the bits are set in pos1, pos2, or errors outside of
-  // their respectable storable regions, we can't pack them together.
-  if ( ( pos1   & PPE_pos1_unpackable_bits   ) ||
-       ( pos2   & PPE_pos2_unpackable_bits   ) ||
-       ( errors & PPE_errors_unpackable_bits ) )
-    mHeaderByte &= ~HB_ppe_is_packed;
+    if ( ! rc2 )
+        mHeaderByte &= ~HB_rc2;
 
-  int blockLimit = std::min( numBlocks, HB_blocks_in_header );
-  for ( int blockIdx = 0; blockIdx < blockLimit; ++blockIdx )
-    if ( ! BlockIsPackable( gaps( blockIdx ), lens( blockIdx ) ) )
-      mHeaderByte &= ~HB_block_is_packed[ blockIdx ];
+    // If any of the bits are set in pos1, pos2, or errors outside of
+    // their respectable storable regions, we can't pack them together.
+    if ( ( pos1   & PPE_pos1_unpackable_bits   ) ||
+            ( pos2   & PPE_pos2_unpackable_bits   ) ||
+            ( errors & PPE_errors_unpackable_bits ) )
+        mHeaderByte &= ~HB_ppe_is_packed;
 
-  CopyValueToBuffer( mHeaderByte );
+    int blockLimit = std::min( numBlocks, HB_blocks_in_header );
+    for ( int blockIdx = 0; blockIdx < blockLimit; ++blockIdx )
+        if ( ! BlockIsPackable( gaps( blockIdx ), lens( blockIdx ) ) )
+            mHeaderByte &= ~HB_block_is_packed[ blockIdx ];
+
+    CopyValueToBuffer( mHeaderByte );
 }
 
 inline
 void
-AlignmentPlusReader::ReadAlignmentHeader()
-{
-  mpReadBuffer->CopyValueFromBuffer( mHeaderByte );
+AlignmentPlusReader::ReadAlignmentHeader() {
+    mpReadBuffer->CopyValueFromBuffer( mHeaderByte );
 
-  rc2 = mHeaderByte & HB_rc2;
-}
-
-
-inline
-void
-VecAlignmentPlusWriter::WriteIds()
-{
-  if ( ! ( mHeaderByte & HB_use_previous_id1 ) )
-    CopyValueToBuffer( id1 );
-
-  CopyValueToBuffer( id2 );
-}
-
-inline
-void
-AlignmentPlusReader::ReadIds()
-{
-  if ( ! ( mHeaderByte & HB_use_previous_id1 ) )
-  {
-    mpReadBuffer->CopyValueFromBuffer( id1 );
-    mLastId1 = id1;
-  }
-  else
-    id1 = mLastId1;
-
-  mpReadBuffer->CopyValueFromBuffer( id2 );
+    rc2 = mHeaderByte & HB_rc2;
 }
 
 
 inline
 void
-VecAlignmentPlusWriter::WritePos1Pos2Errors()
-{
-  if ( mHeaderByte & HB_ppe_is_packed )
-  {
-    mPackedPPE = 
-      ( static_cast<unsigned int>( pos1 )   << PPE_pos1_shift ) | 
-      ( static_cast<unsigned int>( pos2 )   << PPE_pos2_shift ) |
-      ( static_cast<unsigned int>( errors ) << PPE_errors_shift );
-    
-    CopyValueToBuffer( mPackedPPE );
-  }
-  else
-  {
-    CopyValueToBuffer( pos1 );
-    CopyValueToBuffer( pos2 );
-    CopyValueToBuffer( errors );
-  }
-}
-    
-inline
-void
-AlignmentPlusReader::ReadPos1Pos2Errors()
-{
-  if ( mHeaderByte & HB_ppe_is_packed )
-  {
-    mpReadBuffer->CopyValueFromBuffer( mPackedPPE );
+VecAlignmentPlusWriter::WriteIds() {
+    if ( ! ( mHeaderByte & HB_use_previous_id1 ) )
+        CopyValueToBuffer( id1 );
 
-    pos1   = ( mPackedPPE >> PPE_pos1_shift   ) & PPE_pos1_packable_bits_short;
-    pos2   = ( mPackedPPE >> PPE_pos2_shift   ) & PPE_pos2_packable_bits_short;
-    errors = ( mPackedPPE >> PPE_errors_shift ) & PPE_errors_packable_bits_short;
-  }
-  else
-  {
-    mpReadBuffer->CopyValueFromBuffer( pos1 );
-    mpReadBuffer->CopyValueFromBuffer( pos2 );
-    mpReadBuffer->CopyValueFromBuffer( errors );
-  }
-}
-    
-
-inline
-void
-VecAlignmentPlusWriter::WriteScore()
-{
-  CopyValueToBuffer( score );
+    CopyValueToBuffer( id2 );
 }
 
 inline
 void
-AlignmentPlusReader::ReadScore()
-{
-  mpReadBuffer->CopyValueFromBuffer( score );
+AlignmentPlusReader::ReadIds() {
+    if ( ! ( mHeaderByte & HB_use_previous_id1 ) ) {
+        mpReadBuffer->CopyValueFromBuffer( id1 );
+        mLastId1 = id1;
+    } else
+        id1 = mLastId1;
+
+    mpReadBuffer->CopyValueFromBuffer( id2 );
 }
 
 
 inline
 void
-VecAlignmentPlusWriter::WriteNumBlocks()
-{
-  mShortNumBlocks = static_cast<unsigned short>( numBlocks );
-  CopyValueToBuffer( mShortNumBlocks );
-}
+VecAlignmentPlusWriter::WritePos1Pos2Errors() {
+    if ( mHeaderByte & HB_ppe_is_packed ) {
+        mPackedPPE =
+            ( static_cast<unsigned int>( pos1 )   << PPE_pos1_shift ) |
+            ( static_cast<unsigned int>( pos2 )   << PPE_pos2_shift ) |
+            ( static_cast<unsigned int>( errors ) << PPE_errors_shift );
 
-inline
-void
-AlignmentPlusReader::ReadNumBlocks()
-{
-  mpReadBuffer->CopyValueFromBuffer( mShortNumBlocks );
-
-  numBlocks = mShortNumBlocks;
-}
-
-
-inline
-void
-VecAlignmentPlusWriter::WriteBuffer( bool cached )
-{
-  if ( ! cached || 
-       mpBufferEnd - mpBufferCursor < maxOutputChunkSize )
-  {
-    mpDataOut->write( (char *) mpBufferStart, mpBufferCursor - mpBufferStart );
-    mpBufferCursor = mpBufferStart;
-  }
-}
-
-inline
-void
-VecAlignmentPlusWriter::PackBlock( const int gap, const int len )
-{
-  mPackedBlock = ( static_cast<unsigned short>( gap ) << BLOCK_gap_shift |
-                   static_cast<unsigned short>( len ) << BLOCK_len_shift );
-}
-
-inline
-void
-AlignmentPlusReader::UnpackBlock( int &gap, int &len )
-{
-  gap = mPackedBlock >> BLOCK_gap_shift;
-
-  // If the sign bit is set on the gap, we need to restore the rest of
-  // the sign bits.
-  if ( gap & BLOCK_gap_sign_bit )
-    gap |= BLOCK_gap_sign_bits;
-
-  len = mPackedBlock & BLOCK_len_packable_bits_short;
-}
-
-
-inline
-void
-VecAlignmentPlusWriter::WriteBlocks()
-{
-  int blockLimit = std::min( numBlocks, HB_blocks_in_header );
-
-  int blockIdx;
-  for ( blockIdx = 0; blockIdx < blockLimit; ++blockIdx )
-  {
-    if ( mHeaderByte & HB_block_is_packed[ blockIdx ] )
-    {
-      PackBlock( gaps(blockIdx), lens(blockIdx) );
-      CopyValueToBuffer( mPackedBlock );
+        CopyValueToBuffer( mPackedPPE );
+    } else {
+        CopyValueToBuffer( pos1 );
+        CopyValueToBuffer( pos2 );
+        CopyValueToBuffer( errors );
     }
-    else
-    {
-      CopyValueToBuffer( gaps( blockIdx ) );
-      CopyValueToBuffer( lens( blockIdx ) );
+}
+
+inline
+void
+AlignmentPlusReader::ReadPos1Pos2Errors() {
+    if ( mHeaderByte & HB_ppe_is_packed ) {
+        mpReadBuffer->CopyValueFromBuffer( mPackedPPE );
+
+        pos1   = ( mPackedPPE >> PPE_pos1_shift   ) & PPE_pos1_packable_bits_short;
+        pos2   = ( mPackedPPE >> PPE_pos2_shift   ) & PPE_pos2_packable_bits_short;
+        errors = ( mPackedPPE >> PPE_errors_shift ) & PPE_errors_packable_bits_short;
+    } else {
+        mpReadBuffer->CopyValueFromBuffer( pos1 );
+        mpReadBuffer->CopyValueFromBuffer( pos2 );
+        mpReadBuffer->CopyValueFromBuffer( errors );
     }
-  }
+}
 
-  WriteBuffer();
-  
-  while ( blockIdx < numBlocks )
-  {
-    mpBlockCompressionByte = mpBufferCursor;
-    ++mpBufferCursor;
 
-    *mpBlockCompressionByte = BCB_all_blocks_packed; // assume all are compressed
-    
-    blockLimit = std::min( numBlocks, blockIdx + 8 );
+inline
+void
+VecAlignmentPlusWriter::WriteScore() {
+    CopyValueToBuffer( score );
+}
 
-    for ( int bcbIdx = 0; blockIdx < blockLimit; ++blockIdx, ++bcbIdx )
-    {
-      mGap = gaps( blockIdx );
-      mLen = lens( blockIdx );
-      mReverseMaskedGap = mGap & BLOCK_gap_sign_bits;
+inline
+void
+AlignmentPlusReader::ReadScore() {
+    mpReadBuffer->CopyValueFromBuffer( score );
+}
 
-      if ( ! BlockIsPackable( mGap, mLen ) )
-      {
-        // turn appropriate bit off
-        *mpBlockCompressionByte &= ~( BCB_block_is_packed[ bcbIdx ] );
-        
-        CopyValueToBuffer( mGap );
-        CopyValueToBuffer( mLen );
-      }
-      else
-      {
-        PackBlock( gaps(blockIdx), lens(blockIdx) );
-        CopyValueToBuffer( mPackedBlock );
-      }
+
+inline
+void
+VecAlignmentPlusWriter::WriteNumBlocks() {
+    mShortNumBlocks = static_cast<unsigned short>( numBlocks );
+    CopyValueToBuffer( mShortNumBlocks );
+}
+
+inline
+void
+AlignmentPlusReader::ReadNumBlocks() {
+    mpReadBuffer->CopyValueFromBuffer( mShortNumBlocks );
+
+    numBlocks = mShortNumBlocks;
+}
+
+
+inline
+void
+VecAlignmentPlusWriter::WriteBuffer( bool cached ) {
+    if ( ! cached ||
+            mpBufferEnd - mpBufferCursor < maxOutputChunkSize ) {
+        mpDataOut->write( (char *) mpBufferStart, mpBufferCursor - mpBufferStart );
+        mpBufferCursor = mpBufferStart;
+    }
+}
+
+inline
+void
+VecAlignmentPlusWriter::PackBlock( const int gap, const int len ) {
+    mPackedBlock = ( static_cast<unsigned short>( gap ) << BLOCK_gap_shift |
+                     static_cast<unsigned short>( len ) << BLOCK_len_shift );
+}
+
+inline
+void
+AlignmentPlusReader::UnpackBlock( int &gap, int &len ) {
+    gap = mPackedBlock >> BLOCK_gap_shift;
+
+    // If the sign bit is set on the gap, we need to restore the rest of
+    // the sign bits.
+    if ( gap & BLOCK_gap_sign_bit )
+        gap |= BLOCK_gap_sign_bits;
+
+    len = mPackedBlock & BLOCK_len_packable_bits_short;
+}
+
+
+inline
+void
+VecAlignmentPlusWriter::WriteBlocks() {
+    int blockLimit = std::min( numBlocks, HB_blocks_in_header );
+
+    int blockIdx;
+    for ( blockIdx = 0; blockIdx < blockLimit; ++blockIdx ) {
+        if ( mHeaderByte & HB_block_is_packed[ blockIdx ] ) {
+            PackBlock( gaps(blockIdx), lens(blockIdx) );
+            CopyValueToBuffer( mPackedBlock );
+        } else {
+            CopyValueToBuffer( gaps( blockIdx ) );
+            CopyValueToBuffer( lens( blockIdx ) );
+        }
     }
 
     WriteBuffer();
-  }
+
+    while ( blockIdx < numBlocks ) {
+        mpBlockCompressionByte = mpBufferCursor;
+        ++mpBufferCursor;
+
+        *mpBlockCompressionByte = BCB_all_blocks_packed; // assume all are compressed
+
+        blockLimit = std::min( numBlocks, blockIdx + 8 );
+
+        for ( int bcbIdx = 0; blockIdx < blockLimit; ++blockIdx, ++bcbIdx ) {
+            mGap = gaps( blockIdx );
+            mLen = lens( blockIdx );
+            mReverseMaskedGap = mGap & BLOCK_gap_sign_bits;
+
+            if ( ! BlockIsPackable( mGap, mLen ) ) {
+                // turn appropriate bit off
+                *mpBlockCompressionByte &= ~( BCB_block_is_packed[ bcbIdx ] );
+
+                CopyValueToBuffer( mGap );
+                CopyValueToBuffer( mLen );
+            } else {
+                PackBlock( gaps(blockIdx), lens(blockIdx) );
+                CopyValueToBuffer( mPackedBlock );
+            }
+        }
+
+        WriteBuffer();
+    }
 }
 
 
 inline
 void
-AlignmentPlusReader::ReadBlocks()
-{
-  mpReadBuffer->CheckBuffer( numBlocks * BLOCK_max_size );
+AlignmentPlusReader::ReadBlocks() {
+    mpReadBuffer->CheckBuffer( numBlocks * BLOCK_max_size );
 
-  int blockLimit = std::min( numBlocks, HB_blocks_in_header );
+    int blockLimit = std::min( numBlocks, HB_blocks_in_header );
 
-  int blockIdx = 0;
-  
-  // Unpack blocks whose compression bits are stored in the header block.
+    int blockIdx = 0;
 
-  // special case for all blocks packed
-  if ( ( mHeaderByte & HB_all_blocks_packed ) == HB_all_blocks_packed )
-  {
-    for ( ; blockIdx < blockLimit; ++blockIdx )
-    {
-      mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
-      UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
-    }
-  }
+    // Unpack blocks whose compression bits are stored in the header block.
 
-  // general case
-  else
-  {
-    for ( ; blockIdx < blockLimit; ++blockIdx )
-    {
-      if ( mHeaderByte & HB_block_is_packed[ blockIdx ] )
-      {
-        mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
-        UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
-      }
-      else
-      {
-        mpReadBuffer->CopyValueFromBuffer( gaps( blockIdx ) );
-        mpReadBuffer->CopyValueFromBuffer( lens( blockIdx ) );
-      }
-    }
-  }
-
-  // Unpack remaining blocks, if any.
-
-  while ( blockIdx < numBlocks )
-  {
-    blockLimit = std::min( numBlocks, blockIdx + 8 );
-
-    // special case for all 8 blocks packed
-    if ( mpReadBuffer->AtCursor() == BCB_all_blocks_packed )
-    {
-      mpReadBuffer->Skip(1);
-
-      for ( ; blockIdx < blockLimit; ++blockIdx )
-      {
-        mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
-        UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
-      }
+    // special case for all blocks packed
+    if ( ( mHeaderByte & HB_all_blocks_packed ) == HB_all_blocks_packed ) {
+        for ( ; blockIdx < blockLimit; ++blockIdx ) {
+            mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
+            UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
+        }
     }
 
     // general case
-    else
-    {
-      mpReadBuffer->CopyValueFromBuffer( mBlockCompressionByteCopy );
-
-      for ( int bcbIdx = 0; blockIdx < blockLimit; ++blockIdx, ++bcbIdx )
-      {
-        if ( mBlockCompressionByteCopy & BCB_block_is_packed[ bcbIdx ] )
-        {
-          mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
-          UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
+    else {
+        for ( ; blockIdx < blockLimit; ++blockIdx ) {
+            if ( mHeaderByte & HB_block_is_packed[ blockIdx ] ) {
+                mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
+                UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
+            } else {
+                mpReadBuffer->CopyValueFromBuffer( gaps( blockIdx ) );
+                mpReadBuffer->CopyValueFromBuffer( lens( blockIdx ) );
+            }
         }
-        else
-        {
-          mpReadBuffer->CopyValueFromBuffer( gaps( blockIdx ) );
-          mpReadBuffer->CopyValueFromBuffer( lens( blockIdx ) );
-        }
-      }
     }
-  }
+
+    // Unpack remaining blocks, if any.
+
+    while ( blockIdx < numBlocks ) {
+        blockLimit = std::min( numBlocks, blockIdx + 8 );
+
+        // special case for all 8 blocks packed
+        if ( mpReadBuffer->AtCursor() == BCB_all_blocks_packed ) {
+            mpReadBuffer->Skip(1);
+
+            for ( ; blockIdx < blockLimit; ++blockIdx ) {
+                mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
+                UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
+            }
+        }
+
+        // general case
+        else {
+            mpReadBuffer->CopyValueFromBuffer( mBlockCompressionByteCopy );
+
+            for ( int bcbIdx = 0; blockIdx < blockLimit; ++blockIdx, ++bcbIdx ) {
+                if ( mBlockCompressionByteCopy & BCB_block_is_packed[ bcbIdx ] ) {
+                    mpReadBuffer->CopyValueFromBuffer( mPackedBlock );
+                    UnpackBlock( gaps( blockIdx ), lens( blockIdx ) );
+                } else {
+                    mpReadBuffer->CopyValueFromBuffer( gaps( blockIdx ) );
+                    mpReadBuffer->CopyValueFromBuffer( lens( blockIdx ) );
+                }
+            }
+        }
+    }
 }
 
 
 inline
 void
-VecAlignmentPlusWriter::WriteUnpackedAlignment()
-{
-  WriteAlignmentHeader();
-  WriteIds();
-  WritePos1Pos2Errors();
-  WriteScore();
-  WriteNumBlocks();
+VecAlignmentPlusWriter::WriteUnpackedAlignment() {
+    WriteAlignmentHeader();
+    WriteIds();
+    WritePos1Pos2Errors();
+    WriteScore();
+    WriteNumBlocks();
 
-  WriteBuffer();
+    WriteBuffer();
 
-  WriteBlocks();
+    WriteBlocks();
 }
 
 inline
 void
-AlignmentPlusReader::ReadUnpackedAlignment()
-{
-  mpReadBuffer->CheckBuffer( maxHeaderSize );
+AlignmentPlusReader::ReadUnpackedAlignment() {
+    mpReadBuffer->CheckBuffer( maxHeaderSize );
 
-  ReadAlignmentHeader();
-  ReadIds();
-  ReadPos1Pos2Errors();
-  ReadScore();
-  ReadNumBlocks();
+    ReadAlignmentHeader();
+    ReadIds();
+    ReadPos1Pos2Errors();
+    ReadScore();
+    ReadNumBlocks();
 
-  ReadBlocks();
+    ReadBlocks();
 }
 
 
 inline
 bool
-VecAlignmentPlusWriter::IndexingIsOn()
-{
-  return ! mStrIndexFilename.empty();
+VecAlignmentPlusWriter::IndexingIsOn() {
+    return ! mStrIndexFilename.empty();
 }
 
 
 void
-VecAlignmentPlusWriter::Write( const vec<alignment_plus> &vecAligns )
-{
-  OpenDataFileForWriting();
-  if ( IndexingIsOn() )
-    OpenIndexFileForWriting();
-
-  if ( mStrVectorFilename.empty() )
-    mHeaderIO.WriteNumAlignments( mpDataOut, vecAligns.size() );
-  else
-    mHeaderIO.WriteNumAlignments( mStrVectorFilename, vecAligns.size() );
-
-  id1 = -1;
-  mLastId1 = -1;
-  mNumAlignsWithLastId1 = 0;
-  for ( unsigned int alignIdx = 0; alignIdx < vecAligns.size(); ++alignIdx )
-  {
-    const alignment_plus &anAlign = vecAligns[ alignIdx ];
-
-    UnpackAlignment( anAlign );
-
+VecAlignmentPlusWriter::Write( const vec<alignment_plus> &vecAligns ) {
+    OpenDataFileForWriting();
     if ( IndexingIsOn() )
-    {
-      if ( mLastId1 > id1 )
-      {
-        std::cout << "Alignments not sorted.  Unable to index." << std::endl;
-        std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
-        std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
+        OpenIndexFileForWriting();
 
-        TracebackThisProcess();
-      }
-      
-      if ( mLastId1 != id1 )
-        WriteIndexEntry();
-    }
-
-    WriteUnpackedAlignment();
-
-    mLastId1 = id1;
-    ++mNumAlignsWithLastId1;
-  }
-
-  if ( IndexingIsOn() )
-    WriteIndexEntry();
-
-  WriteBuffer( false );
- 
-  mpDataOut->flush();
-  if ( IndexingIsOn() )
-    mpIndexOut->flush();
-}
-
-
-void
-VecAlignmentPlusWriter::Write( const vec_alignment_plus &vecAlignPlus )
-{
-  OpenDataFileForWriting();
-  if ( IndexingIsOn() )
-    OpenIndexFileForWriting();
-
-  if ( mStrVectorFilename.empty() )
-    mHeaderIO.WriteNumAlignments( mpDataOut, vecAlignPlus.GetNumberAlignments() );
-  else
-    mHeaderIO.WriteNumAlignments( mStrVectorFilename, vecAlignPlus.GetNumberAlignments() );
-
-  alignment_plus anAlign;
-  id1 = -1;
-  mLastId1 = -1;
-  mNumAlignsWithLastId1 = 0;
-  for ( unsigned int alignIdx = 0; alignIdx < vecAlignPlus.GetNumberAlignments(); ++alignIdx )
-  {
-    vecAlignPlus.GetAlignment( anAlign, alignIdx );
-
-    UnpackAlignment( anAlign );
-
-    if ( IndexingIsOn() )
-    {
-      if ( mLastId1 > id1 )
-      {
-        std::cout << "Alignments not sorted.  Unable to index." << std::endl;
-        std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
-        std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
-
-        TracebackThisProcess();
-      }
-      
-      if ( mLastId1 != id1 )
-        WriteIndexEntry();
-    }
-
-    WriteUnpackedAlignment();
-
-    mLastId1 = id1;
-    ++mNumAlignsWithLastId1;
-  }
-
-  if ( IndexingIsOn() )
-    WriteIndexEntry();
-
-  WriteBuffer( false );
- 
-  mpDataOut->flush();
-  if ( IndexingIsOn() )
-    mpIndexOut->flush();
-}
-
-void
-VecAlignmentPlusWriter::Append( const vec<alignment_plus> &vecAligns )
-{
-  LoadNumAlignsFromData();
-  LoadLastId1FromIndex();
-
-  OpenDataFileForAppending();
-  if ( IndexingIsOn() )
-    OpenIndexFileForAppending();
-
-  mHeaderIO.WriteNumAlignments( mStrVectorFilename, mNumAligns + vecAligns.size() );
-
-  mpDataOut->seekp( 0, std::ios::end );
-
-  if ( IndexingIsOn() )
-    if ( mLastId1 < 0 )
-      mpIndexOut->seekp( 0, std::ios::end );
+    if ( mStrVectorFilename.empty() )
+        mHeaderIO.WriteNumAlignments( mpDataOut, vecAligns.size() );
     else
-      mpIndexOut->seekp( -SizeOfIndexEntry(), std::ios::end );
+        mHeaderIO.WriteNumAlignments( mStrVectorFilename, vecAligns.size() );
 
-  for ( int alignIdx = 0; alignIdx < vecAligns.isize(); ++alignIdx )
-  {
-    const alignment_plus &anAlign = vecAligns[ alignIdx ];
+    id1 = -1;
+    mLastId1 = -1;
+    mNumAlignsWithLastId1 = 0;
+    for ( unsigned int alignIdx = 0; alignIdx < vecAligns.size(); ++alignIdx ) {
+        const alignment_plus &anAlign = vecAligns[ alignIdx ];
 
-    UnpackAlignment( anAlign );
+        UnpackAlignment( anAlign );
 
-    if ( IndexingIsOn() )
-    {
-      if ( mLastId1 > id1 )
-      {
-        std::cout << "Alignments not sorted.  Unable to index." << std::endl;
+        if ( IndexingIsOn() ) {
+            if ( mLastId1 > id1 ) {
+                std::cout << "Alignments not sorted.  Unable to index." << std::endl;
+                std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
+                std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
 
-        if ( alignIdx == 0 )
-          std::cout << "Id1 of last alignment in file: " << mLastId1 << std::endl;
-        else
-          std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
+                TracebackThisProcess();
+            }
 
-        std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
+            if ( mLastId1 != id1 )
+                WriteIndexEntry();
+        }
 
-        TracebackThisProcess();
-      }
-      
-      if ( mLastId1 != id1 )
-        WriteIndexEntry();
+        WriteUnpackedAlignment();
+
+        mLastId1 = id1;
+        ++mNumAlignsWithLastId1;
     }
 
-    WriteUnpackedAlignment();
+    if ( IndexingIsOn() )
+        WriteIndexEntry();
 
-    mLastId1 = id1;
-    ++mNumAlignsWithLastId1;
-  }
+    WriteBuffer( false );
 
-  if ( IndexingIsOn() )
-    WriteIndexEntry();
-
-  WriteBuffer( false );
-
-  mpDataOut->flush();
-  if ( IndexingIsOn() )
-    mpIndexOut->flush();
+    mpDataOut->flush();
+    if ( IndexingIsOn() )
+        mpIndexOut->flush();
 }
 
 
 void
-VecAlignmentPlusReader::ReadAll( vec<alignment_plus> &vecAligns )
-{
-  OpenDataFileForReading();
+VecAlignmentPlusWriter::Write( const vec_alignment_plus &vecAlignPlus ) {
+    OpenDataFileForWriting();
+    if ( IndexingIsOn() )
+        OpenIndexFileForWriting();
 
-  int numAligns;
-  mHeaderIO.ReadNumAlignments( mpDataIn, numAligns );
-  
-  vecAligns.resize( numAligns );
-  
-  mReader.SetLastId1( -1 );
-  for ( unsigned int alignIdx = 0; alignIdx < vecAligns.size(); ++alignIdx )
-  {
-    mReader.ReadUnpackedAlignment();
-    mReader.PackAlignment( vecAligns[ alignIdx ] );
-  }
+    if ( mStrVectorFilename.empty() )
+        mHeaderIO.WriteNumAlignments( mpDataOut, vecAlignPlus.GetNumberAlignments() );
+    else
+        mHeaderIO.WriteNumAlignments( mStrVectorFilename, vecAlignPlus.GetNumberAlignments() );
+
+    alignment_plus anAlign;
+    id1 = -1;
+    mLastId1 = -1;
+    mNumAlignsWithLastId1 = 0;
+    for ( unsigned int alignIdx = 0; alignIdx < vecAlignPlus.GetNumberAlignments(); ++alignIdx ) {
+        vecAlignPlus.GetAlignment( anAlign, alignIdx );
+
+        UnpackAlignment( anAlign );
+
+        if ( IndexingIsOn() ) {
+            if ( mLastId1 > id1 ) {
+                std::cout << "Alignments not sorted.  Unable to index." << std::endl;
+                std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
+                std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
+
+                TracebackThisProcess();
+            }
+
+            if ( mLastId1 != id1 )
+                WriteIndexEntry();
+        }
+
+        WriteUnpackedAlignment();
+
+        mLastId1 = id1;
+        ++mNumAlignsWithLastId1;
+    }
+
+    if ( IndexingIsOn() )
+        WriteIndexEntry();
+
+    WriteBuffer( false );
+
+    mpDataOut->flush();
+    if ( IndexingIsOn() )
+        mpIndexOut->flush();
+}
+
+void
+VecAlignmentPlusWriter::Append( const vec<alignment_plus> &vecAligns ) {
+    LoadNumAlignsFromData();
+    LoadLastId1FromIndex();
+
+    OpenDataFileForAppending();
+    if ( IndexingIsOn() )
+        OpenIndexFileForAppending();
+
+    mHeaderIO.WriteNumAlignments( mStrVectorFilename, mNumAligns + vecAligns.size() );
+
+    mpDataOut->seekp( 0, std::ios::end );
+
+    if ( IndexingIsOn() )
+        if ( mLastId1 < 0 )
+            mpIndexOut->seekp( 0, std::ios::end );
+        else
+            mpIndexOut->seekp( -SizeOfIndexEntry(), std::ios::end );
+
+    for ( int alignIdx = 0; alignIdx < vecAligns.isize(); ++alignIdx ) {
+        const alignment_plus &anAlign = vecAligns[ alignIdx ];
+
+        UnpackAlignment( anAlign );
+
+        if ( IndexingIsOn() ) {
+            if ( mLastId1 > id1 ) {
+                std::cout << "Alignments not sorted.  Unable to index." << std::endl;
+
+                if ( alignIdx == 0 )
+                    std::cout << "Id1 of last alignment in file: " << mLastId1 << std::endl;
+                else
+                    std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
+
+                std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
+
+                TracebackThisProcess();
+            }
+
+            if ( mLastId1 != id1 )
+                WriteIndexEntry();
+        }
+
+        WriteUnpackedAlignment();
+
+        mLastId1 = id1;
+        ++mNumAlignsWithLastId1;
+    }
+
+    if ( IndexingIsOn() )
+        WriteIndexEntry();
+
+    WriteBuffer( false );
+
+    mpDataOut->flush();
+    if ( IndexingIsOn() )
+        mpIndexOut->flush();
+}
+
+
+void
+VecAlignmentPlusReader::ReadAll( vec<alignment_plus> &vecAligns ) {
+    OpenDataFileForReading();
+
+    int numAligns;
+    mHeaderIO.ReadNumAlignments( mpDataIn, numAligns );
+
+    vecAligns.resize( numAligns );
+
+    mReader.SetLastId1( -1 );
+    for ( unsigned int alignIdx = 0; alignIdx < vecAligns.size(); ++alignIdx ) {
+        mReader.ReadUnpackedAlignment();
+        mReader.PackAlignment( vecAligns[ alignIdx ] );
+    }
 }
 
 void
 VecAlignmentPlusReader::ReadHalf( vec<alignment_plus> &vecAligns,
                                   vec<Bool> &vecAlignIsFlipped,
-                                  vec<int>  &vecAlignIds )
-{
-  OpenDataFileForReading();
-  OpenIndexFileForReading();
+                                  vec<int>  &vecAlignIds ) {
+    OpenDataFileForReading();
+    OpenIndexFileForReading();
 
-  int numAligns;
-  mHeaderIO.ReadNumAlignments( mpDataIn, numAligns );
+    int numAligns;
+    mHeaderIO.ReadNumAlignments( mpDataIn, numAligns );
 
-  vecAligns.clear();
-  vecAligns.reserve( numAligns/2 );
+    vecAligns.clear();
+    vecAligns.reserve( numAligns/2 );
 
-  vecAlignIsFlipped.clear();
-  vecAlignIsFlipped.reserve( numAligns );
+    vecAlignIsFlipped.clear();
+    vecAlignIsFlipped.reserve( numAligns );
 
-  vecAlignIds.clear();
-  vecAlignIds.reserve( numAligns );
+    vecAlignIds.clear();
+    vecAlignIds.reserve( numAligns );
 
-  // If we cache the alignment ids, the runtime is cut by two thirds
-  // at a memory cost of about 20%.
+    // If we cache the alignment ids, the runtime is cut by two thirds
+    // at a memory cost of about 20%.
 
-  vec<int> vecAlignId1;
-  vecAlignId1.reserve( numAligns/2 );
+    vec<int> vecAlignId1;
+    vecAlignId1.reserve( numAligns/2 );
 
-  vec<int> vecAlignId2;
-  vecAlignId2.reserve( numAligns/2 );
+    vec<int> vecAlignId2;
+    vecAlignId2.reserve( numAligns/2 );
 
-  int indexDataSize = mIndexSize - mHeaderIO.GetIndexHeaderSize();
-  int biggestId1 = mIndexSize/SizeOfIndexEntry() - 1;
+    int indexDataSize = mIndexSize - mHeaderIO.GetIndexHeaderSize();
+    int biggestId1 = mIndexSize/SizeOfIndexEntry() - 1;
 
-  vec<int> vecFirstAlignWithId( biggestId1 + 1, -1 );
+    vec<int> vecFirstAlignWithId( biggestId1 + 1, -1 );
 
 
-  int id1, id2;
+    int id1, id2;
 
-  mReader.SetLastId1( -1 );
-  for ( int alignIdx = 0; alignIdx < numAligns; ++alignIdx )
-  {
-    mReader.ReadUnpackedAlignment();
+    mReader.SetLastId1( -1 );
+    for ( int alignIdx = 0; alignIdx < numAligns; ++alignIdx ) {
+        mReader.ReadUnpackedAlignment();
 
-    id1 = mReader.GetId1();
-    id2 = mReader.GetId2();
-    if ( id1 < id2 ) 
-    {
-      vecAlignIds.push_back( vecAligns.size() );
-      vecAlignIsFlipped.push_back( False );
-      
-      vecAlignId1.push_back( id1 );
-      vecAlignId2.push_back( id2 );
+        id1 = mReader.GetId1();
+        id2 = mReader.GetId2();
+        if ( id1 < id2 ) {
+            vecAlignIds.push_back( vecAligns.size() );
+            vecAlignIsFlipped.push_back( False );
 
-      vecAligns.push_back( alignment_plus() );
-      mReader.PackAlignment( vecAligns.back() );
+            vecAlignId1.push_back( id1 );
+            vecAlignId2.push_back( id2 );
 
-      if ( vecFirstAlignWithId[ id1 ] < 0 )
-        vecFirstAlignWithId[ id1 ] = vecAlignIds.back();
+            vecAligns.push_back( alignment_plus() );
+            mReader.PackAlignment( vecAligns.back() );
+
+            if ( vecFirstAlignWithId[ id1 ] < 0 )
+                vecFirstAlignWithId[ id1 ] = vecAlignIds.back();
+        } else {
+            int existingAlignIdx = vecFirstAlignWithId[ id2 ];
+
+            if ( existingAlignIdx == -1 ) {
+                std::cout << mStrVectorFilename << " is not symmetrical." << std::endl;
+                std::cout << "Found alignment with id1=" << id1 << " and id2=" << id2
+                          << " but no alignment with id1=" << id2 << " and id2=" << id1 << "." << std::endl;
+                TracebackThisProcess();
+            }
+
+            for ( ; existingAlignIdx < (int)vecAligns.size(); ++existingAlignIdx ) {
+                if ( vecAlignId2[ existingAlignIdx ] == id1 )
+                    break;
+                if ( vecAlignId1[ existingAlignIdx ] != id2 )
+                    break;
+            }
+
+            if ( vecAlignId1[ existingAlignIdx ] != id2 ) {
+                std::cout << mStrVectorFilename << " is not symmetrical." << std::endl;
+                std::cout << "Found alignment with id1=" << id1 << " and id2=" << id2
+                          << " but no alignment with id1=" << id2 << " and id2=" << id1 << "." << std::endl;
+                TracebackThisProcess();
+            }
+
+            vecAlignIsFlipped.push_back( True );
+            vecAlignIds.push_back( existingAlignIdx );
+        }
     }
-    else
-    {
-      int existingAlignIdx = vecFirstAlignWithId[ id2 ];
-      
-      if ( existingAlignIdx == -1 )
-      {
-        std::cout << mStrVectorFilename << " is not symmetrical." << std::endl;
-        std::cout << "Found alignment with id1=" << id1 << " and id2=" << id2 
-             << " but no alignment with id1=" << id2 << " and id2=" << id1 << "." << std::endl;
-        TracebackThisProcess();
-      }
 
-      for ( ; existingAlignIdx < (int)vecAligns.size(); ++existingAlignIdx )
-      {
-        if ( vecAlignId2[ existingAlignIdx ] == id1 )
-          break;
-        if ( vecAlignId1[ existingAlignIdx ] != id2 )
-          break;
-      }
-
-      if ( vecAlignId1[ existingAlignIdx ] != id2 )
-      {
-        std::cout << mStrVectorFilename << " is not symmetrical." << std::endl;
-        std::cout << "Found alignment with id1=" << id1 << " and id2=" << id2 
-             << " but no alignment with id1=" << id2 << " and id2=" << id1 << "." << std::endl;
-        TracebackThisProcess();
-      }
-        
-      vecAlignIsFlipped.push_back( True );
-      vecAlignIds.push_back( existingAlignIdx );
-    }
-  }
-
-  ForceAssertEq( vecAlignIsFlipped.size(), vecAlignIds.size() );
+    ForceAssertEq( vecAlignIsFlipped.size(), vecAlignIds.size() );
 }
 
 
 int
-VecAlignmentPlusReader::GetNumAlignmentsForId( const int sequenceId )
-{
-  OpenIndexFileForReading();
+VecAlignmentPlusReader::GetNumAlignmentsForId( const int sequenceId ) {
+    OpenIndexFileForReading();
 
-  ReadIndexEntry( sequenceId );
+    ReadIndexEntry( sequenceId );
 
-  return mNumAlignsWithRequestedId1;
+    return mNumAlignsWithRequestedId1;
 }
 
 
 void
 VecAlignmentPlusReader::ReadSubset( vec<alignment_plus> &vecAligns,
                                     const int sequenceId,
-                                    bool append )
-{
-  if ( ! append )
-    vecAligns.clear();
+                                    bool append ) {
+    if ( ! append )
+        vecAligns.clear();
 
-  OpenDataFileForReading();
-  OpenIndexFileForReading();
+    OpenDataFileForReading();
+    OpenIndexFileForReading();
 
-  ReadIndexEntry( sequenceId );
+    ReadIndexEntry( sequenceId );
 
-  if ( mNumAlignsWithRequestedId1 == 0 )
-    return;
+    if ( mNumAlignsWithRequestedId1 == 0 )
+        return;
 
-  mReadBuffer.JumpTo( mRequestedId1Start );
+    mReadBuffer.JumpTo( mRequestedId1Start );
 
-  unsigned int alignIdx = vecAligns.size();
+    unsigned int alignIdx = vecAligns.size();
 
-  vecAligns.resize( vecAligns.size() + mNumAlignsWithRequestedId1 );
-  
-  mReader.SetLastId1( -1 );
-  for ( ; alignIdx < vecAligns.size(); ++alignIdx )
-  {
-    mReader.ReadUnpackedAlignment();
+    vecAligns.resize( vecAligns.size() + mNumAlignsWithRequestedId1 );
 
-    if ( mReader.GetId1() != sequenceId )
-    {
-      std::cout << "Alignment vector not indexed properly." << std::endl;
-      std::cout << "Expected id1: " << sequenceId << ", "
-           << "found id1: " << mReader.GetId1() << std::endl;
-      TracebackThisProcess();
+    mReader.SetLastId1( -1 );
+    for ( ; alignIdx < vecAligns.size(); ++alignIdx ) {
+        mReader.ReadUnpackedAlignment();
+
+        if ( mReader.GetId1() != sequenceId ) {
+            std::cout << "Alignment vector not indexed properly." << std::endl;
+            std::cout << "Expected id1: " << sequenceId << ", "
+                      << "found id1: " << mReader.GetId1() << std::endl;
+            TracebackThisProcess();
+        }
+
+        mReader.PackAlignment( vecAligns[ alignIdx ] );
     }
-
-    mReader.PackAlignment( vecAligns[ alignIdx ] );
-  }
-}  
+}
 
 
 void
 VecAlignmentPlusReader::ReadSubset( vec<alignment_plus> &vecAligns,
                                     const vec<int> &vecSequenceIds,
-                                    bool append )
-{
-  OpenIndexFileForReading();
+                                    bool append ) {
+    OpenIndexFileForReading();
 
-  int numAlignsToRead = 0;
-  for ( vec<int>::const_iterator sequenceIdIter = vecSequenceIds.begin();
-        sequenceIdIter != vecSequenceIds.end(); ++sequenceIdIter )
-  {
-    ReadIndexEntry( *sequenceIdIter );
-    numAlignsToRead += mNumAlignsWithRequestedId1;
-  }
+    int numAlignsToRead = 0;
+    for ( vec<int>::const_iterator sequenceIdIter = vecSequenceIds.begin();
+            sequenceIdIter != vecSequenceIds.end(); ++sequenceIdIter ) {
+        ReadIndexEntry( *sequenceIdIter );
+        numAlignsToRead += mNumAlignsWithRequestedId1;
+    }
 
-  if ( ! append )
-    vecAligns.clear();
+    if ( ! append )
+        vecAligns.clear();
 
-  vecAligns.reserve( vecAligns.size() + numAlignsToRead );
+    vecAligns.reserve( vecAligns.size() + numAlignsToRead );
 
-  for ( vec<int>::const_iterator sequenceIdIter = vecSequenceIds.begin();
-        sequenceIdIter != vecSequenceIds.end(); ++sequenceIdIter )
-    ReadSubset( vecAligns, *sequenceIdIter, true );
+    for ( vec<int>::const_iterator sequenceIdIter = vecSequenceIds.begin();
+            sequenceIdIter != vecSequenceIds.end(); ++sequenceIdIter )
+        ReadSubset( vecAligns, *sequenceIdIter, true );
 }
 
 
 void
-VecAlignmentPlusReader::ReadNext( alignment_plus &nextAlign )
-{
-  OpenIndexFileForReading();
+VecAlignmentPlusReader::ReadNext( alignment_plus &nextAlign ) {
+    OpenIndexFileForReading();
 
-  mReader.ReadUnpackedAlignment();
-  mReader.PackAlignment( nextAlign );
+    mReader.ReadUnpackedAlignment();
+    mReader.PackAlignment( nextAlign );
 }
 
 //[GONZA] Declaration!?
@@ -1501,175 +1347,163 @@ void OldEfficientRead( std::istream& in, alignment_plus& ap, int &p, avector<uns
 
 void
 VecAlignmentPlusWriter::Convert( const String &strOldVectorFilename,
-                                 const int limit )
-{
-  ForceAssert( IsRegularFile( strOldVectorFilename ) );
+                                 const int limit ) {
+    ForceAssert( IsRegularFile( strOldVectorFilename ) );
 
-  std::istream *in_ptr = 0;
-  procbuf *pb_ptr = 0;
-  if ( strOldVectorFilename.Contains( ".gz", -1 ) )
-  {
-    String cmd = "gzip -dc ";
-    cmd += strOldVectorFilename;
-    pb_ptr = new procbuf( cmd.c_str(), std::ios::in | std::ios::binary );
-    in_ptr = new std::istream( pb_ptr );
-  }
-  else
-  {
-    in_ptr = new std::ifstream( strOldVectorFilename.c_str(), std::ios::in | std::ios::binary );
-  }
-  
-  std::istream &in = *in_ptr;
-  
-  OpenDataFileForWriting();
-  if ( IndexingIsOn() )
-    OpenIndexFileForWriting();
-
-  int numAligns;
-  in >> numAligns;
-  char c;
-  in.get(c);
-  
-  int realLimit = ( limit == 0 ? numAligns : limit );
-
-  // std::cout << "Converting " << realLimit << " alignments:" << std::endl;
-
-  avector<unsigned int> x(BufSize);
-  in.read( (char*) &(x(0)), x.length * sizeof(int) );
-  int p = 0;
-  alignment_plus anAlign;
-
-  if ( mStrVectorFilename.empty() )
-    mHeaderIO.WriteNumAlignments( mpDataOut, realLimit );
-  else
-    mHeaderIO.WriteNumAlignments( mStrVectorFilename, realLimit );
-
-  mLastId1 = -1;
-  for ( int alignIdx = 0; alignIdx < realLimit; ++alignIdx )
-  {
-    OldEfficientRead( in, anAlign, p, x, mLastId1 );
-
-    // if ( (alignIdx + 1) % 1000000 == 0 )
-    //   Dot( std::cout, alignIdx / 1000000 );
-
-    UnpackAlignment( anAlign );
-
-    if ( IndexingIsOn() )
-    {
-      if ( mLastId1 > id1 )
-      {
-        std::cout << "Alignments not sorted.  Unable to index." << std::endl;
-        std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
-        std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
-
-        TracebackThisProcess();
-      }
-      
-      if ( id1 != mLastId1 )
-        WriteIndexEntry();
+    std::istream *in_ptr = 0;
+    procbuf *pb_ptr = 0;
+    if ( strOldVectorFilename.Contains( ".gz", -1 ) ) {
+        String cmd = "gzip -dc ";
+        cmd += strOldVectorFilename;
+        pb_ptr = new procbuf( cmd.c_str(), std::ios::in | std::ios::binary );
+        in_ptr = new std::istream( pb_ptr );
+    } else {
+        in_ptr = new std::ifstream( strOldVectorFilename.c_str(), std::ios::in | std::ios::binary );
     }
 
-    WriteUnpackedAlignment();
+    std::istream &in = *in_ptr;
 
-    mLastId1 = id1;
-    ++mNumAlignsWithLastId1;
-  }
+    OpenDataFileForWriting();
+    if ( IndexingIsOn() )
+        OpenIndexFileForWriting();
 
-  WriteBuffer( false );
+    int numAligns;
+    in >> numAligns;
+    char c;
+    in.get(c);
 
-  if ( IndexingIsOn() )
-    WriteIndexEntry();
+    int realLimit = ( limit == 0 ? numAligns : limit );
 
-  mpDataOut->flush();
-  if ( IndexingIsOn() )
-    mpIndexOut->flush();
+    // std::cout << "Converting " << realLimit << " alignments:" << std::endl;
 
-  // std::cout << std::endl;
+    avector<unsigned int> x(BufSize);
+    in.read( (char*) &(x(0)), x.length * sizeof(int) );
+    int p = 0;
+    alignment_plus anAlign;
 
-  if ( in_ptr ) delete in_ptr;
-  if ( pb_ptr ) delete pb_ptr;
+    if ( mStrVectorFilename.empty() )
+        mHeaderIO.WriteNumAlignments( mpDataOut, realLimit );
+    else
+        mHeaderIO.WriteNumAlignments( mStrVectorFilename, realLimit );
+
+    mLastId1 = -1;
+    for ( int alignIdx = 0; alignIdx < realLimit; ++alignIdx ) {
+        OldEfficientRead( in, anAlign, p, x, mLastId1 );
+
+        // if ( (alignIdx + 1) % 1000000 == 0 )
+        //   Dot( std::cout, alignIdx / 1000000 );
+
+        UnpackAlignment( anAlign );
+
+        if ( IndexingIsOn() ) {
+            if ( mLastId1 > id1 ) {
+                std::cout << "Alignments not sorted.  Unable to index." << std::endl;
+                std::cout << "Id1 at position " << alignIdx-1 << " of vector to write: " << mLastId1 << std::endl;
+                std::cout << "Id1 at position " << alignIdx   << " of vector to write: " << id1 << std::endl;
+
+                TracebackThisProcess();
+            }
+
+            if ( id1 != mLastId1 )
+                WriteIndexEntry();
+        }
+
+        WriteUnpackedAlignment();
+
+        mLastId1 = id1;
+        ++mNumAlignsWithLastId1;
+    }
+
+    WriteBuffer( false );
+
+    if ( IndexingIsOn() )
+        WriteIndexEntry();
+
+    mpDataOut->flush();
+    if ( IndexingIsOn() )
+        mpIndexOut->flush();
+
+    // std::cout << std::endl;
+
+    if ( in_ptr ) delete in_ptr;
+    if ( pb_ptr ) delete pb_ptr;
 }
-  
-  
+
+
 void
-VecAlignmentPlusWriter::TestPackBlock()
-{
-  std::cout.setf( std::ios::hex );
-  std::cout.setf( std::ios::showbase );
-  std::cout.unsetf( std::ios::dec );
+VecAlignmentPlusWriter::TestPackBlock() {
+    std::cout.setf( std::ios::hex );
+    std::cout.setf( std::ios::showbase );
+    std::cout.unsetf( std::ios::dec );
 
-  unsigned short expected = 0x0000;
-  for ( int gap = 0; gap < 16; ++gap, expected += 0x0800 )
-  {
-    PackBlock( gap, 0 );
-    ForceAssertEq( mPackedBlock, expected );
-  }
+    unsigned short expected = 0x0000;
+    for ( int gap = 0; gap < 16; ++gap, expected += 0x0800 ) {
+        PackBlock( gap, 0 );
+        ForceAssertEq( mPackedBlock, expected );
+    }
 
-  for ( int gap = -16; gap < 0; ++gap, expected += 0x0800 )
-  {
-    PackBlock( gap, 0 );
-    ForceAssertEq( mPackedBlock, expected );
-  }
+    for ( int gap = -16; gap < 0; ++gap, expected += 0x0800 ) {
+        PackBlock( gap, 0 );
+        ForceAssertEq( mPackedBlock, expected );
+    }
 
-  std::cout.setf( std::ios::dec );
+    std::cout.setf( std::ios::dec );
 }
 
 //[GONZA] definition!?
-void OldEfficientRead( std::istream& in, alignment_plus& ap, int &p, avector<unsigned int>& x, int previous_ap_id1 )
-{
-  if ( BufSize - p < MaxRecordSize ) {
-    for ( int j = 0; j < BufSize - p; j++ )
-      x(j) = x( p + j );
-    in.read( (char*) &(x( BufSize - p )), p * sizeof(int) );
-    p = 0;
-  }
-  unsigned char control = x(p) >> 24;
-  Bool rc2 = x(p) >> 16;
-  unsigned short block_length = (unsigned short) x(p++);
-  if ( control == 0 ) ap.SetId1( x(p++) );
-  else ap.SetId1( previous_ap_id1 );
-  ap.SetId2( x(p++) );
-  ap.SetRc2(rc2);
-  int pos1, pos2, errors;
-  if ( control == 0 ) {
-    pos1 = x(p++);
-    pos2 = x(p++);
-    errors = x(p++);
-  }
-  else {
-    pos1 = x(p) % 1024;
-    unsigned int y = (x(p) - pos1) / 1024;
-    pos2 = y % 1024;
-    errors = (y - pos2) / 1024;
-    p++;
-  }
-  
-  static avector<int> gaps, lengths;
-  if ( gaps.length < block_length )
-  {    gaps.Setsize(block_length);
-       lengths.Setsize(block_length);    }
-  
-  // Sante --- Tue Sep 17 17:53:56 EDT 2002
-  //  Initialize gaps and lengths in the case block_length=0.
-  if ( block_length == 0 ) {
-    gaps.Setsize( 0 );
-    lengths.Setsize( 0 );
-  }
-   
-  for ( unsigned short j = 0; j < block_length; j++ ) {
+void OldEfficientRead( std::istream& in, alignment_plus& ap, int &p, avector<unsigned int>& x, int previous_ap_id1 ) {
+    if ( BufSize - p < MaxRecordSize ) {
+        for ( int j = 0; j < BufSize - p; j++ )
+            x(j) = x( p + j );
+        in.read( (char*) &(x( BufSize - p )), p * sizeof(int) );
+        p = 0;
+    }
+    unsigned char control = x(p) >> 24;
+    Bool rc2 = x(p) >> 16;
+    unsigned short block_length = (unsigned short) x(p++);
+    if ( control == 0 ) ap.SetId1( x(p++) );
+    else ap.SetId1( previous_ap_id1 );
+    ap.SetId2( x(p++) );
+    ap.SetRc2(rc2);
+    int pos1, pos2, errors;
     if ( control == 0 ) {
-      gaps(j) = x(p++);
-      lengths(j) = x(p++);
+        pos1 = x(p++);
+        pos2 = x(p++);
+        errors = x(p++);
+    } else {
+        pos1 = x(p) % 1024;
+        unsigned int y = (x(p) - pos1) / 1024;
+        pos2 = y % 1024;
+        errors = (y - pos2) / 1024;
+        p++;
     }
-    else {
-      gaps(j) = (x(p) >> 16) - 1024;
-      lengths(j) = (unsigned short) x(p);
-      p++;
+
+    static avector<int> gaps, lengths;
+    if ( gaps.length < block_length ) {
+        gaps.Setsize(block_length);
+        lengths.Setsize(block_length);
     }
-  }
-  
-  ap.a.Set( pos1, pos2, errors, gaps, lengths, block_length );
-  ap.score = *( (float*) &x(p) );
-  p += sizeof(float)/sizeof(int);
+
+    // Sante --- Tue Sep 17 17:53:56 EDT 2002
+    //  Initialize gaps and lengths in the case block_length=0.
+    if ( block_length == 0 ) {
+        gaps.Setsize( 0 );
+        lengths.Setsize( 0 );
+    }
+
+    for ( unsigned short j = 0; j < block_length; j++ ) {
+        if ( control == 0 ) {
+            gaps(j) = x(p++);
+            lengths(j) = x(p++);
+        } else {
+            gaps(j) = (x(p) >> 16) - 1024;
+            lengths(j) = (unsigned short) x(p);
+            p++;
+        }
+    }
+
+    ap.a.Set( pos1, pos2, errors, gaps, lengths, block_length );
+    ap.score = *( (float*) &x(p) );
+    p += sizeof(float)/sizeof(int);
 }
 

@@ -12,8 +12,7 @@
 #include "system/Exit.h"
 #include <iostream>
 
-void Assert::reportVals( char const* loc, char const* func, char const* vals )
-{
+void Assert::reportVals( char const* loc, char const* func, char const* vals ) {
     std::cout << loc << " failed in function\n" << func << "\n";
 
     if ( vals )
@@ -22,8 +21,7 @@ void Assert::reportVals( char const* loc, char const* func, char const* vals )
     std::cout << std::endl;
 }
 
-void Assert::reportValsAndDie( char const* loc, char const* func, char const* vals )
-{
+void Assert::reportValsAndDie( char const* loc, char const* func, char const* vals ) {
     reportVals(loc,func,vals);
     CRD::exit(1);
 }

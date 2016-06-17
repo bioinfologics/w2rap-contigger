@@ -22,47 +22,59 @@ extern template class digraphE<efasta>;
 
 class HyperEfasta : public digraphE<efasta> {
 
-     public:
+  public:
 
-     HyperEfasta( ) { }
-     HyperEfasta( int K ) : K_(K) { }
-     HyperEfasta( const HyperBasevector& h );
-     void Initialize( const HyperBasevector& h );
+    HyperEfasta( ) { }
+    HyperEfasta( int K ) : K_(K) { }
+    HyperEfasta( const HyperBasevector& h );
+    void Initialize( const HyperBasevector& h );
 
-     int K( ) const { return K_; }
-     void SetK( int K ) { K_ = K; }
+    int K( ) const {
+        return K_;
+    }
+    void SetK( int K ) {
+        K_ = K;
+    }
 
-     int EdgeLengthBases( int e ) const { return EdgeObject(e).Length1( ); }
-     int EdgeLengthKmers( int e ) const 
-     { return EdgeObject(e).Length1( ) - K( ) + 1; }
+    int EdgeLengthBases( int e ) const {
+        return EdgeObject(e).Length1( );
+    }
+    int EdgeLengthKmers( int e ) const {
+        return EdgeObject(e).Length1( ) - K( ) + 1;
+    }
 
-     void RemoveUnneededVertices( );
+    void RemoveUnneededVertices( );
 
-     void writeBinary( BinaryWriter& writer ) const;
-     void readBinary( BinaryReader& reader );
-     static size_t externalSizeof() { return 0; }
+    void writeBinary( BinaryWriter& writer ) const;
+    void readBinary( BinaryReader& reader );
+    static size_t externalSizeof() {
+        return 0;
+    }
 
-     void PrintSummaryDOT0w( std::ostream& out, Bool label_contigs = True,
-                             Bool label_vertices = False, Bool label_edges = False,
-                             const vec<int>* componentsToPrint = NULL,
-                             const Bool edge_labels_base_alpha = False,
-                             const vec<String> *label_edges_extra = NULL,
-                             const vec<String> *label_contigs_extra = NULL,
-                             const vec<int> *verticesToPrint = NULL ) const;
+    void PrintSummaryDOT0w( std::ostream& out, Bool label_contigs = True,
+                            Bool label_vertices = False, Bool label_edges = False,
+                            const vec<int>* componentsToPrint = NULL,
+                            const Bool edge_labels_base_alpha = False,
+                            const vec<String> *label_edges_extra = NULL,
+                            const vec<String> *label_contigs_extra = NULL,
+                            const vec<int> *verticesToPrint = NULL ) const;
 
-     friend std::ostream& operator<<( std::ostream& out, const HyperEfasta& h )
-     {    for ( int v = 0; v < h.N( ); v++ )
-          {    for ( size_t j = 0; j < h.From(v).size(); j++ )
-               {    int e = h.EdgeObjectIndexByIndexFrom( v, j );
-                    int w = h.From(v)[j];
-                    h.EdgeObject(e).Print( out, BaseAlpha(e) + " [vert_" 
-                         + ToString(v) + "-->vert_" + ToString(w) 
-                         + "]" );    }    }
-          return out;    }
+    friend std::ostream& operator<<( std::ostream& out, const HyperEfasta& h ) {
+        for ( int v = 0; v < h.N( ); v++ ) {
+            for ( size_t j = 0; j < h.From(v).size(); j++ ) {
+                int e = h.EdgeObjectIndexByIndexFrom( v, j );
+                int w = h.From(v)[j];
+                h.EdgeObject(e).Print( out, BaseAlpha(e) + " [vert_"
+                                       + ToString(v) + "-->vert_" + ToString(w)
+                                       + "]" );
+            }
+        }
+        return out;
+    }
 
-     private:
+  private:
 
-     int K_;
+    int K_;
 
 };
 

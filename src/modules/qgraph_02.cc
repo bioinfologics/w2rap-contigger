@@ -18,8 +18,8 @@
 
 
 
-int qgraph_builder(const String work_dir, const string file_prefix, /*uint small_k,*/ uint large_k, uint NUM_THREADS, int MAX_MEM_GB){
-  
+int qgraph_builder(const String work_dir, const string file_prefix, /*uint small_k,*/ uint large_k, uint NUM_THREADS, int MAX_MEM_GB) {
+
     // ********************** Set sys resources ******************
     // Set computational limits (XXX TODO: putin a separate source to import in different code)
     std::cout << "Set computational resources " << std::endl;
@@ -30,11 +30,11 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
 
     // ********************** Load files *************************
     std::cout << "Loading files " << std::endl;
-    
+
     ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
     vec<String> subsam_names;
     vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
-    
+
     BinaryReader::readFile (work_dir + "/subsam.starts", &subsam_starts);
     BinaryReader::readFile (work_dir + "/subsam.names", &subsam_names);
     vecbvec bases;
@@ -48,44 +48,44 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
     bool FILL_JOIN=False;
     bool SHORT_KMER_READ_PATHER=False;
     bool RQGRAPHER_VERBOSE=False;
-    
+
     buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, 7, 3, .75, 0, "", True, SHORT_KMER_READ_PATHER, &hbv, &paths, RQGRAPHER_VERBOSE);
     std::cout << "Finish building Reads qgraph" << std::endl;
-    
+
     vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
     vec<int> inv;
     hbv.Involution(inv);
-    
+
     FixPaths( hbv, paths );
-    
+
     // Save graph kmer 60
     BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.hbv", hbv );
     BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.hbx", HyperBasevectorX(hbv) );
     edges.WriteAll( work_dir +"/"+ file_prefix +".60.fastb" );
     BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.inv", inv );
-    
+
     std::cout << "Done loading " << std::endl;
-    
+
     int64_t checksum_60 = hbv.CheckSum( );
     PRINT(checksum_60);
-    
+
     // Variables to run Repath XXX TODO: Document one by one
     const string run_head = work_dir + "/" + file_prefix;
-    
+
     quals.unload();
     Repath( hbv, edges, inv, paths, hbv.K(), large_k, run_head+".large", True, True, False );
-    
+
     hbv.DumpFasta( run_head + ".after_repath.fasta", False );
     return 0;
 }
 
-int main(int argc, const char* argv[]){
+int main(int argc, const char* argv[]) {
     std::string out_prefix;
     std::string out_dir;
     unsigned int small_K,large_K;
     unsigned int threads;
     int max_mem;
-    std::vector<unsigned int> allowed_k={60,64,72,80,84,88,96,100,108,116,128,136,144,152,160,168,172,180,188,192,196,200,208,216,224,232,240,260,280,300,320,368,400,440,460,500,544,640};
+    std::vector<unsigned int> allowed_k= {60,64,72,80,84,88,96,100,108,116,128,136,144,152,160,168,172,180,188,192,196,200,208,216,224,232,240,260,280,300,320,368,400,440,460,500,544,640};
 
 
     //========== Command Line Option Parsing ==========
@@ -112,8 +112,10 @@ int main(int argc, const char* argv[]){
         threads=threadsArg.getValue();
         max_mem=max_memArg.getValue();
 
-    } catch (TCLAP::ArgException &e)  // catch any exceptions
-    { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; return 1;}
+    } catch (TCLAP::ArgException &e) { // catch any exceptions
+        std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
+        return 1;
+    }
 
 
 

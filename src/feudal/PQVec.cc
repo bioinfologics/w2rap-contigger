@@ -15,8 +15,7 @@
 #include "feudal/PQVec.h"
 #include "math/PowerOf2.h"
 
-void PQVecEncoder::init( qvec const& qv )
-{
+void PQVecEncoder::init( qvec const& qv ) {
     mpQV = &qv;
     mBlocks.clear();
     mCosts.clear();
@@ -25,14 +24,14 @@ void PQVecEncoder::init( qvec const& qv )
     auto beg = qv.begin();
     auto end = qv.end();
     auto itr = beg;
-    while ( itr != end )
-    {
+    while ( itr != end ) {
         unsigned char const MAX_Q = 63;
-        if ( *itr > MAX_Q )
-        {   std::cout << "\nYour input reads are funny.  I found a quality score of "
-                 << unsigned(*itr) << ".\nThe maximum value that I allow is "
-                 << unsigned(MAX_Q) << ".\n" << std::endl;
-            Scram(1);    }
+        if ( *itr > MAX_Q ) {
+            std::cout << "\nYour input reads are funny.  I found a quality score of "
+                      << unsigned(*itr) << ".\nThe maximum value that I allow is "
+                      << unsigned(MAX_Q) << ".\n" << std::endl;
+            Scram(1);
+        }
 
         auto iCost = mCosts.end();
         unsigned minVal = std::min(63u,unsigned(*itr));
@@ -44,8 +43,7 @@ void PQVecEncoder::init( qvec const& qv )
         Block best(1,bits,minVal);
         auto itr2 = itr;
         ++itr;
-        while ( itr2 != beg && nQs < 255 )
-        {
+        while ( itr2 != beg && nQs < 255 ) {
             unsigned val = *--itr2;
             if ( val > maxVal )
                 maxVal = val;
@@ -54,8 +52,7 @@ void PQVecEncoder::init( qvec const& qv )
             bits = PowerOf2::ceilLg2(maxVal+1u-minVal);
             prevCost = *--iCost;
             unsigned curCost = prevCost + Block::blockSize(++nQs,bits);
-            if ( curCost < bestCost )
-            {
+            if ( curCost < bestCost ) {
                 bestCost = curCost;
                 best = Block(nQs,bits,minVal);
             }
@@ -64,19 +61,16 @@ void PQVecEncoder::init( qvec const& qv )
         unsigned toRemove = best.mNQs - 1;
         if ( !toRemove )
             mBlocks.push_back(best);
-        else
-        {
+        else {
             Assert(!mBlocks.empty());
-            while ( toRemove > mBlocks.back().mNQs )
-            {
+            while ( toRemove > mBlocks.back().mNQs ) {
                 toRemove -= mBlocks.back().mNQs;
                 mBlocks.pop_back();
                 Assert(!mBlocks.empty());
             }
             if ( toRemove == mBlocks.back().mNQs )
                 mBlocks.back() = best;
-            else
-            {
+            else {
                 mBlocks.back().mNQs -= toRemove;
                 mBlocks.push_back(best);
             }
@@ -84,12 +78,10 @@ void PQVecEncoder::init( qvec const& qv )
     }
 }
 
-PQVecEncoder::byte* PQVecEncoder::encode( byte* pBuf ) const
-{
+PQVecEncoder::byte* PQVecEncoder::encode( byte* pBuf ) const {
     Assert(mpQV);
     auto itr = mpQV->begin();
-    for ( Block const& block : mBlocks )
-    {
+    for ( Block const& block : mBlocks ) {
         uint64_t nQs = block.mNQs;
         uint64_t nBits = block.mBits;
         uint64_t minQ = block.mMinQ;
@@ -98,21 +90,16 @@ PQVecEncoder::byte* PQVecEncoder::encode( byte* pBuf ) const
         bits |= minQ << 3;
         *pBuf++ = bits;
         bits >>= 8;
-        if ( !nBits )
-        {
+        if ( !nBits ) {
             *pBuf++ = bits;
             itr += nQs;
-        }
-        else
-        {
+        } else {
             uint64_t off = 1;
-            while ( nQs-- )
-            {
+            while ( nQs-- ) {
                 uint64_t val = *itr - minQ;
                 ++itr;
                 bits |= val << off;
-                if ( (off += nBits) >= 8 )
-                {
+                if ( (off += nBits) >= 8 ) {
                     *pBuf++ = bits;
                     off -= 8;
                     bits >>= 8;
@@ -126,8 +113,7 @@ PQVecEncoder::byte* PQVecEncoder::encode( byte* pBuf ) const
     return pBuf;
 }
 
-void PQVecEncoder::decode( byte const* pqBuf, byte* pQs )
-{
+void PQVecEncoder::decode( byte const* pqBuf, byte* pQs ) {
     uint64_t addr = reinterpret_cast<uint64_t>(pqBuf);
     uint64_t* buf = reinterpret_cast<uint64_t*>(addr&~7);
     uint64_t bits = *buf++;
@@ -135,11 +121,9 @@ void PQVecEncoder::decode( byte const* pqBuf, byte* pQs )
     uint64_t remain = 64 - addr;
     bits >>= addr;
     uint64_t nQs;
-    while ( (nQs = bits&0xff) )
-    {
+    while ( (nQs = bits&0xff) ) {
         bits >>= 8;
-        if ( !(remain -= 8) )
-        {
+        if ( !(remain -= 8) ) {
             bits = *buf++;
             remain = 64;
         }
@@ -147,8 +131,7 @@ void PQVecEncoder::decode( byte const* pqBuf, byte* pQs )
         bits >>= 3;
         uint64_t minQ = bits & 0x3f;
         bits >>= 6;
-        if ( remain < 9 )
-        {
+        if ( remain < 9 ) {
             bits = *buf++;
             minQ |= (bits & 1) << 5;
             bits >>= 1;
@@ -158,15 +141,12 @@ void PQVecEncoder::decode( byte const* pqBuf, byte* pQs )
         if ( !nBits )
             while ( nQs-- )
                 *pQs++ = minQ;
-        else
-        {
+        else {
             uint64_t mask = (1ul<<nBits)-1ul;
-            while ( nQs-- )
-            {
+            while ( nQs-- ) {
                 uint64_t val = bits;
                 uint64_t used = nBits;
-                if ( remain < nBits )
-                {
+                if ( remain < nBits ) {
                     bits = *buf++;
                     val |= bits << remain;
                     used -= remain;
@@ -179,8 +159,7 @@ void PQVecEncoder::decode( byte const* pqBuf, byte* pQs )
         }
         bits >>= remain & 7;
         remain &= ~7ul;
-        if ( !remain )
-        {
+        if ( !remain ) {
             bits = *buf++;
             remain = 64;
         }

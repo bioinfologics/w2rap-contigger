@@ -15,7 +15,7 @@
 class RefTraceControl;
 
 class ReadOriginTracker {
-public:
+  public:
     ReadOriginTracker (const RefTraceControl& refc);
     virtual ~ReadOriginTracker () {};
 
@@ -30,9 +30,11 @@ public:
 
     // return the direction of the read +1 or -1. 0 for unknown
     enum READ_DIR {PLUS, MINUS, UNKNOWN};
-    READ_DIR ReadDirection(size_t read_id) const { return read_dirs_[read_id]; };
-       
-private:
+    READ_DIR ReadDirection(size_t read_id) const {
+        return read_dirs_[read_id];
+    };
+
+  private:
     const RefTraceControl& ref_control_;
     vec<READ_DIR> read_dirs_;
 };

@@ -11,7 +11,7 @@
 * \author ghall
 * \date Oct 14, 2009
 *
-* \brief Simple infix calculator 
+* \brief Simple infix calculator
 */
 
 long evaluate(char const *s);

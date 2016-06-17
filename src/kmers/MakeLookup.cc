@@ -16,44 +16,50 @@
 #include "kmers/MakeLookup.h"
 
 template<int K> void MakeKmerLookup0Pre( const vecbasevector& unibases,
-     const String& prefix, vec< triple<kmer<K>,int,int> >& kmers_plus )
-{    vec<int64_t> starts;
-     starts.push_back(0);
-     {    vec<int> counts( unibases.size( ), 0 );
-          #pragma omp parallel for
-          for ( size_t i = 0; i < unibases.size( ); i++ )
-          {    const basevector& u = unibases[i];
-               String s = u.ToString( );
-               counts[i] = 0;
-               for ( int j = 0; j <= u.isize( ) - K; j++ )
-                    if ( s.Contains( prefix, j ) ) counts[i]++;    }
-          for ( size_t i = 0; i < unibases.size( ); i++ )
-               starts.push_back( starts.back( ) + counts[i] );    }
-     kmers_plus.resize( starts.back( ) );
-     #pragma omp parallel for
-     for ( size_t i = 0; i < unibases.size( ); i++ )
-     {    const basevector& u = unibases[i];
-          String s = u.ToString( );
-          kmer<K> x;
-          int count = 0;
-          for ( int j = 0; j <= u.isize( ) - K; j++ )
-          {    if ( s.Contains( prefix, j ) )
-               {    int64_t r = starts[i] + count;
-                    x.SetToSubOf( u, j ); 
-                    kmers_plus[r].first = x;
-                    kmers_plus[r].second = i; 
-                    kmers_plus[r].third = j;    
-                    count++;    }    }    }
-     // std::cout << Date( ) << ": pre -- sorting" << std::endl;
-     ParallelSort(kmers_plus);    
-     // std::cout << Date( ) << ": pre -- sorting complete" << std::endl;
-          }
+        const String& prefix, vec< triple<kmer<K>,int,int> >& kmers_plus ) {
+    vec<int64_t> starts;
+    starts.push_back(0);
+    {
+        vec<int> counts( unibases.size( ), 0 );
+        #pragma omp parallel for
+        for ( size_t i = 0; i < unibases.size( ); i++ ) {
+            const basevector& u = unibases[i];
+            String s = u.ToString( );
+            counts[i] = 0;
+            for ( int j = 0; j <= u.isize( ) - K; j++ )
+                if ( s.Contains( prefix, j ) ) counts[i]++;
+        }
+        for ( size_t i = 0; i < unibases.size( ); i++ )
+            starts.push_back( starts.back( ) + counts[i] );
+    }
+    kmers_plus.resize( starts.back( ) );
+    #pragma omp parallel for
+    for ( size_t i = 0; i < unibases.size( ); i++ ) {
+        const basevector& u = unibases[i];
+        String s = u.ToString( );
+        kmer<K> x;
+        int count = 0;
+        for ( int j = 0; j <= u.isize( ) - K; j++ ) {
+            if ( s.Contains( prefix, j ) ) {
+                int64_t r = starts[i] + count;
+                x.SetToSubOf( u, j );
+                kmers_plus[r].first = x;
+                kmers_plus[r].second = i;
+                kmers_plus[r].third = j;
+                count++;
+            }
+        }
+    }
+    // std::cout << Date( ) << ": pre -- sorting" << std::endl;
+    ParallelSort(kmers_plus);
+    // std::cout << Date( ) << ": pre -- sorting complete" << std::endl;
+}
 
 template void MakeKmerLookup0Pre( const vecbasevector& unibases,
-     const String& prefix, vec< triple<kmer<32>,int,int> >& kmers_plus );
+                                  const String& prefix, vec< triple<kmer<32>,int,int> >& kmers_plus );
 
 template void MakeKmerLookup0Pre( const vecbasevector& unibases,
-     const String& prefix, vec< triple<kmer<40>,int,int> >& kmers_plus );
+                                  const String& prefix, vec< triple<kmer<40>,int,int> >& kmers_plus );
 
 template void MakeKmerLookup0Pre( const vecbasevector& unibases,
-     const String& prefix, vec< triple<kmer<60>,int,int> >& kmers_plus );
+                                  const String& prefix, vec< triple<kmer<60>,int,int> >& kmers_plus );

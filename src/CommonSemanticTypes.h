@@ -16,7 +16,7 @@
    Many of the semantic types seem to be inherently unsigned but should be
    declared as signed integral types, to allow for representing the
    "null" value as -1.
-   
+
    @file
 */
 
@@ -49,7 +49,7 @@ SemanticTypeStd( double, nbases_dbl_t );
 SemanticTypeStd( int, nkmers_t );
 
 
-// Semantic type: basevec_id_t 
+// Semantic type: basevec_id_t
 // Identifier of a basevector in a set of basevectors.
 SemanticTypeStd( int, basevec_id_t );
 

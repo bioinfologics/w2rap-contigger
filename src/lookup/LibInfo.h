@@ -22,8 +22,7 @@
 #include <map>
 #include <fstream>
 
-struct LibInfo
-{
+struct LibInfo {
     LibInfo() : mMean(0), mStdDev(0) {}
     LibInfo( int mean, int stdDev ) : mMean(mean), mStdDev(stdDev) {}
 
@@ -33,29 +32,25 @@ struct LibInfo
     int mStdDev;
 };
 
-class LibInfoDB
-{
-public:
-    LibInfoDB( String const& libInfoFilename )
-    {
+class LibInfoDB {
+  public:
+    LibInfoDB( String const& libInfoFilename ) {
         std::ifstream in(libInfoFilename.c_str());
         char buf[8192];
         vec<String> toks;
         toks.reserve(3);
-        while ( in.getline(buf,sizeof(buf)) )
-        {
+        while ( in.getline(buf,sizeof(buf)) ) {
             unsigned len = strlen(buf);
-            if ( len && buf[0] != '#' )
-            {
+            if ( len && buf[0] != '#' ) {
                 int nToks = Tokenize(buf,toks);
-		// Trim off anything after a '#' token.
-		for ( int i = 0; i < nToks; i++ )
-		  if ( toks[i] == "#" ) {
-		    toks.resize(i);
-		    nToks = i;
-		    break;
-		  }
-		
+                // Trim off anything after a '#' token.
+                for ( int i = 0; i < nToks; i++ )
+                    if ( toks[i] == "#" ) {
+                        toks.resize(i);
+                        nToks = i;
+                        break;
+                    }
+
                 long mean;
                 long stdDev;
                 if ( nToks && nToks != 3 ||
@@ -73,22 +68,23 @@ public:
 
     // compiler-supplied copying and destructor are OK
 
-    LibInfo const* getInfo( String const& libName ) const
-    { std::map<String,LibInfo>::const_iterator itr = mMap.find(libName);
-      LibInfo const* result = 0;
-      if ( itr != mMap.end() ) result = &itr->second;
-      return result; }
+    LibInfo const* getInfo( String const& libName ) const {
+        std::map<String,LibInfo>::const_iterator itr = mMap.find(libName);
+        LibInfo const* result = 0;
+        if ( itr != mMap.end() ) result = &itr->second;
+        return result;
+    }
 
     String getLibraryName(int mean, int stdDev) const {
-      for (std::map<String,LibInfo>::const_iterator itr = mMap.begin(); 
-	   itr != mMap.end(); 
-	   ++itr) {
-	if ((itr->second).mMean == mean && (itr->second).mStdDev == stdDev) return itr->first;
-      }
-      return String();
+        for (std::map<String,LibInfo>::const_iterator itr = mMap.begin();
+                itr != mMap.end();
+                ++itr) {
+            if ((itr->second).mMean == mean && (itr->second).mStdDev == stdDev) return itr->first;
+        }
+        return String();
     }
-  
-private:
+
+  private:
     std::map<String,LibInfo> mMap;
 };
 

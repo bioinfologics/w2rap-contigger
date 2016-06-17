@@ -27,9 +27,9 @@
 // mostly unique already and that it doesn't make sense to do a Map/Reduce
 // cycle.
 void buildBigKHBVFromReads( unsigned K, vecbvec const& reads, unsigned coverage,
-                                HyperBasevector* pHBV,
-                                ReadPathVec* pReadPaths=nullptr,
-                                HyperKmerPath* pHKP=nullptr,
-                                vecKmerPath* pKmerPaths=nullptr );
+                            HyperBasevector* pHBV,
+                            ReadPathVec* pReadPaths=nullptr,
+                            HyperKmerPath* pHKP=nullptr,
+                            vecKmerPath* pKmerPaths=nullptr );
 
 #endif /* BIGKPATHER_H_ */

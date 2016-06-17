@@ -13,24 +13,21 @@
 // ================================ static methods =============================
 
 // If tail b1[len1-overlap:len1) is the same as head b2[0: overlap)
-bool ReadOverlapGraph::BaseMatch( const basevector& b1,  const basevector& b2, int overlap )
-{
+bool ReadOverlapGraph::BaseMatch( const basevector& b1,  const basevector& b2, int overlap ) {
     basevector::const_iterator it1 = b1.end() - overlap;
     basevector::const_iterator it2 = b2.begin();
     if ( it1 == b1.end() ) return true;
     if ( it2 == b2.end() ) return false;
     if ( *it1 != *it2 ) return false;
     while ( true ) {
-        if ( ++it1 == b1.end() ) 
-            if ( ++it2 == b2.end() ) 
+        if ( ++it1 == b1.end() )
+            if ( ++it2 == b2.end() )
                 return false;
             else
                 return true;
-        else 
-            if ( ++it2 == b2.end() ) 
-                return false;
-            else
-                if ( *it1 != *it2 ) return false;
+        else if ( ++it2 == b2.end() )
+            return false;
+        else if ( *it1 != *it2 ) return false;
     }
     std::cout << " Something is wrong " << std::endl;
     std::cout << b1.ToString() << std::endl;
@@ -39,13 +36,12 @@ bool ReadOverlapGraph::BaseMatch( const basevector& b1,  const basevector& b2, i
 }
 
 
-unsigned int ReadOverlapGraph::Overlap( const basevector& r1, const basevector& r2, unsigned int overlap_lb, unsigned int overlap_ub )
-{   
+unsigned int ReadOverlapGraph::Overlap( const basevector& r1, const basevector& r2, unsigned int overlap_lb, unsigned int overlap_ub ) {
     //std::cout << "overlap between " << r1.ToString() << std::endl;
     //std::cout << "          and   " << r2.ToString() << std::endl;
     //PRINT2( overlap_lb, overlap_ub );
     unsigned int overlap = std::min( r1.size(), overlap_ub) -1;
-    for( ; overlap >= overlap_lb; overlap-- ) 
+    for( ; overlap >= overlap_lb; overlap-- )
         if ( BaseMatch( r1, r2, overlap ) ) return overlap;
     return 0;
 }
@@ -53,19 +49,17 @@ unsigned int ReadOverlapGraph::Overlap( const basevector& r1, const basevector& 
 
 // ==============================
 
-void ReadOverlapGraph::Init( int Min_Overlap, const vec< std::pair<int,int> > *pt_starts ) 
-{
-    disable_.clear(); 
+void ReadOverlapGraph::Init( int Min_Overlap, const vec< std::pair<int,int> > *pt_starts ) {
+    disable_.clear();
     Mimic( reads_, disable_, false );
     vec <ReadOverlap> er_overlaps;
     if ( pt_starts == 0 ) { // not range estimate provided
-        for( size_t rid1 = 0; rid1 < NReads(); rid1++ ) 
+        for( size_t rid1 = 0; rid1 < NReads(); rid1++ )
             for( size_t rid2 = rid1+1; rid2 < NReads(); rid2++ ) {
                 FindReadOverlaps( rid1, rid2, Min_Overlap, Len(rid1), &er_overlaps );
                 FindReadOverlaps( rid2, rid1, Min_Overlap, Len(rid2), &er_overlaps );
             }
-    }
-    else {
+    } else {
         const vec< std::pair<int,int> >& starts = *pt_starts;
         for( size_t rid1 = 0; rid1 < NReads(); rid1++ ) {
             int start1_lb = starts[rid1].first;
@@ -76,17 +70,17 @@ void ReadOverlapGraph::Init( int Min_Overlap, const vec< std::pair<int,int> > *p
                 int overlap12_lb = start1_lb + Len(rid1) - start2_ub;
                 int overlap12_ub = start1_ub + Len(rid1) - start2_lb;
                 if ( overlap12_ub > Min_Overlap && overlap12_lb < (int)Len(rid1) )
-                    FindReadOverlaps( rid1, rid2, std::max( Min_Overlap, overlap12_lb ), 
-                            overlap12_ub, &er_overlaps );
+                    FindReadOverlaps( rid1, rid2, std::max( Min_Overlap, overlap12_lb ),
+                                      overlap12_ub, &er_overlaps );
                 int overlap21_lb = start2_lb + Len(rid2) - start1_ub;
                 int overlap21_ub = start2_ub + Len(rid2) - start1_lb;
                 if ( overlap21_ub > Min_Overlap && overlap21_lb < (int)Len(rid2) )
-                    FindReadOverlaps( rid2, rid1, std::max( Min_Overlap, overlap21_lb ), 
-                            overlap21_ub, &er_overlaps );
+                    FindReadOverlaps( rid2, rid1, std::max( Min_Overlap, overlap21_lb ),
+                                      overlap21_ub, &er_overlaps );
             }
         }
     }
-    froms_.clear(); 
+    froms_.clear();
     Mimic( reads_, froms_ );
     tos_.clear();
     Mimic( reads_, tos_ );
@@ -95,7 +89,7 @@ void ReadOverlapGraph::Init( int Min_Overlap, const vec< std::pair<int,int> > *p
         //std::cout << er_overlaps[i].rid1 << " " << er_overlaps[i].rid2 << " " << er_overlaps[i].alt1
         //    << " " << er_overlaps[i].alt2 << " " << er_overlaps[i].overlap << std::endl;
         if ( disable_[ er_overlaps[i].rid1 ][ er_overlaps[i].alt1 ]
-           ||disable_[ er_overlaps[i].rid2 ][ er_overlaps[i].alt2 ] ) 
+                ||disable_[ er_overlaps[i].rid2 ][ er_overlaps[i].alt2 ] )
             continue;
         froms_[ er_overlaps[i].rid1 ][ er_overlaps[i].alt1 ].push_back( er_overlaps[i] );
         tos_[ er_overlaps[i].rid2 ][ er_overlaps[i].alt2 ].push_back( er_overlaps[i] );
@@ -106,8 +100,7 @@ void ReadOverlapGraph::Init( int Min_Overlap, const vec< std::pair<int,int> > *p
 
 
 // If there are overlaps A->B, B->C, and A->C, remove the redundent A->C edge
-void ReadOverlapGraph::RemoveTransitive( )
-{
+void ReadOverlapGraph::RemoveTransitive( ) {
     int count = 0;
     vec< vec<bool> > visited;
     Mimic( reads_, visited, false );
@@ -125,18 +118,17 @@ void ReadOverlapGraph::RemoveTransitive( )
         for ( size_t j = 0; j < froms_[i].size(); ++j ) {
             for ( size_t k = 0; k < froms_[i][j].size(); ++k ) {
                 tos_[ froms_[i][j][k].rid2 ][ froms_[i][j][k].alt2 ].push_back
-                    ( froms_[i][j][k] );
+                ( froms_[i][j][k] );
             }
         }
     }
 }
 
-// Remove the transit edge incident from node ( rid, alt ). 
+// Remove the transit edge incident from node ( rid, alt ).
 // Mark the visited nodes, return the total number of edges removed.
-int ReadOverlapGraph::RemoveTransitiveFrom(int rid, int alt, vec< vec<bool> >& visited )
-{
+int ReadOverlapGraph::RemoveTransitiveFrom(int rid, int alt, vec< vec<bool> >& visited ) {
     int count = 0;
-    std::queue< std::pair<int,int> > que; 
+    std::queue< std::pair<int,int> > que;
     que.push( std::make_pair(rid,alt) );
     while ( ! que.empty() ) {
         std::pair<int,int> node = que.front();
@@ -144,7 +136,7 @@ int ReadOverlapGraph::RemoveTransitiveFrom(int rid, int alt, vec< vec<bool> >& v
         int i = node.first, j = node.second;
         if ( visited[i][j] ) continue;
         visited[i][j] = true;
-        // delete the transit edge out from this node 
+        // delete the transit edge out from this node
         vec<Bool> to_del(  froms_[i][j].size(), False );
         for ( size_t k1 = 0; k1 < froms_[i][j].size(); ++k1 ) {
             const ReadOverlap& ro1 = froms_[i][j][k1];
@@ -166,14 +158,16 @@ int ReadOverlapGraph::RemoveTransitiveFrom(int rid, int alt, vec< vec<bool> >& v
 
 
 // Combine expanded reads if ambiguity sites do not overlap with other reads
-void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs ) 
-{
+void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs ) {
     ForceAssertEq( creads_ambs.size(), reads_.size() );
     combined_ambs_.assign( creads_ambs.size(), vec<Ambiguity>()  ); // empty by default
     // quick check
     bool has_amb = false;
-    for ( size_t i = 0; i < reads_.size(); ++i ) 
-        if ( reads_[i].size() > 1 ) { has_amb = true; break; }
+    for ( size_t i = 0; i < reads_.size(); ++i )
+        if ( reads_[i].size() > 1 ) {
+            has_amb = true;
+            break;
+        }
     if ( !has_amb) return;
     for ( size_t i = 0; i < reads_.size(); ++i ) {
         bool mismatch = false;
@@ -182,18 +176,19 @@ void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs
         for ( size_t j1 = 0; j1 < reads_[i].size(); ++j1 ) {
             for ( size_t j2 = j1+1; j2 < reads_[i].size(); ++j2 ) {
                 if ( froms_[i][j1].size() != froms_[i][j2].size()
-                   ||tos_[i][j1].size() != tos_[i][j2].size()  ) {
+                        ||tos_[i][j1].size() != tos_[i][j2].size()  ) {
                     mismatch=true;
                     //std::cout << "number mismatch from " << j1 << " to " << j2 << std::endl;
                     break;
                 }
-                { // check the froms
+                {
+                    // check the froms
                     vec< triple<int,int,int> > edges1( froms_[i][j1].size() );
-                    for ( size_t k = 0; k < froms_[i][j1].size(); ++k ) 
+                    for ( size_t k = 0; k < froms_[i][j1].size(); ++k )
                         edges1.push( froms_[i][j1][k].rid2, froms_[i][j1][k].alt2, froms_[i][j1][k].overlap );
                     Sort(edges1);
                     vec< triple<int,int,int> > edges2( froms_[i][j1].size() );
-                    for ( size_t k = 0; k < froms_[i][j2].size(); ++k ) 
+                    for ( size_t k = 0; k < froms_[i][j2].size(); ++k )
                         edges2.push( froms_[i][j2][k].rid2, froms_[i][j2][k].alt2, froms_[i][j2][k].overlap );
                     Sort(edges2);
                     if ( edges1 != edges2 ) {
@@ -202,13 +197,14 @@ void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs
                         break;
                     }
                 }
-                { // check the tos
+                {
+                    // check the tos
                     vec< triple<int,int,int> > edges1( tos_[i][j1].size() );
-                    for ( size_t k = 0; k < tos_[i][j1].size(); ++k ) 
+                    for ( size_t k = 0; k < tos_[i][j1].size(); ++k )
                         edges1.push( tos_[i][j1][k].rid1, tos_[i][j1][k].alt1, tos_[i][j1][k].overlap );
                     Sort(edges1);
                     vec< triple<int,int,int> > edges2( tos_[i][j1].size() );
-                    for ( size_t k = 0; k < tos_[i][j2].size(); ++k ) 
+                    for ( size_t k = 0; k < tos_[i][j2].size(); ++k )
                         edges2.push( tos_[i][j2][k].rid1, tos_[i][j2][k].alt1, tos_[i][j2][k].overlap );
                     Sort(edges2);
                     if ( edges1 != edges2 ) {
@@ -229,7 +225,7 @@ void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs
                 int rid2 = froms_[i][0][j].rid2;
                 int alt2 = froms_[i][0][j].alt2;
                 vec<Bool> to_del( tos_[rid2][alt2].size(), False );
-                for ( size_t k = 0; k < tos_[rid2][alt2].size(); ++k ) 
+                for ( size_t k = 0; k < tos_[rid2][alt2].size(); ++k )
                     if ( tos_[rid2][alt2][k].rid1 == (int)i && tos_[rid2][alt2][k].alt1 != 0 )
                         to_del[k] = True;
                 EraseIf( tos_[rid2][alt2], to_del );
@@ -238,7 +234,7 @@ void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs
                 int rid1 = tos_[i][0][j].rid1;
                 int alt1 = tos_[i][0][j].alt1;
                 vec<Bool> to_del( froms_[rid1][alt1].size(), False );
-                for ( size_t k = 0; k < froms_[rid1][alt1].size(); ++k ) 
+                for ( size_t k = 0; k < froms_[rid1][alt1].size(); ++k )
                     if ( froms_[rid1][alt1][k].rid2 == (int)i && froms_[rid1][alt1][k].alt2 != 0 )
                         to_del[k] = True;
                 EraseIf( froms_[rid1][alt1], to_del );
@@ -249,9 +245,8 @@ void ReadOverlapGraph::CombineAmbReads( const vec< vec<Ambiguity> >& creads_ambs
 }
 
 // Stitch the efastas together given the estimated overlaps
-void ReadOverlapGraph::GetAssembly(vec<basevector>& assemblies, 
-        vec< vec<ReadOverlap> >& paths, int max_path ) const
-{
+void ReadOverlapGraph::GetAssembly(vec<basevector>& assemblies,
+                                   vec< vec<ReadOverlap> >& paths, int max_path ) const {
     // find all paths
     assemblies.clear();
     paths.clear();
@@ -269,17 +264,17 @@ void ReadOverlapGraph::GetAssembly(vec<basevector>& assemblies,
         //// from end to end
         //basevector assembly( read0 );
         //for ( size_t i = 0; i < path.size(); ++i ) {
-        //    basevector::const_iterator it = reads_[ path[i].rid2 ][ path[i].alt2 ].begin() 
+        //    basevector::const_iterator it = reads_[ path[i].rid2 ][ path[i].alt2 ].begin()
         //                                  + path[i].overlap;
         //    if ( it <  reads_[ path[i].rid2 ][ path[i].alt2 ].end() )
         //        assembly.append( it, reads_[ path[i].rid2 ][ path[i].alt2 ].end() );
         //}
         // Exclude the non-overlapping region of the end reads
         basevector assembly( read0.begin() + read0.size() - path[0].overlap,
-                read0.end() );
+                             read0.end() );
         for ( size_t i = 0; i < path.size()-1; ++i ) {
-            basevector::const_iterator it = reads_[ path[i].rid2 ][ path[i].alt2 ].begin() 
-                                          + path[i].overlap;
+            basevector::const_iterator it = reads_[ path[i].rid2 ][ path[i].alt2 ].begin()
+                                            + path[i].overlap;
             if ( it <  reads_[ path[i].rid2 ][ path[i].alt2 ].end() )
                 assembly.append( it, reads_[ path[i].rid2 ][ path[i].alt2 ].end() );
         }
@@ -287,8 +282,7 @@ void ReadOverlapGraph::GetAssembly(vec<basevector>& assemblies,
     }
 }
 
-void ReadOverlapGraph::GetAmbsOnPath( const vec<ReadOverlap>&  path, vec<Ambiguity>& new_ambs ) const
-{
+void ReadOverlapGraph::GetAmbsOnPath( const vec<ReadOverlap>&  path, vec<Ambiguity>& new_ambs ) const {
     new_ambs.clear();
     int shift = 0;
     int rid1 = path[0].rid1;
@@ -314,8 +308,7 @@ void ReadOverlapGraph::GetAmbsOnPath( const vec<ReadOverlap>&  path, vec<Ambigui
 
 // check if all the reads can perfectly form a linear assembly and record the starting
 // position of each read on the final assembly
-void ReadOverlapGraph::PerfectAssembly( vec<basevector>& assemblies, vec< vec<ReadOverlap> >& paths ) const
-{
+void ReadOverlapGraph::PerfectAssembly( vec<basevector>& assemblies, vec< vec<ReadOverlap> >& paths ) const {
     const unsigned int Max_Assembly = 10;
     assemblies.clear();
     paths.clear();
@@ -324,8 +317,8 @@ void ReadOverlapGraph::PerfectAssembly( vec<basevector>& assemblies, vec< vec<Re
     while (true) {
         if ( assemblies.size() >= Max_Assembly ) break;
         int rid = -1, alt = -1; // start from which read?
-        for ( size_t i = 0; i < read_locs.size(); ++i ) 
-            for ( size_t j = 0; j < read_locs[i].size(); ++j ) 
+        for ( size_t i = 0; i < read_locs.size(); ++i )
+            for ( size_t j = 0; j < read_locs[i].size(); ++j )
                 if ( read_locs[i][j] == -1 ) {
                     rid = i;
                     alt = j;
@@ -334,7 +327,7 @@ void ReadOverlapGraph::PerfectAssembly( vec<basevector>& assemblies, vec< vec<Re
         read_locs[rid][alt] = 0;
         basevector assembly = reads_[rid][alt];
         vec<ReadOverlap> path;
-        if ( PerfectAssemblyForward(rid,alt,assembly,read_locs,path) && 
+        if ( PerfectAssemblyForward(rid,alt,assembly,read_locs,path) &&
                 PerfectAssemblyBackward(rid,alt,assembly,read_locs,path) ) {
             if ( ! path.empty() ) {
                 assemblies.push_back( assembly );
@@ -349,9 +342,8 @@ void ReadOverlapGraph::PerfectAssembly( vec<basevector>& assemblies, vec< vec<Re
     ReverseSortSync( lens, assemblies, paths );
 }
 
-bool ReadOverlapGraph::PerfectAssemblyForward( int i, int j, 
-        basevector& assembly, vec< vec<int> >& read_locs, vec<ReadOverlap>& path ) const 
-{
+bool ReadOverlapGraph::PerfectAssemblyForward( int i, int j,
+        basevector& assembly, vec< vec<int> >& read_locs, vec<ReadOverlap>& path ) const {
     if ( froms_[i][j].empty() ) return true;
     int loc0 = read_locs[i][j];
     //std::cout << "node " << i << ", " << j << " forward connects to: ";
@@ -381,7 +373,8 @@ bool ReadOverlapGraph::PerfectAssemblyForward( int i, int j,
             if ( *it != *it0 ) { // mismatch
                 return false;
             }
-            ++it; ++it0;
+            ++it;
+            ++it0;
         }
         if ( ! PerfectAssemblyForward( ro.rid2, ro.alt2, assembly, read_locs, path ) )
             return false;
@@ -391,9 +384,8 @@ bool ReadOverlapGraph::PerfectAssemblyForward( int i, int j,
     return true;
 }
 
-bool ReadOverlapGraph::PerfectAssemblyBackward( int i, int j, 
-        basevector& assembly, vec< vec<int> >& read_locs, vec<ReadOverlap>& path ) const 
-{
+bool ReadOverlapGraph::PerfectAssemblyBackward( int i, int j,
+        basevector& assembly, vec< vec<int> >& read_locs, vec<ReadOverlap>& path ) const {
     if ( tos_[i][j].empty() ) return true;
     int loc0 = read_locs[i][j];
     //std::cout << "node " << i << ", " << j << " back connects to: ";
@@ -420,12 +412,13 @@ bool ReadOverlapGraph::PerfectAssemblyBackward( int i, int j,
                 ext.append( assembly );
                 swap( ext, assembly );
                 int shift = distance( begin, it );
-                for ( size_t i = 0; i < read_locs.size(); ++i ) 
-                    for ( size_t j = 0; j < read_locs[i].size(); ++j ) 
+                for ( size_t i = 0; i < read_locs.size(); ++i )
+                    for ( size_t j = 0; j < read_locs[i].size(); ++j )
                         read_locs[i][j] += shift;
                 break;
             }
-            --it; --it0;
+            --it;
+            --it0;
             if ( *it != *it0 ) { // mismatch
                 return false;
             }
@@ -439,14 +432,13 @@ bool ReadOverlapGraph::PerfectAssemblyBackward( int i, int j,
 }
 
 
-void ReadOverlapGraph::AllPathsFrom( int rid, int alt, vec< vec<ReadOverlap> >* p_paths, 
-                                     vec<int> *p_lens, int max_path ) const
-{
+void ReadOverlapGraph::AllPathsFrom( int rid, int alt, vec< vec<ReadOverlap> >* p_paths,
+                                     vec<int> *p_lens, int max_path ) const {
     unsigned int Max_Que_Size = 1000000;  // prevent memory from exploding
     if ( froms_[rid][alt].empty() ) return;
     //std::cout << "allpaths from " << rid << " " << alt << std::endl;
     std::queue< vec<ReadOverlap> > que;
-    for ( size_t i = 0; i < froms_[rid][alt].size(); ++i ) 
+    for ( size_t i = 0; i < froms_[rid][alt].size(); ++i )
         que.push( MkVec(froms_[rid][alt][i]) );
     //std::cout << que.size() << std::endl;
     while ( ! que.empty() ) {
@@ -461,8 +453,7 @@ void ReadOverlapGraph::AllPathsFrom( int rid, int alt, vec< vec<ReadOverlap> >* 
                 p_paths->push_back( q );
                 p_lens->push_back( PathToLen(q) );
                 ReverseSortSync( *p_lens, *p_paths );
-            } 
-            else {
+            } else {
                 int len = PathToLen( q );
                 if ( len > p_lens->back() ) {
                     p_lens->back() = len;
@@ -480,8 +471,7 @@ void ReadOverlapGraph::AllPathsFrom( int rid, int alt, vec< vec<ReadOverlap> >* 
                     p_paths->push_back( q );
                     p_lens->push_back( PathToLen(q) );
                     ReverseSortSync( *p_lens, *p_paths );
-                } 
-                else {
+                } else {
                     int len = PathToLen( q );
                     if ( len > p_lens->back() ) {
                         p_lens->back() = len;
@@ -498,16 +488,15 @@ void ReadOverlapGraph::AllPathsFrom( int rid, int alt, vec< vec<ReadOverlap> >* 
     }
 }
 
-void ReadOverlapGraph::FindReadOverlaps( int rid1, int rid2, int lb, int ub, vec<ReadOverlap> *er_overlaps ) 
-{
-    for( size_t i = 0; i < reads_[rid1].size(); i++ ) 
+void ReadOverlapGraph::FindReadOverlaps( int rid1, int rid2, int lb, int ub, vec<ReadOverlap> *er_overlaps ) {
+    for( size_t i = 0; i < reads_[rid1].size(); i++ )
         for( size_t j = 0; j < reads_[rid2].size(); j++ ) {
             if ( disable_[rid1][i] ) continue;
             if ( disable_[rid2][j] ) continue;
             // disable duplicate reads
-            if ( reads_[rid2][j].size() <= reads_[rid1][i].size() 
+            if ( reads_[rid2][j].size() <= reads_[rid1][i].size()
                     && search( reads_[rid1][i].begin(), reads_[rid1][i].end(),
-                        reads_[rid2][j].begin(), reads_[rid2][j].end() )
+                               reads_[rid2][j].begin(), reads_[rid2][j].end() )
                     != reads_[rid1][i].end() ) {
                 disable_[rid2][j] = true;
                 continue;
@@ -520,57 +509,56 @@ void ReadOverlapGraph::FindReadOverlaps( int rid1, int rid2, int lb, int ub, vec
 
 
 bool ReadOverlapGraph::IsOverlaped( int rid1, int alt1, int rid2, int alt2 ) {
-    for ( size_t k1 = 0; k1 < froms_[rid1][alt1].size(); ++k1 ) 
+    for ( size_t k1 = 0; k1 < froms_[rid1][alt1].size(); ++k1 )
         if ( froms_[rid1][alt1][k1].rid2 == rid2 &&  froms_[rid1][alt1][k1].alt2 == alt2 )
             return true;
-    return false;   
+    return false;
 }
 
 int ReadOverlapGraph::PathToLen( const vec<ReadOverlap>& path ) const {
     int len = Len(path[0].rid1);
-    for ( size_t j = 0; j < path.size(); ++j ) 
+    for ( size_t j = 0; j < path.size(); ++j )
         len += path[j].overlap;
     return len;
 }
 
-void ReadOverlapGraph::PrintGraph( std::ostream& out ) 
-{
+void ReadOverlapGraph::PrintGraph( std::ostream& out ) {
     for ( size_t i = 0; i < tos_.size(); ++i ) {
         out << "Read " << i << std::endl;
-        for ( size_t j = 0; j < reads_[i].size(); ++j ) 
+        for ( size_t j = 0; j < reads_[i].size(); ++j )
             out << "    " << reads_[i][j].ToString() << std::endl;
         out << "  Froms " << std::endl;
-        for ( size_t j = 0; j < froms_[i].size(); ++j ) 
-            for ( size_t k = 0; k < froms_[i][j].size(); ++k ) 
+        for ( size_t j = 0; j < froms_[i].size(); ++j )
+            for ( size_t k = 0; k < froms_[i][j].size(); ++k )
                 out << "    " << froms_[i][j][k] << std::endl;
         out << "  Tos " << std::endl;
-        for ( size_t j = 0; j < tos_[i].size(); ++j ) 
-            for ( size_t k = 0; k < tos_[i][j].size(); ++k ) 
+        for ( size_t j = 0; j < tos_[i].size(); ++j )
+            for ( size_t k = 0; k < tos_[i][j].size(); ++k )
                 out << "    " << tos_[i][j][k] << std::endl;
     }
 }
 
 // =======================================================
-//  SomeReadsAssembler 
+//  SomeReadsAssembler
 // =======================================================
 
-SomeReadsAssembler::SomeReadsAssembler( const vec< vec<basevector> >& reads ) :graph_(reads) 
-{ 
-    Min_Overlap_ = 100 ; Min_Assembly_Len_ = 500; 
-    Max_Assembly_Num_ = 10; 
+SomeReadsAssembler::SomeReadsAssembler( const vec< vec<basevector> >& reads ) :graph_(reads) {
+    Min_Overlap_ = 100 ;
+    Min_Assembly_Len_ = 500;
+    Max_Assembly_Num_ = 10;
 }
 
 
-vec<ReadOverlap> SomeReadsAssembler::GetAssemblyPathRegion( int i, int start, int stop ) const{
+vec<ReadOverlap> SomeReadsAssembler::GetAssemblyPathRegion( int i, int start, int stop ) const {
     vec<ReadOverlap> path = GetAssemblyPath(i);
     vec<Bool> to_del( path.size(), False );
     int len = graph_.Len( path.front().rid1, path.front().alt1 );
     for ( size_t j = 0; j < path.size(); ++j ) {
         len += graph_.Len( path[j].rid2, path[j].alt2 ) - path[j].overlap;
         if ( len < start ) to_del[j] = true;
-        if ( len > stop ) { 
+        if ( len > stop ) {
             for ( size_t k = j+1; k < path.size(); k++ )
-                to_del[k] = true; 
+                to_del[k] = true;
             break;
         }
     }
@@ -578,42 +566,45 @@ vec<ReadOverlap> SomeReadsAssembler::GetAssemblyPathRegion( int i, int start, in
     return path;
 }
 
-bool operator< ( const Ambiguity& lhs, const Ambiguity& rhs) { return lhs.start < rhs.start; }
+bool operator< ( const Ambiguity& lhs, const Ambiguity& rhs) {
+    return lhs.start < rhs.start;
+}
 
-efasta SomeReadsAssembler::GetEfastaAssembly( int i, size_t start, size_t stop ) const
-{
+efasta SomeReadsAssembler::GetEfastaAssembly( int i, size_t start, size_t stop ) const {
     const basevector& assembly = GetAssemblies()[i];
     const vec<ReadOverlap>& path = GetAssemblyPath(i);
     const String assembly_str = assembly.ToString();
     vec<Ambiguity> new_ambs;
     graph_.GetAmbsOnPath( path, new_ambs );
     stop = Min( stop, (size_t) assembly.size() );
-    if ( new_ambs.empty() ) 
+    if ( new_ambs.empty() )
         return efasta( assembly_str.substr(start, stop - start) ) ;
     // add the ambiguity sites back
     Sort(new_ambs);
 
     //jstd::cout << assembly.ToString() << std::endl;
     ///std::cout << path << std::endl;
-    //for ( size_t i = 0; i < new_ambs.size(); ++i ) 
+    //for ( size_t i = 0; i < new_ambs.size(); ++i )
     //    std::cout << new_ambs[i].to_annotation() << std::endl;
 
     vec<Bool> todel( new_ambs.size(), False );
     for ( size_t i = 0; i < new_ambs.size(); ++i )
-        if ( new_ambs[i].start < start 
-           ||new_ambs[i].start >= stop ) 
+        if ( new_ambs[i].start < start
+                ||new_ambs[i].start >= stop )
             todel[i] = True;
     EraseIf( new_ambs, todel );
 
-    if ( new_ambs.empty() ) 
+    if ( new_ambs.empty() )
         return efasta( assembly_str.substr(start, stop - start) ) ;
 
     efasta seq( assembly_str.substr( start, new_ambs[0].start - start ) );
     size_t len = new_ambs[0].start - start;
     for ( size_t i = 0; i < new_ambs.size(); ++i ) {
         size_t j = i+1;
-        while( new_ambs[j].start == new_ambs[i].start ) 
-        { ForceAssertEq( new_ambs[j].size, new_ambs[i].size ); j++; }
+        while( new_ambs[j].start == new_ambs[i].start ) {
+            ForceAssertEq( new_ambs[j].size, new_ambs[i].size );
+            j++;
+        }
         seq.push_back( '{' );
         seq.append( assembly_str,  new_ambs[i].start, new_ambs[i].size );
         for ( size_t k = i; k < j; ++k ) {
@@ -623,11 +614,11 @@ efasta SomeReadsAssembler::GetEfastaAssembly( int i, size_t start, size_t stop )
         seq.push_back( '}' );
         size_t amb_stop = new_ambs[i].start + new_ambs[i].size;
         if ( j != new_ambs.size() )
-            seq.append( assembly_str.substr( 
-                  amb_stop, new_ambs[j].start - amb_stop ) );
+            seq.append( assembly_str.substr(
+                            amb_stop, new_ambs[j].start - amb_stop ) );
         else
-            seq.append( assembly_str.substr( 
-                  amb_stop, stop ) );
+            seq.append( assembly_str.substr(
+                            amb_stop, stop ) );
         i = j - 1;
     }
     return seq;
@@ -635,7 +626,7 @@ efasta SomeReadsAssembler::GetEfastaAssembly( int i, size_t start, size_t stop )
 
 void SomeReadsAssembler::RemoveShortAssembly() {
     vec<Bool> todel( assemblies_.size(), False );
-    for ( size_t i = 0; i < assemblies_.size(); ++i ) 
+    for ( size_t i = 0; i < assemblies_.size(); ++i )
         if ( (int) assemblies_[i].size() < Min_Assembly_Len_ ) todel[i] = True;
     EraseIf( assemblies_, todel );
     EraseIf( paths_, todel );

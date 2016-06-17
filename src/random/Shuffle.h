@@ -28,12 +28,15 @@ void Shuffle64( uint64_t N, vec<uint64_t> &shuffled, uint64_t seed = 0 );
  * way, will produce stable results in a multi-threaded context.
  */
 template <class Itr> // Itr is a random access iterator
-void Shuffle( Itr const& beg, Itr const& end, unsigned seed = RNGen::random() )
-{ RNGen rng(seed);
-  if ( beg !=  end )
-  { long idx = 1; using std::iter_swap;
-    Itr itr(beg);
-    while ( ++itr != end )
-      iter_swap(itr, beg+rng.next()%++idx); } }
+void Shuffle( Itr const& beg, Itr const& end, unsigned seed = RNGen::random() ) {
+    RNGen rng(seed);
+    if ( beg !=  end ) {
+        long idx = 1;
+        using std::iter_swap;
+        Itr itr(beg);
+        while ( ++itr != end )
+            iter_swap(itr, beg+rng.next()%++idx);
+    }
+}
 
 #endif

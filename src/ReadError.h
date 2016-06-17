@@ -21,53 +21,62 @@
 #include "dvString.h"
 #include <ostream>
 
-class ReadError
-{
-public:
+class ReadError {
+  public:
     ReadError() : mLocation(0), mType(0), mRdBase(4), mRefBase(4) {}
 
     static unsigned char const GAP_CODE = 4;
 
     enum ErrType { SUBSTITUTION, INSERTION, DELETION };
     ReadError( unsigned location, ErrType type,
-                unsigned char rdBase, unsigned char refBase )
-    : mLocation(location), mType(type), mRdBase(rdBase), mRefBase(refBase) {}
+               unsigned char rdBase, unsigned char refBase )
+        : mLocation(location), mType(type), mRdBase(rdBase), mRefBase(refBase) {}
 
     // compiler-supplied copying and destructor are OK
 
-    unsigned getLocation() const { return mLocation; }
-    ErrType getType() const { return ErrType(mType); }
-    unsigned char getReadBase() const { return mRdBase; }
-    unsigned char getRefBase() const { return mRefBase; }
+    unsigned getLocation() const {
+        return mLocation;
+    }
+    ErrType getType() const {
+        return ErrType(mType);
+    }
+    unsigned char getReadBase() const {
+        return mRdBase;
+    }
+    unsigned char getRefBase() const {
+        return mRefBase;
+    }
 
     // modifier
-    void setLocation(unsigned pos) { mLocation = pos; };
+    void setLocation(unsigned pos) {
+        mLocation = pos;
+    };
 
     // Add comparator so that the ReadError vector can be sorted and compared
     friend bool operator<( const ReadError& e1, const ReadError& e2) {
-        if( e1.mLocation != e2.mLocation ) return e1.mLocation < e2.mLocation; 
+        if( e1.mLocation != e2.mLocation ) return e1.mLocation < e2.mLocation;
         if( e1.mType != e2.mType ) return e1.mType < e2.mType;
         if ( e1.mType == DELETION ) return false;
         return e1.mRdBase < e2.mRdBase;
     }
 
-    friend std::ostream& operator<<( std::ostream& os, ReadError const& err )
-    { switch ( err.getType() )
-      {
-      case SUBSTITUTION:
-          os << "S(" << Base::val2Char(err.getReadBase())
-              << '/' << Base::val2Char(err.getRefBase());
-          break;
-      case INSERTION:
-          os << "I(" << Base::val2Char(err.getReadBase());
-          break;
-      case DELETION:
-          os << "D(" << Base::val2Char(err.getRefBase());
-          break;
-      }
-      return os << ")@" << err.getLocation(); }
+    friend std::ostream& operator<<( std::ostream& os, ReadError const& err ) {
+        switch ( err.getType() ) {
+        case SUBSTITUTION:
+            os << "S(" << Base::val2Char(err.getReadBase())
+               << '/' << Base::val2Char(err.getRefBase());
+            break;
+        case INSERTION:
+            os << "I(" << Base::val2Char(err.getReadBase());
+            break;
+        case DELETION:
+            os << "D(" << Base::val2Char(err.getRefBase());
+            break;
+        }
+        return os << ")@" << err.getLocation();
+    }
 
-private:
+  private:
     unsigned mLocation; // offset into the read
     unsigned char mType;
     unsigned char mRdBase; // the incorrect base present in the read

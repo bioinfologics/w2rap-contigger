@@ -27,8 +27,7 @@ using std::cout;
 using std::endl;
 
 void FeudalControlBlock::init( FileReader const& fr, bool validate,
-                                size_t* pFileLen )
-{
+                               size_t* pFileLen ) {
     size_t fileLen = fr.getSize();
     if ( pFileLen )
         *pFileLen = fileLen;
@@ -41,76 +40,64 @@ void FeudalControlBlock::init( FileReader const& fr, bool validate,
 }
 
 bool FeudalControlBlock::isValid( char const* fileName, size_t fileLen,
-                                    bool verbose ) const
-{
-    if ( getNFiles() != 1 )
-    {
-        if ( verbose )
-        {
+                                  bool verbose ) const {
+    if ( getNFiles() != 1 ) {
+        if ( verbose ) {
             if ( getNFiles() )
                 cout << "Feudal file " << fileName << " is in " << getNFiles()
                      << " files, but we require it to be in a single file."
                      << std::endl;
             else
                 cout << "Feudal file " << fileName << " claims to exist in 0 "
-                        "files.  It's probably not a feudal file, or the "
-                        "process of creating it was interrupted." << std::endl;
+                     "files.  It's probably not a feudal file, or the "
+                     "process of creating it was interrupted." << std::endl;
         }
         return false;
     }
 
     size_t offsetBytes = mFixedOffset - mVarOffset;
-    if ( offsetBytes % sizeof(size_t) )
-    {
+    if ( offsetBytes % sizeof(size_t) ) {
         if ( verbose )
             cout << "Feudal file " << fileName
                  << " has offset info that does not contain an integral number "
-                    "of offsets." << std::endl;
+                 "of offsets." << std::endl;
         return false;
     }
 
     //unsigned int nnn = offsetBytes/sizeof(size_t) - 1UL;
-    if ( ((offsetBytes/sizeof(size_t) - 1UL) & 0xffffffffUL) != mN )
-    {
+    if ( ((offsetBytes/sizeof(size_t) - 1UL) & 0xffffffffUL) != mN ) {
         if ( verbose )
             cout << "Feudal file " << fileName
                  << " doesn't have the right number of offsets for the number "
-                    "of elements." << std::endl;
+                 "of elements." << std::endl;
         return false;
     }
 
-    if ( !isCompressed() )
-    {
+    if ( !isCompressed() ) {
         size_t fixedBytes = fileLen - mFixedOffset;
         size_t nElements = getNElements();
-        if ( !nElements )
-        {
-            if ( fixedBytes )
-            {
+        if ( !nElements ) {
+            if ( fixedBytes ) {
                 if ( verbose )
                     cout << "Empty feudal file " << fileName
                          << " has some fixed data.  Must be garbage at the "
-                            "file's end." << std::endl;
+                         "file's end." << std::endl;
                 return false;
             }
-        }
-        else
-        {
-            if ( fixedBytes % nElements )
-            {
+        } else {
+            if ( fixedBytes % nElements ) {
                 if ( verbose )
                     cout << "Feudal file " << fileName
                          << " has fixed info that is not an integral number of "
-                            "bytes per element." << std::endl;
+                         "bytes per element." << std::endl;
                 return false;
             }
 
-            if ( mSizeofFixed && ((fixedBytes/nElements)&0xff) != mSizeofFixed )
-            {
+            if ( mSizeofFixed && ((fixedBytes/nElements)&0xff) != mSizeofFixed ) {
                 if ( verbose )
                     cout << "Feudal file " << fileName
                          << " doesn't have the right amount of fixed data for "
-                            "the number of elements." << std::endl;
+                         "the number of elements." << std::endl;
                 return false;
             }
         }
@@ -119,8 +106,7 @@ bool FeudalControlBlock::isValid( char const* fileName, size_t fileLen,
     return true;
 }
 
-bool FeudalControlBlock::isGoodFeudalFile( char const* fileName, bool verbose )
-{
+bool FeudalControlBlock::isGoodFeudalFile( char const* fileName, bool verbose ) {
     size_t fileLen;
     FeudalControlBlock fcb(fileName,false,&fileLen);
     return fcb.isValid(fileName,fileLen,verbose);

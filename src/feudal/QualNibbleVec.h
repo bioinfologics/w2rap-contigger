@@ -26,239 +26,324 @@
 #include <cstddef>
 #include <iterator>
 
-class QualNibbleVec : private FieldVec<4, MempoolAllocator<unsigned char> >
-{
-public:
-  typedef allocator_type Alloc;
-  typedef unsigned char value_type;
-  typedef unsigned size_type;
-  typedef FieldVec<4, MempoolAllocator<unsigned char> > BaseT;
-  typedef std::ptrdiff_t difference_type;
-  typedef std::iterator<std::random_access_iterator_tag,
-                        value_type,
-                        difference_type,
-                        void,
-                        value_type> ItrBase;
-  struct QualMapper
-  {
-      value_type operator()( value_type val ) const
-      { return deflate(val); }
-
-      static value_type deflate( value_type val )
-      { using std::min; return min(val/3,15); }
-      static value_type inflate( value_type val )
-      { return 3*val + 1; }
-  };
-
-  class iterator
-  : public ItrBase,
-    public IteratorBase<iterator,size_type,difference_type>
-  {
+class QualNibbleVec : private FieldVec<4, MempoolAllocator<unsigned char> > {
   public:
-      iterator() : mpContainer(0) {}
-      iterator( QualNibbleVec* pContainer, size_type pos )
-      : IteratorBase<iterator,size_type,difference_type>(pos),
-        mpContainer(pContainer) {}
+    typedef allocator_type Alloc;
+    typedef unsigned char value_type;
+    typedef unsigned size_type;
+    typedef FieldVec<4, MempoolAllocator<unsigned char> > BaseT;
+    typedef std::ptrdiff_t difference_type;
+    typedef std::iterator<std::random_access_iterator_tag,
+            value_type,
+            difference_type,
+            void,
+            value_type> ItrBase;
+    struct QualMapper {
+        value_type operator()( value_type val ) const {
+            return deflate(val);
+        }
 
-      // compiler-supplied copying and destructor are OK
+        static value_type deflate( value_type val ) {
+            using std::min;
+            return min(val/3,15);
+        }
+        static value_type inflate( value_type val ) {
+            return 3*val + 1;
+        }
+    };
 
-      value_type operator*() const { return (*mpContainer)[this->pos()]; }
+    class iterator
+        : public ItrBase,
+          public IteratorBase<iterator,size_type,difference_type> {
+      public:
+        iterator() : mpContainer(0) {}
+        iterator( QualNibbleVec* pContainer, size_type pos )
+            : IteratorBase<iterator,size_type,difference_type>(pos),
+              mpContainer(pContainer) {}
 
-      value_type operator[]( difference_type idx ) const
-      { return (*mpContainer)[this->pos()+idx]; }
+        // compiler-supplied copying and destructor are OK
 
-      void set( value_type val )
-      { mpContainer->set(this->pos(),val); }
+        value_type operator*() const {
+            return (*mpContainer)[this->pos()];
+        }
 
-  private:
-      QualNibbleVec* mpContainer;
-  };
+        value_type operator[]( difference_type idx ) const {
+            return (*mpContainer)[this->pos()+idx];
+        }
 
-  class const_iterator
-  : public ItrBase,
-    public IteratorBase<const_iterator,size_type,difference_type>
-  {
-  public:
-      const_iterator() : mpContainer(0) {}
-      const_iterator( QualNibbleVec const* pContainer, size_type pos )
-      : IteratorBase<const_iterator,size_type,difference_type>(pos),
-        mpContainer(pContainer) {}
+        void set( value_type val ) {
+            mpContainer->set(this->pos(),val);
+        }
 
-      // compiler-supplied copying and destructor are OK
+      private:
+        QualNibbleVec* mpContainer;
+    };
 
-      value_type operator*() const { return (*mpContainer)[this->pos()]; }
-      value_type operator[]( difference_type idx ) const
-      { return (*mpContainer)[this->pos()+idx]; }
+    class const_iterator
+        : public ItrBase,
+          public IteratorBase<const_iterator,size_type,difference_type> {
+      public:
+        const_iterator() : mpContainer(0) {}
+        const_iterator( QualNibbleVec const* pContainer, size_type pos )
+            : IteratorBase<const_iterator,size_type,difference_type>(pos),
+              mpContainer(pContainer) {}
 
-  private:
-      QualNibbleVec const* mpContainer;
-  };
+        // compiler-supplied copying and destructor are OK
 
-  class reverse_iterator
-  : public ItrBase,
-    public IteratorBase<reverse_iterator,size_type,difference_type>
-  {
-  public:
-      reverse_iterator() : mLast(~0), mpContainer(0) {}
-      reverse_iterator( QualNibbleVec* pContainer, size_type pos )
-      : IteratorBase<reverse_iterator,size_type,difference_type>(pos),
-        mLast(pContainer->size()-1), mpContainer(pContainer) {}
+        value_type operator*() const {
+            return (*mpContainer)[this->pos()];
+        }
+        value_type operator[]( difference_type idx ) const {
+            return (*mpContainer)[this->pos()+idx];
+        }
 
-      // compiler-supplied copying and destructor are OK
+      private:
+        QualNibbleVec const* mpContainer;
+    };
 
-      value_type operator*() const { return (*mpContainer)[mLast-this->pos()]; }
+    class reverse_iterator
+        : public ItrBase,
+          public IteratorBase<reverse_iterator,size_type,difference_type> {
+      public:
+        reverse_iterator() : mLast(~0), mpContainer(0) {}
+        reverse_iterator( QualNibbleVec* pContainer, size_type pos )
+            : IteratorBase<reverse_iterator,size_type,difference_type>(pos),
+              mLast(pContainer->size()-1), mpContainer(pContainer) {}
 
-      value_type operator[]( difference_type idx ) const
-      { return (*mpContainer)[mLast-(this->pos()+idx)]; }
+        // compiler-supplied copying and destructor are OK
 
-      void set( value_type val )
-      { mpContainer->set(mLast-this->pos(),val); }
+        value_type operator*() const {
+            return (*mpContainer)[mLast-this->pos()];
+        }
 
-  private:
-      size_type mLast;
-      QualNibbleVec* mpContainer;
-  };
+        value_type operator[]( difference_type idx ) const {
+            return (*mpContainer)[mLast-(this->pos()+idx)];
+        }
 
-  class const_reverse_iterator
-  : public ItrBase,
-    public IteratorBase<const_reverse_iterator,size_type,difference_type>
-  {
-  public:
-      const_reverse_iterator() : mLast(~0), mpContainer(0) {}
-      const_reverse_iterator( QualNibbleVec const* pContainer, size_type pos )
-      : IteratorBase<const_reverse_iterator,size_type,difference_type>(pos),
-        mLast(pContainer->size()-1), mpContainer(pContainer) {}
+        void set( value_type val ) {
+            mpContainer->set(mLast-this->pos(),val);
+        }
 
-      // compiler-supplied copying and destructor are OK
+      private:
+        size_type mLast;
+        QualNibbleVec* mpContainer;
+    };
 
-      value_type operator*() const { return (*mpContainer)[mLast-this->pos()]; }
+    class const_reverse_iterator
+        : public ItrBase,
+          public IteratorBase<const_reverse_iterator,size_type,difference_type> {
+      public:
+        const_reverse_iterator() : mLast(~0), mpContainer(0) {}
+        const_reverse_iterator( QualNibbleVec const* pContainer, size_type pos )
+            : IteratorBase<const_reverse_iterator,size_type,difference_type>(pos),
+              mLast(pContainer->size()-1), mpContainer(pContainer) {}
 
-      value_type operator[]( difference_type idx ) const
-      { return (*mpContainer)[mLast-(this->pos()+idx)]; }
+        // compiler-supplied copying and destructor are OK
 
-  private:
-      size_type mLast;
-      QualNibbleVec const* mpContainer;
-  };
+        value_type operator*() const {
+            return (*mpContainer)[mLast-this->pos()];
+        }
 
-  //
-  // Constructors
-  //
-  QualNibbleVec() {}
-  QualNibbleVec( Alloc const& alloc ) : BaseT(alloc) {}
+        value_type operator[]( difference_type idx ) const {
+            return (*mpContainer)[mLast-(this->pos()+idx)];
+        }
 
-  // SetToSubOf constructor.
-  QualNibbleVec( const QualNibbleVec& q, const size_type start, const size_type len )
-  { AssertLe(start,q.size()); AssertLe(len,q.size()-start);
-    assign(q.begin(start),q.begin(start+len)); }
+      private:
+        size_type mLast;
+        QualNibbleVec const* mpContainer;
+    };
 
-  // sized constructor
-  explicit QualNibbleVec( size_type sz, size_type extra = 0 )
-  : BaseT(sz, value_type(), sz+extra) {}
+    //
+    // Constructors
+    //
+    QualNibbleVec() {}
+    QualNibbleVec( Alloc const& alloc ) : BaseT(alloc) {}
 
-  // Copy constructor
-  QualNibbleVec( QualNibbleVec const& q )
-  : BaseT(q) {}
+    // SetToSubOf constructor.
+    QualNibbleVec( const QualNibbleVec& q, const size_type start, const size_type len ) {
+        AssertLe(start,q.size());
+        AssertLe(len,q.size()-start);
+        assign(q.begin(start),q.begin(start+len));
+    }
 
-  // Construct from an 8 bit qualvector
-  explicit QualNibbleVec( qualvector const & qv )
-  { assign(qv.begin(),qv.end(),QualMapper()); }
+    // sized constructor
+    explicit QualNibbleVec( size_type sz, size_type extra = 0 )
+        : BaseT(sz, value_type(), sz+extra) {}
 
-  QualNibbleVec& operator=( QualNibbleVec const& q )
-  { BaseT::operator=(q); return *this; }
+    // Copy constructor
+    QualNibbleVec( QualNibbleVec const& q )
+        : BaseT(q) {}
 
-  //
-  // iterators
-  //
+    // Construct from an 8 bit qualvector
+    explicit QualNibbleVec( qualvector const & qv ) {
+        assign(qv.begin(),qv.end(),QualMapper());
+    }
 
-  iterator begin() { return iterator(this,0); }
-  iterator begin( size_type idx )
-  { AssertLe(idx,size()); return iterator(this,idx); }
-  iterator end() { return iterator(this,size()); }
+    QualNibbleVec& operator=( QualNibbleVec const& q ) {
+        BaseT::operator=(q);
+        return *this;
+    }
 
-  const_iterator begin() const { return const_iterator(this,0); }
-  const_iterator begin( size_type idx ) const
-  { AssertLe(idx,size()); return const_iterator(this,idx); }
-  const_iterator end() const { return const_iterator(this,size()); }
+    //
+    // iterators
+    //
 
-  const_iterator cbegin() const { return const_iterator(this,0); }
-  const_iterator cbegin( size_type const idx ) const
-  { AssertLe(idx,size()); return const_iterator(this,idx); }
-  const_iterator cend() const { return const_iterator(this,size()); }
+    iterator begin() {
+        return iterator(this,0);
+    }
+    iterator begin( size_type idx ) {
+        AssertLe(idx,size());
+        return iterator(this,idx);
+    }
+    iterator end() {
+        return iterator(this,size());
+    }
 
-  reverse_iterator rbegin() { return reverse_iterator(this,0); }
-  reverse_iterator rbegin( size_type idx )
-  { AssertLe(idx,size()); return reverse_iterator(this,idx); }
-  reverse_iterator rend() { return reverse_iterator(this, size()); }
+    const_iterator begin() const {
+        return const_iterator(this,0);
+    }
+    const_iterator begin( size_type idx ) const {
+        AssertLe(idx,size());
+        return const_iterator(this,idx);
+    }
+    const_iterator end() const {
+        return const_iterator(this,size());
+    }
 
-  const_reverse_iterator rbegin() const
-  { return const_reverse_iterator(this,0); }
-  const_reverse_iterator rbegin( size_type idx ) const
-  { AssertLe(idx,size()); return const_reverse_iterator(this,idx); }
-  const_reverse_iterator rend() const
-  { return const_reverse_iterator(this,size()); }
+    const_iterator cbegin() const {
+        return const_iterator(this,0);
+    }
+    const_iterator cbegin( size_type const idx ) const {
+        AssertLe(idx,size());
+        return const_iterator(this,idx);
+    }
+    const_iterator cend() const {
+        return const_iterator(this,size());
+    }
 
-  const_reverse_iterator crbegin() const
-  { return const_reverse_iterator(this,0); }
-  const_reverse_iterator crbegin( size_type idx ) const
-  { AssertLe(idx,size()); return const_reverse_iterator(this,idx); }
-  const_reverse_iterator crend() const { return const_reverse_iterator(this, size()); }
+    reverse_iterator rbegin() {
+        return reverse_iterator(this,0);
+    }
+    reverse_iterator rbegin( size_type idx ) {
+        AssertLe(idx,size());
+        return reverse_iterator(this,idx);
+    }
+    reverse_iterator rend() {
+        return reverse_iterator(this, size());
+    }
 
-  size_type size() const { return BaseT::size(); }
-  size_type allocSize() const { return BaseT::allocSize(); }
-  void swap( QualNibbleVec& q ) { BaseT::swap(q); }
-  QualNibbleVec& reserve( size_type nnn ) { BaseT::reserve(nnn); return *this; }
-  QualNibbleVec& resize( size_type nnn, value_type vvv = 0 )
-  { BaseT::resize(nnn,QualMapper::deflate(vvv)); return *this; }
-  QualNibbleVec& clear() { BaseT::clear(); return *this; }
-  QualNibbleVec& push_back( value_type vvv )
-  { BaseT::push_back(QualMapper::deflate(vvv)); return *this; }
-  QualNibbleVec& reverse() { BaseT::reverse(); return *this; }
+    const_reverse_iterator rbegin() const {
+        return const_reverse_iterator(this,0);
+    }
+    const_reverse_iterator rbegin( size_type idx ) const {
+        AssertLe(idx,size());
+        return const_reverse_iterator(this,idx);
+    }
+    const_reverse_iterator rend() const {
+        return const_reverse_iterator(this,size());
+    }
 
-  void writeFeudal( BinaryWriter& writer, void const** ppFixed ) const
-  { BaseT::writeFeudal(writer,ppFixed); }
-  void readFeudal( BinaryReader& rdr, size_t varDataLen, void* pFixed )
-  { BaseT::readFeudal(rdr,varDataLen,pFixed); }
-  void writeBinary( BinaryWriter& writer ) const
-  { BaseT::writeBinary(writer); }
-  void readBinary( BinaryReader& reader ) { BaseT::readBinary(reader); }
-  static size_t externalSizeof() { return 0; }
-  //
-  // Converstions to and from 8 bit qualvector
-  //
+    const_reverse_iterator crbegin() const {
+        return const_reverse_iterator(this,0);
+    }
+    const_reverse_iterator crbegin( size_type idx ) const {
+        AssertLe(idx,size());
+        return const_reverse_iterator(this,idx);
+    }
+    const_reverse_iterator crend() const {
+        return const_reverse_iterator(this, size());
+    }
 
-  // Initialize QualNibbleVec from an 8 bit qualvector
-  void SetFromQualvector( const qualvector& q )
-  { assign(q.begin(),q.end(),QualMapper()); }
+    size_type size() const {
+        return BaseT::size();
+    }
+    size_type allocSize() const {
+        return BaseT::allocSize();
+    }
+    void swap( QualNibbleVec& q ) {
+        BaseT::swap(q);
+    }
+    QualNibbleVec& reserve( size_type nnn ) {
+        BaseT::reserve(nnn);
+        return *this;
+    }
+    QualNibbleVec& resize( size_type nnn, value_type vvv = 0 ) {
+        BaseT::resize(nnn,QualMapper::deflate(vvv));
+        return *this;
+    }
+    QualNibbleVec& clear() {
+        BaseT::clear();
+        return *this;
+    }
+    QualNibbleVec& push_back( value_type vvv ) {
+        BaseT::push_back(QualMapper::deflate(vvv));
+        return *this;
+    }
+    QualNibbleVec& reverse() {
+        BaseT::reverse();
+        return *this;
+    }
 
-  // Convert QualNibbleVec to an 8 bit qualvector
-  qualvector GetQualvector() const
-  { qualvector qv; qv.reserve(size());
-    for (size_type i = 0; i < size(); ++i) qv.push_back( (*this)[i] );
-    return qv; }
+    void writeFeudal( BinaryWriter& writer, void const** ppFixed ) const {
+        BaseT::writeFeudal(writer,ppFixed);
+    }
+    void readFeudal( BinaryReader& rdr, size_t varDataLen, void* pFixed ) {
+        BaseT::readFeudal(rdr,varDataLen,pFixed);
+    }
+    void writeBinary( BinaryWriter& writer ) const {
+        BaseT::writeBinary(writer);
+    }
+    void readBinary( BinaryReader& reader ) {
+        BaseT::readBinary(reader);
+    }
+    static size_t externalSizeof() {
+        return 0;
+    }
+    //
+    // Converstions to and from 8 bit qualvector
+    //
+
+    // Initialize QualNibbleVec from an 8 bit qualvector
+    void SetFromQualvector( const qualvector& q ) {
+        assign(q.begin(),q.end(),QualMapper());
+    }
+
+    // Convert QualNibbleVec to an 8 bit qualvector
+    qualvector GetQualvector() const {
+        qualvector qv;
+        qv.reserve(size());
+        for (size_type i = 0; i < size(); ++i) qv.push_back( (*this)[i] );
+        return qv;
+    }
 
 
-  //
-  // Accessors
-  //
+    //
+    // Accessors
+    //
 
-  unsigned char operator[]( size_type idx ) const
-  { return QualMapper::inflate(BaseT::operator[](idx)); }
+    unsigned char operator[]( size_type idx ) const {
+        return QualMapper::inflate(BaseT::operator[](idx));
+    }
 
-  unsigned char getRaw( size_type idx ) const
-  { return BaseT::operator [](idx); }
+    unsigned char getRaw( size_type idx ) const {
+        return BaseT::operator [](idx);
+    }
 
-  void set( size_type idx, unsigned char value)
-  { BaseT::set(idx, QualMapper::deflate(value) ); }
+    void set( size_type idx, unsigned char value) {
+        BaseT::set(idx, QualMapper::deflate(value) );
+    }
 
-  void setRaw( size_type idx, unsigned char value )
-  { BaseT::set(idx,value); }
+    void setRaw( size_type idx, unsigned char value ) {
+        BaseT::set(idx,value);
+    }
 
-  void ReverseMe() { reverse(); }
+    void ReverseMe() {
+        reverse();
+    }
 
-  /// Replaces each quality score with the minimum quality score in the range
-  /// idx-radius to idx+radius.
-  QualNibbleVec& squash( unsigned radius );
+    /// Replaces each quality score with the minimum quality score in the range
+    /// idx-radius to idx+radius.
+    QualNibbleVec& squash( unsigned radius );
 };
 
 SELF_SERIALIZABLE(QualNibbleVec);

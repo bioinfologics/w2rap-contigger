@@ -25,8 +25,8 @@
 /// Also, any of s1,...,sn can have an individual multiplier, e.g., si*ki, which
 /// expands to ki copies of just that element.
 ///
-/// ParseIntSet: this defines a syntax for converting a string into a vec of 
-/// integers, which is by default sorted, but can be left unsorted 
+/// ParseIntSet: this defines a syntax for converting a string into a vec of
+/// integers, which is by default sorted, but can be left unsorted
 /// (by setting nosort = True).
 ///
 /// In the current syntax there are several allowed formats:
@@ -38,7 +38,7 @@
 ///
 /// [2'] n1,...,nk -- same meaning as [2]
 ///
-/// [3] [a,b], where 0 <= a <= b, representing all integers between a and b, 
+/// [3] [a,b], where 0 <= a <= b, representing all integers between a and b,
 ///     inclusive
 ///
 /// [4] [a,b), where 0 <= a <= b, representing all integers x, a <= x < b
@@ -51,13 +51,13 @@
 /// [7] any of the above, followed by *n, where n is an integer, which causes the
 ///     entries to be multiplied by n.
 ///
-/// [8] random:n, where n is a nonnegative integer; this only makes sense if 
+/// [8] random:n, where n is a nonnegative integer; this only makes sense if
 ///     ParseIntSet is provided with start and stop arguments.  Random number
 ///     generator is always initialized using the same seed.  We also allow the
 ///     case random:d where is a real number strictly between 0 and 1, and p%
 ///     is allowed too.
 ///
-/// [9] trandom:n, like random, but for trandom, random number generator is 
+/// [9] trandom:n, like random, but for trandom, random number generator is
 ///     initialized based on the time in microseconds.
 ///
 /// If start and stop are provided, values are checked to see that they lie on the
@@ -71,22 +71,22 @@
 ///      status = 0 returned upon success
 ///      status = 1 returned upon failure.
 ///
-/// Note: if you use forms [2], [3], [4], or [6] to pass an argument to an 
+/// Note: if you use forms [2], [3], [4], or [6] to pass an argument to an
 /// executable on the command-line, you need to double-quote it.
 
 void ParseIntSet( String descrip, vec<int>& answer, bool sortAnswer = true,
-     const int start = 0, const int stop = -1 );
+                  const int start = 0, const int stop = -1 );
 
-void ParseLongLongSet( String descrip, vec<longlong>& answer, 
-     bool sortAnswer = true, const longlong start = 0, const longlong stop = -1 );
+void ParseLongLongSet( String descrip, vec<longlong>& answer,
+                       bool sortAnswer = true, const longlong start = 0, const longlong stop = -1 );
 
-void ParseIntSet( String descrip, vec<int>& answer, int& status, 
-     Bool ABORT_IF_BAD = False, bool sortAnswer = true, const int start = 0,
-     const int stop = -1 );
+void ParseIntSet( String descrip, vec<int>& answer, int& status,
+                  Bool ABORT_IF_BAD = False, bool sortAnswer = true, const int start = 0,
+                  const int stop = -1 );
 
-void ParseLongLongSet( String descrip, vec<longlong>& answer, int& status, 
-     Bool ABORT_IF_BAD = False, bool sortAnswer = true, const longlong start = 0,
-     const longlong stop = -1 );
+void ParseLongLongSet( String descrip, vec<longlong>& answer, int& status,
+                       Bool ABORT_IF_BAD = False, bool sortAnswer = true, const longlong start = 0,
+                       const longlong stop = -1 );
 
 void ParseStringSet( String descrip, vec<String>& answer, bool recurse = false );
 
@@ -95,10 +95,10 @@ void ParseStringSet( String descrip, vec<String>& answer, bool recurse = false )
 /// [1] x, where x is a string convertible to a double
 /// [2] {x1,x2,...,xk}, where k >= 0 and x1,...,xk are strings convertible to doubles
 /// and
-/// [5] @fn, where fn is the name of a file containing whitespace-separated strings 
+/// [5] @fn, where fn is the name of a file containing whitespace-separated strings
 ///     convertible to doubles
 
-void ParseDoubleSet( 
-     const String & descrip, vec<double> & answer, bool sortAnswer = true );
+void ParseDoubleSet(
+    const String & descrip, vec<double> & answer, bool sortAnswer = true );
 
 #endif

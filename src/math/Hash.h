@@ -24,10 +24,8 @@
 // first chunk, and the previously returned hash value as the initial value for
 // subsequent chunks.
 template <class Itr>
-uint64_t FNV1a( Itr itr, Itr const& end, uint64_t val = 14695981039346656037ul )
-{
-    while ( itr != end )
-    {
+uint64_t FNV1a( Itr itr, Itr const& end, uint64_t val = 14695981039346656037ul ) {
+    while ( itr != end ) {
         val = 1099511628211ul * (val ^ *itr);
         ++itr;
     }

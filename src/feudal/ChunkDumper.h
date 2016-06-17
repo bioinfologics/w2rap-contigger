@@ -35,50 +35,59 @@
 /// a reserve() method, and have an operator[] that returns a legitimate
 /// reference to an element.
 template <class V>
-class ChunkDumper : public SpinLockedData
-{
-public:
+class ChunkDumper : public SpinLockedData {
+  public:
     typedef typename V::size_type size_type;
     typedef typename V::value_type value_type;
 
     ChunkDumper( char const* filename, size_type nValsTotal, size_t nChunks )
-    : mWriter(filename), mNValsTotal(nValsTotal), mNChunks(nChunks),
-      mChunks(new V*[nChunks]), mNextChunk(0), mNValsWritten(0)
-    { memset(mChunks,0,nChunks*sizeof(V*)); mWriter.write(nValsTotal); }
+        : mWriter(filename), mNValsTotal(nValsTotal), mNChunks(nChunks),
+          mChunks(new V*[nChunks]), mNextChunk(0), mNValsWritten(0) {
+        memset(mChunks,0,nChunks*sizeof(V*));
+        mWriter.write(nValsTotal);
+    }
 
-    ~ChunkDumper()
-    { if ( mChunks ) close(); }
+    ~ChunkDumper() {
+        if ( mChunks ) close();
+    }
 
-    void close()
-    { ForceAssertEq(mNChunks,mNextChunk);
-      ForceAssertEq(mNValsWritten,mNValsTotal);
-      mWriter.close();
-      delete [] mChunks;
-      mChunks = 0; }
+    void close() {
+        ForceAssertEq(mNChunks,mNextChunk);
+        ForceAssertEq(mNValsWritten,mNValsTotal);
+        mWriter.close();
+        delete [] mChunks;
+        mChunks = 0;
+    }
 
     /// Stores your vals for writing, and swaps in an empty V in its place.
-    void dumpChunk( size_t chunk, V& vals )
-    { ForceAssertGe(chunk,mNextChunk);
-      V* pV = new V();
-      using std::swap; swap(*pV,vals);
-      SpinLocker lock(*this);
-      mChunks[chunk] = pV;
-      if ( chunk == mNextChunk ) doDump(); }
+    void dumpChunk( size_t chunk, V& vals ) {
+        ForceAssertGe(chunk,mNextChunk);
+        V* pV = new V();
+        using std::swap;
+        swap(*pV,vals);
+        SpinLocker lock(*this);
+        mChunks[chunk] = pV;
+        if ( chunk == mNextChunk ) doDump();
+    }
 
-private:
+  private:
     ChunkDumper( ChunkDumper const& ); // unimplemented -- no copying
     ChunkDumper& operator=( ChunkDumper const& ); // unimplemented -- no copying
 
-    void doDump()
-    { while ( mNextChunk < mNChunks )
-      { V* pV = mChunks[mNextChunk];
-        if ( !pV ) break;
-        if ( pV->size() )
-        { value_type const* start = &(*pV)[0];
-          value_type const* end = start + pV->size();
-          mWriter.write(start,end);
-          mNValsWritten += pV->size(); }
-        delete pV; mChunks[mNextChunk++] = 0; } }
+    void doDump() {
+        while ( mNextChunk < mNChunks ) {
+            V* pV = mChunks[mNextChunk];
+            if ( !pV ) break;
+            if ( pV->size() ) {
+                value_type const* start = &(*pV)[0];
+                value_type const* end = start + pV->size();
+                mWriter.write(start,end);
+                mNValsWritten += pV->size();
+            }
+            delete pV;
+            mChunks[mNextChunk++] = 0;
+        }
+    }
 
     BinaryWriter mWriter;
     size_t mNValsTotal;

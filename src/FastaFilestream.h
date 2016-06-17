@@ -25,74 +25,76 @@
 template<typename vecT, typename seqT, typename converterT, typename verifierT>
 class FastaFilestream {
 
- public:
-  FastaFilestream( const String& filename,
-		   FastaNameParser* name_parser );
+  public:
+    FastaFilestream( const String& filename,
+                     FastaNameParser* name_parser );
 
-  FastaFilestream( const FastaFilestream& original );
-  FastaFilestream& operator= ( const FastaFilestream& original );
+    FastaFilestream( const FastaFilestream& original );
+    FastaFilestream& operator= ( const FastaFilestream& original );
 
-  virtual ~FastaFilestream() 
-  {
-    if (preview_ptr_) 
-      delete preview_ptr_; 
-  }
+    virtual ~FastaFilestream() {
+        if (preview_ptr_)
+            delete preview_ptr_;
+    }
 
-  /// Get estimated number of sequences.
-  int estimatedSize();
+    /// Get estimated number of sequences.
+    int estimatedSize();
 
-  /// Get estimated amount of data in bases.
-  longlong estimatedData();
+    /// Get estimated amount of data in bases.
+    longlong estimatedData();
 
 
-  /// Verify the format of the file specified in the constructor.
-  bool verify();
+    /// Verify the format of the file specified in the constructor.
+    bool verify();
 
-  /// Get the names of the sequences, but Reserve first!
-  /// This routine does not try to resize names, but just uses
-  /// push_back, so if you don't Reserve you will get quadratic performance.
-  void getOnlyNames( vecString &names ) 
-  { this->parse_( names, 0, 0 ); }
-    
-  /// Gets all the sequences in the file, but Reserve first!.
-  /// This routine does not try to resize names or sequences, but just uses
-  /// push_back, so if you don't Reserve you will get quadratic performance.
-  void parse( vecString &names, vecT &sequences ) 
-  { this->parse_( names, &sequences, 0 ); }
+    /// Get the names of the sequences, but Reserve first!
+    /// This routine does not try to resize names, but just uses
+    /// push_back, so if you don't Reserve you will get quadratic performance.
+    void getOnlyNames( vecString &names ) {
+        this->parse_( names, 0, 0 );
+    }
 
-  /// Gets the sequences with the specified indices, but Reserve first!
-  /// Reads sequences from the file specified in the constructor.  
-  /// The indices vector must be sorted.
-  /// This routine does not try to resize names or sequences, but just uses
-  /// push_back, so if you don't Reserve you will get quadratic performance.
-  void parseSubset( const vec<int>& indices, vecString &names, vecT &sequences )
-  { this->parse_( names, &sequences, &indices ); }
+    /// Gets all the sequences in the file, but Reserve first!.
+    /// This routine does not try to resize names or sequences, but just uses
+    /// push_back, so if you don't Reserve you will get quadratic performance.
+    void parse( vecString &names, vecT &sequences ) {
+        this->parse_( names, &sequences, 0 );
+    }
 
- private:
-  String filename_;
-  FastaFilestreamPreview* preview_ptr_;
-  bool parsed_;
-  bool needs_pipe_;
+    /// Gets the sequences with the specified indices, but Reserve first!
+    /// Reads sequences from the file specified in the constructor.
+    /// The indices vector must be sorted.
+    /// This routine does not try to resize names or sequences, but just uses
+    /// push_back, so if you don't Reserve you will get quadratic performance.
+    void parseSubset( const vec<int>& indices, vecString &names, vecT &sequences ) {
+        this->parse_( names, &sequences, &indices );
+    }
 
-  FastaNameParser* name_parser_;
-  
-  void preview_( std::istream* fasta_istream );
-  
-  /// This method is very slow (quadratic) unless  names and p_sequences
-  /// have been appropriately Reserve()d first.
-  /// If p_sequences is 0, don't save the sequences.
-  /// If p_indices is 0, get all data, else just grab the sequences specified.
-  void parse_( vecString &names, vecT *p_sequences, const vec<int> *p_indices );
+  private:
+    String filename_;
+    FastaFilestreamPreview* preview_ptr_;
+    bool parsed_;
+    bool needs_pipe_;
 
-  std::istream* getIstream_() const;
-  void resetIstream_( std::istream*& fasta_istream ) const;
-  void closeIstream_( std::istream* fasta_istream ) const;
+    FastaNameParser* name_parser_;
 
-  const String getBasename_( const String& filename ) const;
+    void preview_( std::istream* fasta_istream );
+
+    /// This method is very slow (quadratic) unless  names and p_sequences
+    /// have been appropriately Reserve()d first.
+    /// If p_sequences is 0, don't save the sequences.
+    /// If p_indices is 0, get all data, else just grab the sequences specified.
+    void parse_( vecString &names, vecT *p_sequences, const vec<int> *p_indices );
+
+    std::istream* getIstream_() const;
+    void resetIstream_( std::istream*& fasta_istream ) const;
+    void closeIstream_( std::istream* fasta_istream ) const;
+
+    const String getBasename_( const String& filename ) const;
 };
 
 
-typedef 
+typedef
 FastaFilestream<VecCharVec,CharVec,FastaNullConverter,FastaNullVerifier>
 FastaRawFilestream;
 
@@ -107,19 +109,17 @@ FastaQualityFilestream;
 
 
 template <typename filestreamT>
-class FastaFilestreamBuilder : std::unary_function<String, filestreamT>
-{
- public:
-  FastaFilestreamBuilder( FastaNameParser* name_parser )
-    : name_parser_(name_parser) { }
-  
-  filestreamT operator() (const String& filename)
-  { 
-    return filestreamT( filename, name_parser_ ); 
-  }
-  
- private:
-  FastaNameParser* name_parser_;
+class FastaFilestreamBuilder : std::unary_function<String, filestreamT> {
+  public:
+    FastaFilestreamBuilder( FastaNameParser* name_parser )
+        : name_parser_(name_parser) { }
+
+    filestreamT operator() (const String& filename) {
+        return filestreamT( filename, name_parser_ );
+    }
+
+  private:
+    FastaNameParser* name_parser_;
 };
 
 

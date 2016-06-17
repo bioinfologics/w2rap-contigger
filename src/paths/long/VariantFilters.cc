@@ -12,17 +12,16 @@
 #include "PackAlign.h"
 #include "Basevector.h"
 
-void RemoveRepetitiveEdges(vec<VariantCallGroup>& groups, 
-        const vec<size_t>& ref_index, 
-        const vec<size_t>& ref_shift, 
-        const String& ref_m100_file,
-        const HyperBasevector& hbp,
-        const vec< std::pair<int,Bool>>& hbp_to_hb,
-        int verbosity)
-{
+void RemoveRepetitiveEdges(vec<VariantCallGroup>& groups,
+                           const vec<size_t>& ref_index,
+                           const vec<size_t>& ref_shift,
+                           const String& ref_m100_file,
+                           const HyperBasevector& hbp,
+                           const vec< std::pair<int,Bool>>& hbp_to_hb,
+                           int verbosity) {
     if (verbosity >= 1)
         std::cout << Date() << ": Removing variants on repetitive edges using genome mask file "
-            << ref_m100_file  << std::endl;
+                  << ref_m100_file  << std::endl;
     const int maxq = 600;
     vecbitvector amb(ref_m100_file);
     for (VariantCallGroup& group: groups) {
@@ -45,8 +44,10 @@ void RemoveRepetitiveEdges(vec<VariantCallGroup>& groups,
                 assembly_edge_ids[i] = hbp_to_hb[path0[i]].first;
             }
             if (verbosity >= 2) {
-                std::cout << "edge "; assembly_edge_ids.Print(std::cout);
-                std::cout << " path0= "; path0.Print(std::cout);
+                std::cout << "edge ";
+                assembly_edge_ids.Print(std::cout);
+                std::cout << " path0= ";
+                path0.Print(std::cout);
                 std::cout << " estart= " << estart << " estop= " << estop << std::endl;
             }
 
@@ -58,7 +59,7 @@ void RemoveRepetitiveEdges(vec<VariantCallGroup>& groups,
 
             if (verbosity >= 1) {
                 std::cout << "    Removing " << group.GetVariantCalls(i).size()
-                    << " variants from edge ";
+                          << " variants from edge ";
                 assembly_edge_ids.Println(std::cout);
             }
             group.GetVariantCalls(i).clear();

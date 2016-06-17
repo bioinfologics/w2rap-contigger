@@ -32,13 +32,15 @@ void FetchReads( vecbasevector& b, vecqualvector& q, vecString * names,
                  std::ostream& out = std::cout,
                  Bool no_q = False, const vec<int>* ids_to_read = 0, const Bool allowX = False );
 
-inline void FetchReads( vecbasevector& b, vecString& names, String fasta_file )
-{    vecqualvector q;
-     FetchReads( b, q, &names, 0, fasta_file, 0, 0, std::cout, True );    }
+inline void FetchReads( vecbasevector& b, vecString& names, String fasta_file ) {
+    vecqualvector q;
+    FetchReads( b, q, &names, 0, fasta_file, 0, 0, std::cout, True );
+}
 
-inline void FetchReads( vecbasevector& b, vecString& names, String fasta_file, const Bool allowX )
-{    vecqualvector q;
-     FetchReads( b, q, &names, 0, fasta_file, 0, 0, std::cout, True, 0, allowX );    }
+inline void FetchReads( vecbasevector& b, vecString& names, String fasta_file, const Bool allowX ) {
+    vecqualvector q;
+    FetchReads( b, q, &names, 0, fasta_file, 0, 0, std::cout, True, 0, allowX );
+}
 
 ///Put reads from a fasta file into a vecbasevector.
 /// Ambiguous bases are saved as random bases.
@@ -50,15 +52,15 @@ void FetchReads( vecbasevector& b, vecqualvector& q, unsigned int n,
 ///Put reads from a fasta file into a vecbasevector.
 /// Ambiguous bases are saved as random bases.
 void FetchReads( vecbasevector& b, unsigned int n, String fasta_file,
-     int amb_break = 0, int min_size = 0, std::ostream& out = std::cout,
-     const vec<int>* ids_to_read = 0, const Bool allowX = False );
+                 int amb_break = 0, int min_size = 0, std::ostream& out = std::cout,
+                 const vec<int>* ids_to_read = 0, const Bool allowX = False );
 
 /// Put reads from a fasta file into a vecbasevector.
 /// Ambiguous bases are saved as random bases.
 /// Also return names
 void FetchReads( vecbasevector& b, vecString * names, unsigned int n, String fasta_file,
-     int amb_break = 0, int min_size = 0, std::ostream& out = std::cout,
-     const vec<int>* ids_to_read = 0, const Bool allowX = False );
+                 int amb_break = 0, int min_size = 0, std::ostream& out = std::cout,
+                 const vec<int>* ids_to_read = 0, const Bool allowX = False );
 
 
 /// Read a "fasta" file whose entries are floats.

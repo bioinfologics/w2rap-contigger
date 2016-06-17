@@ -29,8 +29,8 @@ void FastFetchReads(vecbasevector & b, vecString * n, const String &file);
 
 ///Convenience method, reads both fastb and fasta files.
 inline void LoadReads(vecbasevector & reads, const String & fname) {
-  if (fname.Contains(".fastb", -1)) reads.ReadAll(fname);
-  else FastFetchReads(reads, 0, fname);
+    if (fname.Contains(".fastb", -1)) reads.ReadAll(fname);
+    else FastFetchReads(reads, 0, fname);
 }
 
 /// Put qualities and names from qual file into vecqualvector and vecString.
@@ -41,19 +41,18 @@ void FastFetchQuals(vecqualvector & q, vecString * n, const String &file);
 /// \class NamedData
 template<typename dataT>
 struct NamedData {
-  const String *mp_name;
-  const dataT  *mp_data;
-  
-  NamedData()
-    : mp_name( 0 ), mp_data( 0 ) {}
-  
-  NamedData( const String *p_name, const dataT *p_data )
-    : mp_name( p_name ), mp_data( p_data ) {}
-  
-  bool operator< ( const NamedData<dataT> &other ) const
-  {
-    return ( *mp_name < *(other.mp_name) );
-  }
+    const String *mp_name;
+    const dataT  *mp_data;
+
+    NamedData()
+        : mp_name( 0 ), mp_data( 0 ) {}
+
+    NamedData( const String *p_name, const dataT *p_data )
+        : mp_name( p_name ), mp_data( p_data ) {}
+
+    bool operator< ( const NamedData<dataT> &other ) const {
+        return ( *mp_name < *(other.mp_name) );
+    }
 };
 
 /// Template for class that knows how to extract a particular kind of
@@ -63,71 +62,70 @@ struct NamedData {
 /// \class FastaFilesetTemplate
 
 template<typename vecT, typename dataT, typename filestreamT>
-class FastaFilesetTemplate
-{
- public:
-  
-  FastaFilesetTemplate( const vec<String>& filenames,
-                        FastaNameParser *nameParser = 0,
-                        std::ostream &log = std::cout );
+class FastaFilesetTemplate {
+  public:
 
-  /// Returns the number of sequences found.
-  int Parse();
+    FastaFilesetTemplate( const vec<String>& filenames,
+                          FastaNameParser *nameParser = 0,
+                          std::ostream &log = std::cout );
 
-  /// Get the number of sequences found.
-  int GetSize();
-  
-  /// Get the number of bases found.
-  longlong GetNumberOfBases();
-  
-  /// Retrieve the next parsed sequence, returning false if the last
-  /// sequence has already been returned. Sequences are ordered 
-  /// alphabetically by name.
-  bool GetNext( String &name, dataT &bases );
+    /// Returns the number of sequences found.
+    int Parse();
 
-  /// Retrieve the sequence at index i, returning false if the index is out
-  /// of bounds. Sequences are ordered 
-  /// in the order they were in in the original files.
-  bool GetAtIndex( typename vecT::size_type i, String &name, dataT &bases );
+    /// Get the number of sequences found.
+    int GetSize();
 
-  /// Retrieve the next parsed sequence's name, returning false if the last
-  /// sequence has already been returned. Sequences are ordered 
-  /// alphabetically by name. 
-  bool GetNextName( String &name );
+    /// Get the number of bases found.
+    longlong GetNumberOfBases();
 
-  /// Start over at beginning of sequences.
-  void Reset();
- 
-  /// If the parsed sequences contain exactly one piece of data with
-  /// the given name, copy it to the parameter and return true.
-  /// Otherwise, return false.  Has no effect on iteration via
-  /// GetNext().
-  bool GetByName( const String &name, dataT &bases );
+    /// Retrieve the next parsed sequence, returning false if the last
+    /// sequence has already been returned. Sequences are ordered
+    /// alphabetically by name.
+    bool GetNext( String &name, dataT &bases );
 
- private:
-  longlong EstimateVecSize( longlong totalSeqSize );
+    /// Retrieve the sequence at index i, returning false if the index is out
+    /// of bounds. Sequences are ordered
+    /// in the order they were in in the original files.
+    bool GetAtIndex( typename vecT::size_type i, String &name, dataT &bases );
 
-  vec<String> m_filenames;
-  
-  vecString m_names;
-  vecT      m_data;
+    /// Retrieve the next parsed sequence's name, returning false if the last
+    /// sequence has already been returned. Sequences are ordered
+    /// alphabetically by name.
+    bool GetNextName( String &name );
 
-  typedef struct NamedData<dataT> NamedDataT;
-  vec<NamedDataT>                    m_sortedData;
-  typename vec<NamedDataT>::iterator m_currentDataIter;
+    /// Start over at beginning of sequences.
+    void Reset();
 
-  bool m_isParsed;
+    /// If the parsed sequences contain exactly one piece of data with
+    /// the given name, copy it to the parameter and return true.
+    /// Otherwise, return false.  Has no effect on iteration via
+    /// GetNext().
+    bool GetByName( const String &name, dataT &bases );
 
-  FastaNameParser *mp_nameParser;
+  private:
+    longlong EstimateVecSize( longlong totalSeqSize );
 
-  std::ostream &m_log;
+    vec<String> m_filenames;
+
+    vecString m_names;
+    vecT      m_data;
+
+    typedef struct NamedData<dataT> NamedDataT;
+    vec<NamedDataT>                    m_sortedData;
+    typename vec<NamedDataT>::iterator m_currentDataIter;
+
+    bool m_isParsed;
+
+    FastaNameParser *mp_nameParser;
+
+    std::ostream &m_log;
 };
 
 // Typedefs for commonly used FastaFilesetTemplates.
-typedef FastaFilesetTemplate<veccompseq,CompressedSequence,FastaSequenceFilestream> 
+typedef FastaFilesetTemplate<veccompseq,CompressedSequence,FastaSequenceFilestream>
 FastaSequenceFileset;
 
-typedef FastaFilesetTemplate<vecqualvector,qualvector,FastaQualityFilestream> 
+typedef FastaFilesetTemplate<vecqualvector,qualvector,FastaQualityFilestream>
 FastaQualityFileset;
 
 
@@ -135,42 +133,42 @@ FastaQualityFileset;
 /// FastaSequenceFileset and a FastaQualityFileset.
 class FastaPairedFileset {
 
- public:
-  
-  FastaPairedFileset( const vec<String>& sequenceFilenames, 
-                      const vec<String>& qualityFilenames,
-                      FastaNameParser *nameParser = 0,
-                      std::ostream &log = std::cout );
+  public:
 
-  virtual ~FastaPairedFileset() {}
+    FastaPairedFileset( const vec<String>& sequenceFilenames,
+                        const vec<String>& qualityFilenames,
+                        FastaNameParser *nameParser = 0,
+                        std::ostream &log = std::cout );
 
-  /// Returns the number of sequences with both sequence and quality data.
-  int Parse();
+    virtual ~FastaPairedFileset() {}
 
-  /// Retrieve the next parsed sequence for which there is both base
-  /// and qual data, returning true if such a sequence was found.
-  /// Sequences are ordered alphabetically by name.
-  bool GetNext( String &name, CompressedSequence &bases, qualvector &quals );
- 
-  /// If the parsed sequences contain exactly one set each of bases and
-  /// quals with the given name, copy them to the parameters and return
-  /// true.  Otherwise, return false.  Has no effect on iteration via
-  /// GetNext().
-  bool GetByName( const String &name, CompressedSequence &bases, qualvector &quals );
+    /// Returns the number of sequences with both sequence and quality data.
+    int Parse();
 
-  void GetUnmatchedSequenceNames( vec<String> &unmatchedNames );
-  void GetUnmatchedQualityNames( vec<String> &unmatchedNames );
+    /// Retrieve the next parsed sequence for which there is both base
+    /// and qual data, returning true if such a sequence was found.
+    /// Sequences are ordered alphabetically by name.
+    bool GetNext( String &name, CompressedSequence &bases, qualvector &quals );
 
- private:
-  FastaSequenceFileset m_basesFileset;
-  FastaQualityFileset  m_qualsFileset;
+    /// If the parsed sequences contain exactly one set each of bases and
+    /// quals with the given name, copy them to the parameters and return
+    /// true.  Otherwise, return false.  Has no effect on iteration via
+    /// GetNext().
+    bool GetByName( const String &name, CompressedSequence &bases, qualvector &quals );
 
-  vec<String> m_unmatchedSeqs;
-  vec<String> m_unmatchedQuals;
+    void GetUnmatchedSequenceNames( vec<String> &unmatchedNames );
+    void GetUnmatchedQualityNames( vec<String> &unmatchedNames );
 
-  bool   m_isParsed;
+  private:
+    FastaSequenceFileset m_basesFileset;
+    FastaQualityFileset  m_qualsFileset;
 
-  std::ostream &m_log;
+    vec<String> m_unmatchedSeqs;
+    vec<String> m_unmatchedQuals;
+
+    bool   m_isParsed;
+
+    std::ostream &m_log;
 };
 
 #endif

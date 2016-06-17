@@ -39,9 +39,8 @@
 /// An ID for a KMer.
 /// Kmers are assigned IDs in such a way that each edge of a unipath graph can
 /// be described by a consecutive sequence of KmerIDs.
-class KmerID : public ID<5>
-{
-public:
+class KmerID : public ID<5> {
+  public:
     KmerID() {}
     explicit KmerID( size_t id ) : ID<5>(id) {}
 
@@ -51,35 +50,50 @@ public:
 TRIVIALLY_SERIALIZABLE(KmerID);
 
 /// An ID for an edge of a unipath graph.
-class EdgeID
-{
-public:
+class EdgeID {
+  public:
     EdgeID() : mID(NULLVAL) {}
-    explicit EdgeID( size_t id ) { setVal(id); }
+    explicit EdgeID( size_t id ) {
+        setVal(id);
+    }
 
     // compiler-supplied copying and destructor are ok
 
-    size_t val() const { return mID; }
-    void setVal( size_t id ) { ForceAssertLe(id,NULLVAL); mID = id; }
-    void setNull() { mID = NULLVAL; }
-    bool isNull() const { return mID == NULLVAL; }
+    size_t val() const {
+        return mID;
+    }
+    void setVal( size_t id ) {
+        ForceAssertLe(id,NULLVAL);
+        mID = id;
+    }
+    void setNull() {
+        mID = NULLVAL;
+    }
+    bool isNull() const {
+        return mID == NULLVAL;
+    }
 
-    friend bool operator==( EdgeID const& eid1, EdgeID const& eid2 )
-    { return eid1.mID == eid2.mID; }
+    friend bool operator==( EdgeID const& eid1, EdgeID const& eid2 ) {
+        return eid1.mID == eid2.mID;
+    }
 
-    friend bool operator!=( EdgeID const& eid1, EdgeID const& eid2 )
-    { return eid1.mID != eid2.mID; }
+    friend bool operator!=( EdgeID const& eid1, EdgeID const& eid2 ) {
+        return eid1.mID != eid2.mID;
+    }
 
-    friend bool operator<( EdgeID const& eid1, EdgeID const& eid2 )
-    { return eid1.mID < eid2.mID; }
+    friend bool operator<( EdgeID const& eid1, EdgeID const& eid2 ) {
+        return eid1.mID < eid2.mID;
+    }
 
-    friend int compare( EdgeID const& eid1, EdgeID const& eid2 )
-    { return compare(eid1.mID,eid2.mID); }
+    friend int compare( EdgeID const& eid1, EdgeID const& eid2 ) {
+        return compare(eid1.mID,eid2.mID);
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, EdgeID const& eid )
-    { return os << eid.mID; }
+    friend std::ostream& operator<<( std::ostream& os, EdgeID const& eid ) {
+        return os << eid.mID;
+    }
 
-private:
+  private:
     static unsigned const NULLVAL = ~0u;
     unsigned mID;
 };
@@ -87,9 +101,8 @@ private:
 TRIVIALLY_SERIALIZABLE(EdgeID);
 
 /// An ID for a connected set of edges in a unipath graph.
-class ComponentID : public ID<3>
-{
-public:
+class ComponentID : public ID<3> {
+  public:
     ComponentID() {}
     explicit ComponentID( size_t id ) : ID<3>(id) {}
 
@@ -101,42 +114,66 @@ TRIVIALLY_SERIALIZABLE(ComponentID);
 /// What you get if you look up a KMer that exists in the dictionary.
 /// Namely, you get an EdgeID in which it occurs, and the offset of the kmer
 /// in question.
-class KDef
-{
-public:
+class KDef {
+  public:
     KDef() : mEdgeOffset(0) {}
     KDef( KMerContext context ) : mEdgeOffset(0), mContext(context) {}
 
     // compiler-supplied copying and destructor are ok
 
-    EdgeID const& getEdgeID() const { return mEdgeID; }
-    unsigned getEdgeOffset() const { return mEdgeOffset; }
+    EdgeID const& getEdgeID() const {
+        return mEdgeID;
+    }
+    unsigned getEdgeOffset() const {
+        return mEdgeOffset;
+    }
 
-    KMerContext getContext() const { return mContext; }
-    void orContext( KMerContext context ) { mContext |= context; }
-    void setContext( KMerContext context ) { mContext = context; }
+    KMerContext getContext() const {
+        return mContext;
+    }
+    void orContext( KMerContext context ) {
+        mContext |= context;
+    }
+    void setContext( KMerContext context ) {
+        mContext = context;
+    }
 
-    bool isNull() const { return mEdgeID.isNull(); }
-    void setNull() { mEdgeID.setNull(); }
-    void set( EdgeID const& edgeID, unsigned edgeOffset )
-    { Assert(isNull()); ForceAssertLe(edgeOffset,MAX_OFFSET);
-      mEdgeID = edgeID; mEdgeOffset = edgeOffset; }
+    bool isNull() const {
+        return mEdgeID.isNull();
+    }
+    void setNull() {
+        mEdgeID.setNull();
+    }
+    void set( EdgeID const& edgeID, unsigned edgeOffset ) {
+        Assert(isNull());
+        ForceAssertLe(edgeOffset,MAX_OFFSET);
+        mEdgeID = edgeID;
+        mEdgeOffset = edgeOffset;
+    }
 
     // the UnipathGraph stores a kmer count in mEdgeOffset during construction
-    size_t getCount() const { Assert(isNull()); return mEdgeOffset; }
-    void setCount( size_t count )
-    { mEdgeOffset = std::min(MAX_OFFSET,count); }
-    size_t incrementCount()
-    { Assert(isNull()); if ( mEdgeOffset < MAX_OFFSET ) ++mEdgeOffset;
-      return mEdgeOffset; }
+    size_t getCount() const {
+        Assert(isNull());
+        return mEdgeOffset;
+    }
+    void setCount( size_t count ) {
+        mEdgeOffset = std::min(MAX_OFFSET,count);
+    }
+    size_t incrementCount() {
+        Assert(isNull());
+        if ( mEdgeOffset < MAX_OFFSET ) ++mEdgeOffset;
+        return mEdgeOffset;
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, KDef const& kd )
-    { return os << '[' << kd.mEdgeID << '+' << kd.mEdgeOffset << "] "
-            << kd.mContext; }
+    friend std::ostream& operator<<( std::ostream& os, KDef const& kd ) {
+        return os << '[' << kd.mEdgeID << '+' << kd.mEdgeOffset << "] "
+               << kd.mContext;
+    }
 
-private:
-    void checkAssumptions()
-    { STATIC_ASSERT(sizeof(KDef)==sizeof(long)); }
+  private:
+    void checkAssumptions() {
+        STATIC_ASSERT(sizeof(KDef)==sizeof(long));
+    }
 
     EdgeID mEdgeID;
     unsigned mEdgeOffset : 24;
@@ -147,36 +184,43 @@ private:
 TRIVIALLY_SERIALIZABLE(KDef);
 
 template <unsigned K>
-class KmerDictEntry : public KMer<K>
-{
-public:
+class KmerDictEntry : public KMer<K> {
+  public:
     KmerDictEntry() {}
     KmerDictEntry( KMer<K> const& kmer, KMerContext context )
-    : KMer<K>(kmer), mKDef(context) {}
-    KmerDictEntry& operator=( KMer<K> const& kmer )
-    { static_cast<KMer<K>&>(*this) = kmer; mKDef = KDef(); return *this; }
+        : KMer<K>(kmer), mKDef(context) {}
+    KmerDictEntry& operator=( KMer<K> const& kmer ) {
+        static_cast<KMer<K>&>(*this) = kmer;
+        mKDef = KDef();
+        return *this;
+    }
 
     // compiler-supplied copying and destructor are OK
 
-    KDef& getKDef() { return mKDef; }
-    KDef const& getKDef() const { return mKDef; }
+    KDef& getKDef() {
+        return mKDef;
+    }
+    KDef const& getKDef() const {
+        return mKDef;
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, KmerDictEntry const& ent )
-    { return os << static_cast<KMer<K> const&>(ent) << ' ' << ent.getKDef(); }
+    friend std::ostream& operator<<( std::ostream& os, KmerDictEntry const& ent ) {
+        return os << static_cast<KMer<K> const&>(ent) << ' ' << ent.getKDef();
+    }
 
-private:
+  private:
     KDef mKDef;
 };
 
 template <unsigned K>
-struct Serializability< KmerDictEntry<K> >
-{ typedef TriviallySerializable type; };
+struct Serializability< KmerDictEntry<K> > {
+    typedef TriviallySerializable type;
+};
 
 /// A set of KmerDictEntry's, used as a map from KMer onto KDef.
 template <unsigned K>
-class KmerDict
-{
-public:
+class KmerDict {
+  public:
     typedef KmerDictEntry<K> Entry;
     typedef typename KMer<K>::Hasher Hasher;
     typedef std::equal_to<KMer<K> > Comparator;
@@ -186,156 +230,203 @@ public:
     typedef typename Set::ICItr ICItr;
 
     KmerDict( size_t dictSize, double maxLoadFactor=.75 )
-    : mKSet(dictSize,Hasher(),Comparator(),TFactory<Entry>(),maxLoadFactor) {}
+        : mKSet(dictSize,Hasher(),Comparator(),TFactory<Entry>(),maxLoadFactor) {}
 
     KmerDict( KmerDict const& ) = delete;
     KmerDict& operator=( KmerDict const& ) = delete;
 
-    Entry const* findEntryCanonical( KMer<K> const& kmer ) const
-    { return mKSet.lookup(kmer); }
+    Entry const* findEntryCanonical( KMer<K> const& kmer ) const {
+        return mKSet.lookup(kmer);
+    }
 
     /// Returns null pointer if kmer isn't in dictionary.
-    Entry const* findEntry( KMer<K> const& kmer ) const
-    { return mKSet.lookup( kmer.getCanonicalForm() == CanonicalForm::REV ?
-                            KMer<K>(kmer).rc() :
-                            kmer ); }
+    Entry const* findEntry( KMer<K> const& kmer ) const {
+        return mKSet.lookup( kmer.getCanonicalForm() == CanonicalForm::REV ?
+                             KMer<K>(kmer).rc() :
+                             kmer );
+    }
 
     /// Applies functor to entry, which will be added if not present.
     template <class Func>
-    void applyCanonical( KMer<K> const& kmer, Func const& func )
-    { mKSet.apply(kmer,func); }
+    void applyCanonical( KMer<K> const& kmer, Func const& func ) {
+        mKSet.apply(kmer,func);
+    }
 
     /// Returns null pointer if kmer isn't in dictionary.
-    KDef* lookup( KMer<K> const& kmer )
-    { Entry const* pEnt = findEntry(kmer);
-      return pEnt ? const_cast<KDef*>(&pEnt->getKDef()) : 0; }
+    KDef* lookup( KMer<K> const& kmer ) {
+        Entry const* pEnt = findEntry(kmer);
+        return pEnt ? const_cast<KDef*>(&pEnt->getKDef()) : 0;
+    }
 
-    KDef const* lookup( KMer<K> const& kmer ) const
-    { Entry const* pEnt = findEntry(kmer);
-      return pEnt ? &pEnt->getKDef() : 0; }
+    KDef const* lookup( KMer<K> const& kmer ) const {
+        Entry const* pEnt = findEntry(kmer);
+        return pEnt ? &pEnt->getKDef() : 0;
+    }
 
     /// Canonicalizes and inserts kmer, if necessary.
-    KDef& operator[]( KMer<K> const& kmer )
-    { Entry const* pEnt;
-      if ( kmer.getCanonicalForm() != CanonicalForm::REV ) pEnt = &mKSet[kmer];
-      else pEnt = &mKSet[KMer<K>(kmer).rc()];
-      return const_cast<KDef&>(pEnt->getKDef()); }
+    KDef& operator[]( KMer<K> const& kmer ) {
+        Entry const* pEnt;
+        if ( kmer.getCanonicalForm() != CanonicalForm::REV ) pEnt = &mKSet[kmer];
+        else pEnt = &mKSet[KMer<K>(kmer).rc()];
+        return const_cast<KDef&>(pEnt->getKDef());
+    }
 
     /// Inserts a kmer known to be in canonical form.
-    void insertCanonical( KMer<K> const& kmer )
-    { mKSet.add(kmer); }
+    void insertCanonical( KMer<K> const& kmer ) {
+        mKSet.add(kmer);
+    }
 
     /// Inserts a canonical kmer, known to be novel, along with its entry info
     /// directly into the dictionary without further ado.
-    void insertEntry( Entry const& entry )
-    { mKSet.insertUniqueValue(entry); }
+    void insertEntry( Entry const& entry ) {
+        mKSet.insertUniqueValue(entry);
+    }
 
-    class BadKmerCountFunctor
-    {
-    public:
-      BadKmerCountFunctor( size_t minCount, size_t maxCount = ~0ul )
-      : mMinCount(minCount), mMaxCount(maxCount) {}
+    class BadKmerCountFunctor {
+      public:
+        BadKmerCountFunctor( size_t minCount, size_t maxCount = ~0ul )
+            : mMinCount(minCount), mMaxCount(maxCount) {}
 
-      bool operator()( Entry const& entry )
-      { size_t count = entry.getKDef().getCount();
-        return count < mMinCount || count > mMaxCount; }
+        bool operator()( Entry const& entry ) {
+            size_t count = entry.getKDef().getCount();
+            return count < mMinCount || count > mMaxCount;
+        }
 
-    private:
-      size_t mMinCount; size_t mMaxCount;
+      private:
+        size_t mMinCount;
+        size_t mMaxCount;
     };
 
     /// Retain only entries with counts in the given range.
     template <class Functor>
-    void clean( Functor const& functor )
-    { mKSet.remove_if(functor);
-      recomputeAdjacencies(); }
+    void clean( Functor const& functor ) {
+        mKSet.remove_if(functor);
+        recomputeAdjacencies();
+    }
 
-    OCItr begin() const { return mKSet.begin(); }
-    OCItr end() const { return mKSet.end(); }
-    OCItr cbegin() { return mKSet.cbegin(); }
-    OCItr cend() { return mKSet.cend(); }
-    OItr begin() { return mKSet.begin(); }
-    OItr end() { return mKSet.end(); }
+    OCItr begin() const {
+        return mKSet.begin();
+    }
+    OCItr end() const {
+        return mKSet.end();
+    }
+    OCItr cbegin() {
+        return mKSet.cbegin();
+    }
+    OCItr cend() {
+        return mKSet.cend();
+    }
+    OItr begin() {
+        return mKSet.begin();
+    }
+    OItr end() {
+        return mKSet.end();
+    }
 
-    size_t size() const { return mKSet.size(); }
+    size_t size() const {
+        return mKSet.size();
+    }
 
-    void remove( KMer<K> const& kmer )
-    { mKSet.remove( kmer.getCanonicalForm() == CanonicalForm::REV ?
-                            KMer<K>(kmer).rc() : kmer ); }
+    void remove( KMer<K> const& kmer ) {
+        mKSet.remove( kmer.getCanonicalForm() == CanonicalForm::REV ?
+                      KMer<K>(kmer).rc() : kmer );
+    }
 
-    void removeCanonical( KMer<K> const& kmer ) { mKSet.remove(kmer); }
+    void removeCanonical( KMer<K> const& kmer ) {
+        mKSet.remove(kmer);
+    }
 
     void process( VirtualMasterVec<bvec> const& reads,
-                        bool validate = false,
-                        unsigned nThreads = getConfiguredNumThreads(),
-                        size_t batchSize = 10000 );
+                  bool validate = false,
+                  unsigned nThreads = getConfiguredNumThreads(),
+                  size_t batchSize = 10000 );
 
     void process( vecbvec const& reads, bool verbose = false,
-                        bool validate = false,
-                        unsigned nThreads = getConfiguredNumThreads(),
-                        size_t batchSize = 10000 );
+                  bool validate = false,
+                  unsigned nThreads = getConfiguredNumThreads(),
+                  size_t batchSize = 10000 );
 
-    void clear() { mKSet.clear(); }
+    void clear() {
+        mKSet.clear();
+    }
 
-    friend void swap( KmerDict& kd1, KmerDict& kd2 )
-    { swap(kd1.mKSet,kd2.mKSet); }
+    friend void swap( KmerDict& kd1, KmerDict& kd2 ) {
+        swap(kd1.mKSet,kd2.mKSet);
+    }
 
-    friend bool operator==( KmerDict const& kd1, KmerDict const& kd2 )
-    { return kd1.mKSet == kd2.mKSet; }
+    friend bool operator==( KmerDict const& kd1, KmerDict const& kd2 ) {
+        return kd1.mKSet == kd2.mKSet;
+    }
 
-    friend bool operator!=( KmerDict const& kd1, KmerDict const& kd2 )
-    { return !(kd1==kd2); }
+    friend bool operator!=( KmerDict const& kd1, KmerDict const& kd2 ) {
+        return !(kd1==kd2);
+    }
 
-    void writeBinary( BinaryWriter& writer ) const
-    { writer.write(mKSet); }
+    void writeBinary( BinaryWriter& writer ) const {
+        writer.write(mKSet);
+    }
 
-    void readBinary( BinaryReader& reader )
-    { reader.read(&mKSet); }
+    void readBinary( BinaryReader& reader ) {
+        reader.read(&mKSet);
+    }
 
-    static size_t externalSizeof() { return 0; }
+    static size_t externalSizeof() {
+        return 0;
+    }
 
     template <class Proc>
-    void parallelForEachHHS( Proc const& proc ) const
-    { mKSet.parallelForEachHHS(proc); }
+    void parallelForEachHHS( Proc const& proc ) const {
+        mKSet.parallelForEachHHS(proc);
+    }
 
-    void recomputeAdjacencies()
-    { parallelForEachHHS(AdjProc(*this)); }
+    void recomputeAdjacencies() {
+        parallelForEachHHS(AdjProc(*this));
+    }
 
-    void nullEntries()
-    { parallelForEachHHS(
-                []( typename Set::HHS const& hhs )
-                { for ( Entry const& entry : hhs )
-                    const_cast<Entry&>(entry).getKDef().setNull(); }); }
+    void nullEntries() {
+        parallelForEachHHS(
+        []( typename Set::HHS const& hhs ) {
+            for ( Entry const& entry : hhs )
+                const_cast<Entry&>(entry).getKDef().setNull();
+        });
+    }
 
-private:
-    class AdjProc
-    {
-    public:
+  private:
+    class AdjProc {
+      public:
         AdjProc( KmerDict& dict ) : mDict(dict) {}
 
-        void operator()( typename Set::HHS const& hhs )
-        { for ( auto itr=hhs.begin(),end=hhs.end(); itr != end; ++itr )
-          { KDef& kDef = const_cast<KDef&>(itr->getKDef());
-            KMerContext context = kDef.getContext();
-            if ( context.getSuccessors() )
-            { KMer<K> kmer(*itr);
-              kmer.toSuccessor(0);
-              for ( unsigned succCode = 0; succCode < 4u; ++succCode )
-              { if ( context.isSuccessor(succCode) )
-                { kmer.setBack(succCode);
-                  if ( !mDict.findEntry(kmer) )
-                    context.removeSuccessor(succCode); } } }
-            if ( context.getPredecessors() )
-            { KMer<K> kmer(*itr);
-              kmer.toPredecessor(0);
-              for ( unsigned predCode = 0; predCode < 4u; ++predCode )
-              { if ( context.isPredecessor(predCode) )
-                { kmer.setFront(predCode);
-                  if ( !mDict.findEntry(kmer) )
-                    context.removePredecessor(predCode); } } }
-            kDef.setContext(context); } }
+        void operator()( typename Set::HHS const& hhs ) {
+            for ( auto itr=hhs.begin(),end=hhs.end(); itr != end; ++itr ) {
+                KDef& kDef = const_cast<KDef&>(itr->getKDef());
+                KMerContext context = kDef.getContext();
+                if ( context.getSuccessors() ) {
+                    KMer<K> kmer(*itr);
+                    kmer.toSuccessor(0);
+                    for ( unsigned succCode = 0; succCode < 4u; ++succCode ) {
+                        if ( context.isSuccessor(succCode) ) {
+                            kmer.setBack(succCode);
+                            if ( !mDict.findEntry(kmer) )
+                                context.removeSuccessor(succCode);
+                        }
+                    }
+                }
+                if ( context.getPredecessors() ) {
+                    KMer<K> kmer(*itr);
+                    kmer.toPredecessor(0);
+                    for ( unsigned predCode = 0; predCode < 4u; ++predCode ) {
+                        if ( context.isPredecessor(predCode) ) {
+                            kmer.setFront(predCode);
+                            if ( !mDict.findEntry(kmer) )
+                                context.removePredecessor(predCode);
+                        }
+                    }
+                }
+                kDef.setContext(context);
+            }
+        }
 
-    private:
+      private:
         KmerDict& mDict;
     };
 
@@ -343,111 +434,151 @@ private:
 };
 
 template <unsigned K>
-struct Serializability< KmerDict<K> >
-{ typedef SelfSerializable type; };
+struct Serializability< KmerDict<K> > {
+    typedef SelfSerializable type;
+};
 
 /// An unbranched sequence of kmers.
 /// Described by a close-ended range of kmer IDs.
 /// Also includes info on predecessor and successor edges.
-class UnipathEdge
-{
-public:
+class UnipathEdge {
+  public:
     UnipathEdge() : mRCFlags(0), mIsPalindrome(false) {}
 
     UnipathEdge( KmerID const& kmerID, ComponentID componentID,
                  bool isPalindrome )
-    : mRCFlags(0),
-      mFirstKmerID(kmerID), mLastKmerID(kmerID),
-      mComponentID(componentID), mIsPalindrome(isPalindrome)
-    {}
+        : mRCFlags(0),
+          mFirstKmerID(kmerID), mLastKmerID(kmerID),
+          mComponentID(componentID), mIsPalindrome(isPalindrome) {
+    }
 
     // compiler-supplied copying and destructor are ok
 
-    KmerID const& getInitialKmerID() const { return mFirstKmerID; }
-    size_t getInitialKmerId() const { return mFirstKmerID.val(); }
-    KmerID const& getFinalKmerID() const { return mLastKmerID; }
-    size_t getFinalKmerId() const { return mLastKmerID.val(); }
-    KmerID getKmerID( unsigned offset ) const
-    { return KmerID(mFirstKmerID.val()+offset); }
+    KmerID const& getInitialKmerID() const {
+        return mFirstKmerID;
+    }
+    size_t getInitialKmerId() const {
+        return mFirstKmerID.val();
+    }
+    KmerID const& getFinalKmerID() const {
+        return mLastKmerID;
+    }
+    size_t getFinalKmerId() const {
+        return mLastKmerID.val();
+    }
+    KmerID getKmerID( unsigned offset ) const {
+        return KmerID(mFirstKmerID.val()+offset);
+    }
 
-    size_t getLength() const { return mLastKmerID.val()-mFirstKmerID.val()+1; }
-    ComponentID const& getComponentID() const { return mComponentID; }
+    size_t getLength() const {
+        return mLastKmerID.val()-mFirstKmerID.val()+1;
+    }
+    ComponentID const& getComponentID() const {
+        return mComponentID;
+    }
 
-    size_t extend()
-    { size_t newVal = mLastKmerID.val()+1;
-      mLastKmerID.setVal(newVal);
-      return newVal - mFirstKmerID.val(); }
+    size_t extend() {
+        size_t newVal = mLastKmerID.val()+1;
+        mLastKmerID.setVal(newVal);
+        return newVal - mFirstKmerID.val();
+    }
 
-    bool hasPredecessor( unsigned baseCode ) const
-    { return !getPredecessor(baseCode).isNull(); }
+    bool hasPredecessor( unsigned baseCode ) const {
+        return !getPredecessor(baseCode).isNull();
+    }
 
-    EdgeID const& getPredecessor( unsigned baseCode ) const
-    { AssertLt(baseCode,4u); return mConnections[baseCode]; }
+    EdgeID const& getPredecessor( unsigned baseCode ) const {
+        AssertLt(baseCode,4u);
+        return mConnections[baseCode];
+    }
 
-    size_t getPredecessorId( unsigned baseCode ) const
-    { return getPredecessor(baseCode).val(); }
+    size_t getPredecessorId( unsigned baseCode ) const {
+        return getPredecessor(baseCode).val();
+    }
 
-    bool isPredecessorRC( unsigned baseCode ) const
-    { AssertLt(baseCode,4u); return (mRCFlags >> baseCode) & 1; }
+    bool isPredecessorRC( unsigned baseCode ) const {
+        AssertLt(baseCode,4u);
+        return (mRCFlags >> baseCode) & 1;
+    }
 
-    void setPredecessor( unsigned baseCode, EdgeID id, bool rc )
-    { AssertLt(baseCode,4u);
-      if ( !mConnections[baseCode].isNull() )
-      { AssertEq(mConnections[baseCode],id); }
-      else
-      { mConnections[baseCode] = id;
-        if ( rc ) mRCFlags |= 1 << baseCode; } }
+    void setPredecessor( unsigned baseCode, EdgeID id, bool rc ) {
+        AssertLt(baseCode,4u);
+        if ( !mConnections[baseCode].isNull() ) {
+            AssertEq(mConnections[baseCode],id);
+        } else {
+            mConnections[baseCode] = id;
+            if ( rc ) mRCFlags |= 1 << baseCode;
+        }
+    }
 
-    bool hasSuccessor( unsigned baseCode ) const
-    { return !getSuccessor(baseCode).isNull(); }
+    bool hasSuccessor( unsigned baseCode ) const {
+        return !getSuccessor(baseCode).isNull();
+    }
 
-    EdgeID const& getSuccessor( unsigned baseCode ) const
-    { AssertLt(baseCode,4u); return mConnections[baseCode+4]; }
+    EdgeID const& getSuccessor( unsigned baseCode ) const {
+        AssertLt(baseCode,4u);
+        return mConnections[baseCode+4];
+    }
 
-    size_t getSuccessorId( unsigned baseCode ) const
-    { return getSuccessor(baseCode).val(); }
+    size_t getSuccessorId( unsigned baseCode ) const {
+        return getSuccessor(baseCode).val();
+    }
 
-    bool isSuccessorRC( unsigned baseCode ) const
-    { AssertLt(baseCode,4u); return (mRCFlags >> (baseCode+4)) & 1; }
+    bool isSuccessorRC( unsigned baseCode ) const {
+        AssertLt(baseCode,4u);
+        return (mRCFlags >> (baseCode+4)) & 1;
+    }
 
-    void setSuccessor( unsigned baseCode, EdgeID id, bool rc )
-    { AssertLt(baseCode,4u);
-      baseCode += 4u;
-      if ( !mConnections[baseCode].isNull() )
-      { AssertEq(mConnections[baseCode],id); }
-      else
-      { mConnections[baseCode] = id;
-        if ( rc ) mRCFlags |= 1 << baseCode; } }
+    void setSuccessor( unsigned baseCode, EdgeID id, bool rc ) {
+        AssertLt(baseCode,4u);
+        baseCode += 4u;
+        if ( !mConnections[baseCode].isNull() ) {
+            AssertEq(mConnections[baseCode],id);
+        } else {
+            mConnections[baseCode] = id;
+            if ( rc ) mRCFlags |= 1 << baseCode;
+        }
+    }
 
-    bool isPalindrome() const
-    { return mIsPalindrome; }
+    bool isPalindrome() const {
+        return mIsPalindrome;
+    }
 
-    bool isSource() const
-    { return !hasPredecessor(0) && !hasPredecessor(1) &&
-                !hasPredecessor(2) && !hasPredecessor(3); }
+    bool isSource() const {
+        return !hasPredecessor(0) && !hasPredecessor(1) &&
+               !hasPredecessor(2) && !hasPredecessor(3);
+    }
 
-    bool isSink() const
-    { return !hasSuccessor(0) && !hasSuccessor(1) &&
-                !hasSuccessor(2) && !hasSuccessor(3); }
+    bool isSink() const {
+        return !hasSuccessor(0) && !hasSuccessor(1) &&
+               !hasSuccessor(2) && !hasSuccessor(3);
+    }
 
-    void setPalindrome( bool isPalindrome ) { mIsPalindrome = isPalindrome; }
-    friend bool operator==( UnipathEdge const& ue1, UnipathEdge const& ue2 )
-    { return !memcmp(&ue1,&ue2,sizeof(UnipathEdge)); }
+    void setPalindrome( bool isPalindrome ) {
+        mIsPalindrome = isPalindrome;
+    }
+    friend bool operator==( UnipathEdge const& ue1, UnipathEdge const& ue2 ) {
+        return !memcmp(&ue1,&ue2,sizeof(UnipathEdge));
+    }
 
-    friend bool operator!=( UnipathEdge const& ue1, UnipathEdge const& ue2 )
-    { return !(ue1 == ue2); }
+    friend bool operator!=( UnipathEdge const& ue1, UnipathEdge const& ue2 ) {
+        return !(ue1 == ue2);
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, UnipathEdge const& edge )
-    { os << '[' << edge.getInitialKmerID() << '-' << edge.getFinalKmerID() <<
-        '@' << edge.getComponentID();
-      char sep = '>';
-      for ( size_t idx = 0; idx < 8; ++idx )
-      { os << sep; sep = ',';
-        if ( edge.mRCFlags & (1 << idx) ) os << '~';
-        os << edge.mConnections[idx]; }
-      return os << ']'; }
+    friend std::ostream& operator<<( std::ostream& os, UnipathEdge const& edge ) {
+        os << '[' << edge.getInitialKmerID() << '-' << edge.getFinalKmerID() <<
+           '@' << edge.getComponentID();
+        char sep = '>';
+        for ( size_t idx = 0; idx < 8; ++idx ) {
+            os << sep;
+            sep = ',';
+            if ( edge.mRCFlags & (1 << idx) ) os << '~';
+            os << edge.mConnections[idx];
+        }
+        return os << ']';
+    }
 
-private:
+  private:
     unsigned char mRCFlags;
     KmerID mFirstKmerID;
     KmerID mLastKmerID;
@@ -460,8 +591,7 @@ TRIVIALLY_SERIALIZABLE(UnipathEdge);
 typedef std::vector<UnipathEdge> UnipathEdgeVec;
 
 // Data about the graph files stashed in the .info file.
-struct GraphInfo
-{
+struct GraphInfo {
     size_t nComponents;
     size_t nKmers;
     size_t nEdges;
@@ -473,9 +603,8 @@ TRIVIALLY_SERIALIZABLE(GraphInfo);
 
 /// A bi-directional graph of UnipathEdges.
 template <unsigned K>
-class UnipathGraph
-{
-public:
+class UnipathGraph {
+  public:
     typedef KmerDict<K> KDict;
 
     /// Instantiate a graph from its binary files.
@@ -486,120 +615,161 @@ public:
 
     /// Create a graph from a mess of reads.
     UnipathGraph( VirtualMasterVec<bvec> const& reads,
-                    bool validate, unsigned nThreads, size_t nKmersEstimate,
+                  bool validate, unsigned nThreads, size_t nKmersEstimate,
                   const int verbosity = 0 );
 
     /// Create a graph from a mess of reads.
     UnipathGraph( vecbvec const& reads,
-                    bool validate, unsigned nThreads, size_t nKmersEstimate,
+                  bool validate, unsigned nThreads, size_t nKmersEstimate,
                   const int verbosity = 0 );
 
-    ~UnipathGraph() { ungetDict(); }
+    ~UnipathGraph() {
+        ungetDict();
+    }
 
-    size_t getNEdges() const { return mEdges.size(); }
+    size_t getNEdges() const {
+        return mEdges.size();
+    }
 
-    UnipathEdge const& getEdge( EdgeID const& edgeID ) const
-    { Assert(edgeID.val()<mEdges.size()); return mEdges[edgeID.val()]; }
+    UnipathEdge const& getEdge( EdgeID const& edgeID ) const {
+        Assert(edgeID.val()<mEdges.size());
+        return mEdges[edgeID.val()];
+    }
 
-    KmerID getKmerID( KDef const& kDef ) const
-    { return KmerID(getEdge(kDef.getEdgeID()).getInitialKmerID().val() +
-                        kDef.getEdgeOffset()); }
+    KmerID getKmerID( KDef const& kDef ) const {
+        return KmerID(getEdge(kDef.getEdgeID()).getInitialKmerID().val() +
+                      kDef.getEdgeOffset());
+    }
 
-    UnipathEdgeVec const& getAllEdges() const { return mEdges; }
+    UnipathEdgeVec const& getAllEdges() const {
+        return mEdges;
+    }
 
-    HugeBVec::const_iterator getBases( KmerID const& kmerID ) const
-    { return mSeq.begin(kmerID.val()); }
-    HugeBVec::const_iterator getBases( EdgeID const& edgeID ) const
-    { return mSeq.begin(getEdge(edgeID).getInitialKmerID().val()); }
-    HugeBVec::const_iterator getBases( KDef const& kDef ) const
-    { return mSeq.begin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
-                        +kDef.getEdgeOffset()); }
-    HugeBVec::const_iterator getBasesEnd( KmerID const& kmerID ) const
-    { return mSeq.begin(kmerID.val()+K); }
-    HugeBVec::const_iterator getBasesEnd( EdgeID const& edgeID ) const
-    { return mSeq.begin(getEdge(edgeID).getFinalKmerID().val()+K); }
-    HugeBVec::const_iterator getBasesEnd( KDef const& kDef ) const
-    { return mSeq.begin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
-                        +kDef.getEdgeOffset()+K); }
+    HugeBVec::const_iterator getBases( KmerID const& kmerID ) const {
+        return mSeq.begin(kmerID.val());
+    }
+    HugeBVec::const_iterator getBases( EdgeID const& edgeID ) const {
+        return mSeq.begin(getEdge(edgeID).getInitialKmerID().val());
+    }
+    HugeBVec::const_iterator getBases( KDef const& kDef ) const {
+        return mSeq.begin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
+                          +kDef.getEdgeOffset());
+    }
+    HugeBVec::const_iterator getBasesEnd( KmerID const& kmerID ) const {
+        return mSeq.begin(kmerID.val()+K);
+    }
+    HugeBVec::const_iterator getBasesEnd( EdgeID const& edgeID ) const {
+        return mSeq.begin(getEdge(edgeID).getFinalKmerID().val()+K);
+    }
+    HugeBVec::const_iterator getBasesEnd( KDef const& kDef ) const {
+        return mSeq.begin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
+                          +kDef.getEdgeOffset()+K);
+    }
 
-    HugeBVec::const_rc_iterator getRCBases( KmerID const& kmerID ) const
-    { return mSeq.rcbegin(kmerID.val()+K); }
-    HugeBVec::const_rc_iterator getRCBases( EdgeID const& edgeID ) const
-    { return mSeq.rcbegin(getEdge(edgeID).getFinalKmerID().val()+K); }
-    HugeBVec::const_rc_iterator getRCBases( KDef const& kDef ) const
-    { return mSeq.rcbegin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
-                        +kDef.getEdgeOffset()+K); }
-    HugeBVec::const_rc_iterator getRCBasesEnd( KmerID const& kmerID ) const
-    { return mSeq.rcbegin(kmerID.val()+K,K); }
-    HugeBVec::const_rc_iterator getRCBasesEnd( EdgeID const& edgeID ) const
-    { UnipathEdge const& edge = getEdge(edgeID);
-      size_t len = edge.getLength()+K-1;
-      return mSeq.rcbegin(edge.getFinalKmerID().val()+K,len); }
-    HugeBVec::const_rc_iterator getRCBasesEnd( KDef const& kDef ) const
-    { return mSeq.rcbegin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
-                        +kDef.getEdgeOffset()+K,K); }
+    HugeBVec::const_rc_iterator getRCBases( KmerID const& kmerID ) const {
+        return mSeq.rcbegin(kmerID.val()+K);
+    }
+    HugeBVec::const_rc_iterator getRCBases( EdgeID const& edgeID ) const {
+        return mSeq.rcbegin(getEdge(edgeID).getFinalKmerID().val()+K);
+    }
+    HugeBVec::const_rc_iterator getRCBases( KDef const& kDef ) const {
+        return mSeq.rcbegin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
+                            +kDef.getEdgeOffset()+K);
+    }
+    HugeBVec::const_rc_iterator getRCBasesEnd( KmerID const& kmerID ) const {
+        return mSeq.rcbegin(kmerID.val()+K,K);
+    }
+    HugeBVec::const_rc_iterator getRCBasesEnd( EdgeID const& edgeID ) const {
+        UnipathEdge const& edge = getEdge(edgeID);
+        size_t len = edge.getLength()+K-1;
+        return mSeq.rcbegin(edge.getFinalKmerID().val()+K,len);
+    }
+    HugeBVec::const_rc_iterator getRCBasesEnd( KDef const& kDef ) const {
+        return mSeq.rcbegin(getEdge(kDef.getEdgeID()).getInitialKmerID().val()
+                            +kDef.getEdgeOffset()+K,K);
+    }
 
-    HugeBVec const& getAllBases() const { return mSeq; }
+    HugeBVec const& getAllBases() const {
+        return mSeq;
+    }
 
-    bool nextEdge( unsigned baseCode, EdgeID* pEdgeID, bool isRC ) const
-    { UnipathEdge const& edge = getEdge(*pEdgeID);
-      if ( isRC )
-      { *pEdgeID = edge.getPredecessor(baseCode);
-        if ( edge.isPredecessorRC(baseCode) ) isRC = false; }
-      else
-      { *pEdgeID = edge.getSuccessor(baseCode);
-        if ( edge.isSuccessorRC(baseCode) ) isRC = true; }
-      AssertNot(pEdgeID->isNull());
-      return isRC; }
+    bool nextEdge( unsigned baseCode, EdgeID* pEdgeID, bool isRC ) const {
+        UnipathEdge const& edge = getEdge(*pEdgeID);
+        if ( isRC ) {
+            *pEdgeID = edge.getPredecessor(baseCode);
+            if ( edge.isPredecessorRC(baseCode) ) isRC = false;
+        } else {
+            *pEdgeID = edge.getSuccessor(baseCode);
+            if ( edge.isSuccessorRC(baseCode) ) isRC = true;
+        }
+        AssertNot(pEdgeID->isNull());
+        return isRC;
+    }
 
     // loads dictionary (which is huge) lazily
-    KDict const& getDict() const
-    { if ( !mpDict ) loadDict(); return *mpDict; }
+    KDict const& getDict() const {
+        if ( !mpDict ) loadDict();
+        return *mpDict;
+    }
 
     // unloads dictionary to recover lots of memory
-    void ungetDict() const
-    { if ( mMyDict ) { delete mpDict; mpDict = 0; } }
+    void ungetDict() const {
+        if ( mMyDict ) {
+            delete mpDict;
+            mpDict = 0;
+        }
+    }
 
-    void write( String const& graphInfoFilename )
-    { unlink(graphInfoFilename.c_str()); // don't check results, just try it
-      BinaryWriter::writeFile(getSeqFilename(graphInfoFilename),mSeq);
-      BinaryWriter::writeFile(getDictFilename(graphInfoFilename),getDict());
-      BinaryWriter::writeFile(getEdgesFilename(graphInfoFilename),mEdges);
-      GraphInfo gi;
-      gi.K = K; gi.kSeqSize = mSeq.size();
-      gi.nComponents = 0;
-      if ( mEdges.size() )
-        gi.nComponents = mEdges.back().getComponentID().val() + 1;
-      gi.nKmers = getDict().size(); gi.nEdges = mEdges.size();
-      BinaryWriter::writeFile(graphInfoFilename,gi); }
+    void write( String const& graphInfoFilename ) {
+        unlink(graphInfoFilename.c_str()); // don't check results, just try it
+        BinaryWriter::writeFile(getSeqFilename(graphInfoFilename),mSeq);
+        BinaryWriter::writeFile(getDictFilename(graphInfoFilename),getDict());
+        BinaryWriter::writeFile(getEdgesFilename(graphInfoFilename),mEdges);
+        GraphInfo gi;
+        gi.K = K;
+        gi.kSeqSize = mSeq.size();
+        gi.nComponents = 0;
+        if ( mEdges.size() )
+            gi.nComponents = mEdges.back().getComponentID().val() + 1;
+        gi.nKmers = getDict().size();
+        gi.nEdges = mEdges.size();
+        BinaryWriter::writeFile(graphInfoFilename,gi);
+    }
 
-    friend bool operator==( UnipathGraph const& ug1, UnipathGraph const& ug2 )
-    { return ug1.mSeq == ug2.mSeq &&
-             ug1.mEdges == ug2.mEdges; }
+    friend bool operator==( UnipathGraph const& ug1, UnipathGraph const& ug2 ) {
+        return ug1.mSeq == ug2.mSeq &&
+               ug1.mEdges == ug2.mEdges;
+    }
 
-    friend bool operator!=( UnipathGraph ug1, UnipathGraph ug2 )
-    { return !(ug1 == ug2); }
+    friend bool operator!=( UnipathGraph ug1, UnipathGraph ug2 ) {
+        return !(ug1 == ug2);
+    }
 
-    static String getInfoFilename( String const& fastb )
-    { return fastb.ReplaceExtension(".fastb",".k"+ToString(K)+".ug.info"); }
+    static String getInfoFilename( String const& fastb ) {
+        return fastb.ReplaceExtension(".fastb",".k"+ToString(K)+".ug.info");
+    }
 
-    static String getSeqFilename( String const& graphInfoFilename )
-    { return graphInfoFilename.ReplaceExtension(".info",".seq"); }
-    static String getEdgesFilename( String const& graphInfoFilename )
-    { return graphInfoFilename.ReplaceExtension(".info",".edges"); }
-    static String getDictFilename( String const& graphInfoFilename )
-    { return graphInfoFilename.ReplaceExtension(".info",".dict"); }
-    static void removeFiles( String const& graphInfoFilename )
-    { unlink(graphInfoFilename.c_str());
-      unlink(getSeqFilename(graphInfoFilename).c_str());
-      unlink(getEdgesFilename(graphInfoFilename).c_str());
-      unlink(getDictFilename(graphInfoFilename).c_str()); }
+    static String getSeqFilename( String const& graphInfoFilename ) {
+        return graphInfoFilename.ReplaceExtension(".info",".seq");
+    }
+    static String getEdgesFilename( String const& graphInfoFilename ) {
+        return graphInfoFilename.ReplaceExtension(".info",".edges");
+    }
+    static String getDictFilename( String const& graphInfoFilename ) {
+        return graphInfoFilename.ReplaceExtension(".info",".dict");
+    }
+    static void removeFiles( String const& graphInfoFilename ) {
+        unlink(graphInfoFilename.c_str());
+        unlink(getSeqFilename(graphInfoFilename).c_str());
+        unlink(getEdgesFilename(graphInfoFilename).c_str());
+        unlink(getDictFilename(graphInfoFilename).c_str());
+    }
 
     static void validateUnipaths( HugeBVec const& seq,
                                   UnipathEdgeVec const& edges,
                                   KDict const& dict );
 
-private:
+  private:
     UnipathGraph( UnipathGraph const& ); // unimplemented -- no copying
     UnipathGraph& operator=( UnipathGraph const& ); // unimplemented -- no copying
 
@@ -614,9 +784,8 @@ private:
 
 template <unsigned K>
 UnipathGraph<K>::UnipathGraph( String const& graphInfoFile )
-: mSeq(getSeqFilename(graphInfoFile).c_str()),
-  mDictFilename(getDictFilename(graphInfoFile)), mpDict(0), mMyDict(false)
-{
+    : mSeq(getSeqFilename(graphInfoFile).c_str()),
+      mDictFilename(getDictFilename(graphInfoFile)), mpDict(0), mMyDict(false) {
     GraphInfo gi;
     BinaryReader::readFile(graphInfoFile.c_str(),&gi);
 
@@ -637,63 +806,74 @@ UnipathGraph<K>::UnipathGraph( String const& graphInfoFile )
 
 /// Figures out successors or predecessors to a given kmer.
 template <unsigned K>
-class KmerStepper
-{
-public:
+class KmerStepper {
+  public:
     typedef typename KmerDict<K>::Entry DictEntry;
 
     KmerStepper( KmerDict<K> const& dict )
-    : mDict(dict) {}
+        : mDict(dict) {}
 
     // compiler-supplied copy ctor and dtor are OK
 
-    KMer<K>& getSteppedKmer() { return mKMer; }
+    KMer<K>& getSteppedKmer() {
+        return mKMer;
+    }
 
     unsigned getSuccessors( KMer<K> const& kmer,
-                                    DictEntry const** pEntries )
-    { unsigned result = 0;
-      KMerContext context = getContext(kmer);
-      mKMer = kmer;
-      mKMer.toSuccessor(0);
-      for ( unsigned succCode = 0; succCode < 4u; ++succCode )
-      { DictEntry const* pEntry = 0;
-        if ( context.isSuccessor(succCode) )
-        { mKMer.setBack(succCode);
-          pEntry = mDict.findEntry(mKMer); ForceAssert(pEntry);
-          result += 1; }
-        *pEntries++ = pEntry; }
-      AssertEq(result,context.getSuccessorCount());
-      return result; }
+                            DictEntry const** pEntries ) {
+        unsigned result = 0;
+        KMerContext context = getContext(kmer);
+        mKMer = kmer;
+        mKMer.toSuccessor(0);
+        for ( unsigned succCode = 0; succCode < 4u; ++succCode ) {
+            DictEntry const* pEntry = 0;
+            if ( context.isSuccessor(succCode) ) {
+                mKMer.setBack(succCode);
+                pEntry = mDict.findEntry(mKMer);
+                ForceAssert(pEntry);
+                result += 1;
+            }
+            *pEntries++ = pEntry;
+        }
+        AssertEq(result,context.getSuccessorCount());
+        return result;
+    }
 
     unsigned getPredecessors( KMer<K> const& kmer,
-                                        DictEntry const** pEntries )
-    { unsigned result = 0;
-      KMerContext context = getContext(kmer);
-      mKMer = kmer;
-      mKMer.toPredecessor(0);
-      for ( unsigned predCode = 0; predCode < 4u; ++predCode )
-      { DictEntry const* pEntry = 0;
-        if ( context.isPredecessor(predCode) )
-        { mKMer.setFront(predCode);
-          pEntry = mDict.findEntry(mKMer); ForceAssert(pEntry);
-          result += 1; }
-        *pEntries++ = pEntry; }
-      AssertEq(result,context.getPredecessorCount());
-      return result; }
+                              DictEntry const** pEntries ) {
+        unsigned result = 0;
+        KMerContext context = getContext(kmer);
+        mKMer = kmer;
+        mKMer.toPredecessor(0);
+        for ( unsigned predCode = 0; predCode < 4u; ++predCode ) {
+            DictEntry const* pEntry = 0;
+            if ( context.isPredecessor(predCode) ) {
+                mKMer.setFront(predCode);
+                pEntry = mDict.findEntry(mKMer);
+                ForceAssert(pEntry);
+                result += 1;
+            }
+            *pEntries++ = pEntry;
+        }
+        AssertEq(result,context.getPredecessorCount());
+        return result;
+    }
 
-private:
-    KMerContext getContext( KMer<K> const& kmer )
-    { KMerContext result;
-      DictEntry const* pEntry;
-      if ( kmer.getCanonicalForm() == CanonicalForm::REV )
-      { pEntry = mDict.findEntryCanonical(KMer<K>(kmer).rc());
-        ForceAssert(pEntry);
-        result = pEntry->getKDef().getContext().rc(); }
-      else
-      { pEntry = mDict.findEntryCanonical(kmer);
-        ForceAssert(pEntry);
-        result = pEntry->getKDef().getContext(); }
-      return result; }
+  private:
+    KMerContext getContext( KMer<K> const& kmer ) {
+        KMerContext result;
+        DictEntry const* pEntry;
+        if ( kmer.getCanonicalForm() == CanonicalForm::REV ) {
+            pEntry = mDict.findEntryCanonical(KMer<K>(kmer).rc());
+            ForceAssert(pEntry);
+            result = pEntry->getKDef().getContext().rc();
+        } else {
+            pEntry = mDict.findEntryCanonical(kmer);
+            ForceAssert(pEntry);
+            result = pEntry->getKDef().getContext();
+        }
+        return result;
+    }
 
     KmerDict<K> const& mDict;
     KMer<K> mKMer;
@@ -701,9 +881,8 @@ private:
 
 template <unsigned K>
 void UnipathGraph<K>::validateUnipaths( HugeBVec const& bv,
-                                     UnipathEdgeVec const& edges,
-                                     KmerDict<K> const& dict )
-{
+                                        UnipathEdgeVec const& edges,
+                                        KmerDict<K> const& dict ) {
     std::cout << Date() << " Validating unipaths." << std::endl;
     size_t nErrors = 0;
     typedef UnipathEdgeVec::const_iterator Itr;
@@ -711,96 +890,79 @@ void UnipathGraph<K>::validateUnipaths( HugeBVec const& bv,
     KmerStepper<K> stepper(dict);
     KMer<K> kmer;
     using std::equal;
-    for ( Itr itr(edges.begin()), end(edges.end()); itr != end; ++itr )
-    {
+    for ( Itr itr(edges.begin()), end(edges.end()); itr != end; ++itr ) {
         UnipathEdge const& edge = *itr;
         kmer.assign(bv.begin(edge.getFinalKmerID().val()));
         stepper.getSuccessors(kmer,entries);
-        for ( unsigned succCode = 0; succCode < 4u; ++succCode )
-        {
+        for ( unsigned succCode = 0; succCode < 4u; ++succCode ) {
             typename KmerDict<K>::Entry const* pEntry = entries[succCode];
             EdgeID edgeID = edge.getSuccessor(succCode);
-            if ( !pEntry )
-            {
-                if ( !edgeID.isNull() )
-                {
+            if ( !pEntry ) {
+                if ( !edgeID.isNull() ) {
                     std::cout << "Edge " << (itr-edges.begin()) << " has a " <<
-                        Base::val2Char(succCode) << " successor, edge " <<
-                        edgeID << ", that wasn't found by getSuccessors." <<
-                        std::endl;
+                              Base::val2Char(succCode) << " successor, edge " <<
+                              edgeID << ", that wasn't found by getSuccessors." <<
+                              std::endl;
                     nErrors += 1;
                 }
-            }
-            else
-            {
+            } else {
                 KDef const& def = pEntry->getKDef();
-                if ( edgeID.isNull() )
-                {
+                if ( edgeID.isNull() ) {
                     std::cout << "Edge " << (itr-edges.begin()) <<
-                            " should have a " << Base::val2Char(succCode) <<
-                            " successor, edge " << def.getEdgeID() <<
-                            ", but it's not marked." << std::endl;
+                              " should have a " << Base::val2Char(succCode) <<
+                              " successor, edge " << def.getEdgeID() <<
+                              ", but it's not marked." << std::endl;
                     nErrors += 1;
-                }
-                else
-                {
-                    if ( edgeID != def.getEdgeID() )
-                    {
+                } else {
+                    if ( edgeID != def.getEdgeID() ) {
                         std::cout << "Edge " << (itr-edges.begin()) <<
-                                " should have a " << Base::val2Char(succCode) <<
-                                " successor, edge " << def.getEdgeID() <<
-                                ", but it's marked as edge " << edgeID << '.'
-                                << std::endl;
+                                  " should have a " << Base::val2Char(succCode) <<
+                                  " successor, edge " << def.getEdgeID() <<
+                                  ", but it's marked as edge " << edgeID << '.'
+                                  << std::endl;
                         nErrors += 1;
                         edgeID = def.getEdgeID();
                     }
                     UnipathEdge const& succ = edges[edgeID.val()];
-                    if ( edge.getComponentID() != succ.getComponentID() )
-                    {
+                    if ( edge.getComponentID() != succ.getComponentID() ) {
                         std::cout << "Edge " << (itr-edges.begin()) << " has a "
-                                << Base::val2Char(succCode) << " successor, " <<
-                                edgeID << ", in a different component: " <<
-                                edge.getComponentID() << " vs. " <<
-                                succ.getComponentID() << std::endl;
+                                  << Base::val2Char(succCode) << " successor, " <<
+                                  edgeID << ", in a different component: " <<
+                                  edge.getComponentID() << " vs. " <<
+                                  succ.getComponentID() << std::endl;
                         nErrors += 1;
                     }
                     bool isRC = edge.isSuccessorRC(succCode);
                     KmerID kid = isRC ? succ.getFinalKmerID() :
-                                        succ.getInitialKmerID();
+                                 succ.getInitialKmerID();
                     KmerID kid2 = succ.getKmerID(def.getEdgeOffset());
-                    if ( kid != kid2 )
-                    {
+                    if ( kid != kid2 ) {
                         std::cout << "Edge " << (itr-edges.begin()) << " has a "
-                                << Base::val2Char(succCode) << " successor, " <<
-                                edgeID << ", but its adjacent kmerID " << kid <<
-                                " looks up as " << kid2 << '.' << std::endl;
+                                  << Base::val2Char(succCode) << " successor, " <<
+                                  edgeID << ", but its adjacent kmerID " << kid <<
+                                  " looks up as " << kid2 << '.' << std::endl;
                         nErrors += 1;
                     }
                     KMer<K>& kmerSucc = stepper.getSteppedKmer();
                     kmerSucc.setBack(succCode);
-                    if ( isRC )
-                    {
+                    if ( isRC ) {
                         if ( !equal(kmerSucc.rcbegin(),kmerSucc.rcend(),
-                                    bv.begin(kid.val())) )
-                        {
+                                    bv.begin(kid.val())) ) {
                             std::cout << "Edge " << (itr-edges.begin()) <<
-                                    " has a " << Base::val2Char(succCode) <<
-                                    " successor, " << edgeID <<
-                           ", but the adjacent kmer has an incorrect sequence."
-                                    << std::endl;
+                                      " has a " << Base::val2Char(succCode) <<
+                                      " successor, " << edgeID <<
+                                      ", but the adjacent kmer has an incorrect sequence."
+                                      << std::endl;
                             nErrors += 1;
                         }
-                    }
-                    else
-                    {
+                    } else {
                         if ( !equal(kmerSucc.begin(),kmerSucc.end(),
-                                    bv.begin(kid.val())) )
-                        {
+                                    bv.begin(kid.val())) ) {
                             std::cout << "Edge " << (itr-edges.begin()) <<
-                                    " has a " << Base::val2Char(succCode) <<
-                                    " successor, " << edgeID <<
-                           ", but the adjacent kmer has an incorrect sequence."
-                                    << std::endl;
+                                      " has a " << Base::val2Char(succCode) <<
+                                      " successor, " << edgeID <<
+                                      ", but the adjacent kmer has an incorrect sequence."
+                                      << std::endl;
                             nErrors += 1;
                         }
                     }
@@ -810,92 +972,76 @@ void UnipathGraph<K>::validateUnipaths( HugeBVec const& bv,
 
         kmer.assign(bv.begin(edge.getInitialKmerID().val()));
         stepper.getPredecessors(kmer,entries);
-        for ( unsigned predCode = 0; predCode < 4u; ++predCode )
-        {
+        for ( unsigned predCode = 0; predCode < 4u; ++predCode ) {
             typename KmerDict<K>::Entry const* pEntry = entries[predCode];
             EdgeID edgeID = edge.getPredecessor(predCode);
-            if ( !pEntry )
-            {
-                if ( !edgeID.isNull() )
-                {
+            if ( !pEntry ) {
+                if ( !edgeID.isNull() ) {
                     std::cout << "Edge " << (itr-edges.begin()) << " has a " <<
-                        Base::val2Char(predCode) << " predecessor, edge " <<
-                        edgeID << ", that wasn't found by getPredecessors." <<
-                        std::endl;
+                              Base::val2Char(predCode) << " predecessor, edge " <<
+                              edgeID << ", that wasn't found by getPredecessors." <<
+                              std::endl;
                     nErrors += 1;
                 }
-            }
-            else
-            {
+            } else {
                 KDef const& def = pEntry->getKDef();
-                if ( edgeID.isNull() )
-                {
+                if ( edgeID.isNull() ) {
                     std::cout << "Edge " << (itr-edges.begin()) <<
-                            " should have a " << Base::val2Char(predCode) <<
-                            " predecessor, edge " << def.getEdgeID() <<
-                            ", but it's not marked." << std::endl;
+                              " should have a " << Base::val2Char(predCode) <<
+                              " predecessor, edge " << def.getEdgeID() <<
+                              ", but it's not marked." << std::endl;
                     nErrors += 1;
-                }
-                else
-                {
-                    if ( edgeID != def.getEdgeID() )
-                    {
+                } else {
+                    if ( edgeID != def.getEdgeID() ) {
                         std::cout << "Edge " << (itr-edges.begin()) <<
-                                " should have a " << Base::val2Char(predCode) <<
-                                " predecessor, edge " << def.getEdgeID() <<
-                                ", but it's marked as edge " << edgeID << '.'
-                            << std::endl;
+                                  " should have a " << Base::val2Char(predCode) <<
+                                  " predecessor, edge " << def.getEdgeID() <<
+                                  ", but it's marked as edge " << edgeID << '.'
+                                  << std::endl;
                         nErrors += 1;
                         edgeID = def.getEdgeID();
                     }
                     UnipathEdge const& pred = edges[edgeID.val()];
-                    if ( edge.getComponentID() != pred.getComponentID() )
-                    {
+                    if ( edge.getComponentID() != pred.getComponentID() ) {
                         std::cout << "Edge " << (itr-edges.begin()) << " has a "
-                                << Base::val2Char(predCode) << " predecessor, "
-                                << edgeID << ", in a different component: " <<
-                                edge.getComponentID() << " vs. " <<
-                                pred.getComponentID() << std::endl;
+                                  << Base::val2Char(predCode) << " predecessor, "
+                                  << edgeID << ", in a different component: " <<
+                                  edge.getComponentID() << " vs. " <<
+                                  pred.getComponentID() << std::endl;
                         nErrors += 1;
                     }
                     bool isRC = edge.isPredecessorRC(predCode);
                     KmerID kid = isRC ? pred.getInitialKmerID():
-                                        pred.getFinalKmerID();
+                                 pred.getFinalKmerID();
                     KmerID kid2 = pred.getKmerID(def.getEdgeOffset());
-                    if ( kid != kid2 )
-                    {
+                    if ( kid != kid2 ) {
                         std::cout << "Edge " << (itr-edges.begin()) << " has a "
-                                << Base::val2Char(predCode) << " predecessor, "
-                                << edgeID << ", but its adjacent kmerID " <<
-                                kid << " looks up as " << kid2 << '.' <<
-                                std::endl;
+                                  << Base::val2Char(predCode) << " predecessor, "
+                                  << edgeID << ", but its adjacent kmerID " <<
+                                  kid << " looks up as " << kid2 << '.' <<
+                                  std::endl;
                         nErrors += 1;
                     }
                     KMer<K>& kmerPred = stepper.getSteppedKmer();
                     kmerPred.setFront(predCode);
-                    if ( isRC )
-                    {
+                    if ( isRC ) {
                         if ( !equal(kmerPred.rcbegin(),kmerPred.rcend(),
-                                    bv.begin(kid.val())) )
-                        {
+                                    bv.begin(kid.val())) ) {
                             std::cout << "Edge " << (itr-edges.begin()) <<
-                                    " has a " << Base::val2Char(predCode) <<
-                                    " predecessor, " << edgeID <<
-                           ", but the adjacent kmer has an incorrect sequence."
-                                    << std::endl;
+                                      " has a " << Base::val2Char(predCode) <<
+                                      " predecessor, " << edgeID <<
+                                      ", but the adjacent kmer has an incorrect sequence."
+                                      << std::endl;
                             nErrors += 1;
                         }
-                    }
-                    else
-                    {
+                    } else {
                         if ( !equal(kmerPred.begin(),kmerPred.end(),
-                                    bv.begin(kid.val())) )
-                        {
+                                    bv.begin(kid.val())) ) {
                             std::cout << "Edge " << (itr-edges.begin()) <<
-                                    " has a " << Base::val2Char(predCode) <<
-                                    " predecessor, " << edgeID <<
-                           ", but the adjacent kmer has an incorrect sequence."
-                                    << std::endl;
+                                      " has a " << Base::val2Char(predCode) <<
+                                      " predecessor, " << edgeID <<
+                                      ", but the adjacent kmer has an incorrect sequence."
+                                      << std::endl;
                             nErrors += 1;
                         }
                     }
@@ -907,8 +1053,7 @@ void UnipathGraph<K>::validateUnipaths( HugeBVec const& bv,
 }
 
 template <unsigned K>
-void UnipathGraph<K>::loadDict() const
-{
+void UnipathGraph<K>::loadDict() const {
     std::cout << Date() << " Loading kmer dictionary." << std::endl;
     mpDict = new KmerDict<K>(0);
     BinaryReader::readFile(mDictFilename,mpDict);
@@ -916,9 +1061,8 @@ void UnipathGraph<K>::loadDict() const
 }
 
 /// An ID for a Read.
-class ReadID : public ID<5>
-{
-public:
+class ReadID : public ID<5> {
+  public:
     ReadID() {}
     explicit ReadID( size_t id ) : ID<5>(id) {}
 
@@ -928,15 +1072,20 @@ public:
 TRIVIALLY_SERIALIZABLE(ReadID);
 
 // A path segment index, and a bit for RC or not
-class SegID : public ID<3>
-{
-public:
+class SegID : public ID<3> {
+  public:
     SegID() : ID<3>(0ul) {}
     explicit SegID( size_t idx, bool isRC ) : ID<3>(2*idx+isRC) {}
 
-    size_t getIndex() const { return val()>>1; }
-    void setIndex( size_t idx ) { setVal(2*idx+isRC()); }
-    bool isRC() const { return val()&1; }
+    size_t getIndex() const {
+        return val()>>1;
+    }
+    void setIndex( size_t idx ) {
+        setVal(2*idx+isRC());
+    }
+    bool isRC() const {
+        return val()&1;
+    }
 
     // compiler-supplied copying and destructor are ok
 };
@@ -947,25 +1096,31 @@ TRIVIALLY_SERIALIZABLE(SegID);
 /// (Which edge is not specified by this class: that's an external association.)
 /// Also tells you which segment of the read's pathing has the edge, and whether
 /// it's reverse-complement or not.
-class UnipathEvidence
-{
-public:
+class UnipathEvidence {
+  public:
     UnipathEvidence() {}
     UnipathEvidence( ReadID const& readID, size_t segID, bool isRC )
-    : mReadID(readID), mSegID(segID,isRC) {}
+        : mReadID(readID), mSegID(segID,isRC) {}
 
     // compiler-supplied copying and destructor are ok
 
-    ReadID const& getReadID() const { return mReadID; }
-    size_t getSegmentID() const { return mSegID.getIndex(); }
-    bool isRC() const { return mSegID.isRC(); }
+    ReadID const& getReadID() const {
+        return mReadID;
+    }
+    size_t getSegmentID() const {
+        return mSegID.getIndex();
+    }
+    bool isRC() const {
+        return mSegID.isRC();
+    }
 
-    friend int compare( UnipathEvidence const& ev1, UnipathEvidence const& ev2 )
-    { int result = compare(ev1.mReadID,ev2.mReadID);
-      if ( !result ) result = compare(ev1.mSegID,ev2.mSegID);
-      return result; }
+    friend int compare( UnipathEvidence const& ev1, UnipathEvidence const& ev2 ) {
+        int result = compare(ev1.mReadID,ev2.mReadID);
+        if ( !result ) result = compare(ev1.mSegID,ev2.mSegID);
+        return result;
+    }
 
-private:
+  private:
     ReadID mReadID;
     SegID mSegID;
 };
@@ -981,9 +1136,8 @@ TRIVIALLY_SERIALIZABLE(UnipathEvidence);
 /// each node of a UnipathGraph traversed by some sequence of bases (usually a
 /// read) placed onto the graph.  This is a very terse way of representing a
 /// path.
-class PathID : public ID<5>
-{
-public:
+class PathID : public ID<5> {
+  public:
     PathID() {}
     explicit PathID( size_t id ) : ID<5>(id) {}
 
@@ -995,41 +1149,60 @@ TRIVIALLY_SERIALIZABLE(PathID);
 /// Describes a traversal of a UnipathGraph.
 /// Used, for example, to indicate where a read is placed on the graph.
 /// This is not convenient to compute with, but is a good storage format.
-class Unipathing
-{
-public:
+class Unipathing {
+  public:
     Unipathing() {}
     Unipathing( EdgeID const& edgeID, bool isRC, size_t skip )
-    : mEdgeID(edgeID), mInitialSkip(skip), mNSegments(1ul,isRC)
-    { ForceAssertLt(skip,1ul<<32); }
+        : mEdgeID(edgeID), mInitialSkip(skip), mNSegments(1ul,isRC) {
+        ForceAssertLt(skip,1ul<<32);
+    }
 
     // compiler-supplied copying and destructor are ok
 
-    bool isNull() const { return mPathID.isNull(); }
-    size_t getNSegments() const { return mNSegments.getIndex(); }
-    EdgeID const& getInitialEdgeID() const { return mEdgeID; }
-    bool isInitialEdgeRC() const { return mNSegments.isRC(); }
-    PathID const& getPathID() const { return mPathID; }
-    size_t getInitialSkip() const { return mInitialSkip; }
-    size_t getFinalSkip() const { return mFinalSkip; }
+    bool isNull() const {
+        return mPathID.isNull();
+    }
+    size_t getNSegments() const {
+        return mNSegments.getIndex();
+    }
+    EdgeID const& getInitialEdgeID() const {
+        return mEdgeID;
+    }
+    bool isInitialEdgeRC() const {
+        return mNSegments.isRC();
+    }
+    PathID const& getPathID() const {
+        return mPathID;
+    }
+    size_t getInitialSkip() const {
+        return mInitialSkip;
+    }
+    size_t getFinalSkip() const {
+        return mFinalSkip;
+    }
 
-    void setSegments( size_t nSegments, PathID const& pathID )
-    { mNSegments.setIndex(nSegments); mPathID = pathID; }
+    void setSegments( size_t nSegments, PathID const& pathID ) {
+        mNSegments.setIndex(nSegments);
+        mPathID = pathID;
+    }
 
-    void setFinalSkip( size_t skip )
-    { ForceAssertLt(skip,1ul<<32); mFinalSkip = skip; }
+    void setFinalSkip( size_t skip ) {
+        ForceAssertLt(skip,1ul<<32);
+        mFinalSkip = skip;
+    }
 
     friend std::ostream& operator<<( std::ostream& os,
-                                     Unipathing const& pathing )
-    { os << "Edge=" << pathing.getInitialEdgeID() <<
-            " IsRC=" << pathing.isInitialEdgeRC() <<
-            " IniSkip=" << pathing.getInitialSkip() <<
-            " FinSkip=" << pathing.getFinalSkip() <<
-            " nSegs=" << static_cast<unsigned>(pathing.getNSegments()) <<
-            " PathID=" << pathing.getPathID();
-      return os; }
+                                     Unipathing const& pathing ) {
+        os << "Edge=" << pathing.getInitialEdgeID() <<
+           " IsRC=" << pathing.isInitialEdgeRC() <<
+           " IniSkip=" << pathing.getInitialSkip() <<
+           " FinSkip=" << pathing.getFinalSkip() <<
+           " nSegs=" << static_cast<unsigned>(pathing.getNSegments()) <<
+           " PathID=" << pathing.getPathID();
+        return os;
+    }
 
-private:
+  private:
     EdgeID mEdgeID; // initial edge ID
     unsigned mInitialSkip;
     unsigned mFinalSkip;
@@ -1040,119 +1213,153 @@ private:
 TRIVIALLY_SERIALIZABLE(Unipathing);
 typedef std::vector<Unipathing> UnipathingVec;
 
-class EdgeDesc
-{
-public:
+class EdgeDesc {
+  public:
     EdgeDesc( EdgeID const& edgeID, CanonicalForm status )
-    : mEdgeID(edgeID), mStatus(status) {}
+        : mEdgeID(edgeID), mStatus(status) {}
 
     // compiler-supplied copying and destructor are OK
 
-    EdgeID const& getEdgeID() const { return mEdgeID; }
-    CanonicalForm getStatus() const { return mStatus; }
+    EdgeID const& getEdgeID() const {
+        return mEdgeID;
+    }
+    CanonicalForm getStatus() const {
+        return mStatus;
+    }
 
-    EdgeDesc operator~() const
-    { return EdgeDesc(mEdgeID,complement(mStatus)); }
+    EdgeDesc operator~() const {
+        return EdgeDesc(mEdgeID,complement(mStatus));
+    }
 
-    friend bool operator<( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { return compare(ed1,ed2) < 0; }
-    friend bool operator<=( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { return compare(ed1,ed2) <= 0; }
-    friend bool operator>( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { return compare(ed1,ed2) > 0; }
-    friend bool operator>=( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { return compare(ed1,ed2) >= 0; }
-    friend bool operator==( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { return compare(ed1,ed2) == 0; }
-    friend bool operator!=( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { return compare(ed1,ed2) != 0; }
-    friend int compare( EdgeDesc const& ed1, EdgeDesc const& ed2 )
-    { int result = compare(ed1.mEdgeID,ed2.mEdgeID);
-      if ( !result ) result = compare(ed1.mStatus,ed2.mStatus);
-      return result; }
+    friend bool operator<( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        return compare(ed1,ed2) < 0;
+    }
+    friend bool operator<=( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        return compare(ed1,ed2) <= 0;
+    }
+    friend bool operator>( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        return compare(ed1,ed2) > 0;
+    }
+    friend bool operator>=( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        return compare(ed1,ed2) >= 0;
+    }
+    friend bool operator==( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        return compare(ed1,ed2) == 0;
+    }
+    friend bool operator!=( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        return compare(ed1,ed2) != 0;
+    }
+    friend int compare( EdgeDesc const& ed1, EdgeDesc const& ed2 ) {
+        int result = compare(ed1.mEdgeID,ed2.mEdgeID);
+        if ( !result ) result = compare(ed1.mStatus,ed2.mStatus);
+        return result;
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, EdgeDesc const& ed )
-    { if ( ed.mStatus == CanonicalForm::REV ) os << '~';
-      return os << ed.mEdgeID; }
+    friend std::ostream& operator<<( std::ostream& os, EdgeDesc const& ed ) {
+        if ( ed.mStatus == CanonicalForm::REV ) os << '~';
+        return os << ed.mEdgeID;
+    }
 
-private:
+  private:
     EdgeID mEdgeID;
     CanonicalForm mStatus;
 };
 
 /// Describes a unipath graph traversal as a sequence of EdgeDescs.
 /// Also has the number of kmers not covered in the initial and final segments.
-class EdgeList : public std::vector<EdgeDesc>
-{
+class EdgeList : public std::vector<EdgeDesc> {
     typedef std::vector<EdgeDesc> Base;
-public:
+  public:
     EdgeList()
-    : mInitialSkip(0), mFinalSkip(0)
-    {}
+        : mInitialSkip(0), mFinalSkip(0) {
+    }
 
     EdgeList( size_t initialSkip, size_t finalSkip )
-    : mInitialSkip(initialSkip), mFinalSkip(finalSkip)
-    {}
+        : mInitialSkip(initialSkip), mFinalSkip(finalSkip) {
+    }
 
     // compiler-supplied copying and destructor are OK
 
     // Reverse-complement in place.
-    EdgeList& rc()
-    { using std::swap; swap(mInitialSkip,mFinalSkip);
-      iterator head = begin(); iterator tail = end();
-      while (head != tail)
-      { EdgeDesc tmp = ~*--tail;
-        if ( head == tail ) { *head = tmp; break; }
-        *tail = ~*head; *head = tmp; ++head; }
-      return *this; }
+    EdgeList& rc() {
+        using std::swap;
+        swap(mInitialSkip,mFinalSkip);
+        iterator head = begin();
+        iterator tail = end();
+        while (head != tail) {
+            EdgeDesc tmp = ~*--tail;
+            if ( head == tail ) {
+                *head = tmp;
+                break;
+            }
+            *tail = ~*head;
+            *head = tmp;
+            ++head;
+        }
+        return *this;
+    }
 
-    size_t getInitialSkip() const { return mInitialSkip; }
-    size_t getFinalSkip() const { return mFinalSkip; }
+    size_t getInitialSkip() const {
+        return mInitialSkip;
+    }
+    size_t getFinalSkip() const {
+        return mFinalSkip;
+    }
 
-    friend bool operator<( EdgeList const& el1, EdgeList const& el2 )
-    { return compare(el1,el2) < 0; }
-    friend bool operator<=( EdgeList const& el1, EdgeList const& el2 )
-    { return compare(el1,el2) <= 0; }
-    friend bool operator>( EdgeList const& el1, EdgeList const& el2 )
-    { return compare(el1,el2) > 0; }
-    friend bool operator>=( EdgeList const& el1, EdgeList const& el2 )
-    { return compare(el1,el2) >= 0; }
-    friend bool operator==( EdgeList const& el1, EdgeList const& el2 )
-    { return compare(el1,el2) == 0; }
-    friend bool operator!=( EdgeList const& el1, EdgeList const& el2 )
-    { return compare(el1,el2) != 0; }
-    friend int compare( EdgeList const& el1, EdgeList const& el2 )
-    { int result = compare(static_cast<Base const&>(el1),
-                            static_cast<Base const&>(el2));
-      if ( !result ) result = compare(el1.mInitialSkip,el2.mInitialSkip);
-      if ( !result ) result = compare(el1.mFinalSkip,el2.mFinalSkip);
-      return result; }
+    friend bool operator<( EdgeList const& el1, EdgeList const& el2 ) {
+        return compare(el1,el2) < 0;
+    }
+    friend bool operator<=( EdgeList const& el1, EdgeList const& el2 ) {
+        return compare(el1,el2) <= 0;
+    }
+    friend bool operator>( EdgeList const& el1, EdgeList const& el2 ) {
+        return compare(el1,el2) > 0;
+    }
+    friend bool operator>=( EdgeList const& el1, EdgeList const& el2 ) {
+        return compare(el1,el2) >= 0;
+    }
+    friend bool operator==( EdgeList const& el1, EdgeList const& el2 ) {
+        return compare(el1,el2) == 0;
+    }
+    friend bool operator!=( EdgeList const& el1, EdgeList const& el2 ) {
+        return compare(el1,el2) != 0;
+    }
+    friend int compare( EdgeList const& el1, EdgeList const& el2 ) {
+        int result = compare(static_cast<Base const&>(el1),
+                             static_cast<Base const&>(el2));
+        if ( !result ) result = compare(el1.mInitialSkip,el2.mInitialSkip);
+        if ( !result ) result = compare(el1.mFinalSkip,el2.mFinalSkip);
+        return result;
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, EdgeList const& el )
-    { os << '[' << el.getInitialSkip();
-      char sep = ']';
-      EdgeList::const_iterator end(el.end());
-      for ( EdgeList::const_iterator itr(el.begin()); itr != end; ++itr )
-      { os << sep << *itr; sep = ':'; }
-      os << '[' << el.getFinalSkip() << ']';
-      return os; }
+    friend std::ostream& operator<<( std::ostream& os, EdgeList const& el ) {
+        os << '[' << el.getInitialSkip();
+        char sep = ']';
+        EdgeList::const_iterator end(el.end());
+        for ( EdgeList::const_iterator itr(el.begin()); itr != end; ++itr ) {
+            os << sep << *itr;
+            sep = ':';
+        }
+        os << '[' << el.getFinalSkip() << ']';
+        return os;
+    }
 
-    friend void swap( EdgeList& el1, EdgeList& el2 )
-    { el1.swap(el2);
-      using std::swap;
-      swap(el1.mInitialSkip,el2.mInitialSkip);
-      swap(el1.mFinalSkip,el2.mFinalSkip); }
+    friend void swap( EdgeList& el1, EdgeList& el2 ) {
+        el1.swap(el2);
+        using std::swap;
+        swap(el1.mInitialSkip,el2.mInitialSkip);
+        swap(el1.mFinalSkip,el2.mFinalSkip);
+    }
 
-private:
+  private:
     size_t mInitialSkip;
     size_t mFinalSkip;
 };
 
 /// Describes how reads align to a UnipathGraph.
 template <unsigned K>
-class PathCollection
-{
-public:
+class PathCollection {
+  public:
     typedef UnipathGraph<K> UGraph;
 
     /// Create a new graph, and path onto it.
@@ -1166,69 +1373,91 @@ public:
 
     // copying prohibited.  compiler-supplied destructor is OK
 
-    UGraph const& getGraph() const { return mGraph; }
+    UGraph const& getGraph() const {
+        return mGraph;
+    }
 
-    size_t getNReads() const { return mPathings.size(); }
+    size_t getNReads() const {
+        return mPathings.size();
+    }
 
     EdgeList getEdgeList( size_t readId ) const;
-    EdgeList getEdgeList( ReadID const& readID ) const
-    { return getEdgeList(readID.val()); }
+    EdgeList getEdgeList( ReadID const& readID ) const {
+        return getEdgeList(readID.val());
+    }
 
     // number of segments in the path
-    size_t getEdgeListSize( size_t readId ) const
-    { return mPathings[readId].getNSegments(); }
-    size_t getEdgeListSize( ReadID const& readID ) const
-    { return mPathings[readID.val()].getNSegments(); }
+    size_t getEdgeListSize( size_t readId ) const {
+        return mPathings[readId].getNSegments();
+    }
+    size_t getEdgeListSize( ReadID const& readID ) const {
+        return mPathings[readID.val()].getNSegments();
+    }
 
     // number of kmers in the path
-    size_t getEdgeLen( EdgeDesc const& ed ) const
-    { return getEdgeLen(ed.getEdgeID()); }
-    size_t getEdgeLen( EdgeID const& edgeID ) const
-    { return mGraph.getEdge(edgeID).getLength(); }
-    size_t getEdgeListLen( EdgeList const& el ) const
-    { size_t len = getEdgeListLen(el.begin(),el.end());
-      return len - el.getInitialSkip() - el.getFinalSkip(); }
+    size_t getEdgeLen( EdgeDesc const& ed ) const {
+        return getEdgeLen(ed.getEdgeID());
+    }
+    size_t getEdgeLen( EdgeID const& edgeID ) const {
+        return mGraph.getEdge(edgeID).getLength();
+    }
+    size_t getEdgeListLen( EdgeList const& el ) const {
+        size_t len = getEdgeListLen(el.begin(),el.end());
+        return len - el.getInitialSkip() - el.getFinalSkip();
+    }
     size_t getEdgeListLen( EdgeList::const_iterator itr,
-                           EdgeList::const_iterator end ) const
-    { size_t len = 0;
-      while ( itr != end )
-      { len += getEdgeLen(itr->getEdgeID()); ++itr; }
-      return len; }
+                           EdgeList::const_iterator end ) const {
+        size_t len = 0;
+        while ( itr != end ) {
+            len += getEdgeLen(itr->getEdgeID());
+            ++itr;
+        }
+        return len;
+    }
 
-    EdgeDesc getNextEdgeDesc( EdgeDesc const& ed, unsigned base ) const
-    { UnipathEdge const& edge = mGraph.getEdge(ed.getEdgeID());
-      EdgeID id;
-      CanonicalForm status = CanonicalForm::FWD;
-      if ( ed.getStatus() == CanonicalForm::REV )
-      { id = edge.getPredecessor(base);
-        if ( !edge.isPredecessorRC(base) ) status = CanonicalForm::REV; }
-      else
-      { id = edge.getSuccessor(base);
-        if ( edge.isSuccessorRC(base) ) status = CanonicalForm::REV; }
-      if ( !id.isNull() && mGraph.getEdge(id).isPalindrome() )
-        status = CanonicalForm::PALINDROME;
-      return EdgeDesc(id,status); }
+    EdgeDesc getNextEdgeDesc( EdgeDesc const& ed, unsigned base ) const {
+        UnipathEdge const& edge = mGraph.getEdge(ed.getEdgeID());
+        EdgeID id;
+        CanonicalForm status = CanonicalForm::FWD;
+        if ( ed.getStatus() == CanonicalForm::REV ) {
+            id = edge.getPredecessor(base);
+            if ( !edge.isPredecessorRC(base) ) status = CanonicalForm::REV;
+        } else {
+            id = edge.getSuccessor(base);
+            if ( edge.isSuccessorRC(base) ) status = CanonicalForm::REV;
+        }
+        if ( !id.isNull() && mGraph.getEdge(id).isPalindrome() )
+            status = CanonicalForm::PALINDROME;
+        return EdgeDesc(id,status);
+    }
 
-    bvec getBases( EdgeList const& el ) const
-    { bvec result; getBases(el,&result); return result; }
+    bvec getBases( EdgeList const& el ) const {
+        bvec result;
+        getBases(el,&result);
+        return result;
+    }
 
     bvec& getBases( EdgeList const& el, bvec* pBV ) const;
 
     void validate( String const& fastbFilename );
 
-    static String getInfoFilename( String const& fastb )
-    { return fastb.ReplaceExtension(".fastb",".k"+ToString(K)+".pc.info"); }
+    static String getInfoFilename( String const& fastb ) {
+        return fastb.ReplaceExtension(".fastb",".k"+ToString(K)+".pc.info");
+    }
 
-    static String getPathsFilename( String const& infoFile )
-    { return infoFile.ReplaceExtension(".info",".paths"); }
+    static String getPathsFilename( String const& infoFile ) {
+        return infoFile.ReplaceExtension(".info",".paths");
+    }
 
-    static String getPathseqFilename( String const& infoFile )
-    { return infoFile.ReplaceExtension(".info",".seq"); }
+    static String getPathseqFilename( String const& infoFile ) {
+        return infoFile.ReplaceExtension(".info",".seq");
+    }
 
-    static String getEvidenceFilename( String const& infoFile )
-    { return infoFile.ReplaceExtension(".info",".ev"); }
+    static String getEvidenceFilename( String const& infoFile ) {
+        return infoFile.ReplaceExtension(".info",".ev");
+    }
 
-private:
+  private:
     PathCollection( PathCollection const& ); // unimplemented -- no copying
     PathCollection& operator=( PathCollection const& ); // unimplemented -- no copying
 
@@ -1238,11 +1467,10 @@ private:
 };
 
 // Data about the pathing files stuffed into the .info file.
-struct PathInfo
-{
+struct PathInfo {
     PathInfo() : mVersion(CURRENT_VERSION), mNReads(0), mPathSeqSize(0) {}
     PathInfo( size_t nReads, size_t pathSeqSize )
-    : mVersion(CURRENT_VERSION), mNReads(nReads), mPathSeqSize(pathSeqSize) {}
+        : mVersion(CURRENT_VERSION), mNReads(nReads), mPathSeqSize(pathSeqSize) {}
 
     // compiler-supplied copying and destructor are OK
 
@@ -1256,10 +1484,9 @@ TRIVIALLY_SERIALIZABLE(PathInfo);
 
 template <unsigned K>
 PathCollection<K>::PathCollection( String const& pathInfoFilename,
-                                  String const& graphInfoFilename )
-: mGraph(graphInfoFilename),
-  mPathSeq(getPathseqFilename(pathInfoFilename).c_str())
-{
+                                   String const& graphInfoFilename )
+    : mGraph(graphInfoFilename),
+      mPathSeq(getPathseqFilename(pathInfoFilename).c_str()) {
     String pathsFile = getPathsFilename(pathInfoFilename);
     BinaryReader::readFile(pathsFile.c_str(),&mPathings);
     PathInfo pi;
@@ -1278,35 +1505,31 @@ PathCollection<K>::PathCollection( String const& pathInfoFilename,
 }
 
 template <unsigned K>
-EdgeList PathCollection<K>::getEdgeList( size_t readId ) const
-{
+EdgeList PathCollection<K>::getEdgeList( size_t readId ) const {
     Unipathing const& pathing = mPathings[readId];
     EdgeList result(pathing.getInitialSkip(),pathing.getFinalSkip());
     unsigned nSegs = pathing.getNSegments();
-    if ( nSegs )
-    {
+    if ( nSegs ) {
         result.reserve(nSegs);
         EdgeID edgeID = pathing.getInitialEdgeID();
         bool isRC = pathing.isInitialEdgeRC();
         bool isPalindrome = mGraph.getEdge(edgeID).isPalindrome();
         CanonicalForm status = isPalindrome ?
-                                CanonicalForm::PALINDROME :
-                                isRC ? CanonicalForm::REV : CanonicalForm::FWD;
+                               CanonicalForm::PALINDROME :
+                               isRC ? CanonicalForm::REV : CanonicalForm::FWD;
         result.push_back(EdgeDesc(edgeID,status));
-        if ( nSegs > 1 )
-        {
+        if ( nSegs > 1 ) {
             size_t off = pathing.getPathID().val()-1;
             HugeBVec::const_iterator itr(mPathSeq.begin(off));
-            while ( --nSegs )
-            {
+            while ( --nSegs ) {
                 isRC = mGraph.nextEdge(*++itr,&edgeID,isRC);
                 if ( edgeID.isNull() )
                     FatalErr("Invalid successor base in path sequence for read "
                              << readId );
                 bool isPalindrome = mGraph.getEdge(edgeID).isPalindrome();
                 CanonicalForm status = isPalindrome ?
-                                CanonicalForm::PALINDROME :
-                                isRC ? CanonicalForm::REV : CanonicalForm::FWD;
+                                       CanonicalForm::PALINDROME :
+                                       isRC ? CanonicalForm::REV : CanonicalForm::FWD;
                 result.push_back(EdgeDesc(edgeID,status));
             }
         }
@@ -1315,25 +1538,20 @@ EdgeList PathCollection<K>::getEdgeList( size_t readId ) const
 }
 
 template <unsigned K>
-bvec& PathCollection<K>::getBases( EdgeList const& el, bvec* pBV ) const
-{
+bvec& PathCollection<K>::getBases( EdgeList const& el, bvec* pBV ) const {
     pBV->clear().reserve(getEdgeListLen(el));
 
     typedef HugeBVec::const_iterator Itr;
-    for ( unsigned idx = 0; idx < el.size(); ++idx )
-    {
+    for ( unsigned idx = 0; idx < el.size(); ++idx ) {
         EdgeDesc const& ed = el[idx];
         UnipathEdge const& edge = mGraph.getEdge(ed.getEdgeID());
         Itr bItr = mGraph.getBases(edge.getInitialKmerID());
         Itr bEnd = mGraph.getBases(edge.getFinalKmerID()) + K;
-        if ( ed.getStatus() != CanonicalForm::REV )
-        {
+        if ( ed.getStatus() != CanonicalForm::REV ) {
             bItr += idx ? (K-1) : el.getInitialSkip();
             if ( idx+1 == el.size() ) bEnd -= el.getFinalSkip();
             pBV->append(bItr,bEnd);
-        }
-        else
-        {
+        } else {
             bEnd -= idx ? (K-1) : el.getInitialSkip();
             if ( idx+1 == el.size() ) bItr += el.getFinalSkip();
             while ( bEnd != bItr )
@@ -1344,14 +1562,12 @@ bvec& PathCollection<K>::getBases( EdgeList const& el, bvec* pBV ) const
 }
 
 template <unsigned K>
-void PathCollection<K>::validate( String const& fastbFilename )
-{
+void PathCollection<K>::validate( String const& fastbFilename ) {
     std::cout << Date() << " Validating pathings." << std::endl;
     VirtualMasterVec<bvec> vmv(fastbFilename.c_str());
     size_t nnn = vmv.size();
     bvec scratch;
-    for ( size_t idx = 0; idx < nnn; ++idx )
-    {
+    for ( size_t idx = 0; idx < nnn; ++idx ) {
         EdgeList el(getEdgeList(idx));
         if ( el.size() )
             ForceAssertEq(vmv[idx],getBases(el,&scratch));
@@ -1361,38 +1577,38 @@ void PathCollection<K>::validate( String const& fastbFilename )
 }
 
 template <unsigned K>
-class PathsWithEvidence : public PathCollection<K>
-{
-public:
+class PathsWithEvidence : public PathCollection<K> {
+  public:
     PathsWithEvidence( String const& pathInfoFilename,
                        String const& graphInfoFilename );
 
     // copying prohibited by base class.  compiler-supplied destructor is OK
 
-    size_t getNEdges() const { return mEvidence.size(); }
+    size_t getNEdges() const {
+        return mEvidence.size();
+    }
 
-    UnipathEvidenceVec const& getEvidence( EdgeID const& edgeID ) const
-    { return mEvidence[edgeID.val()]; }
+    UnipathEvidenceVec const& getEvidence( EdgeID const& edgeID ) const {
+        return mEvidence[edgeID.val()];
+    }
 
-    struct ReadLoc
-    {
+    struct ReadLoc {
         size_t readId;
         size_t readOffset;
     };
     typedef std::vector<ReadLoc> ReadLocVec;
     ReadLocVec getKmerLocations( KMer<K> const& kmer );
 
-private:
+  private:
     VecUnipathEvidenceVec mEvidence; // indexed by EdgeID
 };
 
 template <unsigned K>
 PathsWithEvidence<K>::PathsWithEvidence( String const& pathInfoFilename,
-                                        String const& graphInfoFilename )
-: PathCollection<K>(pathInfoFilename,graphInfoFilename)
-{
+        String const& graphInfoFilename )
+    : PathCollection<K>(pathInfoFilename,graphInfoFilename) {
     String evidenceFile =
-            PathCollection<K>::getEvidenceFilename(pathInfoFilename);
+        PathCollection<K>::getEvidenceFilename(pathInfoFilename);
     BinaryReader::readFile(evidenceFile.c_str(),&mEvidence);
     size_t nEdges = PathCollection<K>::getGraph().getNEdges();
     if ( mEvidence.size() != nEdges )
@@ -1403,20 +1619,17 @@ PathsWithEvidence<K>::PathsWithEvidence( String const& pathInfoFilename,
 
 template <unsigned K>
 typename PathsWithEvidence<K>::ReadLocVec
-PathsWithEvidence<K>::getKmerLocations( KMer<K> const& kmer )
-{
+PathsWithEvidence<K>::getKmerLocations( KMer<K> const& kmer ) {
     ReadLocVec result;
     UnipathGraph<K> const& graph = this->getGraph();
     KmerDict<K> const& dict = graph.getDict();
     KDef const* pDef = dict.lookup(kmer);
-    if ( pDef )
-    {
+    if ( pDef ) {
         unsigned kmerOffset = pDef->getEdgeOffset();
         UnipathEvidenceVec const& evVec = getEvidence(pDef->getEdgeID());
         result.reserve(evVec.size());
         typedef UnipathEvidenceVec::const_iterator Itr;
-        for ( Itr itr(evVec.begin()), end(evVec.end()); itr != end; ++itr )
-        {
+        for ( Itr itr(evVec.begin()), end(evVec.end()); itr != end; ++itr ) {
             EdgeList el = this->getEdgeList(itr->getReadID());
             unsigned seg = itr->getSegmentID();
             if ( !seg && kmerOffset < el.getInitialSkip() )
@@ -1424,7 +1637,7 @@ PathsWithEvidence<K>::getKmerLocations( KMer<K> const& kmer )
             if ( seg == el.size()-1 && kmerOffset >= this->getEdgeLen(el.back().getEdgeID())-el.getFinalSkip() )
                 return -1L;
             size_t offset = this->getEdgeLen(el.begin(),el.begin()+seg)
-                                    - el.getInitialSkip() + kmerOffset;
+                            - el.getInitialSkip() + kmerOffset;
             result.push_back(ReadLoc(itr->getReadID().val(),offset));
         }
     }

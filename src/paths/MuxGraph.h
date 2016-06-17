@@ -14,86 +14,91 @@
 #include <map>
 
 class MuxGraph {
- public:
-  // Constructors.
+  public:
+    // Constructors.
 
-  MuxGraph()
-  {}
+    MuxGraph() {
+    }
 
-  MuxGraph( int numReads )
-  {
-    this->resize( numReads );
-  }
+    MuxGraph( int numReads ) {
+        this->resize( numReads );
+    }
 
-  int size() const;
+    int size() const;
 
-  // Resize the graph to accomodate the forward and reverse versions of numReads paths.
-  void resize( const int numReads );
+    // Resize the graph to accomodate the forward and reverse versions of numReads paths.
+    void resize( const int numReads );
 
 
-  // Methods to get/set edges.
+    // Methods to get/set edges.
 
-  void GetMuxesOf( const OrientedKmerPathId& pathId, vec<Mux>& muxes ) const;
+    void GetMuxesOf( const OrientedKmerPathId& pathId, vec<Mux>& muxes ) const;
 
-  int NumMuxesOf( const OrientedKmerPathId& pathId ) const;
+    int NumMuxesOf( const OrientedKmerPathId& pathId ) const;
 
-  void SetMuxOf( const OrientedKmerPathId& pathId, const Mux& theMux );
+    void SetMuxOf( const OrientedKmerPathId& pathId, const Mux& theMux );
 
-  void SetMuxesOf( const OrientedKmerPathId& pathId, const vec<Mux>& muxes );
+    void SetMuxesOf( const OrientedKmerPathId& pathId, const vec<Mux>& muxes );
 
-  // Methods for I/O.
+    // Methods for I/O.
 
-  void Write( const String& filename ) const;
+    void Write( const String& filename ) const;
 
-  void Read( const String& filename );
-  bool FilesExist( const String& filename ) const; // do all files exist?
-  
-  bool VerifySameAs( const MuxGraph& other ) const;
+    void Read( const String& filename );
+    bool FilesExist( const String& filename ) const; // do all files exist?
 
-  void PrintDot( const String& filename, int partition = 0 ) const;
+    bool VerifySameAs( const MuxGraph& other ) const;
 
- private:  
+    void PrintDot( const String& filename, int partition = 0 ) const;
 
-  bool IsSingle( const Mux& aMux ) const { return aMux.GetSegment() >= 0; }
-  bool IsSpecial( const Mux& aMux ) const { return aMux.GetSegment() < 0; }
+  private:
 
-  // Special nodes in the singleEdgeNodes point to nodes in
-  // multiEdgeNodes as follows:
-  //   start index of nodes = aMux.GetNumKmers()
-  //   number of nodes      = -aMux.GetSegment()-1;
-  //
-  // By this convention, empty nodes are those with aMux.GetSegment() == -1.
+    bool IsSingle( const Mux& aMux ) const {
+        return aMux.GetSegment() >= 0;
+    }
+    bool IsSpecial( const Mux& aMux ) const {
+        return aMux.GetSegment() < 0;
+    }
 
-  static const int s_empty = -1;
+    // Special nodes in the singleEdgeNodes point to nodes in
+    // multiEdgeNodes as follows:
+    //   start index of nodes = aMux.GetNumKmers()
+    //   number of nodes      = -aMux.GetSegment()-1;
+    //
+    // By this convention, empty nodes are those with aMux.GetSegment() == -1.
 
-  void SetToEmpty( Mux& aMux ) const { aMux.SetSegment( s_empty ); }
-  void SetToMulti( Mux& aMux, int startIndex, int numMuxes ) const
-  {
-    aMux.SetNumKmers( startIndex );
-    aMux.SetSegment( -(numMuxes)-1 );
-  }
+    static const int s_empty = -1;
 
-  int GetStartIndexFromMulti( const Mux& aMux ) const 
-  {
-    return aMux.GetNumKmers();
-  }
+    void SetToEmpty( Mux& aMux ) const {
+        aMux.SetSegment( s_empty );
+    }
+    void SetToMulti( Mux& aMux, int startIndex, int numMuxes ) const {
+        aMux.SetNumKmers( startIndex );
+        aMux.SetSegment( -(numMuxes)-1 );
+    }
 
-  int GetNumMuxesFromSpecial( const Mux& aMux ) const
-  {
-    return -(aMux.GetSegment())-1;
-  }
+    int GetStartIndexFromMulti( const Mux& aMux ) const {
+        return aMux.GetNumKmers();
+    }
 
-  void GetFromMulti( const Mux& aMux, int& startIndex, int& numMuxes ) const
-  {
-    startIndex = GetStartIndexFromMulti( aMux );
-    numMuxes   = GetNumMuxesFromSpecial( aMux );
-  }
+    int GetNumMuxesFromSpecial( const Mux& aMux ) const {
+        return -(aMux.GetSegment())-1;
+    }
 
-  bool IsEmpty( const Mux& aMux ) const { return aMux.GetSegment() == s_empty; }
-  bool IsMulti( const Mux& aMux ) const { return aMux.GetSegment() < s_empty; }
+    void GetFromMulti( const Mux& aMux, int& startIndex, int& numMuxes ) const {
+        startIndex = GetStartIndexFromMulti( aMux );
+        numMuxes   = GetNumMuxesFromSpecial( aMux );
+    }
 
-  vec<Mux> m_singleEdgeNodes;
-  vec<Mux> m_multiEdgeNodes;
+    bool IsEmpty( const Mux& aMux ) const {
+        return aMux.GetSegment() == s_empty;
+    }
+    bool IsMulti( const Mux& aMux ) const {
+        return aMux.GetSegment() < s_empty;
+    }
+
+    vec<Mux> m_singleEdgeNodes;
+    vec<Mux> m_multiEdgeNodes;
 };
 
 #endif

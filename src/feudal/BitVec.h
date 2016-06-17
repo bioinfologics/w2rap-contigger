@@ -20,9 +20,8 @@
 #include <ostream>
 
 /// A feudal vector that has bits as values.
-class BitVec : public FieldVec<1, MempoolAllocator<unsigned char> >
-{
-public:
+class BitVec : public FieldVec<1, MempoolAllocator<unsigned char> > {
+  public:
     typedef FieldVec<1, MempoolAllocator<unsigned char> > Base;
     typedef MempoolAllocator<unsigned char> Alloc;
 
@@ -30,8 +29,8 @@ public:
     BitVec() : Base() {}
     BitVec(Alloc const& alloc) : Base(alloc) {}
     BitVec(Base::size_type n, Base::value_type exemplar = 0,
-            Base::size_type cap = 0, Alloc const& alloc = Alloc())
-    : Base(n, exemplar, cap, alloc) {}
+           Base::size_type cap = 0, Alloc const& alloc = Alloc())
+        : Base(n, exemplar, cap, alloc) {}
 
     BitVec& operator|=( BitVec const& bv );
 
@@ -44,17 +43,23 @@ public:
     BitVec& Zero();
 
     // Wrappers
-    void Set(size_type i, value_type bit) { set(i, bit); }
+    void Set(size_type i, value_type bit) {
+        set(i, bit);
+    }
 
-    BitVec& ReverseMe() { std::reverse(begin(),end()); return *this; }
+    BitVec& ReverseMe() {
+        std::reverse(begin(),end());
+        return *this;
+    }
 
     /// Return the index of the next element after i that is different from
     /// the ith element.  Returns size() if there is no such element.
-    size_type NextDiff(Base::size_type i) const
-    { Base::value_type val = (*this)[i];
-      for ( ++i; i < size(); ++i )
-        if ( (*this)[i] != val) break;
-      return i; }
+    size_type NextDiff(Base::size_type i) const {
+        Base::value_type val = (*this)[i];
+        for ( ++i; i < size(); ++i )
+            if ( (*this)[i] != val) break;
+        return i;
+    }
 
     // Set *this to the length len sub-bitvector of src, starting at position
     // start_pos.  The case where this == &src is allowed.
@@ -62,69 +67,86 @@ public:
 
 
     // Set bits x (start <= x < stop) to the same value "bit".
-    BitVec& Set( size_type start, size_type stop, value_type bit )
-    { AssertLe(stop,size()); AssertLe(start,stop);
-      iterator end(begin(stop));
-      for ( iterator itr(begin(start)); itr != end; ++itr )
-        itr.set(bit);
-      return *this; }
+    BitVec& Set( size_type start, size_type stop, value_type bit ) {
+        AssertLe(stop,size());
+        AssertLe(start,stop);
+        iterator end(begin(stop));
+        for ( iterator itr(begin(start)); itr != end; ++itr )
+            itr.set(bit);
+        return *this;
+    }
 
     // Return a sum of the bits
-    size_type Sum() const
-    { return std::accumulate(begin(),end(),size_type(0)); }
+    size_type Sum() const {
+        return std::accumulate(begin(),end(),size_type(0));
+    }
 
-    bool isUniformlyFalse() const // true if every bit is false
-    { if ( !empty() )
-      { for ( const_pointer itr=data(),end=dataEnd()-1; itr != end; ++itr )
-          if ( *itr ) return false;
-        if ( dataEnd()[-1] & finalByteMask() ) return false; }
-      return true; }
+    bool isUniformlyFalse() const { // true if every bit is false
+        if ( !empty() ) {
+            for ( const_pointer itr=data(),end=dataEnd()-1; itr != end; ++itr )
+                if ( *itr ) return false;
+            if ( dataEnd()[-1] & finalByteMask() ) return false;
+        }
+        return true;
+    }
 
     void PrintFastaStyle(std::ostream& out, const String& id) const;
 
-    friend std::ostream& operator<<( std::ostream& s, const BitVec& bv )
-    { BitVec::const_iterator stop(bv.end());
-      for ( BitVec::const_iterator itr(bv.begin()); itr != stop; ++itr )
-        s << (*itr ? '1' : '0');
-      return s; }
+    friend std::ostream& operator<<( std::ostream& s, const BitVec& bv ) {
+        BitVec::const_iterator stop(bv.end());
+        for ( BitVec::const_iterator itr(bv.begin()); itr != stop; ++itr )
+            s << (*itr ? '1' : '0');
+        return s;
+    }
 };
 
 SELF_SERIALIZABLE(BitVec);
 
-inline BitVec operator|( BitVec const& bv1, BitVec const& bv2 )
-{ BitVec result(bv1); return result |= bv2; }
-inline BitVec operator&( BitVec const& bv1, BitVec const& bv2 )
-{ BitVec result(bv1); return result &= bv2; }
-inline BitVec operator^( BitVec const& bv1, BitVec const& bv2 )
-{ BitVec result(bv1); return result ^= bv2; }
-inline BitVec nor( BitVec const& bv1, BitVec const& bv2 )
-{ BitVec result(bv1); result |= bv2; return result.invert(); }
-inline BitVec nand( BitVec const& bv1, BitVec const& bv2 )
-{ BitVec result(bv1); result &= bv2; return result.invert(); }
-inline BitVec xnor( BitVec const& bv1, BitVec const& bv2 )
-{ BitVec result(bv1); result ^= bv2; return result.invert(); }
+inline BitVec operator|( BitVec const& bv1, BitVec const& bv2 ) {
+    BitVec result(bv1);
+    return result |= bv2;
+}
+inline BitVec operator&( BitVec const& bv1, BitVec const& bv2 ) {
+    BitVec result(bv1);
+    return result &= bv2;
+}
+inline BitVec operator^( BitVec const& bv1, BitVec const& bv2 ) {
+    BitVec result(bv1);
+    return result ^= bv2;
+}
+inline BitVec nor( BitVec const& bv1, BitVec const& bv2 ) {
+    BitVec result(bv1);
+    result |= bv2;
+    return result.invert();
+}
+inline BitVec nand( BitVec const& bv1, BitVec const& bv2 ) {
+    BitVec result(bv1);
+    result &= bv2;
+    return result.invert();
+}
+inline BitVec xnor( BitVec const& bv1, BitVec const& bv2 ) {
+    BitVec result(bv1);
+    result ^= bv2;
+    return result.invert();
+}
 
-namespace std
-{
+namespace std {
 template<> inline void iter_swap( BitVec::iterator itr1,
-                                  BitVec::iterator itr2 )
-{
+                                  BitVec::iterator itr2 ) {
     BitVec::value_type tmp = *itr1;
     itr1.set(*itr2);
     itr2.set(tmp);
 }
 
 template<> inline void iter_swap( BitVec::reverse_iterator itr1,
-                                  BitVec::reverse_iterator itr2 )
-{
+                                  BitVec::reverse_iterator itr2 ) {
     BitVec::value_type tmp = *itr1;
     itr1.set(*itr2);
     itr2.set(tmp);
 }
 }
 
-inline void swap( BitVec& bv1, BitVec& bv2 )
-{
+inline void swap( BitVec& bv1, BitVec& bv2 ) {
     bv1.swap(bv2);
 }
 

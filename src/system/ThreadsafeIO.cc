@@ -17,18 +17,15 @@
 
 SpinLockedData ThreadsafeStreambuf::gLock;
 
-ThreadsafeStreambuf::int_type ThreadsafeStreambuf::overflow( int_type ch )
-{
-    if ( ch != traits_type::eof() )
-    {
+ThreadsafeStreambuf::int_type ThreadsafeStreambuf::overflow( int_type ch ) {
+    if ( ch != traits_type::eof() ) {
         *pptr() = ch;
         pbump(1);
     }
     return sync() ? traits_type::eof() : ch;
 }
 
-int ThreadsafeStreambuf::sync()
-{
+int ThreadsafeStreambuf::sync() {
     SpinLocker locker(gLock);
     char* buf = pbase();
     mOS.write(buf,pptr() - buf);

@@ -15,49 +15,45 @@
 // ---------- class to manage blocks of data in a thread-safe way --------
 
 
-class LockedBlocks : public vec<uint64_t>, private SpinLockedData
-{
+class LockedBlocks : public vec<uint64_t>, private SpinLockedData {
 
-public:
-  LockedBlocks(const size_t n = 0)
-    : vec<uint64_t>(n, 0), SpinLockedData()
-  {}
-
-  size_t lock_some_block(const std::set<size_t> & i_blocks)
-  {
-    ForceAssertGt(i_blocks.size(), 0ul);
- 
-    SpinLocker lock(*this);  // destructor of 'lock' unlocks mutex
-    
-    std::set<size_t>::iterator it = i_blocks.begin();
-    while (1) {
-
-      if (!(*this)[*it]) {   // block is not locked
-        (*this)[*it] = 1;
-        return *it;
-      }
-      
-      it++;
-      if (it == i_blocks.end()) it = i_blocks.begin();      
+  public:
+    LockedBlocks(const size_t n = 0)
+        : vec<uint64_t>(n, 0), SpinLockedData() {
     }
-  }
 
-  // we can unlock the block without a Locker if blocks 
-  // are associated with a vec<uint64_t>
-  // if you have a vec<bool>, alignment could be a problem 
-  void unlock_block(const size_t iblk)
-  {
-    ForceAssert((*this)[iblk]);
-    (*this)[iblk] = 0;
-  }
+    size_t lock_some_block(const std::set<size_t> & i_blocks) {
+        ForceAssertGt(i_blocks.size(), 0ul);
 
-  String str() const
-  {
-    String s = "";
-    for (size_t i = 0; i != this->size(); i++)
-      s += ((*this)[i] ? "1" : "0");
-    return s;
-  }
+        SpinLocker lock(*this);  // destructor of 'lock' unlocks mutex
+
+        std::set<size_t>::iterator it = i_blocks.begin();
+        while (1) {
+
+            if (!(*this)[*it]) {   // block is not locked
+                (*this)[*it] = 1;
+                return *it;
+            }
+
+            it++;
+            if (it == i_blocks.end()) it = i_blocks.begin();
+        }
+    }
+
+    // we can unlock the block without a Locker if blocks
+    // are associated with a vec<uint64_t>
+    // if you have a vec<bool>, alignment could be a problem
+    void unlock_block(const size_t iblk) {
+        ForceAssert((*this)[iblk]);
+        (*this)[iblk] = 0;
+    }
+
+    String str() const {
+        String s = "";
+        for (size_t i = 0; i != this->size(); i++)
+            s += ((*this)[i] ? "1" : "0");
+        return s;
+    }
 
 };
 

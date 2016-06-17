@@ -13,7 +13,7 @@
 #include "CoreTools.h"
 #include "graph/Digraph.h"
 
-// For purposes of this code, define a cell in a directed graph to be a list of 
+// For purposes of this code, define a cell in a directed graph to be a list of
 // vertices v1,..., vn (where the order of v2,...,vn-1 does not matter) such that:
 // * edges to or from v2,...,vn-1 stay within the list;
 // * edges from v1 stay within the list;
@@ -24,17 +24,17 @@
 //    we might want to change this condition);
 // * n >= 2;
 // * if n = 2 there are at least two edges between v1 and v2.
-// A cell is minimal if it does not contain another cell as a proper 
+// A cell is minimal if it does not contain another cell as a proper
 // subset.  The size of a cell is n.
 
-void FindCells( const digraph& G, const size_t max_cell_size, 
-     vec< vec<int> >& cells );
+void FindCells( const digraph& G, const size_t max_cell_size,
+                vec< vec<int> >& cells );
 
 // Another algorithm to find some cells, different in several ways from FindCells,
-// including that it does not return simple bubbles.  This returns only the 
+// including that it does not return simple bubbles.  This returns only the
 // bounding vertices v and w.
 
 void FindSomeCells( const digraph& G, const int max_cell_size,
-     const int max_depth, vec< std::pair<int,int> >& bounds );
+                    const int max_depth, vec< std::pair<int,int> >& bounds );
 
 #endif

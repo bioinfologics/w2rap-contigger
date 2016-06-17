@@ -24,286 +24,345 @@
 #include "paths/long/FriendAligns.h"
 #include "paths/long/MakeAlignments.h"
 
- typedef SerfVec<char>			StackBaseVec;
- typedef MasterVec<StackBaseVec > 	StackBaseVecVec;
- typedef SerfVec<int>			StackQualVec;
- typedef MasterVec<StackQualVec > 	StackQualVecVec;
+typedef SerfVec<char>			StackBaseVec;
+typedef MasterVec<StackBaseVec > 	StackBaseVecVec;
+typedef SerfVec<int>			StackQualVec;
+typedef MasterVec<StackQualVec > 	StackQualVecVec;
 
 class readstack {
 
-     public:
+  public:
+
+    // ======================== CONSTRUCTORS ======================================
+
+    // Constructor: initialize to undefined.
+
+    readstack()=default;
+    readstack( const int nrows, const int ncols ) {
+        Initialize(nrows,ncols);
+    }
+
+    // Constructor from aligns [start,stop).  In the 'strict' case the columns
+    // are defined by the bases of read id1, whereas in the 'right_extended' case
+    // the column start at the leftmost base of read id1 but can extend beyond its
+    // right end.
+    enum con_type { strict, right_extended };
+    readstack( const int64_t id1, Friends const& aligns,
+               const int64_t start, const int64_t stop, con_type ctype,
+               const vecbasevector& bases, const vecqualvector& quals,
+               const PairsManager& pairs, const Bool use_pairs = True ) {
+        Initialize(id1,aligns,start,stop,ctype,bases,quals,pairs,use_pairs);
+    }
+
+    void Initialize( const int nrows, const int ncols );
+    void Initialize( const int64_t id1, Friends const& aligns,
+                     const int64_t start, const int64_t stop, con_type ctype,
+                     const vecbasevector& bases, const vecqualvector& quals,
+                     const PairsManager& pairs, const Bool use_pairs = True );
+    void Initialize( const int64_t id1, Friends const& aligns,
+                     const int64_t start, const int64_t stop, con_type ctype,
+                     const vecbasevector& bases, const VecPQVec& quals,
+                     const PairsManager& pairs, const Bool use_pairs = True );
+
+    // RefStack: Given a chunk of reference sequence, build the stack consisting
+    // of all reads having a perfect K-base overlap with it.
+
+    template<int K> void RefStack( const basevector& ref,
+                                   const vecbasevector& bases, const vecqualvector& quals,
+                                   const PairsManager& pairs );
+
+    int CheckSum( ) const {
+        int x = 0;
+        for ( int i = 0; i < Rows( ); i++ )
+            for ( int j = 0; j < Cols( ); j++ ) {
+                x += Qual(i,j) + (int) Base(i,j);
+                x *= 12345;
+            }
+        return x;
+    }
+
+    // ========================= ACCESSORS ========================================
+
+    // Rows, Cols: return number of rows and columns.
+    int Rows() const {
+        return bases_.size( );
+    }
+    int Cols() const {
+        return cols_;
+    }
+
+    // Def: tell whether entry is defined.
+
+    Bool Def( const int i, const int j ) const {
+        return quals_[i][j] >= 0;
+    }
+
+    // Base: return given base, represented as 0, 1, 2, 3 or ' ' if undefined.
+
+    char Base( const int i, const int j ) const {
+        return bases_[i][j];
+    }
+
+    // Qual: return a given quality score (0-255), or -1 if undefined.
+
+    int Qual( const int i, const int j ) const {
+        return quals_[i][j];
+    }
+
+    // SetBase, SetQual: set base or quality score.
+
+    void SetBase( const int i, const int j, char b ) {
+        bases_[i][j] = b;
+    }
+    void SetQual( const int i, const int j, int q ) {
+        quals_[i][j] = q;
+    }
+
+    // Offset: implied start position of read or its rc relative to first column.
+
+    int Offset( const int i ) const {
+        return offset_[i];
+    }
+
+    // SetOffset: set offset value.
+
+    void SetOffset( const int i, const int offset ) {
+        offset_[i] = offset;
+    }
+
+    // Len, SetLen: return or set read length.
+
+    int Len( const int i ) const {
+        return len_[i];
+    }
+    void SetLen( const int i, const int len ) {
+        len_[i] = len;
+    }
+
+    // Id, Rc2: return read id and orientation.
+
+    int64_t Id( const int i ) const {
+        return id_[i];
+    }
+    Bool Rc2( const int i ) const {
+        return rc2_[i];
+    }
+
+    // Pid, PairPos: return pair id, and position (0 or 1) within pair.
+
+    int64_t Pid( const int i ) const {
+        return pid_[i];
+    }
+    int PairPos( const int i ) const {
+        return pair_pos_[i];
+    }
+
+    // SetId, SetPid, SetRc2, SetPairPos: set these members.
 
-     // ======================== CONSTRUCTORS ======================================
+    void SetId( const int i, const int64_t id ) {
+        id_[i] = id;
+    }
+    void SetPid( const int i, const int64_t pid ) {
+        pid_[i] = pid;
+    }
+    void SetRc2( const int i, const Bool rc2 ) {
+        rc2_[i] = rc2;
+    }
+    void SetPairPos( const int i, const int pp ) {
+        pair_pos_[i] = pp;
+    }
 
-     // Constructor: initialize to undefined.
+    // Functions to return the entire matrix.
 
-     readstack()=default;
-     readstack( const int nrows, const int ncols ) { Initialize(nrows,ncols); }
+    const StackBaseVecVec& Bases( ) const {
+        return bases_;
+    }
+    const StackQualVecVec& Quals( ) const {
+        return quals_;
+    }
+    const vec<int64_t>& Id( ) const {
+        return id_;
+    }
+    const vec<Bool>& Rc2( ) const {
+        return rc2_;
+    }
+    const vec<int64_t>& Pid( ) const {
+        return pid_;
+    }
+    const vec<int>& PairPos( ) const {
+        return pair_pos_;
+    }
+    const vec<int>& Offset( ) const {
+        return offset_;
+    }
+    const vec<int>& Len( ) const {
+        return len_;
+    }
 
-     // Constructor from aligns [start,stop).  In the 'strict' case the columns
-     // are defined by the bases of read id1, whereas in the 'right_extended' case
-     // the column start at the leftmost base of read id1 but can extend beyond its
-     // right end.
-     enum con_type { strict, right_extended };
-     readstack( const int64_t id1, Friends const& aligns,
-          const int64_t start, const int64_t stop, con_type ctype,
-          const vecbasevector& bases, const vecqualvector& quals, 
-          const PairsManager& pairs, const Bool use_pairs = True )
-     { Initialize(id1,aligns,start,stop,ctype,bases,quals,pairs,use_pairs); }
+    // Erase: remove the given rows.
 
-     void Initialize( const int nrows, const int ncols );
-     void Initialize( const int64_t id1, Friends const& aligns,
-          const int64_t start, const int64_t stop, con_type ctype,
-          const vecbasevector& bases, const vecqualvector& quals, 
-          const PairsManager& pairs, const Bool use_pairs = True );
-     void Initialize( const int64_t id1, Friends const& aligns,
-          const int64_t start, const int64_t stop, con_type ctype,
-          const vecbasevector& bases, const VecPQVec& quals,
-          const PairsManager& pairs, const Bool use_pairs = True );
+    void Erase( const vec<Bool>& to_remove );
 
-     // RefStack: Given a chunk of reference sequence, build the stack consisting
-     // of all reads having a perfect K-base overlap with it.
+    // ========================= OPERATORS ========================================
 
-     template<int K> void RefStack( const basevector& ref,
-          const vecbasevector& bases, const vecqualvector& quals,
-          const PairsManager& pairs );
+    // SortByPid: place rows in a particular order.  First group them by pid.
+    // Put pid1 first.  Sort the groups by their minimum offsets.  Sort within
+    // a given group by orientation (fw, then rc), and then by offset.  Note
+    // that for this, the offset would not be used unless a read appeared multiple
+    // times with the same orientation (but different offsets).
+    //
+    // Make sure that first two rows are i1 then i2.
 
-     int CheckSum( ) const
-     {    int x = 0;
-          for ( int i = 0; i < Rows( ); i++ )
-          for ( int j = 0; j < Cols( ); j++ )
-          {    x += Qual(i,j) + (int) Base(i,j);
-               x *= 12345;    }
-          return x;    }
+    void SortByPid( const int64_t pid1, const int i1, const int i2 );
 
-     // ========================= ACCESSORS ========================================
+    // Unique: delete adjacent and duplicate rows.
 
-     // Rows, Cols: return number of rows and columns.
-     int Rows() const { return bases_.size( ); }
-     int Cols() const { return cols_; }
+    void Unique( );
 
-     // Def: tell whether entry is defined.
+    // Reverse: reverse complement the entire matrix.
 
-     Bool Def( const int i, const int j ) const { return quals_[i][j] >= 0; }
+    void Reverse( );
 
-     // Base: return given base, represented as 0, 1, 2, 3 or ' ' if undefined.
+    // Merge: merge another readstack into *this, placing it at the given offset
+    // relative to *this.  The entire readstack is placed after *this.
 
-     char Base( const int i, const int j ) const { return bases_[i][j]; }
+    void Merge( const readstack& s, const int offset );
 
-     // Qual: return a given quality score (0-255), or -1 if undefined.
+    // AddToStack: add in reads at given offsets.
 
-     int Qual( const int i, const int j ) const { return quals_[i][j]; }
+    void AddToStack( const vec< triple<int,int64_t,Bool> >& offset_id_rc2,
+                     const vecbasevector& bases, const vecqualvector& quals,
+                     const PairsManager& pairs );
 
-     // SetBase, SetQual: set base or quality score.
+    // AddPartners: for reads placed in the stack but whose partners are not,
+    // recruit the partners based on perfect K-base overlaps.
 
-     void SetBase( const int i, const int j, char b ) { bases_[i][j] = b; }
-     void SetQual( const int i, const int j, int q ) { quals_[i][j] = q; }
+    void AddPartners( const int K, const int top, const vecbasevector& bases,
+                      const vecqualvector& quals, const PairsManager& pairs );
 
-     // Offset: implied start position of read or its rc relative to first column.
+    // Recruit: bring in reads that align to a read in the stack and overlap
+    // the stack by at least K.
 
-     int Offset( const int i ) const { return offset_[i]; }
+    void Recruit( const int K, const vec<simple_align_data>& aligns,
+                  const vec<int64_t>& id1_start, const vecbasevector& bases,
+                  const vecqualvector& quals, const PairsManager& pairs );
 
-     // SetOffset: set offset value.
+    // Trim: keep only the columns in [start,stop).
 
-     void SetOffset( const int i, const int offset ) { offset_[i] = offset; }
+    void Trim( const int start, const int stop );
 
-     // Len, SetLen: return or set read length.
+    // ========================= ALGORITHMS =======================================
 
-     int Len( const int i ) const { return len_[i]; }
-     void SetLen( const int i, const int len ) { len_[i] = len; }
+    // ColumnConsensus1: return consensus base for column.
 
-     // Id, Rc2: return read id and orientation.
+    char ColumnConsensus1( const int i ) const;
 
-     int64_t Id( const int i ) const { return id_[i]; }
-     Bool Rc2( const int i ) const { return rc2_[i]; }
+    // Consensus1, StrongConsensus1: algorithms for computing consensus.
 
-     // Pid, PairPos: return pair id, and position (0 or 1) within pair.
+    basevector Consensus1( ) const;
+    void Consensus1( basevector& con, qualvector& conq ) const;
+    void StrongConsensus1( basevector& con, qualvector& conq,
+                           const Bool raise_zero ) const;
 
-     int64_t Pid( const int i ) const { return pid_[i]; }
-     int PairPos( const int i ) const { return pair_pos_[i]; }
+    // Consensuses1: an algorithm for computing multiple consensuses.
 
-     // SetId, SetPid, SetRc2, SetPairPos: set these members.
+    vec<basevector> Consensuses1( ) const;
 
-     void SetId( const int i, const int64_t id ) { id_[i] = id; }
-     void SetPid( const int i, const int64_t pid ) { pid_[i] = pid; }
-     void SetRc2( const int i, const Bool rc2 ) { rc2_[i] = rc2; }
-     void SetPairPos( const int i, const int pp ) { pair_pos_[i] = pp; }
+    // Consensuses2: return all consensuses that can be traverse via K-base
+    // perfect matches.
 
-     // Functions to return the entire matrix.
+    vec<basevector> Consensuses2( const int K, const int top ) const;
 
-     const StackBaseVecVec& Bases( ) const { return bases_; }
-     const StackQualVecVec& Quals( ) const { return quals_; }
-     const vec<int64_t>& Id( ) const { return id_; }
-     const vec<Bool>& Rc2( ) const { return rc2_; }
-     const vec<int64_t>& Pid( ) const { return pid_; }
-     const vec<int>& PairPos( ) const { return pair_pos_; }
-     const vec<int>& Offset( ) const { return offset_; }
-     const vec<int>& Len( ) const { return len_; }
+    // Raise1: raise quality scores on row id based on agreement with it.
 
-     // Erase: remove the given rows.
+    void Raise1( const int id, const int rwindow = 11,
+                 const Bool require_unedited = False );
 
-     void Erase( const vec<Bool>& to_remove );
+    // HighQualDiff: return the rows having a Qn diff with the first 'top' rows
+    // (typically 1 or 2).
 
-     // ========================= OPERATORS ========================================
-     
-     // SortByPid: place rows in a particular order.  First group them by pid.
-     // Put pid1 first.  Sort the groups by their minimum offsets.  Sort within
-     // a given group by orientation (fw, then rc), and then by offset.  Note
-     // that for this, the offset would not be used unless a read appeared multiple 
-     // times with the same orientation (but different offsets).
-     // 
-     // Make sure that first two rows are i1 then i2.
+    void HighQualDiff( const int n, const int top, vec<Bool>& suspect ) const;
 
-     void SortByPid( const int64_t pid1, const int i1, const int i2 );
+    void HighQualDiffWindow( vec<Bool>& suspect ) const;
 
-     // Unique: delete adjacent and duplicate rows.  
+    // CleanColumns: another criterion for killing rows.
 
-     void Unique( );
+    void CleanColumns( const int top, vec<Bool>& suspect ) const;
 
-     // Reverse: reverse complement the entire matrix.
+    // MotifDiff: find motifs and use them to define suspect rows.
 
-     void Reverse( );
+    void MotifDiff( const int top, vec<Bool>& suspect ) const;
 
-     // Merge: merge another readstack into *this, placing it at the given offset
-     // relative to *this.  The entire readstack is placed after *this.
+    // PairWeak1: First find the quality score sums for each column, using only
+    // reads whose partner is placed in the stack.  If the quality score sum
+    // for the winning base is at least 100, and > 10 times the sum for the
+    // second best, and the second best score is < 100, then return the
+    // rows having such a q30 position.  (This needs to be explained better.)
 
-     void Merge( const readstack& s, const int offset );
+    void PairWeak1( vec<Bool>& suspect ) const;
 
-     // AddToStack: add in reads at given offsets.
+    // PairWeak2: Just like PairWeak1, but operates on two separate stacks.
 
-     void AddToStack( const vec< triple<int,int64_t,Bool> >& offset_id_rc2,
-          const vecbasevector& bases, const vecqualvector& quals,
-          const PairsManager& pairs );
+    friend void PairWeak2( const readstack& s1, const readstack& s2,
+                           vec<Bool>& suspect1, vec<Bool>& suspect2 );
 
-     // AddPartners: for reads placed in the stack but whose partners are not,
-     // recruit the partners based on perfect K-base overlaps.
+    // CorrectAll: correct all undisputed columns, and suggest a safe trim point.
 
-     void AddPartners( const int K, const int top, const vecbasevector& bases,
-          const vecqualvector& quals, const PairsManager& pairs );
+    void CorrectAll( basevector& b, qualvector& q, int& trim_to,
+                     const Bool verbose = False ) const;
 
-     // Recruit: bring in reads that align to a read in the stack and overlap
-     // the stack by at least K.
+    // CorrectAllEM3: correct all columns using draft EM algorithm
+    // trim_to currenly set to founder read len
+    // accesses bases_ quals_ internally for now.
 
-     void Recruit( const int K, const vec<simple_align_data>& aligns,
-          const vec<int64_t>& id1_start, const vecbasevector& bases,
-          const vecqualvector& quals, const PairsManager& pairs );
+    void CorrectAllEM3( basevector& b, qualvector& q, int& trim_to, std::vector<double>& pfriend, bool debug = false) const;
 
-     // Trim: keep only the columns in [start,stop).
+    // GetOffsets1: compute predicted offsets.
 
-     void Trim( const int start, const int stop );
+    friend vec<int> GetOffsets1( const readstack& stack1, const readstack& stack2,
+                                 const int verbosity, const int delta_mis );
 
-     // ========================= ALGORITHMS =======================================
+    // FlagNoise: identify friends  having inadequate glue to the founder.
 
-     // ColumnConsensus1: return consensus base for column.
+    void FlagNoise( vec<Bool>& ) const;
 
-     char ColumnConsensus1( const int i ) const;
+    // IdentifyShifters: identify friends that align much better to the founder
+    // if shifted at a homopolymer.
 
-     // Consensus1, StrongConsensus1: algorithms for computing consensus.
+    void IdentifyShifters( vec<Bool>& suspect ) const;
 
-     basevector Consensus1( ) const;
-     void Consensus1( basevector& con, qualvector& conq ) const;
-     void StrongConsensus1( basevector& con, qualvector& conq,
-          const Bool raise_zero ) const;
+    // Defenestrate: look for windows that provide evidence of false friends, then
+    // toss them through it.
 
-     // Consensuses1: an algorithm for computing multiple consensuses.
+    void Defenestrate( vec<Bool>& suspect ) const;
 
-     vec<basevector> Consensuses1( ) const;
+    // ========================== OUTPUT ==========================================
 
-     // Consensuses2: return all consensuses that can be traverse via K-base
-     // perfect matches.
+    // Print: pretty print the matrix, with w columns per window.  Each
+    // window also has about 10 columns on the right containing source info.
+    // There are two forms, both of which display consensus.  The first form
+    // builds the consensus inside Print, whereas for the second form, the
+    // consensus is provided as a second argument.  Multiple consensuses may
+    // be provided, and are rendered in a collapsed form.
 
-     vec<basevector> Consensuses2( const int K, const int top ) const;
+    void Print( std::ostream& out, const int w = 70 ) const;
+    void Print( std::ostream& out, const vec<basevector>& cons, const int w = 70 ) const;
+    void Print( std::ostream& out, const vec<vec<char>>& con, const int w = 70 ) const;
 
-     // Raise1: raise quality scores on row id based on agreement with it.
+    // ========================= PRIVATE ==========================================
 
-     void Raise1( const int id, const int rwindow = 11,
-          const Bool require_unedited = False );
 
-     // HighQualDiff: return the rows having a Qn diff with the first 'top' rows
-     // (typically 1 or 2).
+  private:
 
-     void HighQualDiff( const int n, const int top, vec<Bool>& suspect ) const;
-
-     void HighQualDiffWindow( vec<Bool>& suspect ) const;
-
-     // CleanColumns: another criterion for killing rows.
-
-     void CleanColumns( const int top, vec<Bool>& suspect ) const;
-
-     // MotifDiff: find motifs and use them to define suspect rows.
-
-     void MotifDiff( const int top, vec<Bool>& suspect ) const;
-
-     // PairWeak1: First find the quality score sums for each column, using only
-     // reads whose partner is placed in the stack.  If the quality score sum
-     // for the winning base is at least 100, and > 10 times the sum for the 
-     // second best, and the second best score is < 100, then return the
-     // rows having such a q30 position.  (This needs to be explained better.)
-
-     void PairWeak1( vec<Bool>& suspect ) const;
-
-     // PairWeak2: Just like PairWeak1, but operates on two separate stacks.
-
-     friend void PairWeak2( const readstack& s1, const readstack& s2,
-          vec<Bool>& suspect1, vec<Bool>& suspect2 );
-
-     // CorrectAll: correct all undisputed columns, and suggest a safe trim point.
-
-     void CorrectAll( basevector& b, qualvector& q, int& trim_to,
-          const Bool verbose = False ) const;
-
-     // CorrectAllEM3: correct all columns using draft EM algorithm
-     // trim_to currenly set to founder read len
-     // accesses bases_ quals_ internally for now.
-     
-     void CorrectAllEM3( basevector& b, qualvector& q, int& trim_to, std::vector<double>& pfriend, bool debug = false) const;
-
-     // GetOffsets1: compute predicted offsets.
-
-     friend vec<int> GetOffsets1( const readstack& stack1, const readstack& stack2, 
-          const int verbosity, const int delta_mis );
-
-     // FlagNoise: identify friends  having inadequate glue to the founder.
-
-     void FlagNoise( vec<Bool>& ) const;
-
-     // IdentifyShifters: identify friends that align much better to the founder
-     // if shifted at a homopolymer.
-
-     void IdentifyShifters( vec<Bool>& suspect ) const;
-     
-     // Defenestrate: look for windows that provide evidence of false friends, then
-     // toss them through it.
-
-     void Defenestrate( vec<Bool>& suspect ) const;
-
-     // ========================== OUTPUT ==========================================
-
-     // Print: pretty print the matrix, with w columns per window.  Each
-     // window also has about 10 columns on the right containing source info.
-     // There are two forms, both of which display consensus.  The first form
-     // builds the consensus inside Print, whereas for the second form, the
-     // consensus is provided as a second argument.  Multiple consensuses may
-     // be provided, and are rendered in a collapsed form.
-
-     void Print( std::ostream& out, const int w = 70 ) const;
-     void Print( std::ostream& out, const vec<basevector>& cons, const int w = 70 ) const;
-     void Print( std::ostream& out, const vec<vec<char>>& con, const int w = 70 ) const;
-
-     // ========================= PRIVATE ==========================================
-
-
-     private:
-
-     int cols_;
-     StackBaseVecVec bases_;
-     StackQualVecVec quals_;
-     vec<int64_t> id_;
-     vec<Bool> rc2_;
-     vec<int64_t> pid_;
-     vec<int> pair_pos_;
-     vec<int> offset_;
-     vec<int> len_;
+    int cols_;
+    StackBaseVecVec bases_;
+    StackQualVecVec quals_;
+    vec<int64_t> id_;
+    vec<Bool> rc2_;
+    vec<int64_t> pid_;
+    vec<int> pair_pos_;
+    vec<int> offset_;
+    vec<int> len_;
 
 };
 
