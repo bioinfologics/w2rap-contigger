@@ -1026,7 +1026,7 @@ String Chr( const int g )
 void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
      const vec<vec<vec<vec<int>>>>& linesx, const vec<int>& npairsx,
      const vec<vec<covcount>>& covs, vec< vec< std::pair<int,int> > > hits,
-     const String& final_dir, const String& work_dir, const Bool ALIGN_TO_GENOME )
+     const String& final_dir, const String& work_dir)
 {    double clock1 = WallClockTime( );
      vec<int> llensx;
      GetLineLengths( hbx, linesx, llensx );
@@ -1054,23 +1054,6 @@ void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
                          head[e] += ToString( covs[ss][e].Cov( ), 2 ) + "x";
                     else head[e] += "?x";    }    }    }
 
-     if ( ALIGN_TO_GENOME && IsRegularFile( work_dir + "/genome.fastb" ) )
-     {    for ( int e = 0; e < hits.isize( ); e++ ) 
-          {    int re = inv2[e];
-               if ( hits[e].empty( ) && ( re < 0 || hits[re].empty( ) ) ) 
-                    continue;
-               UniqueSort(hits[e]), UniqueSort(hits[re]);
-               head[e] += " loc=";
-               int c = 0;
-               for ( int j = 0; j < hits[e].isize( ); j++ )
-               {    if ( c++ > 0 ) head[e] += ",";
-                    head[e] += "+" + Chr(hits[e][j].first)
-                         + ":" + ToString(hits[e][j].second);    }
-               if ( re < 0 ) continue;
-               for ( int j = 0; j < hits[re].isize( ); j++ )
-               {    if ( c++ > 0 ) head[e] += ",";
-                    head[e] += "-" + Chr(hits[re][j].first)
-                         + ":" + ToString(hits[re][j].second);    }    }    }
      std::cout << TimeSince(clock1) << " using setting up final fasta" << std::endl;
      double clock2 = WallClockTime( );
      for ( int e = 0; e < hbx.E( ); e++ ) 

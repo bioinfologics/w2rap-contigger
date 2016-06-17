@@ -383,7 +383,7 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
      const vec<vec<vec<vec<int>>>>& linesx, const vec<int>& npairsx,
      const vec<vec<covcount>>& covs, vec< vec< std::pair<int,int> > > hits, 
-     const String& final_dir, const String& work_dir, const Bool ALIGN_TO_GENOME );
+     const String& final_dir, const String& work_dir );
 
 String Chr( const int g );
 

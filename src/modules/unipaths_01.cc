@@ -49,7 +49,6 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
   
   ExtractReads(blank_string_arg, blank_string_arg, READS, blank_string_feudal, -1, regions, work_dir, work_dir, False, False, False, subsam_names, subsam_starts, &bases, quals );
-  //std::cout << "Final to extract reads " << std::endl;
 
   BinaryWriter::writeFile( work_dir + "/subsam.starts", subsam_starts );
   BinaryWriter::writeFile( work_dir + "/subsam.names", subsam_names );

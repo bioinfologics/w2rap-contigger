@@ -35,14 +35,11 @@ int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, in
   vec<int> inv2;
   ReadPathVec paths2;
 
-  // Load necesary files
-  vecbvec bases;
+  // Load necessary files
   vec<String> subsam_names;
   vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
-  std::cout << "Loading fastb, subsam and qualp files" << std::endl;
-  bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
+  std::cout << "Loading subsam file" << std::endl;
   BinaryReader::readFile(work_dir + "/subsam.starts", &subsam_starts);
-  ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
 
   //XXX TODO: Load quals
   // Load K=200 HBV and reda paths
@@ -52,7 +49,7 @@ int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, in
   paths2.ReadAll( work_dir + "/" + prefix + ".fin.paths" );
 
   // Scaffold.
-  //{    
+
   VecULongVec invPaths;
   invert( paths2, invPaths, hb.EdgeObjectCount( ) );
   int MIN_LINE=5000;
@@ -61,35 +58,15 @@ int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, in
   bool SCAFFOLD_VERBOSE=False;
   bool GAP_CLEANUP=True;
   MakeGaps( hb, inv2, paths2, invPaths, MIN_LINE, MIN_LINK_COUNT, work_dir, FIN, SCAFFOLD_VERBOSE, GAP_CLEANUP );
-  //}
+
   
   // Carry out final analyses and write final assembly files.
-  String final_dir = work_dir;
   int MAX_CELL_PATHS=50;
   int MAX_DEPTH=10;
-  bool ALIGN_TO_GENOME=True;
-  String EVALUATE="";
-  bool EVALUATE_VERBOSE=False;
-  String X="all";
-  std::map<String,GapToyResults> res;
-  string SAMPLE="";
-  String species;
-  String SELECT_FRAC="";
-  int READS_TO_USE=-1;
-  string DATASET="1";
-  String READS="";
-    
-  Samples( species, SAMPLE, X, EVALUATE, SELECT_FRAC, READS_TO_USE, DATASET, READS, subsam_names );
-  int PAD=30000;
-  bool all=False;
-  vec<String> regions;
-  vec<int> fosmids;
-  String F;
-  //DefineRegions( X, fosmids, regions, res, PAD, all, SAMPLE, EVALUATE, F );
+
 
   vecbasevector G;
-  bool SAVE_FASTA=True;
-  FinalFiles( hb, inv2, paths2, subsam_names, subsam_starts, work_dir, final_dir, MAX_CELL_PATHS, MAX_DEPTH, ALIGN_TO_GENOME, EVALUATE, EVALUATE_VERBOSE, X, res, SAMPLE, species, fosmids, G, SAVE_FASTA );
+  FinalFiles( hb, inv2, paths2, subsam_names, subsam_starts, work_dir, MAX_CELL_PATHS, MAX_DEPTH, G);
                                             
   // Done.
 #ifdef __linux
