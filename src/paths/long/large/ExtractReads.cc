@@ -43,24 +43,11 @@ void GetAmbInt( const vecbitvector& amb, vec< std::pair<int,ho_interval> >& amb_
 void GetCannedReferenceSequences( const String& sample, const String& species,
      const String& work_dir );
 
-void ExtractReads( const String& sample, const String& species, String reads,
-     String& SELECT_FRAC, const int READS_TO_USE, const vec<String>& regions, 
-     const String& tmp_dir1, const String& work_dir, const Bool all, 
-     const Bool USE_PF_ONLY, const Bool KEEP_NAMES, vec<String>& subsam_names, 
+void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_names,
      vec<int64_t>& subsam_starts, vecbvec* pReads, ObjectManager<VecPQVec>& quals )
 {
      double lclock = WallClockTime( );
 
-     // this needs to be done to remove any symlinks created in a previous "all"
-     // run, because a later non-all run will then over-write the symlinked data,
-     // rather than the symlink itself.
-
-     Remove( tmp_dir1 + "/frag_reads_orig.fastb" );
-     Remove( tmp_dir1 + "/frag_reads_orig.qualp" );
-
-     // Get reference sequence.
-
-     if (all) GetCannedReferenceSequences( sample, species, work_dir );
 
      // Parse, check and load files.  This is the main extraction path.
 
@@ -137,11 +124,7 @@ void ExtractReads( const String& sample, const String& species, String reads,
                               << "metainfo specification " << meta
                               << ".\n" << std::endl;
                          Scram(1);    }    }    }
-          // SHOULD ELIMINATE ******************************************************
-          if ( SELECT_FRAC.IsDouble( ) && SELECT_FRAC.Double( ) < 1 )
-          {    for ( int g = 0; g < groups.isize( ); g++ )
-                    infiles_meta[g].frac = SELECT_FRAC.Double( );    }
-     
+
           // Sort groups by sample.
           //[GONZA] Useless
           subsam_names.clear( );
@@ -260,19 +243,6 @@ void ExtractReads( const String& sample, const String& species, String reads,
                               << "files.\n\n";
                          Scram(1);    }    }    }
 
-          // Check whether use of KEEP_NAMES makes sense.
-
-          if (KEEP_NAMES)
-          {    Bool have_bam = False, have_non_bam = False;
-               for ( int g = 0; g < groups.isize( ); g++ )
-               for ( int j = 0; j < infiles[g].isize( ); j++ )
-               {    if ( infiles[g][j].Contains( ".bam", -1 ) ) have_bam = True;
-                    else have_non_bam = True;    }
-               if ( have_bam && have_non_bam )
-               {    std::cout << "\nFor KEEP_NAMES, you can't supply a mixture of "
-                         << "bam and non-bam files.\n" << std::endl;
-                    Scram(1);    }    }
-
           // Precheck fastb files.
 
           for ( int g = 0; g < groups.isize( ); g++ )
@@ -322,9 +292,9 @@ void ExtractReads( const String& sample, const String& species, String reads,
 
                     if ( fn.Contains( ".bam", -1 ) )
                     {    bool const UNIQUIFY_NAMES = true;
-                         vecString* pxnames = ( KEEP_NAMES ? &xnames : 0 );
-                         BAMReader bamReader( USE_PF_ONLY, UNIQUIFY_NAMES,
-                              infiles_meta[g].frac, long(READS_TO_USE) );
+                         vecString* pxnames = 0 ;
+                         BAMReader bamReader( False /*USE_PF_ONLY*/, UNIQUIFY_NAMES,
+                              infiles_meta[g].frac, long(-1/*READS_TO_USE*/) );
                               bamReader.readBAM( 
                                    fn, &xbases, &xquals, pxnames );    }
 
@@ -631,7 +601,7 @@ void ExtractReads( const String& sample, const String& species, String reads,
 
           // Report stats.
 
-          int64_t all_reads = MastervecFileObjectCount( tmp_dir1 + "/frag_reads_orig.fastb" );
+          int64_t all_reads = MastervecFileObjectCount( work_dir + "/frag_reads_orig.fastb" );
           std::cout << Date( ) << ": using " << all_reads
                << " reads" << std::endl;
           std::cout << Date( ) << ": data extraction complete" 
@@ -640,213 +610,11 @@ void ExtractReads( const String& sample, const String& species, String reads,
 #endif
           << std::endl;
           std::cout << TimeSince(lclock) << " used extracting reads" << std::endl;
-          return;    }
+     }
 
-     // Internal processing when reads are not specified.
 
-     if (all)
-     {    
-          // Handle the fastb/qualb case and fastb/qualp cases.
 
-          if ( sample == "maize" )
-          {    String dir = "/wga/scr4/wg_projects/Z.mays/CML247";
-               SystemSucceed( "ln -s " + dir + "/maize.fastb "
-                     + tmp_dir1 + "/frag_reads_orig.fastb" );
-               SystemSucceed( "ln -s " + dir + "/maize.qualp "
-                     + tmp_dir1 + "/frag_reads_orig.qualp" );    }
-          else if ( sample == "HCC1143+BL" || sample == "HCC1954+BL" 
-               || sample == "F1" || sample == "F2" || sample == "F3"
-               || sample == "CEPH" || sample == "YRI" )
-          {    vec<String> sfss;
-               vec<double> sfs;
-               Tokenize( SELECT_FRAC, '+', sfss );
-               sfs.resize( sfss.size( ) );
-               for ( int j = 0; j < sfss.isize( ); j++ )
-                    sfs[j] = sfss[j].Double( );
-               int ns = sfs.size( );
-               vec<String> dir(ns);
-               String base = "/wga/scr4/wg_projects/H.sapien/";
-               if ( sample == "HCC1143+BL" )
-               {    dir[0] = base + "HCC1143";
-                    dir[1] = base + "HCC1143BL";    }
-               if ( sample == "HCC1954+BL" )
-               {    dir[0] = base + "HCC1954";
-                    dir[1] = base + "HCC1954BL";    }
-               if ( sample == "F1" )
-               {    dir[0] = base + "17E_PD";
-                    dir[1] = base + "16E_MD";
-                    dir[2] = base + "15E_DD";    }
-               if ( sample == "F2" )
-               {    dir[0] = base + "F2.1";
-                    dir[1] = base + "F2.2";
-                    dir[2] = base + "F2.3";    }
-               if ( sample == "F3" )
-               {    dir[0] = base + "F3.1";
-                    dir[1] = base + "F3.2";
-                    dir[2] = base + "F3.3";
-                    dir[3] = base + "F3.4";
-                    dir[4] = base + "F3.5";    }
-               if ( sample == "CEPH" )
-               {    dir[0] = base + "NA12878_CEPH";
-                    dir[1] = base + "NA12892_CEPH";
-                    dir[2] = base + "NA12891_CEPH";    }
-               if ( sample == "YRI" )
-               {    dir[0] = base + "YRI.1";
-                    dir[1] = base + "YRI.2";
-                    dir[2] = base + "YRI.3";    }
-               vec<int64_t> all_reads(ns), using_reads(ns);
-               for ( int j = 0; j < ns; j++ )
-               {    all_reads[j] = MastervecFileObjectCount(
-                          dir[j] + "/frag_reads_orig.fastb" );
-                    using_reads[j] = int64_t(round( sfs[j] * all_reads[j] ));
-                    using_reads[j] = 2 * ( using_reads[j] / 2 );    }
-               for ( int j = 1; j < ns; j++ )
-                    subsam_starts[j] = subsam_starts[j-1] + using_reads[j-1];
-               std::cout << Date( ) << ": building joint qualp" << std::endl;
-               {    VecPQVec& Q = quals.create( );
-                    for ( int j = 0; j < ns; j++ )
-                    {    Q.ReadRange( dir[j] + "/frag_reads_orig.qualp",
-                               0, using_reads[j] );    }
-                    std::cout << Date( ) << ": writing joint qualp" << std::endl;
-                    quals.store( );    }
-               std::cout << Date( ) << ": building joint fastb" << std::endl;
-               {    vecbasevector& bases = *pReads;
-                    for ( int j = 0; j < ns; j++ )
-                    {    bases.ReadRange( dir[j] + "/frag_reads_orig.fastb",
-                               0, using_reads[j] );    }
-                    std::cout << Date( ) << ": writing joint fastb" << std::endl;
-                    bases.WriteAll( tmp_dir1 + "/frag_reads_orig.fastb" );    }
-               SELECT_FRAC = "1.0";    }
-          else
-          {    String dir;
-               if ( IsDirectory( "/wga/scr4/wg_projects/H.sapien/" + sample ) )
-                    dir = "/wga/scr4/wg_projects/H.sapien/" + sample;
-               if ( sample == "rhino" )
-                    dir = "/wga/scr4/wg_projects/C.simum/H77KJADXX";
-               if ( sample == "aardvark" )
-                    dir = "/wga/scr4/wg_projects/O.afer/H7CRNADXX";
-               if ( sample == "lolium" ) dir = "/wga/scr4/wg_projects/L.perenne";
-               SystemSucceed( "ln -s " + dir + "/frag_reads_orig.fastb "
-                     + tmp_dir1 + "/frag_reads_orig.fastb" );
-               pReads->ReadAll(tmp_dir1 + "/frag_reads_orig.fastb");
-               SystemSucceed( "ln -s " + dir + "/frag_reads_orig.qualp "
-                     + tmp_dir1 + "/frag_reads_orig.qualp" );
-               quals.load();    }
-
-          // Report stats.
-
-          int64_t all_reads =
-               MastervecFileObjectCount( tmp_dir1 + "/frag_reads_orig.fastb" );
-          int64_t using_reads = all_reads;
-          if ( reads == "" && SELECT_FRAC.Double( ) < 1.0 )
-          {    using_reads = int64_t(round(SELECT_FRAC.Double()*all_reads));
-               using_reads = 2*(using_reads/2);    }
-          std::cout << Date( ) << ": using " << using_reads
-               << " reads" << std::endl;
-
-          std::cout << TimeSince(lclock) << " used extracting reads" << std::endl;
-          return;   }
-
-     // Regional processing.
-
-     vecbasevector genome( regions.size( ) );
-     vec<String> bams;
-     if ( reads != "" ) ParseStringSet( "{" + reads + "}", bams );
-     else
-     {    String base 
-               = "/wga/scr4/picard/H01UJADXX/C1-508_2012-11-01_2012-11-04";
-          bams.push_back( base + "/1/Solexa-125532/"
-               + "H01UJADXX.1.aligned.duplicates_marked.bam" );
-          bams.push_back( base + "/2/Solexa-125532/"
-               + "H01UJADXX.2.aligned.duplicates_marked.bam" );    }
-     #pragma omp parallel for
-     for ( int i = 0; i < regions.isize( ); i++ )
-     {    vecbasevector bases;
-          vecqualvector quals;
-          String reg = regions[i];
-          if ( reg.Contains( ":" ) ) 
-          {    int start = reg.Between( ":", "-" ).Int( );
-               int stop = reg.After( "-" ).Int( );
-               reg = reg.Before( ":" ) 
-                    + ":" + ToString(start) + "-" + ToString(stop);    }
-          String diri = work_dir + "/data/" + ToString(i);
-          Mkdir777(diri);
-          for ( int z = 0; z < bams.isize( ); z++ )
-          {    String getsam = "samtools view -h " + bams[z] + " " + reg;
-               SamIAm( z, getsam, diri, false, "", USE_PF_ONLY );
-               PairsManager pairs( diri + "/" + ToString(z) + ".pairs" );
-               int64_t N = bases.size( ), n;
-               {    vecqualvector qualsi( diri + "/" + ToString(z) + ".qualb" );
-                    n = pairs.nPairs( ) * 2;
-                    quals.resize( N + n );
-                    for ( int64_t pid = 0; pid < (int64_t) pairs.nPairs( ); pid++ )
-                    {    quals[N + 2*pid] = qualsi[ pairs.ID1(pid) ];
-                         quals[N + 2*pid+1] 
-                              = qualsi[ pairs.ID2(pid) ];    }    }
-               vecbasevector basesi( diri + "/" + ToString(z) + ".fastb" );
-               bases.resize( N + n );
-               for ( int64_t pid = 0; pid < (int64_t) pairs.nPairs( ); pid++ )
-               {    bases[N + 2*pid] = basesi[ pairs.ID1(pid) ];
-                    bases[N + 2*pid+1] = basesi[ pairs.ID2(pid) ];     }    }
-          bases.WriteAll( diri + "/frag_reads_orig.fastb" );
-          quals.WriteAll( diri + "/frag_reads_orig.qualb" );
-          int id;
-          String sid;                         
-          if ( regions[i].Contains( ":" ) ) sid = regions[i].Before(":");
-          else sid = regions[i];
-          if ( sid == "X" ) id = 22;
-          else if ( sid == "Y" ) id = 23;
-          else id = sid.Int( ) - 1;
-          vecbasevector genomei;
-          String genome_fastb = "/wga/dev/references/Homo_sapiens/genome.fastb";
-          genomei.ReadOne( genome_fastb, id );
-          if ( regions[i].Contains( ":" ) ) 
-          {    int start = regions[i].Between( ":", "-" ).Int( );
-               int stop = regions[i].After( "-" ).Int( );
-               genomei[0].SetToSubOf( genomei[0], start, stop - start );    }
-          genome[i] = genomei[0];    }
-     genome.WriteAll( work_dir + "/genome.fastb" );
-     int64_t genome_size = 0;
-     for ( int g = 0; g < (int) genome.size( ); g++ )
-          genome_size += genome[g].size( );
-     std::cout << "genome has size " << genome_size << std::endl;
-     int64_t nbases = 0;
-     for ( int i = 0; i < regions.isize( ); i++ )
-     {    nbases += MastervecFileObjectCount(
-               tmp_dir1 + "/" + ToString(i) + "/frag_reads_orig.fastb" );    }
-     int SEED = 666;
-     vec<uint64_t> shuffled;
-     Shuffle64( nbases/2, shuffled, (uint64_t) SEED );
-     int64_t nusing = nbases;
-     if ( SELECT_FRAC.Double( ) < 1.0 ) 
-     {    nusing = int( round( SELECT_FRAC.Double( ) * nbases ) );
-          if ( nusing % 2 == 1 ) nusing++;    }
-     {    vecqualvector qqq;
-          for ( int i = 0; i < regions.isize( ); i++ )
-          {    qqq.ReadAll( tmp_dir1 + "/" + ToString(i)
-                    + "/frag_reads_orig.qualb", True );    }
-          vecqualvector quals2(nbases);
-          #pragma omp parallel for
-          for ( int64_t pid = 0; pid < nbases/2; pid++ )
-          {    quals2[2*pid] = qqq[ 2*shuffled[pid] ];
-               quals2[2*pid+1] = qqq[ 2*shuffled[pid]+1 ];    }
-          convertAssignParallel(quals2.begin(),quals2.begin(nusing),
-                                  quals.create());
-          quals.store();    }
-     {    vecbasevector bases;
-          for ( int i = 0; i < regions.isize( ); i++ )
-          {    bases.ReadAll( tmp_dir1 + "/" + ToString(i) 
-                    + "/frag_reads_orig.fastb", True );    }
-          std::cout << Date( ) << ": using " << nusing << " reads" << std::endl;
-          vecbasevector& bases2 = *pReads;
-          bases2.clear().resize(nbases);
-          #pragma omp parallel for
-          for ( int64_t pid = 0; pid < nbases/2; pid++ )
-          {    bases2[2*pid] = bases[ 2*shuffled[pid] ];
-               bases2[2*pid+1] = bases[ 2*shuffled[pid]+1 ];    }
-          bases2.resize(nusing);
-          bases2.WriteAll( tmp_dir1 + "/frag_reads_orig.fastb" );    }
-     std::cout << TimeSince(lclock) << " used extracting reads" << std::endl;    }
+}
 
 void GetAmbInt( const vecbitvector& amb, vec< std::pair<int,ho_interval> >& amb_int )
 {    for ( int g = 0; g < (int) amb.size( ); g++ )
@@ -857,96 +625,3 @@ void GetAmbInt( const vecbitvector& amb, vec< std::pair<int,ho_interval> >& amb_
                     if ( !amb[g][j] ) break;
                amb_int.push( g, ho_interval( i, j ) );
                i = j - 1;    }    }    }
-
-void GetCannedReferenceSequences( const String& sample, const String& species,
-     const String& work_dir )
-{
-     // Get reference sequence.
-
-     String genome_fasta, genome_fastb, genome_amb, genome_names;
-     String genome_fasta_alt, genome_fastb_alt, genome_amb_alt;
-     String genome_names_alt;
-     String href_dir = "/wga/scr4/bigrefs";
-     if ( species == "human" ) 
-     {    genome_fastb = href_dir + "/grch38/genome.fastb";
-          genome_names = href_dir + "/grch38/genome.names";
-          genome_amb = href_dir + "/grch38/genome.fastamb";
-          genome_fastb_alt = href_dir + "/human19/genome.fastb";
-          genome_names_alt = href_dir + "/human19/genome.names";
-          genome_amb_alt = href_dir + "/human19/genome.fastamb";    }
-     if ( species == "mouse" )
-     {    genome_fastb = href_dir + "/mouse/genome.fastb";
-          genome_names = href_dir + "/mouse/genome.names";
-          genome_amb = href_dir + "/mouse/genome.fastamb";    }
-     String dref = "/wga/dev/references";
-     if ( sample == "rhino" )
-          genome_fastb = "/wga/scr4/wg_projects/C.simum/genome.fastb";
-     if ( sample == "aardvark" )
-          genome_fastb = "/wga/scr4/wg_projects/O.afer/genome.fastb";
-     if ( sample == "ecoli12" )
-          genome_fastb = dref + "/Escherichia_coli/genome.fastb";
-     if ( sample == "rhody" )
-          genome_fastb = dref + "/Rhodobacter_sphaeroides/genome.fastb";
-     if ( sample == "plasmo" )
-     {    genome_fastb = dref + "/Plasmodium_falciparum/genome.fastb";
-          genome_names = dref + "/Plasmodium_falciparum/genome.names";    }
-     if ( sample == "tb148" )
-     {    genome_fasta = "/seq/references/Mycobacterium_tuberculosis_W148/v0/"
-               "Mycobacterium_tuberculosis_W148.fasta";    }
-     if ( sample == "tbHaarlem" )
-          genome_fasta = dref + "/Mycobacterium_tuberculosis/genome.fasta";
-
-     // Build genome files.
-
-     if ( genome_fastb != "" || genome_fasta != "" )
-     {    vecbasevector genome;
-          if ( genome_fastb != "" )
-          {    Cp2( genome_fastb, work_dir );
-               genome.ReadAll( work_dir + "/genome.fastb" );    }
-          else
-          {    FetchReads( genome, 0, genome_fasta );
-               genome.WriteAll( work_dir + "/genome.fastb" );    }
-          if ( genome_names != "" ) Cp2( genome_names, work_dir );
-          else
-          {    Ofstream( nout, work_dir + "/genome.names" );
-               for ( int g = 0; g < (int) genome.size( ); g++ )
-                    nout << g << "\n";    }
-          if ( genome_amb != "" ) 
-          {    Cp2( genome_amb, work_dir );
-               vec< std::pair<int,ho_interval> > amb_int;
-               vecbitvector amb(genome_amb);
-               GetAmbInt( amb, amb_int );
-               BinaryWriter::writeFile( work_dir + "/genome.ambint", amb_int );    }
-          int64_t genome_size = 0;
-          for ( int g = 0; g < (int) genome.size( ); g++ )
-               genome_size += genome[g].size( );
-          std::cout << "genome has size " << genome_size << std::endl;    }
-
-     // Build genome alt files.
-
-     if ( genome_fastb_alt != "" || genome_fasta_alt != "" )
-     {    vecbasevector genome;
-          if ( genome_fastb_alt != "" )
-          {    Cp2( genome_fastb_alt, work_dir + "/genome.fastb_alt" );
-               genome.ReadAll( work_dir + "/genome.fastb_alt" );    }
-          else
-          {    FetchReads( genome, 0, genome_fasta_alt );
-               genome.WriteAll( work_dir + "/genome.fastb_alt" );    }
-          if ( genome_names_alt != "" ) 
-               Cp2( genome_names_alt, work_dir + "/genome.names_alt" );
-          else
-          {    Ofstream( nout, work_dir + "/genome.names_alt" );
-               for ( int g = 0; g < (int) genome.size( ); g++ )
-                    nout << g << "\n";    }
-          if ( genome_amb_alt != "" ) 
-          {    Cp2( genome_amb_alt, work_dir + "/genome.fastamb_alt" );
-               vec< std::pair<int,ho_interval> > amb_int;
-               vecbitvector amb(genome_amb_alt);
-               GetAmbInt( amb, amb_int );
-               BinaryWriter::writeFile( 
-                    work_dir + "/genome.ambint_alt", amb_int );    }
-          int64_t genome_size = 0;
-          for ( int g = 0; g < (int) genome.size( ); g++ )
-               genome_size += genome[g].size( );
-          std::cout << "genome alt has size " << genome_size
-               << std::endl;    }    }

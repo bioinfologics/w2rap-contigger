@@ -42,13 +42,10 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   String READS_F = READS;
   int ZZ = 0;
   //std::cout << "Start to extract reads " << std::endl;
-  vec<String> regions;
-  vec<String> subsam_names;
-
-  Samples( blank_string_feudal, "", X, blank_string_feudal, blank_string_feudal, ZZ, blank_string_arg, READS_F, subsam_names );
+  vec<String> subsam_names =  { "C" };
   vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
   
-  ExtractReads(blank_string_arg, blank_string_arg, READS, blank_string_feudal, -1, regions, work_dir, work_dir, False, False, False, subsam_names, subsam_starts, &bases, quals );
+  ExtractReads( READS, work_dir, subsam_names, subsam_starts, &bases, quals );
 
   BinaryWriter::writeFile( work_dir + "/subsam.starts", subsam_starts );
   BinaryWriter::writeFile( work_dir + "/subsam.names", subsam_names );

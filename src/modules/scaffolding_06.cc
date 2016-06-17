@@ -15,7 +15,6 @@
 #include "paths/long/large/AssembleGaps.h"
 #include "paths/long/large/FinalFiles.h"
 #include "paths/long/large/MakeGaps.h"
-#include "paths/long/large/Samples.h"
 #include "tclap/CmdLine.h"
 
 

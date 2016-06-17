@@ -219,7 +219,6 @@ SET(SOURCE_FILES_UNIPATH_01 src/modules/unipaths_01.cc
         src/paths/long/ShortKmerReadPather.cc
         src/paths/long/large/ExtractReads.cc
         src/paths/long/large/ReadNameLookup.cc
-        src/paths/long/large/Samples.cc
         src/system/Crash.cc)
 
 SET(SOURCE_FILES_QGRAPH_02 src/modules/qgraph_02.cc
@@ -276,8 +275,7 @@ SET(SOURCE_FILES_SCAFFOLDING_06 src/modules/scaffolding_06.cc
         src/paths/long/large/FinalFiles.cc
         src/paths/long/large/GapToyTools4.cc
         src/paths/long/large/GapToyTools5.cc
-        src/paths/long/large/MakeGaps.cc
-        src/paths/long/large/Samples.cc)
+        src/paths/long/large/MakeGaps.cc)
 
 ## add executables and respective sources
 add_executable(01_unipaths ${SOURCE_FILES_UNIPATH_01} $<TARGET_OBJECTS:base_libs>)
