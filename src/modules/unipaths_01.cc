@@ -13,7 +13,6 @@
 #include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/large/AssembleGaps.h"
 #include "paths/long/large/ExtractReads.h"
-#include "paths/long/large/Samples.h"
 #include "tclap/CmdLine.h"
 
 int create_unipaths(const string work_dir, const string prefix, const string READS, uint NUM_THREADS, int MAX_MEM_GB){

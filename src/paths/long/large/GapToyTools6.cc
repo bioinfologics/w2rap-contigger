@@ -15,53 +15,8 @@
 #include "CoreTools.h"
 #include "FastIfstream.h"
 #include "paths/long/fosmid/Fosmids.h"
-#include "paths/long/large/DiscoStats.h"
 #include "paths/long/large/GapToyTools.h"
 
-void ReportMemory( const disco_stats& stats )
-{
-     // Report memory.
-
-     uint64_t phys_mem = physicalMemory( );
-     std::cout << Date( ) << ": see total physical memory of "
-          << phys_mem << " bytes" << std::endl;
-     rlimit max_data;
-     if ( getrlimit( RLIMIT_DATA, &max_data ) == 0 )
-     {    uint64_t max_mem = max_data.rlim_max;
-          if ( max_mem < phys_mem )
-          {    std::cout << "\nWell this is very interesting.  Apparently "
-                    << "your memory usage is capped at\n" 
-                    << max_mem
-                    << ".  This is less than the physical memory on\n" 
-                    << "your machine, and may result in a crash.  "
-                    << "Please let us know\nif this happens, as we can "
-                    << "make our code respect the memory cap.\n\n";    }    }
-     uint64_t allowed_mem = GetMaxMemory( );
-     if ( allowed_mem > 0 && allowed_mem < phys_mem )
-     {    std::cout << Date( ) << ": see user-imposed limit on memory of "
-               << allowed_mem << " bytes" << std::endl;    }
-
-     // Report bytes per base and issue warning if appropriate.
-
-     int64_t total_bytes = GetMaxMemory( );
-     double bytes_per_base = total_bytes / stats.total_bases;
-     std::cout << Date( ) << ": " << std::setiosflags(std::ios::fixed) 
-          << std::setprecision(2) << bytes_per_base << std::resetiosflags(std::ios::fixed)
-          << " bytes per read base, assuming max memory available" << std::endl;
-     // 2.25 OK in 51452.YRI
-     // 1.85 failed in 51454.F3
-     if ( bytes_per_base < 1.8 )
-     {    std::cout << "\nWARNING: generally 2.0 bytes per read base of memory are "
-               << "needed.  You have\nsubstantially less than this, so the "
-               << "odds of your assembly completing are low.\n" << std::endl;    }
-     if ( bytes_per_base < 2.0 )
-     {    std::cout << "\nWARNING: generally 2.0 bytes per read base of memory are "
-               << "needed.  You have\nsomewhat less than this, so it is "
-               << "possible that your assembly will not finish.\n" << std::endl;    }
-     if ( bytes_per_base < 2.4 )
-     {    std::cout << "\nWARNING: generally about 2.0 bytes per read base is enough, "
-               << "but we have seen\ncases with up to 2.32 bytes per read base "
-               << "where memory is exhausted.\n" << std::endl;    }    }
 
 void PrintSysInfo( )
 {

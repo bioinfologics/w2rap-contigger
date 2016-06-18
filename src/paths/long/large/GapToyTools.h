@@ -17,7 +17,6 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
 #include "paths/long/SupportedHyperBasevector.h"
-#include "paths/long/large/DiscoStats.h"
 #include "paths/long/large/GapToyTools2.h"
 #include "paths/long/large/GapToyTools3.h"
 #include "paths/long/large/GapToyTools4.h"
@@ -423,8 +422,6 @@ void TranslatePaths( ReadPathVec& paths2, const HyperBasevector& hb3,
 
 int N50PerfectStretch( const HyperBasevector& hb, const vecbasevector& genome,
      const Bool concatenate );
-
-void ReportMemory( const disco_stats& stats );
 
 void PrintSysInfo( );
 
