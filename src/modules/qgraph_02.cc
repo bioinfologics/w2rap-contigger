@@ -31,13 +31,14 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
     // ********************** Load files *************************
     std::cout << "Loading files " << std::endl;
     
-    ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
+
     vec<String> subsam_names =  { "C" };
     vec<int64_t> subsam_starts = { 0 };
 
     vecbvec bases;
     bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
-    quals.load();
+    VecPQVec quals;
+    quals.ReadAll( work_dir + "/frag_reads_orig.qualp" );
 
     // variables to run buildReadQGraph XXX TODO: Document one by one
     std::cout << "Starting to build Reads qgraph" << std::endl;
@@ -69,8 +70,6 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
     
     // Variables to run Repath XXX TODO: Document one by one
     const string run_head = work_dir + "/" + file_prefix;
-    
-    quals.unload();
     Repath( hbv, edges, inv, paths, hbv.K(), large_k, run_head+".large", True, True, False );
     
     hbv.DumpFasta( run_head + ".after_repath.fasta", False );

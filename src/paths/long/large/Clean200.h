@@ -20,11 +20,11 @@ void AnalyzeScores( const HyperBasevectorX& hb, const vec<int>& inv, const int e
 
 void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const Bool REMOVE_TINY );
+     const int version, const uint min_size );
 
 void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const Bool REMOVE_TINY );
+     const int version, const uint min_size);
 
 void GetExtensions( const HyperBasevectorX& hb, const int v,
      const int max_exts, vec<vec<int>>& exts, int& depth );

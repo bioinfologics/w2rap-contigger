@@ -145,15 +145,15 @@ namespace
     };
     typedef MapReduceEngine<Kmerizer,Entry,Kmer::Hasher> KMRE;
 
-    Dict* createDict( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
+    Dict* createDict( vecbvec const& reads, VecPQVec const& quals,
                       unsigned minQual, unsigned minFreq )
     {
         // figure out how much of the read to kmerize by examining quals
         //std::cout << Date() << ": processing quals." << std::endl;
         std::vector<unsigned> goodLens(reads.size());
         parallelForBatch(0ul,reads.size(),100000,
-                         GoodLenTailFinder(quals.load(),minQual,&goodLens));
-        quals.unload();
+                         GoodLenTailFinder(quals,minQual,&goodLens));
+        //TODO: check if something like quals.unload() is needed;
         size_t nKmers = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
 
         if ( nKmers == 0 )
@@ -1297,7 +1297,7 @@ namespace
 
 } // end of anonymous namespace
 
-void buildReadQGraph( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
+void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minQual, unsigned minFreq,
                       double minFreq2Fract, unsigned maxGapSize,
@@ -1308,6 +1308,7 @@ void buildReadQGraph( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
 {
     //std::cout << Date() << ": loading reads." << std::endl;
     Dict* pDict = createDict(reads,quals,minQual,minFreq);
+
 
     // figure out the complete base sequence of each edge
     //std::cout << Date() << ": finding edge sequences." << std::endl;
@@ -1331,19 +1332,16 @@ void buildReadQGraph( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
     if ( !pPaths )
     {
         delete pDict;
-        pDict = 0;
         buildHBVFromEdges(edges,K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
     }
     else
     {
         buildHBVFromEdges(edges,K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
-        pathReads(reads,quals.load(),*pDict,edges,*pHBV,
+        pathReads(reads,quals,*pDict,edges,*pHBV,
                   fwdEdgeXlat,revEdgeXlat,pPaths,useNewAligner,VERBOSE);
         delete pDict;
-        pDict = 0;
-
         if (repathUnpathed)
-            repathUnpathedReads(reads,quals.load(),*pHBV, *pPaths);
+            repathUnpathedReads(reads,quals,*pHBV, *pPaths);
     }
 }
 

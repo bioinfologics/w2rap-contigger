@@ -47,7 +47,7 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   ExtractReads( READS, work_dir, subsam_names, subsam_starts, &bases, &quals );
 
   // XXX TODO: Internal error check in original source check also here (?)
-  // XXX TODO: add stats calculation and output like in original source if necesary
+  // XXX TODO: add stats calculation and output like in original source if necessary
   
   return 0; 
 }

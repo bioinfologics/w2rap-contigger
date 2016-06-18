@@ -33,7 +33,7 @@ inline void dumpHBV( std::ostream& out, const HyperBasevector& h )
     }
 }
 
-void buildReadQGraph( vecbvec const& reads, ObjectManager<VecPQVec>& quals,
+void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                         bool doFillGaps, bool doJoinOverlaps,
                         unsigned minQual, unsigned minFreq,
                         double minFreq2Fract, unsigned maxGapSize,

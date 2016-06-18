@@ -18,7 +18,7 @@
 #include "tclap/CmdLine.h"
 
 
-int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREADS, int MAX_MEM_GB){
+int clean_graph(const String work_dir, const string file_prefix, const bool USE_OLD_CLEANUP, const uint min_standalone_edge, uint NUM_THREADS, int MAX_MEM_GB){
   
   // ********************** Set sys resources ******************
   // Set computational limits (XXX TODO: putin a separate source to import in different code)
@@ -30,15 +30,16 @@ int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREAD
   
   // ********************** Load files *************************
   std::cout << "Loading files " << std::endl;
-  
-  ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
+
 
   vec<String> subsam_names =  { "C" };
   vec<int64_t> subsam_starts = { 0 };
 
   vecbvec bases;
   bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
-  quals.load();
+
+  VecPQVec quals;
+  quals.ReadAll( work_dir + "/frag_reads_orig.qualp" );
  
   // Clean (original comment) XXX TODO: porque redeclaration (??) revisar esto!!
   HyperBasevector hb;
@@ -49,15 +50,18 @@ int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREAD
   
   // select the cleaning version (default value in discovar is 2) we always use the Clean200 option !!
   std::cout << "Cleaning!! " << std::endl;
-  int CLEAN_200_VERBOSITY=0;
-  int CLEAN_200V=2;
-  Bool REMOVE_TINY=False;
-  if ( CLEAN_200V <= 2 ){    
-    Clean200( hb, inv, paths, bases, quals.load(), CLEAN_200_VERBOSITY, CLEAN_200V, REMOVE_TINY );    
-  } 
+
+  if (USE_OLD_CLEANUP){
+    int CLEAN_200_VERBOSITY=0;
+    int CLEAN_200V=2;
+    uint REMOVE_TINY=0;
+    Clean200( hb, inv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, REMOVE_TINY );
+  }
   else {
-    Clean200x( hb, inv, paths, bases, quals.load(), CLEAN_200_VERBOSITY, CLEAN_200V, REMOVE_TINY );    
-  } 
+    int CLEAN_200_VERBOSITY=0;
+    int CLEAN_200V=3;
+    Clean200x( hb, inv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_standalone_edge );
+  }
   std::cout << "Done cleaning!! " << std::endl;
 
   std::cout << "Writing output files " << std::endl;
@@ -79,10 +83,7 @@ int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREAD
     invert( paths, paths_index, hb.EdgeObjectCount( ) );
     paths_index.WriteAll( work_dir + "/" + file_prefix + ".pc.large.paths.inv" );
   }
-  
-  // Unload quals
-  quals.unload();
-  
+
   hb.DumpFasta( work_dir + "/" + file_prefix + ".pc.fasta", False );
   return 0;
 }
@@ -90,8 +91,11 @@ int clean_graph(const String work_dir, const string file_prefix, uint NUM_THREAD
 int main(int argc, const char* argv[]){
   std::string out_prefix;
   std::string out_dir;
+  bool old_cleanup;
+  uint min_size;
   unsigned int threads;
   int max_mem;
+
 
   //========== Command Line Option Parsing ==========
 
@@ -101,6 +105,8 @@ int main(int argc, const char* argv[]){
 
     TCLAP::ValueArg<std::string> out_dirArg     ("o","out_dir",     "Output dir path",           true,"","string",cmd);
     TCLAP::ValueArg<std::string> out_prefixArg     ("p","prefix",     "Prefix for the output files",           true,"","string",cmd);
+    TCLAP::ValueArg<bool>         oldCleanupArg        ("","old_cleanup",        "Use old cleanup on the large_k graph", false,false,"bool",cmd);
+    TCLAP::ValueArg<unsigned int>         minSizeArg        ("s","min_size",        "Min size of disconnected elements on large_k graph (in kmers, 0=no min)", false,0,"int",cmd);
     TCLAP::ValueArg<unsigned int>         threadsArg        ("t","threads",        "Number of threads on parallel sections (default: 4)", false,4,"int",cmd);
     TCLAP::ValueArg<unsigned int>         max_memArg       ("m","max_mem",       "Maximum memory in GB (soft limit, impacts performance, default 10000)", false,10000,"int",cmd);
 
@@ -109,6 +115,8 @@ int main(int argc, const char* argv[]){
     // Get the value parsed by each arg.
     out_dir=out_dirArg.getValue();
     out_prefix=out_prefixArg.getValue();
+    old_cleanup=oldCleanupArg.getValue();
+    min_size=minSizeArg.getValue();
     threads=threadsArg.getValue();
     max_mem=max_memArg.getValue();
 
@@ -117,7 +125,7 @@ int main(int argc, const char* argv[]){
 
 
 
-  clean_graph(out_dir, out_prefix, threads, max_mem );
+  clean_graph(out_dir, out_prefix, old_cleanup, min_size, threads, max_mem );
 
   return 0;
 }

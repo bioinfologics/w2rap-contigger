@@ -19,7 +19,7 @@
 
 void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const Bool REMOVE_TINY )
+     const int version, const uint min_size )
 {
      // Start.
 
@@ -179,7 +179,7 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      // Remove tiny standalone edges
 
-     if (REMOVE_TINY)
+     if (min_size>0)
      {    for ( int v = 0; v < hb.N( ); v++ )
           {    if ( hb.To(v).nonempty( ) ) continue;
                if ( !hb.From(v).solo( ) ) continue;
@@ -188,7 +188,7 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
                if ( !hb.To(w).solo( ) ) continue;
                if ( hb.From(w).nonempty( ) ) continue;
                int e = hb.IFrom( v, 0 );
-               if ( hb.EdgeLengthKmers(e) > 50 ) continue;
+               if ( hb.EdgeLengthKmers(e) > min_size ) continue;
                to_delete.push_back(e);    }    }
 
      // Clean up.
@@ -201,7 +201,7 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
 void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const Bool REMOVE_TINY )
+     const int version, const uint min_size )
 {
      // Start.
 
@@ -367,7 +367,7 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      // Remove tiny standalone edges
 
-     if (REMOVE_TINY)
+     if (min_size>0)
      {    for ( int v = 0; v < hb.N( ); v++ )
           {    if ( hb.To(v).nonempty( ) ) continue;
                if ( !hb.From(v).solo( ) ) continue;
@@ -376,7 +376,7 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
                if ( !hb.To(w).solo( ) ) continue;
                if ( hb.From(w).nonempty( ) ) continue;
                int e = hb.IFrom( v, 0 );
-               if ( hb.EdgeLengthKmers(e) > 50 ) continue;
+               if ( hb.EdgeLengthKmers(e) > min_size ) continue;
                to_delete.push_back(e);    }    }
 
      // Clean up.
