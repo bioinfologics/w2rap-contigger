@@ -32,7 +32,6 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   //std::cout << "Object manager " << std::endl;
   vecbvec bases;
   VecPQVec quals;
-  //ObjectManager<MasterVec<PQVec>> quals (work_dir + "/frag_reads_orig.qualp"); // XXX TODO: path to frag_reads_orig.qualp // VecPQvec is replaced for MasterVec<PQVec> using directive in feudal/PQvec.h file check
   //std::cout << "Final object manager " << std::endl;
    
   // Variables to run ExtractReads function
@@ -43,12 +42,9 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   int ZZ = 0;
   //std::cout << "Start to extract reads " << std::endl;
   vec<String> subsam_names =  { "C" };
-  vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
+  vec<int64_t> subsam_starts = { 0 };
   
   ExtractReads( READS, work_dir, subsam_names, subsam_starts, &bases, &quals );
-
-  BinaryWriter::writeFile( work_dir + "/subsam.starts", subsam_starts );
-  BinaryWriter::writeFile( work_dir + "/subsam.names", subsam_names );
 
   // XXX TODO: Internal error check in original source check also here (?)
   // XXX TODO: add stats calculation and output like in original source if necesary

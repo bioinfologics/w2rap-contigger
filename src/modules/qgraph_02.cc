@@ -32,11 +32,9 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
     std::cout << "Loading files " << std::endl;
     
     ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
-    vec<String> subsam_names;
-    vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
-    
-    BinaryReader::readFile (work_dir + "/subsam.starts", &subsam_starts);
-    BinaryReader::readFile (work_dir + "/subsam.names", &subsam_names);
+    vec<String> subsam_names =  { "C" };
+    vec<int64_t> subsam_starts = { 0 };
+
     vecbvec bases;
     bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
     quals.load();

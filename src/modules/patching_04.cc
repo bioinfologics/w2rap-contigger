@@ -34,10 +34,10 @@ int patcher(const String work_dir, const string prefix, uint NUM_THREADS, int MA
 
   // Load necesary files
   vecbvec bases;
-  vec<String> subsam_names;
-  vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
+  vec<String> subsam_names =  { "C" };
+  vec<int64_t> subsam_starts = { 0 };
+
   bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
-  BinaryReader::readFile(work_dir + "/subsam.starts", &subsam_starts);
   ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
 
   //XXX TODO: Load quals
