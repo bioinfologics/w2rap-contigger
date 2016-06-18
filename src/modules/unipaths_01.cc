@@ -31,7 +31,8 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   // Extraxt reads, convert reads to HyperBasevector and paths
   //std::cout << "Object manager " << std::endl;
   vecbvec bases;
-  ObjectManager<MasterVec<PQVec>> quals (work_dir + "/frag_reads_orig.qualp"); // XXX TODO: path to frag_reads_orig.qualp // VecPQvec is replaced for MasterVec<PQVec> using directive in feudal/PQvec.h file check
+  VecPQVec quals;
+  //ObjectManager<MasterVec<PQVec>> quals (work_dir + "/frag_reads_orig.qualp"); // XXX TODO: path to frag_reads_orig.qualp // VecPQvec is replaced for MasterVec<PQVec> using directive in feudal/PQvec.h file check
   //std::cout << "Final object manager " << std::endl;
    
   // Variables to run ExtractReads function
@@ -44,7 +45,7 @@ int create_unipaths(const string work_dir, const string prefix, const string REA
   vec<String> subsam_names =  { "C" };
   vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
   
-  ExtractReads( READS, work_dir, subsam_names, subsam_starts, &bases, quals );
+  ExtractReads( READS, work_dir, subsam_names, subsam_starts, &bases, &quals );
 
   BinaryWriter::writeFile( work_dir + "/subsam.starts", subsam_starts );
   BinaryWriter::writeFile( work_dir + "/subsam.names", subsam_names );

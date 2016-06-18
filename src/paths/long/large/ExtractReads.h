@@ -15,6 +15,6 @@
 
 void ExtractReads( String reads,
      const String& work_dir, vec<String>& subsam_names,
-     vec<int64_t>& subsam_starts, vecbvec* pReads, ObjectManager<VecPQVec>& quals );
+     vec<int64_t>& subsam_starts, vecbvec* pReads, VecPQVec* quals );
 
 #endif

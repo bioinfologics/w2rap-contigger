@@ -35,7 +35,7 @@ int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, in
   ReadPathVec paths2;
 
   // Load necessary files
-  vec<String> subsam_names;
+  vec<String> subsam_names={"C"};
   vec<int64_t> subsam_starts( subsam_names.size( ), 0 );
   std::cout << "Loading subsam file" << std::endl;
   BinaryReader::readFile(work_dir + "/subsam.starts", &subsam_starts);

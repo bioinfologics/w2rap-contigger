@@ -16,7 +16,6 @@
 #include "paths/long/large/FinalFiles.h"
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Lines.h"
-#include "random/Random.h"
 
 // Build final assembly files, starting from the results of scaffolding.
 
@@ -163,12 +162,6 @@ void FinalFiles( const HyperBasevector& hb, const vec<int>& inv, const
                {    sout << "\nWARNING: based on the observed chimera rate, it "
                          << "looks like something may be\nvery wrong "
                          << "with your input data.\n" << std::endl;    }
-               if ( IsRegularFile( work_dir + "/disco_stats" ) )
-               {    sout << "genomic read coverage, using 1 kb+ scaffolds for "
-                         << "genome size estimate: " << std::setiosflags(std::ios::fixed)
-                         << std::setprecision(1)
-                         << double(stats.total_bases)/double(total1)
-                         << std::resetiosflags(std::ios::fixed) << std::endl;    }
                if ( G.size( ) > 0 )
                {    int n50 = N50PerfectStretch( hby, G, false );
                     sout << "N50 perfect stretch = " << n50 << std::endl;

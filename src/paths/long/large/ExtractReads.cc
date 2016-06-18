@@ -44,7 +44,7 @@ void GetCannedReferenceSequences( const String& sample, const String& species,
      const String& work_dir );
 
 void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_names,
-     vec<int64_t>& subsam_starts, vecbvec* pReads, ObjectManager<VecPQVec>& quals )
+     vec<int64_t>& subsam_starts, vecbvec* pReads, VecPQVec* quals )
 {
      double lclock = WallClockTime( );
 
@@ -57,7 +57,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
           vec< vec< String > > infiles;
           vec< vec< String > > infiles_rn;
           vecbasevector& xbases = (*pReads);
-          VecPQVec& xquals = quals.create( );
+          VecPQVec& xquals = (*quals);
           vecString xnames;
           vec< vec< std::pair<int,int> > > infiles_pairs;
           vec<rs_meta> infiles_meta;
@@ -592,7 +592,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
           // Save files.
      
           xbases.WriteAll( work_dir + "/frag_reads_orig.fastb" );
-          quals.store( );
+          xquals.WriteAll( work_dir + "/frag_reads_orig.qualp" );
           if ( xnames.size( ) > 0 )
           {    xnames.WriteAll( work_dir + "/data/frag_reads_orig.names" );
                readname_lookup look(xnames);
