@@ -19,4 +19,9 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
      const String& BIGKHBV0, const Bool REPATH_TRANSLATE, bool INVERT_PATHS,
      const Bool EXTEND_PATHS );
 
+void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
+                const vec<int>& inv, ReadPathVec& paths, const int K, const int K2,
+                HyperBasevector& hb2, ReadPathVec& paths2 , const Bool REPATH_TRANSLATE, bool INVERT_PATHS,
+                const Bool EXTEND_PATHS );
+
 #endif
