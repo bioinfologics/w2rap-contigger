@@ -31,7 +31,6 @@ int clean_graph(const String work_dir, const string file_prefix, const bool USE_
   // ********************** Load files *************************
   std::cout << "Loading files " << std::endl;
 
-
   vec<String> subsam_names =  { "C" };
   vec<int64_t> subsam_starts = { 0 };
 
@@ -45,7 +44,8 @@ int clean_graph(const String work_dir, const string file_prefix, const bool USE_
   HyperBasevector hb;
   vec<int> inv;
   BinaryReader::readFile( work_dir + "/"+ file_prefix +".large.hbv", &hb );
-  BinaryReader::readFile( work_dir + "/"+ file_prefix +".large.inv", &inv );
+  hb.Involution(inv);
+  //BinaryReader::readFile( work_dir + "/"+ file_prefix +".large.inv", &inv );
   ReadPathVec paths( work_dir + "/"+ file_prefix +".large.paths" );
   
   // select the cleaning version (default value in discovar is 2) we always use the Clean200 option !!
@@ -67,15 +67,15 @@ int clean_graph(const String work_dir, const string file_prefix, const bool USE_
   std::cout << "Writing output files " << std::endl;
   // Write files.
   BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.hbv", hb );
-  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.hbx", HyperBasevectorX(hb) );
-  BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.inv", inv );
+  //BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.hbx", HyperBasevectorX(hb) );
+  //BinaryWriter::writeFile( work_dir + "/" + file_prefix + ".pc.large.inv", inv );
   paths.WriteAll( work_dir + "/" + file_prefix + ".pc.large.paths" );
-
+  /*
   vecbasevector edges( hb.EdgeObjectCount( ) );
   for ( int e = 0; e < hb.EdgeObjectCount( ); e++ ){
     edges[e] = hb.EdgeObject(e);
   }
-  edges.WriteAll( work_dir + "/" + file_prefix + ".pc.large.fastb" );
+  //edges.WriteAll( work_dir + "/" + file_prefix + ".pc.large.fastb" );
   std::cout << "Done writing output files " << std::endl;
 
   if ( true ) {  // scope paths_index (original comment ???)
@@ -84,7 +84,7 @@ int clean_graph(const String work_dir, const string file_prefix, const bool USE_
     paths_index.WriteAll( work_dir + "/" + file_prefix + ".pc.large.paths.inv" );
   }
 
-  hb.DumpFasta( work_dir + "/" + file_prefix + ".pc.fasta", False );
+  hb.DumpFasta( work_dir + "/" + file_prefix + ".pc.fasta", False );*/
   return 0;
 }
 

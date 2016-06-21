@@ -18,7 +18,7 @@
 
 
 
-int qgraph_builder(const String work_dir, const string file_prefix, /*uint small_k,*/ uint large_k, uint NUM_THREADS, int MAX_MEM_GB){
+int qgraph_builder(const String work_dir, const string file_prefix, uint large_k, uint NUM_THREADS, int MAX_MEM_GB, bool DUMP_ALL){
   
     // ********************** Set sys resources ******************
     // Set computational limits (XXX TODO: putin a separate source to import in different code)
@@ -56,14 +56,17 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
     hbv.Involution(inv);
     
     FixPaths( hbv, paths );
-    
-    // Save graph kmer 60
-    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.hbv", hbv );
-    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.hbx", HyperBasevectorX(hbv) );
-    edges.WriteAll( work_dir +"/"+ file_prefix +".60.fastb" );
-    BinaryWriter::writeFile( work_dir +"/"+ file_prefix +".60.inv", inv );
-    
-    std::cout << "Done loading " << std::endl;
+
+    if (DUMP_ALL) {
+        // Save graph kmer 60
+        std::cout << "Dumping small_k graph... " << std::endl;
+        BinaryWriter::writeFile(work_dir + "/" + file_prefix + ".60.hbv", hbv);
+        //BinaryWriter::writeFile(work_dir + "/" + file_prefix + ".60.hbx", HyperBasevectorX(hbv));
+        edges.WriteAll(work_dir + "/" + file_prefix + ".60.fastb");
+        //BinaryWriter::writeFile(work_dir + "/" + file_prefix + ".60.inv", inv);
+        std::cout << "   DONE!" << std::endl;
+    }
+
     
     int64_t checksum_60 = hbv.CheckSum( );
     PRINT(checksum_60);
@@ -71,14 +74,17 @@ int qgraph_builder(const String work_dir, const string file_prefix, /*uint small
     // Variables to run Repath XXX TODO: Document one by one
     const string run_head = work_dir + "/" + file_prefix;
     Repath( hbv, edges, inv, paths, hbv.K(), large_k, run_head+".large", True, True, False );
-    
-    hbv.DumpFasta( run_head + ".after_repath.fasta", False );
+
+    if (DUMP_ALL) {
+        hbv.DumpFasta( run_head + ".after_repath.fasta", False );
+    }
     return 0;
 }
 
 int main(int argc, const char* argv[]){
     std::string out_prefix;
     std::string out_dir;
+    bool dump_all;
     unsigned int small_K,large_K;
     unsigned int threads;
     int max_mem;
@@ -94,6 +100,7 @@ int main(int argc, const char* argv[]){
         TCLAP::ValueArg<std::string> out_dirArg     ("o","out_dir",     "Output dir path",           true,"","string",cmd);
         TCLAP::ValueArg<std::string> out_prefixArg     ("p","prefix",     "Prefix for the output files",           true,"","string",cmd);
         //TCLAP::ValueArg<unsigned int>         small_KArg        ("k","small_k",        "Small k (default: 60)", false,60,"int",cmd);
+        TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",        "Enable extra data dumps", false,false,"bool",cmd);
         TCLAP::ValuesConstraint<unsigned int> largeKconst (allowed_k);
         TCLAP::ValueArg<unsigned int>         large_KArg        ("K","large_k",        "Large k (default: 200)", false,200,&largeKconst,cmd);
         TCLAP::ValueArg<unsigned int>         threadsArg        ("t","threads",        "Number of threads on parallel sections (default: 4)", false,4,"int",cmd);
@@ -104,6 +111,7 @@ int main(int argc, const char* argv[]){
         // Get the value parsed by each arg.
         out_dir=out_dirArg.getValue();
         out_prefix=out_prefixArg.getValue();
+        dump_all=dumpAllArg.getValue();
         //small_K=small_KArg.getValue();
         large_K=large_KArg.getValue();
         threads=threadsArg.getValue();
@@ -115,7 +123,7 @@ int main(int argc, const char* argv[]){
 
 
 
-    qgraph_builder(out_dir, out_prefix, /*small_K,*/ large_K, threads, max_mem );
+    qgraph_builder(out_dir, out_prefix, /*small_K,*/ large_K, threads, max_mem, dump_all );
 
     return 0;
 }

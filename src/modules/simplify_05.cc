@@ -35,14 +35,17 @@ int simplify(const String work_dir, const string prefix, uint NUM_THREADS, int M
 
   vecbvec bases;
   bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
-  ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
+
+  VecPQVec quals;
+  quals.ReadAll( work_dir + "/frag_reads_orig.qualp" );
   
   // Load K=200 HBV and reda paths
   HyperBasevector hb;
   vec<int> inv2;
   ReadPathVec paths2;
   BinaryReader::readFile( work_dir + "/" + prefix + ".patched.hbv", &hb);
-  BinaryReader::readFile( work_dir + "/" + prefix + ".patched.inv", &inv2 );
+  hb.Involution(inv2);
+  //BinaryReader::readFile( work_dir + "/" + prefix + ".patched.inv", &inv2 );
   paths2.ReadAll( work_dir + "/" + prefix + ".patched.paths" );
 
  
@@ -68,20 +71,19 @@ int simplify(const String work_dir, const string prefix, uint NUM_THREADS, int M
   bool UNWIND3=True;
   const String fin_dir = work_dir;
 
-  Simplify( fin_dir, hb, inv2, paths2, bases, quals.load(), MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2, PLACE_PARTNERS, ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE, PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS, IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3 );
-  TestInvolution( hb, inv2 );
+  Simplify( fin_dir, hb, inv2, paths2, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2, PLACE_PARTNERS, ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE, PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS, IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3 );
+  //TestInvolution( hb, inv2 );
  
   // Write pre-scaffolded final assembly
-  bases.destroy(); //XXXTODO: revisar si es realmente necesario
   BinaryWriter::writeFile( work_dir + "/" + prefix + ".fin.hbv", hb );
-  BinaryWriter::writeFile( work_dir + "/" + prefix + ".fin.hbx", HyperBasevectorX(hb) );
+  //BinaryWriter::writeFile( work_dir + "/" + prefix + ".fin.hbx", HyperBasevectorX(hb) );
    
-  vecbasevector afin;
+/*  vecbasevector afin;
   for (int e=0; e < hb.EdgeObjectCount(); e++){ // XXX TODO: change this int for uint 32
     afin.push_back(hb.EdgeObject(e));
   }
   afin.WriteAll(work_dir + "/" + prefix + ".fin.fastb");
-  
+  */
   // For now, fix paths and write the and their inverse
   for( int i = 0; i < (int) paths2.size(); i++){ //XXX TODO: change this int for uint 32
     Bool bad=False;
@@ -90,11 +92,11 @@ int simplify(const String work_dir, const string prefix, uint NUM_THREADS, int M
     if (bad) paths2[i].resize(0);
   }
   paths2.WriteAll( work_dir + "/" + prefix + ".fin.paths");
-  VecULongVec invPaths;
+  /*VecULongVec invPaths;
   invert (paths2, invPaths, hb.EdgeObjectCount());
   invPaths.WriteAll ( work_dir + "/" + prefix + ".fin.paths.inv");
   BinaryWriter::writeFile( work_dir + "/" + prefix + ".fin.inv", inv2 );
-  hb.DumpFasta( work_dir + "/" +prefix+ ".fin.sequence.fasta", False ); 
+  hb.DumpFasta( work_dir + "/" +prefix+ ".fin.sequence.fasta", False ); */
  
   // Find lines and write files.
   vec<vec<vec<vec<int>>>> lines;

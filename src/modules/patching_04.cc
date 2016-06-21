@@ -33,25 +33,28 @@ int patcher(const String work_dir, const string prefix, uint NUM_THREADS, int MA
   ReadPathVec paths2;
 
   // Load necesary files
-  vecbvec bases;
   vec<String> subsam_names =  { "C" };
   vec<int64_t> subsam_starts = { 0 };
-
+  vecbvec bases;
   bases.ReadAll( work_dir + "/frag_reads_orig.fastb" );
-  ObjectManager<MasterVec<PQVec>> quals ( work_dir + "/" + "frag_reads_orig.qualp");
+
+  VecPQVec quals;
+  quals.ReadAll( work_dir + "/frag_reads_orig.qualp" );
 
   //XXX TODO: Load quals
   // Load K=200 HBV and reda paths
   BinaryReader::readFile( work_dir + "/" + prefix + ".pc.large.hbv", &hb);
-  BinaryReader::readFile( work_dir + "/" + prefix + ".pc.large.inv", &inv2 );
+  hb.Involution(inv2);
+  //BinaryReader::readFile( work_dir + "/" + prefix + ".pc.large.inv", &inv2 );
   paths2.ReadAll( work_dir + "/" + prefix + ".pc.large.paths" );
+  VecULongVec paths2_index;
+  invert(paths2, paths2_index, hb.EdgeObjectCount());
 
   //int nedges = hb.EdgeObkectCount();
 
   // Assemble gaps, scope new stuff
   vecbvec new_stuff;  
-  VecULongVec paths2_index;
-  invert(paths2, paths2_index, hb.EdgeObjectCount());
+
  
   bool EXTEND=False;
   bool ANNOUNCE=False;
@@ -70,32 +73,32 @@ int patcher(const String work_dir, const string prefix, uint NUM_THREADS, int MA
   int MAX_PROX_RIGHT=400;
   int MAX_BPATHS=100000;
 
-  AssembleGaps2( hb, inv2, paths2, paths2_index, bases, quals.load(), work_dir, EXTEND, ANNOUNCE, KEEP_ALL_LOCAL, CONSERVATIVE_KEEP, INJECT, LOCAL_LAYOUT, DUMP_LOCAL, K2_FLOOR, DUMP_LOCAL_LROOT, DUMP_LOCAL_RROOT, new_stuff, CYCLIC_SAVE, A2V, GAP_CAP, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS );
+  AssembleGaps2( hb, inv2, paths2, paths2_index, bases, quals, work_dir, EXTEND, ANNOUNCE, KEEP_ALL_LOCAL, CONSERVATIVE_KEEP, INJECT, LOCAL_LAYOUT, DUMP_LOCAL, K2_FLOOR, DUMP_LOCAL_LROOT, DUMP_LOCAL_RROOT, new_stuff, CYCLIC_SAVE, A2V, GAP_CAP, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS );
   
   int MIN_GAIN=5;
   //const String TRACE_PATHS="{}";
   const vec<int> TRACE_PATHS;
   int EXT_MODE=1;
   
-  AddNewStuff( new_stuff, hb, inv2, paths2, bases, quals.load(), MIN_GAIN, TRACE_PATHS, work_dir, EXT_MODE );
-  PartnersToEnds( hb, paths2, bases, quals.load() );
+  AddNewStuff( new_stuff, hb, inv2, paths2, bases, quals, MIN_GAIN, TRACE_PATHS, work_dir, EXT_MODE );
+  PartnersToEnds( hb, paths2, bases, quals );
   TestInvolution( hb, inv2 );
 
   // Write patched files to disk XXX TODO: corregir los paths para que no se superpongan entre ellos y con los anteriores
-  BinaryWriter::writeFile( work_dir + "/new_stuff", new_stuff);
-  vecbvec(hb.Edges().begin(), hb.Edges().end()).WriteAll( work_dir + "/" + prefix + ".patched.fastb");
+  //BinaryWriter::writeFile( work_dir + "/new_stuff", new_stuff);
+  //vecbvec(hb.Edges().begin(), hb.Edges().end()).WriteAll( work_dir + "/" + prefix + ".patched.fastb");
   BinaryWriter::writeFile( work_dir + "/" + prefix + ".patched.hbv", hb );
-  BinaryWriter::writeFile( work_dir + "/" + prefix + ".patched.hbx", HyperBasevectorX(hb) );
-  BinaryWriter::writeFile( work_dir + "/" + prefix + ".patched.inv", inv2 );
+  //BinaryWriter::writeFile( work_dir + "/" + prefix + ".patched.hbx", HyperBasevectorX(hb) );
+  //BinaryWriter::writeFile( work_dir + "/" + prefix + ".patched.inv", inv2 );
   paths2.WriteAll( work_dir + "/" + prefix + ".patched.paths");
  
-  VecULongVec invPaths;
+  /*VecULongVec invPaths;
   invert ( paths2, invPaths, hb.EdgeObjectCount() );
   invPaths.WriteAll( work_dir + "/" + prefix + ".patched.paths.inv" );
   
   Validate(hb, inv2, paths2); 
 
-  hb.DumpFasta( work_dir + "/" + prefix + ".patched.fasta", False );
+  hb.DumpFasta( work_dir + "/" + prefix + ".patched.fasta", False );*/
   return 0;
 }
 

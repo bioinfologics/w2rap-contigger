@@ -42,7 +42,8 @@ int scaffolding(const String work_dir, const string prefix, uint NUM_THREADS, in
   // Load K=200 HBV and reda paths
   std::cout << "loading hbv, inv and paths files" << std::endl;
   BinaryReader::readFile( work_dir + "/" + prefix + ".fin.hbv", &hb);
-  BinaryReader::readFile( work_dir + "/" + prefix + ".fin.inv", &inv2 );
+  hb.Involution(inv2);
+  //BinaryReader::readFile( work_dir + "/" + prefix + ".fin.inv", &inv2 );
   paths2.ReadAll( work_dir + "/" + prefix + ".fin.paths" );
 
   // Scaffold.

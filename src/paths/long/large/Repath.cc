@@ -127,14 +127,15 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
      std::cout << Date( ) << ": writing" << std::endl;
      vec<int> inv2;
      BinaryWriter::writeFile( BIGKHBV0 + ".hbv", hb2 );
-     {    HyperBasevectorX hb2x(hb2);
-          BinaryWriter::writeFile( BIGKHBV0 + ".hbx", hb2x );
+     {    //HyperBasevectorX hb2x(hb2);
+          //BinaryWriter::writeFile( BIGKHBV0 + ".hbx", hb2x );
           vecbasevector edges2( hb2.EdgeObjectCount( ) );
           for ( int e = 0; e < hb2.EdgeObjectCount( ); e++ )
                 edges2[e] = hb2.EdgeObject(e);
-          edges2.WriteAll( BIGKHBV0 + ".fastb" );
-          hb2.Involution(inv2);    }
-     BinaryWriter::writeFile( BIGKHBV0 + ".inv", inv2 );
+          //edges2.WriteAll( BIGKHBV0 + ".fastb" );
+          hb2.Involution(inv2);
+     }
+     //BinaryWriter::writeFile( BIGKHBV0 + ".inv", inv2 );
 
      // Translate paths to the K=200 graph.  Translation method is very ugly.
 
@@ -250,6 +251,9 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
           paths2.WriteAll( BIGKHBV0 + ".paths" );
           if ( INVERT_PATHS )
           {
-              VecULongVec invPaths;
+              /*VecULongVec invPaths;
               invert( paths2, invPaths, hb2.EdgeObjectCount( ) );
-              invPaths.WriteAll( BIGKHBV0+".paths.inv" );   }    }    }
+              invPaths.WriteAll( BIGKHBV0+".paths.inv" );*/
+          }
+     }
+}
