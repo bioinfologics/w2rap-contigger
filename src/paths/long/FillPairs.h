@@ -20,7 +20,6 @@
 // This should be rewritten from scratch.
 
 void FillPairs( const vecbvec& bases, const PairsManager& pairs,
-                    const int min_freq, vecbvec& filled, bool newMethod,
-                    bool useOldLRPMethod );
+                    const int min_freq, vecbvec& filled, bool newMethod);
 
 #endif

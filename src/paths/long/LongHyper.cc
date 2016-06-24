@@ -82,8 +82,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
      if (logc.STATUS_LOGGING)
           std::cout << Date() << ": calling LongReadsToPaths" << std::endl;
      unsigned const COVERAGE = 50u;
-     LongReadsToPaths(correctedv,K2,COVERAGE,logc.verb[ "LRP" ],useOldLRPMethod,
-                          &hb,&h,&paths,&paths_rc);
+     LongReadsToPaths(correctedv,K2,COVERAGE, &hb,&h,&paths,&paths_rc);
      REPORT_TIME( pclock, "used in pathing" );
 
      // Trace reads through h.  Ignore reads that lie entirely on one edge.

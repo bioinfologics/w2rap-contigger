@@ -40,11 +40,11 @@ Bool cmp_ho_start_stop( const ho_interval& h1, const ho_interval& h2 )
 void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecbasevector& bases,
      vecqualvector& quals, const PairsManager& pairs, const vec<Bool>& to_edit, 
      const vec<int>& trace_ids, const long_heuristics& heur, 
-     const long_logging_control& log_control, const long_logging& logc, 
+     //const long_logging_control& log_control, const long_logging& logc,
      VecEFasta& corrected )
 {    double clock = WallClockTime( );
-     if (logc.STATUS_LOGGING)
-          std::cout << Date( ) << ": entering CorrectPairs1 with K = " << K << std::endl;
+     //if (logc.STATUS_LOGGING)
+     //     std::cout << Date( ) << ": entering CorrectPairs1 with K = " << K << std::endl;
 
      // Build alignments.
 
@@ -99,10 +99,10 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
 
      int closed = 0, closed_uniquely = 0;
 
-     REPORT_TIME( clock, "used in pair correction head" );
-     if (logc.STATUS_LOGGING)
-     {    ReportPeakMem( "start main correction, " + ToString( use.size( ) )
-               + " reads" );    }
+     //REPORT_TIME( clock, "used in pair correction head" );
+     //if (logc.STATUS_LOGGING)
+     //{    ReportPeakMem( "start main correction, " + ToString( use.size( ) )
+     //          + " reads" );    }
      int batch = (int64_t) use.size( ) / omp_get_max_threads( );
      batch = Min( 100, Max( 1, batch ) );
      #pragma omp parallel for schedule(dynamic, batch)
@@ -123,7 +123,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
           faligns.getAligns( id1p, &aligns_p );
           readstack stack2( id1p, aligns_p, 0, aligns_p.size(),
                readstack::right_extended, bases, quals, pairs );
-          REPORT_TIMEX( aclock, "used making stacks for pair correction", out );
+          //REPORT_TIMEX( aclock, "used making stacks for pair correction", out );
           if ( stack1.Rows( ) > heur.MAX_STACK || stack2.Rows( ) > heur.MAX_STACK )
                continue;
           double bclock = WallClockTime( );
@@ -164,14 +164,14 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
           if ( bases_all == 0 ) bases_all++;
           double all_qual = double(total_all)/double(bases_all);
 
-          if (trace)
+          /*if (trace)
           {
                #pragma omp critical
                {    std::cout << "\ntracing reads id1 = " << id1 
                          << ", id1p = " << id1p << std::endl;
                     PRINT2( this_qual, all_qual );    }    }
           REPORT_TIMEX( bclock, "used qual filtering in pair correction", out );
-
+          */
           if ( all_qual - this_qual > heur.CP_MAX_QDIFF ) 
           {    if ( omp_get_thread_num( ) == 0 ) std::cout << out.str( );
                continue;    }
@@ -270,7 +270,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
           stack2.HighQualDiff( q_solid, 1, suspect );
           stack2.Erase(suspect);
           */
-          REPORT_TIMEX( dclock, "used in filtering pair correction", out );
+          //REPORT_TIMEX( dclock, "used in filtering pair correction", out );
           double d2clock = WallClockTime( );
 
           stack2.Reverse( );
@@ -293,7 +293,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                     {    indel++;    }
                     continue;    }    }
           */
-          REPORT_TIMEX( d2clock, "used in consensus in pair correction", out );
+          //REPORT_TIMEX( d2clock, "used in consensus in pair correction", out );
           double d3clock = WallClockTime( );
 
           vec<int> offsets = GetOffsets1( stack1, stack2, 0, heur.DELTA_MIS );
@@ -317,7 +317,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
           vec<qualvector> closuresq;
           vec<readstack> stacks;
           vec<int> closureso;
-          REPORT_TIMEX( d3clock, "used in offset creation in pair correction", out );
+          //REPORT_TIMEX( d3clock, "used in offset creation in pair correction", out );
           double eclock = WallClockTime( );
           for ( int oj = 0; oj < offsets.isize( ); oj++ )
           {    int minq_floor = ( offsets.size( ) > 1 ? heur.CP_MINQ_FLOOR 
@@ -523,7 +523,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
 
                // Trace.
 
-               if (trace)
+               /*if (trace)
                {
                     #pragma omp critical
                     {    std::cout << "\ntracing reads id1 = " << id1 << ", id1p = "
@@ -539,7 +539,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                               std::cout << "\n";    }
                          std::cout << "\nalignment of closure:\n";
                          vec<look_align> aligns;
-                         ClusterAligner( con, *(log_control.G), log_control.LG, 
+                         ClusterAligner( con, *(log_control.G), log_control.LG,
                               *(log_control.Glocs), aligns );
                          for ( int j = 0; j < aligns.isize( ); j++ )
                          {    int g = aligns[j].target_id;
@@ -565,13 +565,13 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                                         (*(log_control.G))[g], False );    }
                                    }
                          */
-
+                         /*
                          std::cout << "stack1:\n";
                          stack1.Print(std::cout);
                          std::cout << "stack2:\n";
                          stack2.Print(std::cout);
                          std::cout << "stack:\n";
-                         stack.Print(std::cout);    }    }
+                         stack.Print(std::cout);    }    }*/
 
                if ( minq >= minq_floor && min_glue >= min_glue_floor )
                {    if (trace)
@@ -583,7 +583,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                     closures.push_back(con), closuresq.push_back(conq);    
                     closureso.push_back( offsets[oj] );
                     stacks.push_back(stack);    }    }
-          REPORT_TIMEX( eclock, "used processing offsets in pair corr", out );
+          //REPORT_TIMEX( eclock, "used processing offsets in pair corr", out );
           double fclock = WallClockTime( );
 
           // Save closures.  Currently we only save a longest one.
@@ -605,8 +605,8 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                               corrected[id1p] = eclosure;
                               #pragma omp critical
                               {    count_closed++;    }
-                              REPORT_TIMEX( fclock, 
-                                   "used in closures, pair corr", out );
+                              //REPORT_TIMEX( fclock,
+                              //     "used in closures, pair corr", out );
                               if ( omp_get_thread_num( ) == 0 ) std::cout << out.str( );
                               continue;    }    }    }
 
@@ -639,7 +639,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                     {    right.SetToSubOf( right, mc - j, j );
                          break;    }    }
 
-               if ( logc.verb[ "CORRECT1" ] >= 1 )
+               /*if ( logc.verb[ "CORRECT1" ] >= 1 )
                {    vec<placementy> p1, p2;
                     if ( left.size( ) > 0 )
                          p1 = log_control.FindGenomicPlacements(left);
@@ -705,11 +705,12 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                                    std::cout << "\nzero stack:\n";
                                    stacks[0].Print(std::cout);
                                    count++;    }    }    }    }
+                                   */
 
                corrected[id1] = left;
                #pragma omp critical
                {    count_closed++;    }
-               REPORT_TIMEX( fclock, "used in closures, pair corr", out );
+               //REPORT_TIMEX( fclock, "used in closures, pair corr", out );
                #pragma omp critical
                {    std::cout << out.str( );    }
                if ( left != right )
@@ -718,9 +719,10 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
 
      // Done.
 
-     if (logc.STATUS_LOGGING)
+     /*if (logc.STATUS_LOGGING)
      {    std::cout << Date( ) << ": " << PERCENT_RATIO( 3, count_closed, use.isize( ) )
                << " of pairs attempted were closed" << std::endl;
           if ( closed > 0 )
           {    std::cout << Date( ) << ": " << PERCENT_RATIO( 3, closed_uniquely, closed )
-                    << " of closed pairs had a unique closure" << std::endl;    }    }    }
+                    << " of closed pairs had a unique closure" << std::endl;    }    }*/
+}

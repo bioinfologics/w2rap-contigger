@@ -261,7 +261,6 @@ struct LRP_Functor
 }
 
 void LongReadsToPaths( vecbvec const& reads, unsigned k, unsigned coverage,
-                        unsigned logLevel, bool useOldLRPMethod,
                         HyperBasevector* pHBV, HyperKmerPath* pHKP,
                         vecKmerPath* pPaths, vecKmerPath* pPathsRC,
                         vec<big_tagged_rpint>* pPathsDB )
@@ -271,33 +270,14 @@ void LongReadsToPaths( vecbvec const& reads, unsigned k, unsigned coverage,
     if ( pPathsDB && (!pPaths || !pPathsRC) )
         FatalErr("Must specify destination for paths and pathRC if you want a pathsDB");
 
-    if ( useOldLRPMethod )
+    buildBigKHBVFromReads(k,reads,coverage,pHBV,nullptr,pHKP,pPaths);
+    if ( pPathsRC )
     {
-        HyperKmerPath tmpHKP;
-        if ( !pHKP ) pHKP = &tmpHKP;
-        vecKmerPath tmpPaths;
-        if ( !pPaths ) pPaths = &tmpPaths;
-        vecKmerPath tmpPathsRC;
-        if ( !pPathsRC ) pPathsRC = &tmpPathsRC;
-        Long::gLogLevel = logLevel;
-        BigK::dispatch<LRP_Functor>(k,reads,coverage,getConfiguredNumThreads(),
-                                    *pPaths,*pPathsRC,*pHKP);
-        vec<big_tagged_rpint> tmpPathsdb;
-        if ( !pPathsDB ) pPathsDB = &tmpPathsdb;
+        pPathsRC->assign(pPaths->begin(),pPaths->end());
+        for ( KmerPath& path : *pPathsRC )
+            path.ReverseNoConcatenate();
+    }
+    if ( pPathsDB )
         CreateDatabase(*pPaths,*pPathsRC,*pPathsDB);
-        KmerBaseBrokerBig kbb( k, *pPaths, *pPathsRC, *pPathsDB, reads );
-        *pHBV = HyperBasevector( *pHKP, kbb );
-    }
-    else
-    {
-        buildBigKHBVFromReads(k,reads,coverage,pHBV,nullptr,pHKP,pPaths);
-        if ( pPathsRC )
-        {
-            pPathsRC->assign(pPaths->begin(),pPaths->end());
-            for ( KmerPath& path : *pPathsRC )
-                path.ReverseNoConcatenate();
-        }
-        if ( pPathsDB )
-            CreateDatabase(*pPaths,*pPathsRC,*pPathsDB);
-    }
+
 }

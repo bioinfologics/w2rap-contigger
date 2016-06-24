@@ -112,12 +112,12 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
 void MakeLocalAssembly1( const int lroot, const int rroot, 
      const HyperBasevector& hb, const vecbasevector& bases, 
      const VecPQVec& quals, const vec<int64_t>& pids, const String& TMP,
-     std::ostringstream& mout, const Bool LOCAL_LAYOUT, const int K2_FLOOR,
+     const Bool LOCAL_LAYOUT, const int K2_FLOOR,
      const String& work_dir, VecEFasta& corrected, vecbasevector& creads,
      vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr );
 
 void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
-     const vec<int>& lefts, const vec<int>& rights, std::ostringstream& mout,
+     const vec<int>& lefts, const vec<int>& rights,
      SupportedHyperBasevector& shb, const Bool INJECT, const int K2_FLOOR,
      vecbasevector& creads, LongProtoTmpDirManager& tmp_mgr, vec<int>& cid,
      vec<pairing_info>& cpartner );

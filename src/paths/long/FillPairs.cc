@@ -173,8 +173,7 @@ template<int K> void TrimReadsOld( const vecbasevector& bases,
 } // close anonymous namespace
 
 void FillPairs( const vecbasevector& bases, const PairsManager& pairs,
-                    const int MIN_FREQ, vecbasevector& filled, bool newMethod,
-                    bool useOldLRPMethod )
+                    const int MIN_FREQ, vecbasevector& filled, bool newMethod)
 {
      // Build truncated reads.
      vecbasevector basesx;
@@ -191,8 +190,7 @@ void FillPairs( const vecbasevector& bases, const PairsManager& pairs,
      HyperKmerPath h;
      vecKmerPath paths, paths_rc;
      HyperBasevector hb;
-     LongReadsToPaths( basesx, K, COVERAGE, verbosity, useOldLRPMethod,
-                         &hb, &h, &paths, &paths_rc );
+     LongReadsToPaths( basesx, K, COVERAGE, &hb, &h, &paths, &paths_rc );
      vecKmerPath hpaths;
      vec<tagged_rpint> hpathsdb;
      for ( int e = 0; e < h.EdgeObjectCount( ); e++ )

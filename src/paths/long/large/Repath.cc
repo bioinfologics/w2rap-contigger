@@ -119,7 +119,7 @@ void Repath( const HyperBasevector& hb, const vecbasevector& edges,
      HyperKmerPath h2;
      std::cout << Date( ) << ": calling LongReadsToPaths" << std::endl;
      unsigned const COVERAGE = 2u;
-     LongReadsToPaths( all, K2, COVERAGE, 0, False, &hb2, &h2, &xpaths );
+     LongReadsToPaths( all, K2, COVERAGE, &hb2, &h2, &xpaths );
      Destroy(all);
 
      // Write files.
@@ -357,7 +357,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      HyperKmerPath h2;
      std::cout << Date( ) << ": calling LongReadsToPaths" << std::endl;
      unsigned const COVERAGE = 2u;
-     LongReadsToPaths( all, K2, COVERAGE, 0, False, &hb2, &h2, &xpaths );
+     LongReadsToPaths( all, K2, COVERAGE, &hb2, &h2, &xpaths );
      Destroy(all);
 
      // Write files.

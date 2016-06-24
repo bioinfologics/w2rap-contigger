@@ -306,10 +306,10 @@ void SelectRandom( const String& TMP, const double SELECT_FRAC,
 
 void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      const vecbasevector& creads_done, const vec<Bool>& done,
-     const VecEFasta& corrected, const int NUM_THREADS, vec<Bool>& special,
-     const long_logging& logc )
+     const VecEFasta& corrected, const int NUM_THREADS, vec<Bool>& special//,
+     /*const long_logging& logc*/ )
 {
-     if (logc.STATUS_LOGGING) std::cout << Date( ) << ": computing kmers_plus" << std::endl;
+     //if (logc.STATUS_LOGGING) std::cout << Date( ) << ": computing kmers_plus" << std::endl;
      const int M = 40;
      const int min_strong = 5;
 
@@ -340,8 +340,8 @@ void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      vec<KmerRec_t>().swap( kmer_vec );                 // return memory for kmer_vec.
      std::sort( kmers.begin(), kmers.end() );           // sort for later lookup, serial to avoid Parallel sort memory penalty
 
-     if (logc.STATUS_LOGGING)
-          std::cout << Date( ) << ": computing right extensions" << std::endl;
+     //if (logc.STATUS_LOGGING)
+     //     std::cout << Date( ) << ": computing right extensions" << std::endl;
      const int min_ext = 200;
      vec<Bool> right_ext( kmers.size( ), False );
      #pragma omp parallel for
@@ -366,7 +366,7 @@ void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
                          if ( p >= 0 && !right_ext[p] )
                               right_ext[p] = True;    }    }    }    }
 
-     if (logc.STATUS_LOGGING) std::cout << Date( ) << ": finding specials" << std::endl;
+     //if (logc.STATUS_LOGGING) std::cout << Date( ) << ": finding specials" << std::endl;
      special.resize( creads.size(), False );
      vec< kmer<M> > fails;
      for ( int64_t i = 0; i < kmers.jsize( ); i++ )
@@ -441,18 +441,9 @@ void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done )
           for ( int j = 0; j < (int) cquals[id].size( ); j++ )
                cquals[id][j] = q[j];    }    }
 
-void CorrectionSuite( const String& TMP, const long_heuristics& heur,
-     const long_logging& logc, const long_logging_control& log_control,
-     vecbasevector& creads, VecEFasta& corrected, vec<int>& cid,
-     vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
-     const double clock, bool useOldLRPMethod )
-{
-    LongProtoTmpDirManager tmp_mgr(TMP);
-    CorrectionSuite( tmp_mgr, heur, logc, log_control, creads, corrected, cid, cpartner, NUM_THREADS, EXIT, clock, useOldLRPMethod );
-} ;
+
 
 void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& heur,
-     const long_logging& logc, const long_logging_control& log_control,
      vecbasevector& creads,
      VecEFasta& corrected, vec<int>& cid, vec<pairing_info>& cpartner,
      const uint NUM_THREADS, const String& EXIT, const double clock,
@@ -461,10 +452,10 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
      // Run Correct1.
 
      vec<int> trace_ids, precorrect_seq;
-     ParseIntSet( logc.TRACE_IDS, trace_ids );
+     //ParseIntSet( logc.TRACE_IDS, trace_ids );
 
      vec<int> trace_pids;
-     ParseIntSet( logc.TRACE_PIDS, trace_pids );
+     //ParseIntSet( logc.TRACE_PIDS, trace_pids );
      for ( int i = 0; i < trace_pids.isize( ); i++ )
      {    int64_t pid = trace_pids[i];
           trace_ids.push_back( 2*pid, 2*pid + 1 );    }
@@ -494,7 +485,7 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
               qualSum = std::accumulate(qv.begin(),qv.end(),qualSum);   }
           ForceAssertEq(nBases,creads.SizeSum());
 
-          if (logc.MIN_LOGGING)
+          /*if (logc.MIN_LOGGING)
           {    std::cout << Date( ) << ": there are " << nReads
                     << " reads" << std::endl;
                std::cout << Date( ) << ": mean read length = " << std::setiosflags(std::ios::fixed)
@@ -504,7 +495,7 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                     << std::setprecision(1) << double(qualSum)/nBases
                     << std::resetiosflags(std::ios::fixed) << std::endl;    }
 
-          if (logc.STATUS_LOGGING) ReportPeakMem( "start precorrection" );
+          if (logc.STATUS_LOGGING) ReportPeakMem( "start precorrection" );*/
           if ( heur.PRECORRECT_ALT1 )
               precorrectAlt1(&creads);
           else if (heur.PRECORRECT_OLD_NEW)
@@ -524,13 +515,13 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
           }
 
 
-          if ( logc.DUMP_PRE )
+          /*if ( logc.DUMP_PRE )
           {    creads.WriteAll( tmp_mgr.dir() + "/frag_reads_pre.fastb" );
                cquals.WriteAll( tmp_mgr.dir() + "/frag_reads_pre.qualb" );    }
           if (logc.STATUS_LOGGING) ReportPeakMem("precorrection done");
-          REPORT_TIME( bclock, "used in initial precorrection" );
+          REPORT_TIME( bclock, "used in initial precorrection" );*/
 
-          if ( (*log_control.G).size( ) > 0 )
+          /*if ( (*log_control.G).size( ) > 0 )
           {    double true_size = 0;
                for ( int g = 0; g < (int) (*log_control.G).size( ); g++ )
                {    true_size += (*log_control.G)[g].size( )
@@ -539,7 +530,7 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                     << std::setiosflags(std::ios::fixed) << std::setprecision(1)
                     << double(nBases)/true_size
                     << std::resetiosflags(std::ios::fixed) << "x" << std::endl;    }
-          if ( EXIT == "NOMINAL_COV" ) Done(clock);
+          if ( EXIT == "NOMINAL_COV" ) Done(clock);*/
 
           PairsManager const& pairs = tmp_mgr[sFragReadsOrig].pairs();
 //          pairs.Read( TMP + "/frag_reads_orig.pairs" );
@@ -554,11 +545,11 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
           {    double fclock = WallClockTime( );
                creads_done = creads;
                vecbasevector filled;
-               if (logc.STATUS_LOGGING)
-                    std::cout << Date( ) << ": start initial pair filling" << std::endl;
+               //if (logc.STATUS_LOGGING)
+               //     std::cout << Date( ) << ": start initial pair filling" << std::endl;
                const int MIN_FREQ = 5;
-               FillPairs( creads, pairs, MIN_FREQ, filled, heur.FILL_PAIRS_ALT, useOldLRPMethod );
-               REPORT_TIME( fclock, "used in FillPairs" );
+               FillPairs( creads, pairs, MIN_FREQ, filled, heur.FILL_PAIRS_ALT);
+               //REPORT_TIME( fclock, "used in FillPairs" );
                double f2clock = WallClockTime( );
                int64_t fill_count = 0;
                for ( int64_t id = 0; id < (int64_t) filled.size( ); id++ )
@@ -580,30 +571,31 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                     if ( pairs.getPartnerID(id) < id )
                     {    creads_done[id].resize(0);    }
                     to_edit[id] = False;    }
-               if (logc.STATUS_LOGGING)
-               {    std::cout << Date( ) << ": "
-                         << PERCENT_RATIO( 3, fill_count, (int64_t) filled.size( ) )
-                         << " of pairs filled" << std::endl;    }
-               REPORT_TIME( f2clock, "used in filling tail" );    }
+               //if (logc.STATUS_LOGGING)
+               //{    std::cout << Date( ) << ": "
+               //          << PERCENT_RATIO( 3, fill_count, (int64_t) filled.size( ) )
+               //          << " of pairs filled" << std::endl;    }
+               //REPORT_TIME( f2clock, "used in filling tail" );
+          }
 
           // New precorrection.
 
           vec<int> trim_to;
           if (heur.CORRECT_PAIRS)
           {    double mclock = WallClockTime( );
-               if (logc.STATUS_LOGGING)
-                    std::cout << Date( ) << ": begin new precorrection" << std::endl;
+               //if (logc.STATUS_LOGGING)
+               //     std::cout << Date( ) << ": begin new precorrection" << std::endl;
 
                // Cap quality scores.
 
                CapQualityScores( cquals, done );
-               REPORT_TIME( mclock, "used capping" );
+               //REPORT_TIME( mclock, "used capping" );
 
                // Do precorrection.
 
                for ( int j = 0; j < precorrect_seq.isize( ); j++ )
                {    Correct1Pre( tmp_mgr.dir(), precorrect_seq[j], max_freq, creads, cquals,
-                         pairs, to_edit, trim_to, trace_ids, logc, heur );    }
+                         pairs, to_edit, trim_to, trace_ids, /*logc,*/ heur );    }
                /*
                Correct1( 40, max_freq, creads, cquals, pairs, to_edit, trim_to,
                     trace_ids, log_control, logc );
@@ -623,8 +615,8 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
 
                // Path the precorrected reads.
 
-               if (logc.STATUS_LOGGING)
-                    std::cout << Date( ) << ": pathing precorrected reads" << std::endl;
+               //if (logc.STATUS_LOGGING)
+               //     std::cout << Date( ) << ": pathing precorrected reads" << std::endl;
                unsigned const COVERAGE = 50u;
                const int K2 = 80; // SHOULD NOT BE HARDCODED!
                vecbasevector correctedv(creads);
@@ -633,19 +625,18 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                HyperBasevector hb;
                HyperKmerPath h;
                vecKmerPath paths, paths_rc;
-               LongReadsToPaths( correctedv, K2, COVERAGE, logc.verb[ "LRP" ],
-                                  useOldLRPMethod, &hb, &h, &paths, &paths_rc );
+               LongReadsToPaths( correctedv, K2, COVERAGE, &hb, &h, &paths, &paths_rc );
                vecKmerPath hpaths;
                vec<tagged_rpint> hpathsdb;
                for ( int e = 0; e < h.EdgeObjectCount( ); e++ )
                     hpaths.push_back_reserve( h.EdgeObject(e) );
                CreateDatabase( hpaths, hpathsdb );
-               if (logc.STATUS_LOGGING) std::cout << Date( ) << ": done" << std::endl;
+               //if (logc.STATUS_LOGGING) std::cout << Date( ) << ": done" << std::endl;
 
                // Close pairs that we're done with.  Code copied with minor
                // changes from LongHyper.cc.  Should be completely rewritten.
 
-               if (logc.STATUS_LOGGING)
+               //if (logc.STATUS_LOGGING)
                     std::cout << Date( ) << ": initially closing pairs" << std::endl;
                #pragma omp parallel for
                for ( int64_t id1 = 0; id1 < (int64_t) creads.size( ); id1++ )
@@ -742,16 +733,17 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                               creads_done[id2].resize(0);
                               to_edit[id1] = False;
                               to_edit[id2] = False;    }    }    }
-               if (logc.STATUS_LOGGING)
-               {    std::cout << Date( ) << ": "
-                         << PERCENT_RATIO( 3, Sum(done), done.isize( ) )
-                         << " of pairs were preclosed" << std::endl;    }
-               REPORT_TIME( nclock, "used in main precorrection tail" );    }
+               //if (logc.STATUS_LOGGING)
+               //{    std::cout << Date( ) << ": "
+               //          << PERCENT_RATIO( 3, Sum(done), done.isize( ) )
+               //          << " of pairs were preclosed" << std::endl;    }
+               //REPORT_TIME( nclock, "used in main precorrection tail" );
+          }
 
           if (heur.CORRECT_PAIRS)
           {    corrected.clear().resize( creads.size( ) );
                CorrectPairs1( tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
-                    trace_ids, heur, log_control, logc, corrected );
+                    trace_ids, heur, /*log_control, logc,*/ corrected );
                for ( size_t id = 0; id < corrected.size( ); id++ )
                {    if ( corrected[id].size( ) > 0 )
                     {    to_edit[id] = False;
@@ -763,19 +755,19 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                double cp2_clock = WallClockTime( );
                vec<Bool> special;
                PopulateSpecials( creads, pairs, creads_done, done, corrected,
-                    NUM_THREADS, special, logc );
+                    NUM_THREADS, special/*, logc*/ );
 
                for ( size_t id = 0; id < corrected.size( ); id++ )
                     if ( !special[id] ) to_edit[id] = False;
-               if (logc.STATUS_LOGGING)
-               {    std::cout << Date( ) << ": second pass of CorrectPairs1 to use "
-                         << Sum(to_edit)/2 << " pairs" << std::endl;    }
+               //if (logc.STATUS_LOGGING)
+               //{    std::cout << Date( ) << ": second pass of CorrectPairs1 to use "
+               //          << Sum(to_edit)/2 << " pairs" << std::endl;    }
 
-               if ( logc.verb[ "CP2" ] >= 1 )
-               {    std::cout << "\nCP2, using ids:\n";
-                    for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-                         if ( to_edit[id] ) std::cout << id << std::endl;
-                    std::cout << std::endl;    }
+               //if ( logc.verb[ "CP2" ] >= 1 )
+               //{    std::cout << "\nCP2, using ids:\n";
+               //     for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
+               //          if ( to_edit[id] ) std::cout << id << std::endl;
+               //     std::cout << std::endl;    }
 
                long_heuristics heur2(heur);
                // heur2.CP_MIN_GLUE = 5;
@@ -784,36 +776,37 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                heur2.CP_RAISE_ZERO = True;
                heur2.CP_MAX_QDIFF = 25.0;
 
-               if (logc.STATUS_LOGGING)
-               {    std::cout << Date( ) << ": running second pass of CorrectPairs1, "
-                         << "using " << Sum(to_edit)/2 << " pairs" << std::endl;    }
-               REPORT_TIME( cp2_clock, "used in prep for CP2" );
+               //if (logc.STATUS_LOGGING)
+               //{    std::cout << Date( ) << ": running second pass of CorrectPairs1, "
+               //          << "using " << Sum(to_edit)/2 << " pairs" << std::endl;    }
+               //REPORT_TIME( cp2_clock, "used in prep for CP2" );
 
                CorrectPairs1( tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
-                    trace_ids, heur2, log_control, logc, corrected );
+                    trace_ids, heur2, /*log_control, logc,*/ corrected );
                } // end of heur.CP2
 
                double pclock = WallClockTime( );
                for ( int64_t id = 0; id < done.jsize( ); id++ )
                {    if ( done[id] ) corrected[id] = creads_done[id];    }
-               REPORT_TIME( pclock, "used in pair correction copying" );    }
+               //REPORT_TIME( pclock, "used in pair correction copying" );
+          }
 
           else // Non-default!
           {    double oclock = WallClockTime( );
                Correct1( tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, log_control, logc, heur );
+                    trace_ids, /*log_control, logc,*/ heur );
                for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
                     if ( trim_to[id] == creads[id].isize( ) ) to_edit[id] = False;
                Correct1( tmp_mgr.dir(), 60, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, log_control, logc, heur );
+                    trace_ids, /*log_control, logc,*/ heur );
                for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
                     if ( trim_to[id] == creads[id].isize( ) ) to_edit[id] = False;
                Correct1( tmp_mgr.dir(), 80, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, log_control, logc, heur );
+                    trace_ids, /*log_control, logc,*/ heur );
                for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
                     if ( trim_to[id] == creads[id].isize( ) ) to_edit[id] = False;
                Correct1( tmp_mgr.dir(), 28, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, log_control, logc, heur );
+                    trace_ids, /*log_control, logc,*/ heur );
                for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
                {    creads[id].resize( Max( 1, trim_to[id] ) );
                     cquals[id].resize( Max( 1, trim_to[id] ) );    }
@@ -821,7 +814,8 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                // Convert to efasta.
 
                corrected.assign(creads.begin(),creads.end());
-               REPORT_TIME( oclock, "used in old unpair correction" );    }
+               //REPORT_TIME( oclock, "used in old unpair correction" );
+          }
 
           // Write corrected pairs.
 
@@ -834,13 +828,15 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                     corrected[i].Print( out, ToString(i) );    }
                correctedb.WriteAll( tmp_mgr.dir() + "/frag_reads_mod.fastb" );
           }
-          REPORT_TIME( wclock, "used writing corrected" );    }    }
+          //REPORT_TIME( wclock, "used writing corrected" )
+      }
+  }
 
 // Define pairing info.  Note that for now we set all the library ids to 0.
 
 void DefinePairingInfo( const LongProtoTmpDirManager& tmp_mgr, const vecbasevector& creads,
      const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
-     vec<pairing_info>& cpartner, const long_logging& logc )
+     vec<pairing_info>& cpartner/*, const long_logging& logc*/ )
 {    double clock = WallClockTime( );
      PairsManager const& pairs = tmp_mgr.get("frag_reads_orig").pairs();
 //     pairs.Read( TMP + "/frag_reads_orig.pairs" );
@@ -860,5 +856,6 @@ void DefinePairingInfo( const LongProtoTmpDirManager& tmp_mgr, const vecbasevect
                {    if ( pairs.ID1(pid) == id1 )
                          cpartner[xid1] = pairing_info(1,xid2,0);
                     else cpartner[xid1] = pairing_info(2,xid2,0);    }    }    }
-     REPORT_TIME( clock, "used in load tail" );    }
+     /*REPORT_TIME( clock, "used in load tail" );*/
+}
 

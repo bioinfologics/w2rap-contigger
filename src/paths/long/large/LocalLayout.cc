@@ -134,7 +134,7 @@ void LocalLayout( const int lroot, const int rroot, const LongProtoTmpDirManager
      vecKmerPath paths, paths_rc;
      vec<big_tagged_rpint> pathsdb;
      unsigned const COVERAGE = 50u; 
-     LongReadsToPaths(cbases,K,COVERAGE,0,False, &hb,&h,&paths,&paths_rc,&pathsdb);
+     LongReadsToPaths(cbases,K,COVERAGE, &hb,&h,&paths,&paths_rc,&pathsdb);
 
      String head = work_dir + "/loc/uni." + ToString(lroot) + "." + ToString(rroot);
      Ofstream( bout, head + ".fasta" );

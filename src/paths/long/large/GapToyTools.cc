@@ -1002,7 +1002,7 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
      }
 
 void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb, 
-     const vec<int>& lefts, const vec<int>& rights, std::ostringstream& mout, 
+     const vec<int>& lefts, const vec<int>& rights,
      SupportedHyperBasevector& shb, const Bool INJECT, const int K2_FLOOR,
      vecbasevector& creads, LongProtoTmpDirManager& tmp_mgr, vec<int>& cid,
      vec<pairing_info>& cpartner )
@@ -1019,8 +1019,8 @@ void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
      int count = 0;
      for ( int l = 0; l < (int) corrected.size( ); l++ )
           if ( corrected[l].size( ) > 0 ) count++;
-     if ( count == 0 ) mout << "No reads were corrected." << std::endl;
-     else
+     if ( count == 0 ) {//mout << "No reads were corrected." << std::endl;
+     } else
      {    vecbasevector injections;
           if (INJECT)
           {    for ( int i = 0; i < lefts.isize( ); i++ )
@@ -1032,33 +1032,35 @@ void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
                log_control.G = &injections;    }
           if ( !LongHyper( "", corrected, cpartner, shb, heur,
                log_control, logc, tmp_mgr, False ) )
-          {    mout << "No paths were found." << std::endl;
+          {    //mout << "No paths were found." << std::endl;
                SupportedHyperBasevector shb0;
                shb = shb0;    }
           else 
           {    // heur.LC_CAREFUL = True;
                shb.DeleteLowCoverage( heur, log_control, logc );
                if ( shb.NPaths( ) == 0 )
-               {    mout << "No paths were found." << std::endl;
+               {    //mout << "No paths were found." << std::endl;
                     SupportedHyperBasevector shb0;
                     shb = shb0;    }
                else shb.TestValid(logc);    }    }
-     mout << "using K2 = " << shb.K( ) << "\n";
+     /*mout << "using K2 = " << shb.K( ) << "\n";
      mout << "local assembly has " << shb.EdgeObjectCount( ) << " edges" << "\n";
-     mout << "assembly time 2 = " << TimeSince(clock) << std::endl;    }
+     mout << "assembly time 2 = " << TimeSince(clock) << std::endl;*/
+}
 
-void MakeLocalAssembly1( const int lroot, const int rroot, 
+void MakeLocalAssembly1( const int lroot, const int rroot,
      const HyperBasevector& hb, const vecbasevector& bases, 
      const VecPQVec& quals, const vec<int64_t>& pids, const String& TMP,
-     std::ostringstream& mout, const Bool LOCAL_LAYOUT, const int K2_FLOOR, 
+     const Bool LOCAL_LAYOUT, const int K2_FLOOR,
      const String& work_dir, VecEFasta& corrected, vecbasevector& creads, 
      vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr )
 {
-     mout << Date( ) << ": begin gap assembly" << std::endl;
+     //std::cout<<"MakeLocalAssembly1 called!"<<std::endl;
+     //mout << Date( ) << ": begin gap assembly" << std::endl;
      double clock1 = WallClockTime( );
-     long_logging logc( "", "" );
-     logc.STATUS_LOGGING = False;
-     logc.MIN_LOGGING = False;
+     //long_logging logc( "", "" );
+     //logc.STATUS_LOGGING = False;
+     //logc.MIN_LOGGING = False;
      ref_data ref;
      vec<ref_loc> readlocs;
      long_logging_control log_control( ref, &readlocs, "", "" );
@@ -1099,9 +1101,8 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      double clock2 = WallClockTime( );
      // tmp_mgr["frag_reads_orig"].write();
      uint NUM_THREADS = 1;
-     CorrectionSuite( tmp_mgr, heur, logc, log_control, creads, corrected,
-          cid, cpartner, NUM_THREADS, "", clock, False );
-     mout << "total correction time = " << TimeSince(clock2) << std::endl;
+     CorrectionSuite( tmp_mgr, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False );
+     //mout << "total correction time = " << TimeSince(clock2) << std::endl;
 
      int count = 0;
      for ( int l = 0; l < (int) corrected.size( ); l++ )
@@ -1109,13 +1110,14 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      if ( count > 0 )
      {    vec<Bool> to_delete( corrected.size( ), False );
           DefinePairingInfo( 
-               tmp_mgr, creads, to_delete, cid, corrected, cpartner, logc );    }
+               tmp_mgr, creads, to_delete, cid, corrected, cpartner/*, logc*/ );    }
 
      // Experiment.
 
      if (LOCAL_LAYOUT) LocalLayout( lroot, rroot, tmp_mgr, work_dir );
 
-     mout << "assembly time 1 = " << TimeSince(clock1) << std::endl;    }
+     //mout << "assembly time 1 = " << TimeSince(clock1) << std::endl;
+    }
 
 String ToStringN( const vec<int>& x, const int vis )
 {    String v = "{" + ToString( x.size( ) ) + ":";
@@ -1174,13 +1176,7 @@ void LogTime( const double clock, const String& what, const String& work_dir )
      {    Echo( TimeSince(clock) + " used " + what, dir + "/clock.log" );    }    }
 
 void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
-{    
-     time_t now = time(0);
-     //std::cout << "[GapToyTools.cc] Begining CleanupCore: " << ctime(&now) << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
-     double clock2 = WallClockTime( );
+{
      vec<Bool> used;
      hb.Used(used);
      vec<int> to_new_id( used.size( ), -1 );
@@ -1196,7 +1192,6 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
      inv = inv2;
 
      vec<Bool> to_delete( paths.size( ), False );
-     //LogTime( clock2, "cleaning up 2" );
      double clock3 = WallClockTime( );
      #pragma omp parallel for
      for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
@@ -1205,18 +1200,11 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
           {    int n = to_new_id[ p[j] ];
                if ( n < 0 ) to_delete[i] = True;
                else p[j] = n;    }    }
-     //LogTime( clock3, "cleaning up 3" );
      double clock4 = WallClockTime( );
      hb.RemoveDeadEdgeObjects( );
-     //LogTime( clock4, "cleaning up 4" );
      double clock5 = WallClockTime( );
      hb.RemoveEdgelessVertices( );
-     //LogTime( clock5, "cleaning up 5" );
-     //hb.Shrink_FromTo(); ## added by us (bj gg), didn't worked so far
-     //std::cout << "[GapToyTools.cc] Finishing CleanupCore: " << ctime(&now) << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
+
      
      }
 

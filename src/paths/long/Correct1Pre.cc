@@ -45,10 +45,10 @@ void append_read( const std::string& filename, size_t serial, const veclike& r)
 void Correct1Pre( String const& tmpDir, const int K, const int max_freq, 
      vecbasevector& bases, vecqualvector& quals, const PairsManager& pairs, 
      const vec<Bool>& to_edit, vec<int>& trim_to, const vec<int>& trace_ids, 
-     const long_logging& logc, const long_heuristics& heur )
+     /*const long_logging& logc,*/ const long_heuristics& heur )
 {
      double clock1 = WallClockTime( );
-     if (logc.STATUS_LOGGING) ReportPeakMem( "begin Correct1Pre" );
+     //if (logc.STATUS_LOGGING) ReportPeakMem( "begin Correct1Pre" );
 
      // Build alignments.
 
@@ -58,7 +58,7 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
                              heur.FF_MIN_FREQ,heur.FF_MAX_FREQ,
                              heur.FF_MIN_QUAL,heur.FF_COVERAGE,
                              heur.FF_DOWN_SAMPLE,heur.FF_VERBOSITY);
-     if (logc.STATUS_LOGGING) ReportPeakMem( "alignment data created" );
+     //if (logc.STATUS_LOGGING) ReportPeakMem( "alignment data created" );
 
      //// Define read starts.
 
@@ -90,11 +90,11 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
 
      // Do the corrections.
 
-     if (logc.STATUS_LOGGING)
-     {    std::cout << Date( ) << ": going through " << use.size( )
-               << " reads" << std::endl;    }
+     //if (logc.STATUS_LOGGING)
+     //{    std::cout << Date( ) << ": going through " << use.size( )
+     //          << " reads" << std::endl;    }
      const int batch = 100;
-     REPORT_TIME( clock1, "used in Correct1Pre head" );
+     //REPORT_TIME( clock1, "used in Correct1Pre head" );
      double clock2 = WallClockTime( );
      #pragma omp parallel for schedule(dynamic, 1)
      for ( int64_t id1a = 0; id1a < (int64_t) use.size( ); id1a += batch )
@@ -170,4 +170,5 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
           bases[id1] = bases_loc[id1x];
           quals[id1] = quals_loc[id1x];
      }
-     REPORT_TIME( clock2, "used in Correct1Pre main" );    }
+     //REPORT_TIME( clock2, "used in Correct1Pre main" );
+}

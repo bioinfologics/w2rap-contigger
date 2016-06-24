@@ -29,7 +29,7 @@
 #include "paths/long/large/GapToyTools.h"
 #include <ctime>
 
-void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
+/*void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
       VecPQVec const& quals, const ReadPathVec& paths2, const String& work_dir )
 {    
      // Heuristics.
@@ -387,7 +387,7 @@ void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
                               stack.Print( std::cout, cons );    }    }
                     */
 
-                         }    }
+          //               }    }
 
           /*
           #pragma omp parallel for schedule(dynamic)
@@ -397,7 +397,7 @@ void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
                quals[id1] = quals_loc[id1x];    }    }
           */
 
-          if ( i == KS.isize( ) - 1 )
+/*          if ( i == KS.isize( ) - 1 )
           {    std::cout << "\ncorrected reads:\n";
                for ( int i = 0; i < select.isize( ); i++ )
                {    int id = select[i];
@@ -416,7 +416,7 @@ void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
           bases[id].Print( std::cout, "id=" + ToString(id) );    }    
      */
 
-
+/*
      const int K0 = 60;
      unsigned const COVERAGE = 50u;
      HyperBasevector hbn;
@@ -430,7 +430,7 @@ void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
      for ( int e = 0; e < hbn.EdgeObjectCount( ); e++ )
           hbn.EdgeObject(e).Print( eout, e );
      BinaryWriter::writeFile( work_dir + "/special/xxx.hbv", hbn );    }
-
+*/
 void FixPath( ReadPath& p, const vec< triple<int,int,int> >& merges,
      const vec< vec<int> >& merges_index, const HyperBasevector& hb_orig )
 {

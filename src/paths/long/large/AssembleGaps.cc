@@ -142,17 +142,17 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
 
           double aclock1 = WallClockTime( );
           const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second;
-          std::ostringstream mout;
-          mout << "\nbl = " << bl << ", lefts = " << printSeq(lefts)
-               << ", rights = " << printSeq(rights) << std::endl;
+          //std::ostringstream mout;
+          //mout << "\nbl = " << bl << ", lefts = " << printSeq(lefts)
+               //<< ", rights = " << printSeq(rights) << std::endl;
           int K2_FLOOR_LOCAL = K2_FLOOR;
 
-          if (ANNOUNCE)
+          /*if (ANNOUNCE)
           {   
                #pragma omp critical
                {    std::cout << "\n" << Date( ) << ": START " << bl << ", lefts = "
                          << printSeq(lefts) << ", rights = " 
-                         << printSeq(rights) << std::endl;    }    }
+                         << printSeq(rights) << std::endl;    }    }*/
 
           // Find relevant pids.
      
@@ -304,8 +304,8 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                          pids.push_back( pids2[m] );    }    }    }
 
           UniqueSort(pids);
-          mout << "using " << pids.size( ) << " pairs" << std::endl;
-          mout << "pids = " << printSeq(pids) << std::endl;
+          //mout << "using " << pids.size( ) << " pairs" << std::endl;
+          //mout << "pids = " << printSeq(pids) << std::endl;
 
           if (ANNOUNCE)
           {   
@@ -324,8 +324,8 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                      } else
                TMP = work_dir + "/local/" + ToString( omp_get_thread_num() );
 
-          mout << "assembling in " << TMP << "\n";
-          mout << "total setup time = " << TimeSince(aclock1) << std::endl;
+          //mout << "assembling in " << TMP << "\n";
+          //mout << "total setup time = " << TimeSince(aclock1) << std::endl;
           VecEFasta corrected;
           vecbasevector creads;
           vec<pairing_info> cpartner;
@@ -335,7 +335,7 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
 
           int lroot = lefts[0], rroot = rights[0];
 
-          MakeLocalAssembly1( lroot, rroot, hb, bases, quals, pids, TMP, mout,
+          MakeLocalAssembly1( lroot, rroot, hb, bases, quals, pids, TMP,
                LOCAL_LAYOUT, K2_FLOOR_LOCAL, work_dir, corrected, creads, cpartner, 
                cid, tmp_mgr );
 
@@ -347,7 +347,7 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                          << std::endl;    }    }
 
           retry:
-          MakeLocalAssembly2( corrected, hb, lefts, rights, mout, shb, INJECT, 
+          MakeLocalAssembly2( corrected, hb, lefts, rights, shb, INJECT,
                K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner );
 
           if (ANNOUNCE)
@@ -357,9 +357,10 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                          << shb.K( ) << ", time used so far = " 
                          << TimeSince(aclock1) << std::endl;    }    }
 
-          if ( shb.K( ) == 0 ) 
-          {    mreport[bl] = mout.str( );
-               Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
+          if ( shb.K( ) == 0 )
+          {    // TODO: no more dots in advances...
+               /*mreport[bl] = mout.str( );
+               Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );*/
                continue;    }
 
           if ( DUMP_LOCAL != "" )
@@ -421,7 +422,7 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
           xshb.DeleteEdges(ydels);
           xshb.RemoveUnneededVertices( );
           xshb.RemoveDeadEdgeObjects( );
-          mout << TimeSince(sclock) << " used contracting" << std::endl;
+          //mout << TimeSince(sclock) << " used contracting" << std::endl;
 
           if ( DUMP_LOCAL != "" )
           {    static Bool special(False);
@@ -446,7 +447,7 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                     if ( xshb.K( ) < K2s[j] ) break;
                if ( j < K2s.isize( ) )
                {    K2_FLOOR_LOCAL = K2s[j];
-                    PRINT_TO( mout, K2_FLOOR_LOCAL );
+                    //PRINT_TO( mout, K2_FLOOR_LOCAL );
                     goto retry;    }    }
 
           if (ANNOUNCE)
@@ -457,13 +458,13 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                          << std::endl;    }    }
 
           if ( !xshb.Acyclic( ) || xshb.N( ) == 0 )
-          {    if ( !xshb.Acyclic( ) ) mout << "has cycle, not using" << std::endl;
-               if ( xshb.N( ) == 0 ) mout << "local assembly empty" << std::endl;
-               mreport[bl] += mout.str( );
-               Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
+          {    //if ( !xshb.Acyclic( ) ) mout << "has cycle, not using" << std::endl;
+               //if ( xshb.N( ) == 0 ) mout << "local assembly empty" << std::endl;
+               //mreport[bl] += mout.str( );
+               //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
                continue;    }
-          mout << "local assembly has " << xshb.NComponents( )
-               << " components" << "\n";
+          //mout << "local assembly has " << xshb.NComponents( )
+          //     << " components" << "\n";
 
           // Make bpaths.  These are all source-sink paths through the
           // local graph.
@@ -485,11 +486,11 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                          b = Cat( b, xshb.EdgeObject( p[l][m] ) );    }
                     bpaths.push_back(b);    
                     if ( bpaths.isize( ) > MAX_BPATHS ) break;    }    }
-          PRINT_TO( mout, bpaths.size( ) );
+          //PRINT_TO( mout, bpaths.size( ) );
           if ( bpaths.isize( ) > MAX_BPATHS )
-          {    mout << "Too many bpaths." << std::endl;
-               mreport[bl] += mout.str( );
-               Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
+          {    //mout << "Too many bpaths." << std::endl;
+               //mreport[bl] += mout.str( );
+               //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
                continue;    }
 
           // Make more bpaths.  
@@ -514,19 +515,19 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                          bpaths.push_back(b);
                          ext = True;    }    }
                if ( !ext ) bpaths.push_back( hb.EdgeObject( rights[r] ) );    }
-          PRINT_TO( mout, bpaths.size( ) );
+          //PRINT_TO( mout, bpaths.size( ) );
 
           if ( lroot == DUMP_LOCAL_LROOT && rroot == DUMP_LOCAL_RROOT )
                DumpBPaths(bpaths,lroot,rroot,work_dir+"/loc/bpaths");
 
           // Make the bpaths into a HyperBasevector.
 
-          mout << "initial patch creation time = " << TimeSince(aclock2) << std::endl;
+          //mout << "initial patch creation time = " << TimeSince(aclock2) << std::endl;
           vecbasevector bpathsx;
           for ( int l = 0; l < bpaths.isize( ); l++ )
                bpathsx.push_back( bpaths[l] );
           BasesToGraph( bpathsx, K, mhbp[bl] );
-          mout << "patch creation time = " << TimeSince(aclock2) << std::endl;
+          //mout << "patch creation time = " << TimeSince(aclock2) << std::endl;
 
           if (ANNOUNCE)
           {   
@@ -539,8 +540,9 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
 
           // Save.
      
-          mreport[bl] += mout.str( );    
-          Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );    }
+          //mreport[bl] += mout.str( );
+          //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
+            }
 
      std::cout << TimeSince(clockp1) << " spent in local assemblies, "
           << "memory in use = " << MemUsageGBString( )

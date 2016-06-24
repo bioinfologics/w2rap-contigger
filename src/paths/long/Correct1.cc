@@ -64,7 +64,7 @@
 void Correct1( String const& tmpDir, const int K, const int max_freq, vecbasevector& bases,
      vecqualvector& quals, const PairsManager& pairs, const vec<Bool>& to_edit, 
      vec<int>& trim_to, const vec<int>& trace_ids, 
-     const long_logging_control& log_control, const long_logging& logc,
+     //const long_logging_control& log_control, const long_logging& logc,
      const long_heuristics& heur )
 {    double clock = WallClockTime( );
      std::cout << Date( ) << ": entering Correct1 with K = " << K << std::endl;
@@ -159,7 +159,7 @@ void Correct1( String const& tmpDir, const int K, const int max_freq, vecbasevec
 
           // Align to reference.
 
-          if ( BinMember( trace_ids, id1 ) && log_control.G != 0 )
+          /*if ( BinMember( trace_ids, id1 ) && log_control.G != 0 )
           {    basevector b = bases_new[id1];
                #pragma omp critical
                {    for ( int pass = 1; pass <= 2; pass++ )
@@ -178,7 +178,8 @@ void Correct1( String const& tmpDir, const int K, const int max_freq, vecbasevec
                                    ToString(g) );
                               la.PrintVisual( std::cout, b, quals_new[id1], 
                                    (*(log_control.G))[g], 
-                                   0 );    }    }    }    }    }
+                                   0 );    }    }    }    }*/
+     }
 
      // Save results.
 

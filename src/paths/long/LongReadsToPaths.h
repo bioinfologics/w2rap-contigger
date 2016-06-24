@@ -24,7 +24,6 @@
 
 void LongReadsToPaths( vecbvec const& reads,
                             unsigned K, unsigned coverage,
-                            unsigned logLevel, bool useOldLRPMethod,
                             HyperBasevector* pHBV,
                             HyperKmerPath* pHKP=nullptr,
                             vecKmerPath* pPaths=nullptr,
