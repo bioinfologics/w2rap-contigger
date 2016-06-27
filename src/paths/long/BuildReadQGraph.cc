@@ -53,8 +53,8 @@ namespace
     typedef KMer<K-1> SubKmer;
     typedef KmerDictEntry<K> Entry;
     typedef KmerDict<K> Dict;
-    typedef UnipathGraph<K> Graph;
-    typedef std::vector<std::atomic_size_t> SpectrumBins;
+    //typedef UnipathGraph<K> Graph;
+    //typedef std::vector<std::atomic_size_t> SpectrumBins;
 
     class GoodLenTailFinder
     {
@@ -1303,7 +1303,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       double minFreq2Fract, unsigned maxGapSize,
                       String const& refFasta,
                       bool useNewAligner, bool repathUnpathed,
-                      HyperBasevector* pHBV, ReadPathVec* pPaths,
+                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K,
                       bool const VERBOSE )
 {
     //std::cout << Date() << ": loading reads." << std::endl;
@@ -1322,7 +1322,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         fillGaps(reads,maxGapSize,minFreq2,&edges,pDict);
 
     if ( doJoinOverlaps )
-        joinOverlaps(reads,K/2,minFreq2,&edges,pDict);
+        joinOverlaps(reads,_K/2,minFreq2,&edges,pDict);
 
     if ( !refFasta.empty() )
         pathRef(refFasta,*pDict,edges);
@@ -1332,7 +1332,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     if ( !pPaths )
     {
         delete pDict;
-        buildHBVFromEdges(edges,K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
+        buildHBVFromEdges(edges,_K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
     }
     else
     {

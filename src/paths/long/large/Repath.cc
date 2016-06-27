@@ -362,7 +362,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
 
      // Write files.
 
-     std::cout << Date( ) << ": writing" << std::endl;
+     //std::cout << Date( ) << ": writing" << std::endl;
      vec<int> inv2;
      //BinaryWriter::writeFile( BIGKHBV0 + ".hbv", hb2 );
      /*{    //HyperBasevectorX hb2x(hb2);
@@ -486,7 +486,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                else
                {    for ( int j = 0; j < n; j++ )
                          paths2[id][j] = inv2[ ipaths2[pos][n-j-1] ];    }    }
-          std::cout << Date( ) << ": writing paths" << std::endl;
+          //std::cout << Date( ) << ": writing paths" << std::endl;
           //paths2.WriteAll( BIGKHBV0 + ".paths" );
           if ( INVERT_PATHS )
           {

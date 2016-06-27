@@ -451,13 +451,16 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
                     HyperBasevector* pHBV, ReadPathVec* pReadPaths,
                     HyperKmerPath* pHKP, vecKmerPath* pKmerPaths )
 {
+    std::cout<< "Constructing "<<BIGK<<"-mer graph..."<<std::endl;
     if ( pReadPaths )
     {
+        std::cout<< "Clearing read paths..."<<std::endl;
         pReadPaths->clear();
         pReadPaths->resize(reads.size());
     }
     if ( pKmerPaths )
     {
+        std::cout<< "Clearing kmer paths..."<<std::endl;
         pKmerPaths->clear();
         pKmerPaths->resize(reads.size());
     }
@@ -469,13 +472,13 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
         if ( pHKP ) pHKP->Clear();
         return;
     }
-
+    std::cout<< "Creating dict..."<<std::endl;
     BigDict<BIGK> bigDict(nKmers/coverage);
     BigKMerizer<BIGK> kmerizer(&bigDict);
     parallelFor(0ul,reads.size(),
             [kmerizer,&reads]( size_t readId ) mutable
             { kmerizer.kmerize(reads[readId]); });
-
+    std::cout<< "Building Edges..."<<std::endl;
     vecbvec edges;
     edges.reserve(bigDict.size()/100);
     BigKEdgeBuilder<BIGK>::buildEdges(bigDict,&edges);
@@ -484,23 +487,31 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
     vec<int> revXlat;
     if ( !pReadPaths && !pKmerPaths )
     {
+        std::cout<< "Building HBV from Edges..."<<std::endl;
         buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
-        if ( pHKP )
-            buildHKPFromHBV(*pHBV,fwdXlat,revXlat,pHKP);
+        if ( pHKP ) {
+            std::cout<< "Building HKPF..."<<std::endl;
+            buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
+        }
     }
     else
     {
+        std::cout<< "Updating Dict..."<<std::endl;
         parallelForBatch(0ul,edges.size(),100,
                 [&edges,&kmerizer]( size_t edgeId )
                 { kmerizer.updateDict(edges[edgeId]); });
-
+        std::cout<< "Building HBV from Edges..."<<std::endl;
         buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
         HyperKmerPath hkp;
-        if ( pKmerPaths && !pHKP )
+        if ( pKmerPaths && !pHKP ) {
+            std::cout<< "Creating new HKP..."<<std::endl;
             pHKP = &hkp;
-        if ( pHKP )
-            buildHKPFromHBV(*pHBV,fwdXlat,revXlat,pHKP);
-
+        }
+        if ( pHKP ) {
+            std::cout<< "Building HKPF..."<<std::endl;
+            buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
+        }
+        std::cout<< "Running pather..."<<std::endl;
         Pather<BIGK> pather(reads,bigDict,edges,fwdXlat,revXlat,
                                 pReadPaths,pHKP,pKmerPaths);
         parallelForBatch(0ul,reads.size(),10000,pather);

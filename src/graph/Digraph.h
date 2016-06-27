@@ -1385,6 +1385,7 @@ template<class F> class digraphEX : public digraphX {
      void writeBinary( BinaryWriter& writer ) const;
      void readBinary( BinaryReader& reader );
 
+
      private:
 
      MasterVec<F> edges_;

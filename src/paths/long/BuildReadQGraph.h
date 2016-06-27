@@ -39,7 +39,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                         double minFreq2Fract, unsigned maxGapSize,
                         String const& refFasta,
        		        bool useNewAligner, bool repathUnpathed,
-                        HyperBasevector* pHBV, ReadPathVec* pPaths,
+                        HyperBasevector* pHBV, ReadPathVec* pPaths, int _K,
                         bool const VERBOSE = False );
 
 void rePath( HyperBasevector const& hbv,
