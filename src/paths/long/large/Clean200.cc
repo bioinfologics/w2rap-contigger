@@ -47,8 +47,8 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      // Look for weak branches.
 
-     std::cout << Date( ) << ": start walking" << std::endl;
-     std::cout << "memory in use = " << ToStringAddCommas( MemUsageBytes( ) ) << std::endl;
+     //std::cout << Date( ) << ": start walking" << std::endl;
+     //std::cout << "memory in use = " << ToStringAddCommas( MemUsageBytes( ) ) << std::endl;
      const int max_rl = 250;
      vec<int> to_delete;
      #pragma omp parallel for
@@ -385,7 +385,8 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      Cleanup( hb, inv, paths );    }
      TestInvolution( hb, inv );
      Validate( hb, inv, paths );    
-     std::cout << TimeSince(clock) << " used cleaning 200-mer graph" << std::endl;    }
+     //std::cout << TimeSince(clock) << " used cleaning large_k-mer graph" << std::endl;
+}
 
 void AnalyzeScores( const HyperBasevectorX& hb, const vec<int>& inv, const int v,
      const vec<vec<int>>& scores, vec<int>& to_delete, const int zpass, 

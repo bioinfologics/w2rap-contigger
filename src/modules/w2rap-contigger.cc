@@ -110,9 +110,9 @@ int main(const int argc, const char * argv[]) {
     vec<int64_t> subsam_starts = {0};
 
     //create_unipaths( out_dir, out_prefix, read_files, threads, max_mem );
-    std::cout << "Reading input files..." << std::endl;
+    std::cout << "--== Reading input files ==--" << std::endl;
     ExtractReads(read_files, out_dir, subsam_names, subsam_starts, &bases, &quals);
-    std::cout << "   DONE!" << std::endl;
+    std::cout << "Reading input files DONE!" << std::endl<< std::endl<< std::endl;
     //TODO: add an option to dump the reads
     if (dump_all) {
         std::cout << "Dumping reads in fastb/qualp format..." << std::endl;
@@ -134,24 +134,25 @@ int main(const int argc, const char * argv[]) {
     {//This scope-trick to invalidate old data is dirty
         HyperBasevector hbv;
         ReadPathVec paths;
-        std::cout << "Building first graph (K=60)..." << std::endl;
+        std::cout << "--== Building first graph ==--" << std::endl;
         buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, 7, 3, .75, 0, "", True, SHORT_KMER_READ_PATHER, &hbv, &paths,
                         small_K);
+        FixPaths(hbv, paths); //TODO: is this even needed?
+        std::cout << "Building first graph DONE!" << std::endl<< std::endl<< std::endl;
 
-        std::cout << "   DONE building graph" << std::endl;
-
+        std::cout << "--== Repathing to second graph ==--" << std::endl;
         vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
-
         hbv.Involution(inv);
 
-        FixPaths(hbv, paths);
         const string run_head = out_dir + "/" + out_prefix;
 
         pathsr.resize(paths.size());
         RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
+        std::cout << "Repathing to second graph DONE!" << std::endl<< std::endl<< std::endl;
     }
 
     //== Clean ======
+    std::cout << "--== Cleaning graph ==--" << std::endl;
     inv.clear();
     hbvr.Involution(inv);
     int CLEAN_200_VERBOSITY=0;
@@ -162,12 +163,14 @@ int main(const int argc, const char * argv[]) {
         pathsr.WriteAll(out_dir + "/" + out_prefix + ".pc.large.paths");
     }
 
+    std::cout << "Cleaning graph DONE!" << std::endl<< std::endl<< std::endl;
     //== Patching ======
+
+    std::cout << "--== Assembling gaps ==--" << std::endl;
     VecULongVec paths_inv;
     invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
 
     vecbvec new_stuff;
-
 
     bool EXTEND=False;
     bool ANNOUNCE=False;
@@ -195,7 +198,9 @@ int main(const int argc, const char * argv[]) {
 
     AddNewStuff( new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, TRACE_PATHS, out_dir, EXT_MODE );
     PartnersToEnds( hbvr, pathsr, bases, quals );
+    std::cout << "Assembling gaps DONE!" << std::endl<< std::endl<< std::endl;
 
+    std::cout << "--== Simplifying ==--" << std::endl;
     //==Simplify
     int MAX_SUPP_DEL=0;
     bool TAMP_EARLY_MIN=True;
@@ -229,7 +234,9 @@ int main(const int argc, const char * argv[]) {
     // TODO: this is "bj making sure the inversion still works", but shouldn't be required
     paths_inv.clear();
     invert(pathsr,paths_inv,hbvr.EdgeObjectCount());
+    std::cout << "Simplifying DONE!" << std::endl<< std::endl<< std::endl;
 
+    std::cout << "--== Finding lines ==--" << std::endl;
     // Find lines and write files.
     vec<vec<vec<vec<int>>>> lines;
     int MAX_CELL_PATHS=50;
@@ -259,9 +266,11 @@ int main(const int argc, const char * argv[]) {
     // Compute fragment distribution.
     FragDist( hbvr, inv, pathsr, out_dir + "/" +out_prefix+ ".fin.frags.dist" );
 
+    std::cout << "Finding lines DONE!" << std::endl<< std::endl<< std::endl;
+
 
     //== Scaffolding
-
+    std::cout << "--== Scaffolding ==--" << std::endl;
     int MIN_LINE=5000;
     int MIN_LINK_COUNT=3; //XXX TODO: this variable is the same as -w in soap??
 
@@ -269,7 +278,7 @@ int main(const int argc, const char * argv[]) {
     bool GAP_CLEANUP=True;
     MakeGaps( hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP );
 
-
+    std::cout << "--== Scaffolding DONE!" << std::endl<< std::endl<< std::endl;
     // Carry out final analyses and write final assembly files.
 
     vecbasevector G;
