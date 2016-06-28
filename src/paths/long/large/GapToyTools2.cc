@@ -554,9 +554,9 @@ void LayoutReads( const HyperBasevector& hb, const vec<int>& inv,
 {
      int nedges = hb.EdgeObjectCount( );
      layout_pos.resize(nedges), layout_id.resize(nedges), layout_or.resize(nedges);
-     for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
+     for ( int64_t i = 0; i < (int64_t) paths.size( ); ++i )
      {    vec<int> x;
-          for ( int64_t j = 0; j < (int64_t) paths[i].size( ); j++ )
+          for ( int64_t j = 0; j < (int64_t) paths[i].size( ); ++j )
                x.push_back( paths[i][j] );
           if ( x.empty( ) ) continue;
           int pos = paths[i].getOffset( );
@@ -701,7 +701,7 @@ void Patch( HyperBasevector& hb, const vec< std::pair<int,int> >& blobs,
           << std::endl;
 }
 
-void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
+/*void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity )
 {
      // Start.
@@ -924,7 +924,7 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      Cleanup( hb, inv, paths );    }
      TestInvolution( hb, inv );
      Validate( hb, inv, paths );    
-     std::cout << TimeSince(clock) << " used cleaning 200-mer graph" << std::endl;    }
+     std::cout << TimeSince(clock) << " used cleaning 200-mer graph" << std::endl;    }*/
 
 template<class H> void DegloopCore( const int mode, H& hb, vec<int>& inv, 
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,

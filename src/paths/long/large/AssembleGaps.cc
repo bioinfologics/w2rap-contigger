@@ -142,42 +142,9 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
 
           double aclock1 = WallClockTime( );
           const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second;
-          //std::ostringstream mout;
-          //mout << "\nbl = " << bl << ", lefts = " << printSeq(lefts)
-               //<< ", rights = " << printSeq(rights) << std::endl;
           int K2_FLOOR_LOCAL = K2_FLOOR;
-
-          /*if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": START " << bl << ", lefts = "
-                         << printSeq(lefts) << ", rights = " 
-                         << printSeq(rights) << std::endl;    }    }*/
-
-          // Find relevant pids.
-     
           vec<int64_t> pids;
 
-          /*
-          if ( A2V == 1 )
-          {    const int max_delta = 120;
-               for ( int l = 0; l < lefts.isize( ); l++ )
-               for ( int k = layout_pos[ lefts[l] ].isize( ) - 1; k >= 0; k-- )
-               {    int pos = layout_pos[ lefts[l] ][k]; 
-                    int64_t id = layout_id[ lefts[l] ][k];
-                    if ( pos + bases[id].isize( ) 
-                         < hb.EdgeLengthBases( lefts[l] ) - max_delta ) 
-                    {    break;    }
-                    pids.push_back(id/2);    }
-               for ( int l = 0; l < rights.isize( ); l++ )
-               for ( int k = 0; k < layout_pos[ rights[l] ].isize( ); k++ )
-               {    int pos = layout_pos[ rights[l] ][k]; 
-                    int64_t id = layout_id[ rights[l] ][k];
-                    if ( pos > max_delta ) break;
-                    pids.push_back(id/2);    }    }
-          */
-
-          // if ( A2V >= 2 )
           {
                // Heuristics.
 
@@ -235,12 +202,7 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                     int64_t id = layout_id[ lefts[l] ][k];
                     Bool fw = layout_or[ lefts[l] ][k];
                     if ( BinMember( pids1, id/2 ) ) continue;
-                    /*
-                    if ( lstarts[l].empty( ) ) // XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    {    std::cout << "No lstarts." << std::endl; // XXXXXXXXXXXXXXXXXXXX
-                         PRINT( lefts[l] ); // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                         Scram(0);    } // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    */
+
                     int low = lstarts[l].front( ), high = lstarts[l].back( );
                     Bool close = False;
                     if ( low <= pos && pos <= high ) close = True;
@@ -256,18 +218,14 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                               else if ( high < pos && pos - high <= MAX_PROX_LEFT ) 
                               {    close = True;    }    }    }
                     if (close) pids2.push_back(id/2);    }
+
                for ( int l = 0; l < rights.isize( ); l++ )
                for ( int k = 0; k < layout_pos[ rights[l] ].isize( ); k++ )
                {    int pos = layout_pos[ rights[l] ][k]; 
                     int64_t id = layout_id[ rights[l] ][k];
                     Bool fw = layout_or[ rights[l] ][k];
                     if ( BinMember( pids1, id/2 ) ) continue;
-                    /*
-                    if ( rstarts[l].empty( ) ) // XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    {    std::cout << "No rstarts." << std::endl; // XXXXXXXXXXXXXXXXXXXX
-                         PRINT( rights[l] ); // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                         Scram(0);    } // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    */
+
                     int low = rstarts[l].front( ), high = rstarts[l].back( );
                     Bool close = False;
                     if ( low <= pos && pos <= high ) close = True;
@@ -283,6 +241,7 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                               else if ( high < pos && pos - high <= MAX_PROX_LEFT ) 
                               {    close = True;    }    }    }
                     if (close) pids2.push_back(id/2);    }
+
                UniqueSort(pids2);
 
                // Now subsample if needed.

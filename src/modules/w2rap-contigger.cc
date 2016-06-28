@@ -143,7 +143,7 @@ int main(const int argc, const char * argv[]) {
         std::cout << "--== Repathing to second graph ==--" << std::endl;
         vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
         hbv.Involution(inv);
-
+        FragDist( hbv, inv, paths, out_dir + "/" +out_prefix+ ".first.frags.dist" );
         const string run_head = out_dir + "/" + out_prefix;
 
         pathsr.resize(paths.size());
