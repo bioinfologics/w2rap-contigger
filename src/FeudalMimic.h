@@ -23,21 +23,19 @@
 // Generic Mimic function.
 template<class vecvec1, class vecvec2>
 void Mimic( const vecvec1 & in, vecvec2 & out ) {
-  out.resize( in.size( ) );
-  for (typename vecvec1::size_type i=0; i != in.size( ); ++i)
-    out[i].resize(in[i].size( ));
+    out.resize( in.size( ) );
+    for (typename vecvec1::size_type i=0; i != in.size( ); ++i)
+        out[i].resize(in[i].size( ));
 }
 
 // Mimic the shape, but reserve space on the inner vectors, rather than resizing
 template<class vecvec1, class vecvec2>
-void MimicReserve( const vecvec1 & in, vecvec2 & out )
-{
+void MimicReserve( const vecvec1 & in, vecvec2 & out ) {
     typedef typename vecvec1::const_iterator I1;
     typedef typename vecvec2::iterator I2;
     out.resize(in.size());
     I2 i2(out.begin());
-    for ( I1 i1(in.begin()), iE(in.end()); i1 != iE; ++i1, ++i2 )
-    {
+    for ( I1 i1(in.begin()), iE(in.end()); i1 != iE; ++i1, ++i2 ) {
         i2->clear();
         i2->reserve(i1->size());
     }
@@ -46,9 +44,9 @@ void MimicReserve( const vecvec1 & in, vecvec2 & out )
 // Generic Mimic function, with templatized initialization value.
 template<class vecvec1, class vecvec2, class number>
 void Mimic( const vecvec1 & in, vecvec2 & out, number value ) {
-  out.resize( in.size( ) );
-  for (typename vecvec1::size_type i=0; i != in.size( ); ++i)
-    out[i].resize(in[i].size( ),value);
+    out.resize( in.size( ) );
+    for (typename vecvec1::size_type i=0; i != in.size( ); ++i)
+        out[i].resize(in[i].size( ),value);
 }
 
 #endif

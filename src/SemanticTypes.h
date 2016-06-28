@@ -59,17 +59,22 @@
 
 template <class T>
 class SemType {
- public:
-  typedef T value_type;
-  
-  T val;
+  public:
+    typedef T value_type;
 
-  SemType() { }
-  SemType(const T& _val): val(_val) { }
+    T val;
 
-  SemType& operator=(const T& _val) { val = _val; return *this; }
+    SemType() { }
+    SemType(const T& _val): val(_val) { }
 
-  operator T() const { return val; }
+    SemType& operator=(const T& _val) {
+        val = _val;
+        return *this;
+    }
+
+    operator T() const {
+        return val;
+    }
 };  // class SemType
 
 #define SemanticTypeStd(physicalType, semanticType) class semanticType: public SemType<physicalType> {  \
@@ -80,7 +85,7 @@ class SemType {
         semanticType& operator=(const physicalType& _val) {                                             \
 	  PARENT::operator=(_val); return *this;                                                        \
 	}                                                                                               \
-  }       
+  }
 
 #define SemanticType(physicalType, semanticType) class semanticType: public physicalType {       \
        public:                                                                                   \

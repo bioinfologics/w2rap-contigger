@@ -90,170 +90,223 @@
 //    mre.process(reads.getKmerCount(K),reads.cbegin(),reads.cend(),true);
 //
 template <class Impl, class Key, class Hash, class Comp=std::less<Key>>
-class MapReduceEngine
-{
-    struct KeyBounds
-    { Key* mpStart; Key* mpCur; Key* mpEnd; };
+class MapReduceEngine {
+    struct KeyBounds {
+        Key* mpStart;
+        Key* mpCur;
+        Key* mpEnd;
+    };
 
-    class KeyBuf
-    {
-    public:
+    class KeyBuf {
+      public:
         static size_t const EMPTY = ~0ul;
 
         KeyBuf( size_t nBatches, size_t nKeysPerBatch )
-        : mBounds(new KeyBounds[nBatches]), mEnd(mBounds+nBatches)
-        { std::allocator<Key> alloc;
-          Key* pKeys = alloc.allocate(nBatches*nKeysPerBatch);
-          for ( KeyBounds* itr = mBounds; itr != mEnd; ++itr )
-          { itr->mpStart = itr->mpCur = pKeys;
-            pKeys += nKeysPerBatch; itr->mpEnd = pKeys; } }
+            : mBounds(new KeyBounds[nBatches]), mEnd(mBounds+nBatches) {
+            std::allocator<Key> alloc;
+            Key* pKeys = alloc.allocate(nBatches*nKeysPerBatch);
+            for ( KeyBounds* itr = mBounds; itr != mEnd; ++itr ) {
+                itr->mpStart = itr->mpCur = pKeys;
+                pKeys += nKeysPerBatch;
+                itr->mpEnd = pKeys;
+            }
+        }
 
         KeyBuf( KeyBuf const& ) = delete;
         KeyBuf& operator=( KeyBuf const& ) = delete;
 
-        ~KeyBuf()
-        { for ( KeyBounds* itr=mBounds; itr != mEnd; ++itr )
-            while ( itr->mpCur != itr->mpStart )
-              (--itr->mpCur)->~Key();
-          std::allocator<Key> alloc;
-          Key* start = mBounds[0].mpStart;
-          alloc.deallocate(start,mEnd[-1].mpEnd-start);
-          delete [] mBounds; }
+        ~KeyBuf() {
+            for ( KeyBounds* itr=mBounds; itr != mEnd; ++itr )
+                while ( itr->mpCur != itr->mpStart )
+                    (--itr->mpCur)->~Key();
+            std::allocator<Key> alloc;
+            Key* start = mBounds[0].mpStart;
+            alloc.deallocate(start,mEnd[-1].mpEnd-start);
+            delete [] mBounds;
+        }
 
-        KeyBounds& getBounds( size_t batch )
-        { return mBounds[batch]; }
+        KeyBounds& getBounds( size_t batch ) {
+            return mBounds[batch];
+        }
 
-        bool addKey( Key const& key, size_t batch )
-        { KeyBounds& kb = mBounds[batch];
-          if ( kb.mpCur == kb.mpEnd )
-            return false;
-          new (kb.mpCur++) Key(key);
-          return true; }
+        bool addKey( Key const& key, size_t batch ) {
+            KeyBounds& kb = mBounds[batch];
+            if ( kb.mpCur == kb.mpEnd )
+                return false;
+            new (kb.mpCur++) Key(key);
+            return true;
+        }
 
-        size_t getMaxBatchSize()
-        { size_t result = 0;
-          for ( KeyBounds* itr=mBounds; itr != mEnd; ++itr )
-              result = std::max(result,size_t(itr->mpCur-itr->mpStart));
-          return result; }
+        size_t getMaxBatchSize() {
+            size_t result = 0;
+            for ( KeyBounds* itr=mBounds; itr != mEnd; ++itr )
+                result = std::max(result,size_t(itr->mpCur-itr->mpStart));
+            return result;
+        }
 
-        void move( KeyBounds& from, size_t batch )
-        { KeyBounds& to = mBounds[batch];
-          ForceAssertEq(to.mpStart,to.mpCur);
-          Key* end = from.mpCur;
-          for ( Key* itr = from.mpStart; itr != end; ++itr )
-          { new (to.mpCur++) Key(std::move(*itr)); itr->~Key(); }
-          from.mpCur = from.mpStart; }
+        void move( KeyBounds& from, size_t batch ) {
+            KeyBounds& to = mBounds[batch];
+            ForceAssertEq(to.mpStart,to.mpCur);
+            Key* end = from.mpCur;
+            for ( Key* itr = from.mpStart; itr != end; ++itr ) {
+                new (to.mpCur++) Key(std::move(*itr));
+                itr->~Key();
+            }
+            from.mpCur = from.mpStart;
+        }
 
-        Key* begin() const { return mBounds->mpStart; }
-        Key* compress()
-        { KeyBounds* itr = mBounds;
-          Key* beg = itr->mpStart;
-          Key* end = itr->mpCur;
-          itr->mpCur = itr->mpStart;
-          KeyBounds* last = mEnd-1;
-          ForceAssertEq(last->mpStart,last->mpCur);
-          while ( ++itr != last )
-          { if ( itr->mpStart == end )
-            { end = itr->mpCur; itr->mpCur = itr->mpStart; continue; }
-            for ( Key* pKey=itr->mpStart; pKey != itr->mpCur; ++pKey )
-            { new (end++) Key(std::move(*pKey)); pKey->~Key(); }
-            itr->mpCur = itr->mpStart; }
-          return end; }
+        Key* begin() const {
+            return mBounds->mpStart;
+        }
+        Key* compress() {
+            KeyBounds* itr = mBounds;
+            Key* beg = itr->mpStart;
+            Key* end = itr->mpCur;
+            itr->mpCur = itr->mpStart;
+            KeyBounds* last = mEnd-1;
+            ForceAssertEq(last->mpStart,last->mpCur);
+            while ( ++itr != last ) {
+                if ( itr->mpStart == end ) {
+                    end = itr->mpCur;
+                    itr->mpCur = itr->mpStart;
+                    continue;
+                }
+                for ( Key* pKey=itr->mpStart; pKey != itr->mpCur; ++pKey ) {
+                    new (end++) Key(std::move(*pKey));
+                    pKey->~Key();
+                }
+                itr->mpCur = itr->mpStart;
+            }
+            return end;
+        }
 
-    private:
+      private:
         KeyBounds* mBounds;
         KeyBounds* mEnd;
     };
 
     enum class Cycle { INIT, MAP, SWIZZLE, REDUCE, EXIT };
 
-    class Status
-    {
-    public:
+    class Status {
+      public:
         Status( size_t nThreads, size_t nPasses, size_t nKeysPerBatch )
-        : mNThreads(nThreads), mNPasses(nPasses), mNKeysPerBatch(nKeysPerBatch),
-          mNTotalBatches(mNThreads*mNPasses), mPass(0), mOK(true),
-          mpKeyBufs(new KeyBuf*[nThreads]), mDoneCount(0),
-          mCycle(Cycle::INIT), mSwizDone(0), mSwizGen(0), mNOverflows(0)
-        {}
+            : mNThreads(nThreads), mNPasses(nPasses), mNKeysPerBatch(nKeysPerBatch),
+              mNTotalBatches(mNThreads*mNPasses), mPass(0), mOK(true),
+              mpKeyBufs(new KeyBuf*[nThreads]), mDoneCount(0),
+              mCycle(Cycle::INIT), mSwizDone(0), mSwizGen(0), mNOverflows(0) {
+        }
 
-        ~Status()
-        { delete [] mpKeyBufs; }
+        ~Status() {
+            delete [] mpKeyBufs;
+        }
 
         Status( Status const& ) = delete;
         Status& operator=( Status const& ) = delete;
 
-        size_t getNThreads() const { return mNThreads; }
-        size_t getNPasses() const { return mNPasses; }
-        size_t getNTotalBatches() const { return mNTotalBatches; }
-        size_t getNKeysPerBatch() const { return mNKeysPerBatch; }
+        size_t getNThreads() const {
+            return mNThreads;
+        }
+        size_t getNPasses() const {
+            return mNPasses;
+        }
+        size_t getNTotalBatches() const {
+            return mNTotalBatches;
+        }
+        size_t getNKeysPerBatch() const {
+            return mNKeysPerBatch;
+        }
 
-        size_t getNOverflows() const { return mNOverflows; }
-        void incrementNOverflows() { mNOverflows += 1; }
+        size_t getNOverflows() const {
+            return mNOverflows;
+        }
+        void incrementNOverflows() {
+            mNOverflows += 1;
+        }
 
-        size_t getPass() const { return mPass; }
-        void setPass( size_t pass ) { mPass = pass; }
+        size_t getPass() const {
+            return mPass;
+        }
+        void setPass( size_t pass ) {
+            mPass = pass;
+        }
 
-        KeyBuf& getKeyBuf( size_t thread ) { return *mpKeyBufs[thread]; }
-        void setKeyBuf( size_t thread, KeyBuf* pKeyBuf )
-        { mpKeyBufs[thread] = pKeyBuf; }
+        KeyBuf& getKeyBuf( size_t thread ) {
+            return *mpKeyBufs[thread];
+        }
+        void setKeyBuf( size_t thread, KeyBuf* pKeyBuf ) {
+            mpKeyBufs[thread] = pKeyBuf;
+        }
 
-        void fail() { mOK = false; }
-        bool OK() const { return mOK; }
+        void fail() {
+            mOK = false;
+        }
+        bool OK() const {
+            return mOK;
+        }
 
         // notify everyone waiting for the next cycle to begin
-        bool setCycle( Cycle cycle )
-        { if ( !mOK && cycle != Cycle::EXIT ) return false;
-          waitForAllDone();
-          std::unique_lock<std::mutex> lock(mCycleMtx);
-          mCycle = cycle;
-          mCycleCV.notify_all();
-          return true; }
+        bool setCycle( Cycle cycle ) {
+            if ( !mOK && cycle != Cycle::EXIT ) return false;
+            waitForAllDone();
+            std::unique_lock<std::mutex> lock(mCycleMtx);
+            mCycle = cycle;
+            mCycleCV.notify_all();
+            return true;
+        }
 
         // wait until it's time to do a map cycle
-        bool waitForMap()
-        { done();
-          std::unique_lock<std::mutex> lock(mCycleMtx);
-          while ( mCycle != Cycle::MAP && mCycle != Cycle::EXIT )
-              mCycleCV.wait(lock);
-          return mCycle == Cycle::MAP; }
+        bool waitForMap() {
+            done();
+            std::unique_lock<std::mutex> lock(mCycleMtx);
+            while ( mCycle != Cycle::MAP && mCycle != Cycle::EXIT )
+                mCycleCV.wait(lock);
+            return mCycle == Cycle::MAP;
+        }
 
         // wait until it's time to do a swizzle cycle
-        bool waitForSwizzle()
-        { done();
-          std::unique_lock<std::mutex> lock(mCycleMtx);
-          while ( mCycle != Cycle::SWIZZLE && mCycle != Cycle::EXIT )
-              mCycleCV.wait(lock);
-          return mCycle == Cycle::SWIZZLE; }
+        bool waitForSwizzle() {
+            done();
+            std::unique_lock<std::mutex> lock(mCycleMtx);
+            while ( mCycle != Cycle::SWIZZLE && mCycle != Cycle::EXIT )
+                mCycleCV.wait(lock);
+            return mCycle == Cycle::SWIZZLE;
+        }
 
         // wait until it's time to do a reduce cycle
-        bool waitForReduce()
-        { done();
-          std::unique_lock<std::mutex> lock(mCycleMtx);
-          while ( mCycle != Cycle::REDUCE && mCycle != Cycle::EXIT )
-              mCycleCV.wait(lock);
-          return mCycle == Cycle::REDUCE; }
+        bool waitForReduce() {
+            done();
+            std::unique_lock<std::mutex> lock(mCycleMtx);
+            while ( mCycle != Cycle::REDUCE && mCycle != Cycle::EXIT )
+                mCycleCV.wait(lock);
+            return mCycle == Cycle::REDUCE;
+        }
 
         // thread barrier -- wait until everyone is done with the current
         // round of swizzling
-        void swizDone()
-        { std::unique_lock<std::mutex> lock(mSwizMtx);
-          size_t swizGen = mSwizGen;
-          if ( ++mSwizDone == mNThreads )
-          { mSwizGen += 1; mSwizDone = 0; mSwizCV.notify_all(); }
-          while ( swizGen == mSwizGen )
-              mSwizCV.wait(lock); }
+        void swizDone() {
+            std::unique_lock<std::mutex> lock(mSwizMtx);
+            size_t swizGen = mSwizGen;
+            if ( ++mSwizDone == mNThreads ) {
+                mSwizGen += 1;
+                mSwizDone = 0;
+                mSwizCV.notify_all();
+            }
+            while ( swizGen == mSwizGen )
+                mSwizCV.wait(lock);
+        }
 
-    private:
-        void done()
-        { std::unique_lock<std::mutex> lock(mDoneMtx);
-          if ( ++mDoneCount == mNThreads ) mDoneCV.notify_one(); }
+      private:
+        void done() {
+            std::unique_lock<std::mutex> lock(mDoneMtx);
+            if ( ++mDoneCount == mNThreads ) mDoneCV.notify_one();
+        }
 
-        void waitForAllDone()
-        { std::unique_lock<std::mutex> lock(mDoneMtx);
-          while ( mDoneCount != mNThreads )
-              mDoneCV.wait(lock);
-          mDoneCount = 0; }
+        void waitForAllDone() {
+            std::unique_lock<std::mutex> lock(mDoneMtx);
+            while ( mDoneCount != mNThreads )
+                mDoneCV.wait(lock);
+            mDoneCount = 0;
+        }
 
         size_t mNThreads;
         size_t mNPasses;
@@ -275,57 +328,63 @@ class MapReduceEngine
         std::atomic_size_t mNOverflows;
     };
 
-    class OItr
-    {
-    public:
+    class OItr {
+      public:
         OItr( MapReduceEngine& mre, Status& status, KeyBuf* pKeyBuf )
-        : mMRE(mre), mStatus(status), mpKeyBuf(pKeyBuf) {}
+            : mMRE(mre), mStatus(status), mpKeyBuf(pKeyBuf) {}
 
-        OItr& operator*() { return *this; }
-        OItr& operator++() { return *this; }
-        OItr& operator++(int) { return *this; }
+        OItr& operator*() {
+            return *this;
+        }
+        OItr& operator++() {
+            return *this;
+        }
+        OItr& operator++(int) {
+            return *this;
+        }
 
-        Key const& operator=( Key const& key )
-        { size_t batch = mMRE.mHasher(key)%mStatus.getNTotalBatches();
-          size_t nThreads = mStatus.getNThreads();
-          if ( batch/nThreads == mStatus.getPass() )
-          { size_t bin = batch%nThreads;
-            if ( !mpKeyBuf->addKey(key,bin) )
-            { mStatus.incrementNOverflows();
-              KeyBounds& kb = mpKeyBuf->getBounds(bin);
-              kb.mpCur = mMRE.overflow(kb.mpStart,kb.mpCur);
-              if ( !mpKeyBuf->addKey(key,bin) )
-                mStatus.fail(); } }
-          return key; }
+        Key const& operator=( Key const& key ) {
+            size_t batch = mMRE.mHasher(key)%mStatus.getNTotalBatches();
+            size_t nThreads = mStatus.getNThreads();
+            if ( batch/nThreads == mStatus.getPass() ) {
+                size_t bin = batch%nThreads;
+                if ( !mpKeyBuf->addKey(key,bin) ) {
+                    mStatus.incrementNOverflows();
+                    KeyBounds& kb = mpKeyBuf->getBounds(bin);
+                    kb.mpCur = mMRE.overflow(kb.mpStart,kb.mpCur);
+                    if ( !mpKeyBuf->addKey(key,bin) )
+                        mStatus.fail();
+                }
+            }
+            return key;
+        }
 
-    private:
+      private:
         MapReduceEngine& mMRE;
         Status& mStatus;
         KeyBuf* mpKeyBuf;
     };
 
     template <class Itr>
-    class Client
-    {
-    public:
+    class Client {
+      public:
         Client( size_t thread, MapReduceEngine& mre, Status& status,
-                    Itr beg, Itr end )
-        : mThread(thread), mMRE(mre), mStatus(status)
-        { size_t nTotInputs = end - beg;
-          size_t nThreads = mStatus.getNThreads();
-          size_t nInputsPerThread = (nTotInputs+nThreads-1)/nThreads;
-          mBeg = beg+std::min(nTotInputs,mThread*nInputsPerThread);
-          mEnd = beg+std::min(nTotInputs,(mThread+1)*nInputsPerThread); }
+                Itr beg, Itr end )
+            : mThread(thread), mMRE(mre), mStatus(status) {
+            size_t nTotInputs = end - beg;
+            size_t nThreads = mStatus.getNThreads();
+            size_t nInputsPerThread = (nTotInputs+nThreads-1)/nThreads;
+            mBeg = beg+std::min(nTotInputs,mThread*nInputsPerThread);
+            mEnd = beg+std::min(nTotInputs,(mThread+1)*nInputsPerThread);
+        }
 
-        void operator()()
-        {
+        void operator()() {
             size_t nThreads = mStatus.getNThreads();
             KeyBuf kb(nThreads+1,mStatus.getNKeysPerBatch());
             size_t nSwizzles = (nThreads - 1)/2;
             mStatus.setKeyBuf(mThread,&kb);
 
-            while ( mStatus.waitForMap() )
-            {
+            while ( mStatus.waitForMap() ) {
                 // this must be inside loop because it reads the pass #.
                 OItr oItr(mMRE,mStatus,&kb);
 
@@ -334,8 +393,7 @@ class MapReduceEngine
 
                 if ( !mStatus.waitForSwizzle() )
                     break;
-                for ( size_t swizzle = 0; swizzle != nSwizzles; ++swizzle )
-                {
+                for ( size_t swizzle = 0; swizzle != nSwizzles; ++swizzle ) {
                     size_t batch = (mThread+swizzle+1) % nThreads;
                     kb.move( kb.getBounds(batch), nThreads );
                     kb.move( mStatus.getKeyBuf(batch).getBounds(mThread), batch );
@@ -346,8 +404,7 @@ class MapReduceEngine
                     kb.move( kb2.getBounds(nThreads), batch );
                     mStatus.swizDone();
                 }
-                if ( !(nThreads & 1) )
-                {
+                if ( !(nThreads & 1) ) {
                     size_t batch = (mThread+nSwizzles+1) % nThreads;
                     kb.move( kb.getBounds(batch), nThreads );
                     mStatus.swizDone();
@@ -363,7 +420,7 @@ class MapReduceEngine
             }
         }
 
-    private:
+      private:
         size_t mThread;
         MapReduceEngine mMRE;
         Status& mStatus;
@@ -371,13 +428,23 @@ class MapReduceEngine
         Itr mEnd;
     };
 
+<<<<<<< HEAD
 public:
     MapReduceEngine( Impl const& impl=Impl(), Hash const& hasher=Hash(), Comp const& comparator=Comp() )
     : mImpl(impl), mHasher(hasher), mComparator(comparator), mFailed(false)
     {}
+=======
+  public:
+    MapReduceEngine( Impl const& impl=Impl(),
+                     Hash const& hasher=Hash(),
+                     Comp const& comparator=Comp() )
+        : mImpl(impl), mHasher(hasher), mComparator(comparator), mFailed(false) {
+    }
+>>>>>>> codestlye
 
-    ~MapReduceEngine()
-    { if ( mFailed ) FatalErr("Map/Reduce operation has failed."); }
+    ~MapReduceEngine() {
+        if ( mFailed ) FatalErr("Map/Reduce operation has failed.");
+    }
 
     enum class VERBOSITY { SILENT, QUIET, NOISY };
 
@@ -386,10 +453,8 @@ public:
     // linearish in their production of Ks.
     template <class Itr>
     bool run( size_t nKs, Itr beg, Itr end,
-                VERBOSITY verbose=VERBOSITY::SILENT, double meanUsage=.8 )
-    {
-        if ( inParallelSection() )
-        {
+              VERBOSITY verbose=VERBOSITY::SILENT, double meanUsage=.8 ) {
+        if ( inParallelSection() ) {
             runSingleThreaded(nKs,beg,end);
             return true;
         }
@@ -411,13 +476,14 @@ public:
         if ( nPasses == 0 )
             FatalErr("No work to do. The calling code should watch for this case");
         size_t const MAX_PASSES = 100;
-        if ( nPasses > MAX_PASSES )
-        {   std::cout << "\nWell this is unfortunate.  It seems that there is "
-                 << "unsufficient memory.\n"
-                 << "We would need " << nPasses << " passes, but the maximum "
-                 << "allowed here is 100." << std::endl;
+        if ( nPasses > MAX_PASSES ) {
+            std::cout << "\nWell this is unfortunate.  It seems that there is "
+                      << "unsufficient memory.\n"
+                      << "We would need " << nPasses << " passes, but the maximum "
+                      << "allowed here is 100." << std::endl;
             std::cout << "Giving up." << std::endl << std::endl;
-            _exit(1);    }
+            _exit(1);
+        }
 
         //if ( nPasses < minPasses )
         //    nPasses = minPasses;
@@ -433,7 +499,7 @@ public:
             nKsPerBatch = MIN_BATCH_SIZE;
         if ( verbose != VERBOSITY::SILENT )
             std::cout << "Expect " << meanKsPerBatch << " keys per batch.\n"
-            "Provide " << nKsPerBatch << " keys per batch." << std::endl;
+                      "Provide " << nKsPerBatch << " keys per batch." << std::endl;
 
         Status status(nThreads,nPasses,nKsPerBatch);
         std::thread* threads = new std::thread[nThreads];
@@ -441,25 +507,22 @@ public:
             threads[thread] = std::thread(Client<Itr>(thread,*this,status,beg,end));
 
         size_t pass;
-        for ( pass = 0; pass != nPasses; ++pass )
-        {
+        for ( pass = 0; pass != nPasses; ++pass ) {
             status.setPass(pass);
             if ( !status.setCycle(Cycle::MAP) )
                 break;
-            if ( verbose == VERBOSITY::NOISY )
-            {
+            if ( verbose == VERBOSITY::NOISY ) {
                 if ( pass ) std::cout << ".\n";
                 std::cout<<Date()<<" Pass "<<pass+1<<" parse,"<< std::flush;
             }
             if ( !status.setCycle(Cycle::SWIZZLE) )
                 break;
-            if ( verbose == VERBOSITY::NOISY )
-            {
+            if ( verbose == VERBOSITY::NOISY ) {
 #if 0
                 size_t maxBatchSz = 0;
                 for ( size_t thread = 0; thread != nThreads; ++thread )
                     maxBatchSz = std::max(maxBatchSz,
-                                    status.getKeyBuf(thread).getMaxBatchSize());
+                                          status.getKeyBuf(thread).getMaxBatchSize());
                 std::cout << ' ' << 1.*maxBatchSz/nKsPerBatch;
 #endif
                 std::cout << " swizzle," << std::flush;
@@ -480,22 +543,22 @@ public:
 
         if ( (mFailed = !status.OK()) )
             std::cout << "Map/Reduce operation has failed at pass "
-                        << pass << std::endl;
+                      << pass << std::endl;
 
-        if ( verbose != VERBOSITY::SILENT )
-        {
+        if ( verbose != VERBOSITY::SILENT ) {
             size_t nOverflows = status.getNOverflows();
             if ( nOverflows )
                 std::cout << "There were " << nOverflows
-                            << " buffer overflows." << std::endl;
+                          << " buffer overflows." << std::endl;
         }
 
         omp_set_num_threads(getConfiguredNumThreads());
         return status.OK();
     }
 
-private:
+  private:
     template <class Itr>
+<<<<<<< HEAD
     void runSingleThreaded( size_t nKs, Itr itr, Itr end )
     { std::vector<Key> keys;
       keys.reserve(nKs);
@@ -525,6 +588,39 @@ private:
         Key* itr = beg;
         while ( itr != end )
         {
+=======
+    void runSingleThreaded( size_t nKs, Itr itr, Itr end ) {
+        std::vector<Key> keys;
+        keys.reserve(nKs);
+        auto oItr = std::back_inserter(keys);
+        for ( ; itr != end; ++itr )
+            mImpl.map(itr,oItr);
+        if ( !keys.empty() ) {
+            Key* beg = &keys.front();
+            reduce(beg,beg+keys.size());
+        }
+    }
+
+    Key* overflow( Key* beg, Key* end ) {
+        std::sort(beg,end,mComparator);
+        Key* oItr = beg;
+        while ( beg != end ) {
+            Key* itr2 = beg;
+            while ( ++itr2 != end )
+                if ( mComparator(*beg,*itr2) )
+                    break;
+            oItr = moveKeys(beg,mImpl.overflow(beg,itr2),oItr);
+            beg = itr2;
+        }
+        while ( end != oItr ) (--end)->~Key();
+        return oItr;
+    }
+
+    void reduce( Key* beg, Key* end ) {
+        std::sort(beg,end,mComparator);
+        Key* itr = beg;
+        while ( itr != end ) {
+>>>>>>> codestlye
             Key* itr2 = itr;
             while ( ++itr2 != end )
                 if ( mComparator(*itr,*itr2) )
@@ -535,10 +631,18 @@ private:
         while ( end != beg ) (--end)->~Key();
     }
 
+<<<<<<< HEAD
     static Key* moveKeys( Key* itr, Key* end, Key* oItr )
     { if ( itr == oItr ) return end;
       while ( itr != end ) *oItr++ = std::move(*itr++);
       return oItr; }
+=======
+    static Key* moveKeys( Key* itr, Key* end, Key* oItr ) {
+        if ( itr == oItr ) return end;
+        while ( itr != end ) *oItr++ = std::move(*itr++);
+        return oItr;
+    }
+>>>>>>> codestlye
 
     Impl mImpl;
     Hash mHasher;

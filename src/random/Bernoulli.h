@@ -19,7 +19,7 @@
 
 double PartialBernoulliSum( int n, int k );
 
-// SurprisingTosses: Given a sequence of fair coin tosses, this looks at each 
+// SurprisingTosses: Given a sequence of fair coin tosses, this looks at each
 // contiguous subsequence, and assigns it a p value, as follows: if it has length
 // n and k heads in it, the p value is PartialBernoulliSum( n, Min( k, n-k ) )/2^n.
 // The return value is the minimum of all these p values.
@@ -39,16 +39,18 @@ double SurprisingTosses( const vec<Bool>& s, int max_seq = -1 );
 
 double BinomialSum( int n, int k, double p );
 
-template<class T> T BinomialSum( int n, int k, T p )
-{    ForceAssertGe( n, 1 );
-     ForceAssertGe( k, 0 );
-     ForceAssertLe( k, n );
-     T sum = 0, choose = 1, product = IPow( T(1-p), n );
-     for ( int i = 0; i <= k; i++ )
-     {    sum += choose * product;
-          choose *= T(n - i);
-          choose /= T(i + 1);
-          product *= p / (1 - p);    }
-     return sum;    }
+template<class T> T BinomialSum( int n, int k, T p ) {
+    ForceAssertGe( n, 1 );
+    ForceAssertGe( k, 0 );
+    ForceAssertLe( k, n );
+    T sum = 0, choose = 1, product = IPow( T(1-p), n );
+    for ( int i = 0; i <= k; i++ ) {
+        sum += choose * product;
+        choose *= T(n - i);
+        choose /= T(i + 1);
+        product *= p / (1 - p);
+    }
+    return sum;
+}
 
 #endif

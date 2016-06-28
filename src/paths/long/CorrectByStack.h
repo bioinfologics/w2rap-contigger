@@ -24,43 +24,43 @@
 
 void CorrectByStack(
 
-     // The matrices call and callq provide bases and quality scores for the
-     // founder (row 0) and its friends, for the positions aligned to the founder.  
-     // Bases are 0, 1, 2, 3 (not '0',...), or ' ' (blank) in the case for a 
-     // position on a friend that is before or after its end.  In the latter
-     // case the quality score is shown as -1.
-     //
-     // For convenience, call and callq may be modified, but this is not treated
-     // as a return value.
+    // The matrices call and callq provide bases and quality scores for the
+    // founder (row 0) and its friends, for the positions aligned to the founder.
+    // Bases are 0, 1, 2, 3 (not '0',...), or ' ' (blank) in the case for a
+    // position on a friend that is before or after its end.  In the latter
+    // case the quality score is shown as -1.
+    //
+    // For convenience, call and callq may be modified, but this is not treated
+    // as a return value.
 
-     StackBaseVecVec& call,
-     StackQualVecVec& callq,
+    StackBaseVecVec& call,
+    StackQualVecVec& callq,
 
-     // The new consensus is returned via bases_new and quals_new.  Their lengths
-     // should not be changed.  It is assumed that upon input bases_new and 
-     // quals_new are the founder.
+    // The new consensus is returned via bases_new and quals_new.  Their lengths
+    // should not be changed.  It is assumed that upon input bases_new and
+    // quals_new are the founder.
 
-     basevector& bases_new,
-     qualvector& quals_new,
-    
-     // The recommended trimmed length of the founder is returned as trim_to.
-     // Set it to the length of the founder if it is not to be trimmed at all.
-     // Note that bases_new and quals_new should not themselves be trimmed.
+    basevector& bases_new,
+    qualvector& quals_new,
 
-     int& trim_to,
+    // The recommended trimmed length of the founder is returned as trim_to.
+    // Set it to the length of the founder if it is not to be trimmed at all.
+    // Note that bases_new and quals_new should not themselves be trimmed.
 
-     // Triples (offset,id,rc2?) are provided, and may be modified as with
-     // call and callq.  This is mostly for diagnostic purposes.
+    int& trim_to,
 
-     vec< triple<int,int,Bool> >& offset_id_rc2,
+    // Triples (offset,id,rc2?) are provided, and may be modified as with
+    // call and callq.  This is mostly for diagnostic purposes.
 
-     // Provide logging?
+    vec< triple<int,int,Bool> >& offset_id_rc2,
 
-     const Bool verbose );
+    // Provide logging?
+
+    const Bool verbose );
 
 // TraceRead: provide view of what's happening for a particular read.
 
 void TraceRead( StackBaseVecVec& call, StackQualVecVec& callq,
-     vec< triple<int,int,Bool> >& offset_id_rc2 );
+                vec< triple<int,int,Bool> >& offset_id_rc2 );
 
 #endif

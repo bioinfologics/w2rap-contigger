@@ -17,18 +17,19 @@
 
 #include <ostream>
 
-class NullOStream : private std::streambuf, public std::ostream
-{
-public:
+class NullOStream : private std::streambuf, public std::ostream {
+  public:
     NullOStream() : std::ostream(this) {}
 
     // compiler-supplied copying and destructor are OK
 
-protected:
-    virtual int overflow( int c )
-    { setp(mBuf,mBuf+sizeof(mBuf)); return 0; }
+  protected:
+    virtual int overflow( int c ) {
+        setp(mBuf,mBuf+sizeof(mBuf));
+        return 0;
+    }
 
-private:
+  private:
     char mBuf[1024];
 };
 

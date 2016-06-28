@@ -19,23 +19,22 @@
 #include "VecString.h"
 #include "feudal/PQVec.h"
 
-class BAMReader
-{
-public:
+class BAMReader {
+  public:
     explicit BAMReader( bool pfOnly=false,
                         bool uniquifyNames=true,
                         double selectFrac=1.,
                         size_t readsToUse=~0ul )
-    : mPFOnly(pfOnly), mUniquifyNames(uniquifyNames),
-      mSelectFrac(selectFrac), mReadsToUse(readsToUse) {}
+        : mPFOnly(pfOnly), mUniquifyNames(uniquifyNames),
+          mSelectFrac(selectFrac), mReadsToUse(readsToUse) {}
 
     // Appends sequence, quals, and (optionally) names of the paired reads
     // in the given BAM to the given vecvecs.
     void readBAM( String const& bamFile,
-                    vecbvec* pVBV, VecPQVec* pVPQV,
-                    vecString* pReadNames=nullptr );
+                  vecbvec* pVBV, VecPQVec* pVPQV,
+                  vecString* pReadNames=nullptr );
 
-private:
+  private:
     bool mPFOnly;
     bool mUniquifyNames;
     double mSelectFrac;

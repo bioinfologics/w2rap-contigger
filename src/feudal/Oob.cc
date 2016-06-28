@@ -17,7 +17,6 @@
 #include "system/System.h"
 #include <cstdlib>
 
-void OutOfBoundsReporter::oob( char const* className, size_t idx, size_t siz )
-{
+void OutOfBoundsReporter::oob( char const* className, size_t idx, size_t siz ) {
     FatalErr(className << " access out of bounds.  Tried to access " << idx << " when there were only " << siz << " elements.");
 }

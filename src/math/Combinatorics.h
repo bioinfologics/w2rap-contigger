@@ -28,9 +28,9 @@
 
 template<class T>
 void FirstCombination( vec<T>& c, int num_bits, int bits_on ) {
-  c.clear();
-  c.resize(bits_on, 1);
-  c.resize(num_bits, 0);
+    c.clear();
+    c.resize(bits_on, 1);
+    c.resize(num_bits, 0);
 }
 
 /// Knuths "Algorithm L": push up the first bit you can;
@@ -38,23 +38,30 @@ void FirstCombination( vec<T>& c, int num_bits, int bits_on ) {
 /// Returns false when there are no more combinations.
 template<class T>
 bool NextCombination( vec<T>& c ) {
-  unsigned int i=0, j=0;
-  for(; i<c.size() && !c[i]; i++)  ;
-  for(; i<c.size()-1 && c[i+1]; i++) { c[i]=0; c[j++]=1; }
-  if( i < c.size()-1 ) {c[i]=0; c[i+1]=1; return true;}
-  return false;
+    unsigned int i=0, j=0;
+    for(; i<c.size() && !c[i]; i++)  ;
+    for(; i<c.size()-1 && c[i+1]; i++) {
+        c[i]=0;
+        c[j++]=1;
+    }
+    if( i < c.size()-1 ) {
+        c[i]=0;
+        c[i+1]=1;
+        return true;
+    }
+    return false;
 }
 
 // Number of combinations of n objects taken k at a time, following
 // Knuth's definitions to extend the classical case when n is positive
 // and 0<=k<=n.
 double Choices(int n, int k);
-  
+
 // Binomial probability: probability that in n trials with prob. p of
 // success we see exactly k successes.
 double BinomialProb(double p, int n, int k);
 
-// Compute the probability of getting k or fewer successes in 
+// Compute the probability of getting k or fewer successes in
 // n trials with probability of success p.
 //
 // See also BinomialSum in random/Bernoulli.h.
@@ -62,7 +69,8 @@ double BinomialProb(double p, int n, int k);
 double BinomialProbCum( double p, int n, int k );
 
 // Probability of k or more failures in n trials with probability of failure p.
-inline double BinomialProbCumFailure( double p, int n, int k )
-{ return BinomialProbCum(1.-p,n,n-k); }
+inline double BinomialProbCumFailure( double p, int n, int k ) {
+    return BinomialProbCum(1.-p,n,n-k);
+}
 
 #endif

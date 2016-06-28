@@ -20,8 +20,7 @@
 using std::ios_base;
 
 
-std::istream& operator>>( std::istream& is, PerfStat& perfStat )
-{
+std::istream& operator>>( std::istream& is, PerfStat& perfStat ) {
     is >> perfStat.mName;
     is >> perfStat.mVal;
     is >> std::ws;
@@ -29,29 +28,25 @@ std::istream& operator>>( std::istream& is, PerfStat& perfStat )
     return is;
 }
 
-std::ostream& operator<<( std::ostream& os, PerfStat const& perfStat )
-{
-  os << "PERFSTAT: " << perfStat.mGloss << " [" << perfStat.mName << "] = " << perfStat.mVal << std::endl;
-  return os;
+std::ostream& operator<<( std::ostream& os, PerfStat const& perfStat ) {
+    os << "PERFSTAT: " << perfStat.mGloss << " [" << perfStat.mName << "] = " << perfStat.mVal << std::endl;
+    return os;
 }
 
-std::ostream& PerfStat::log()
-{
-  static int dfltPrecision = std::cout.precision();
-  std::cout.precision(dfltPrecision);
-  std::cout.unsetf(ios_base::floatfield);
-  return std::cout;
+std::ostream& PerfStat::log() {
+    static int dfltPrecision = std::cout.precision();
+    std::cout.precision(dfltPrecision);
+    std::cout.unsetf(ios_base::floatfield);
+    return std::cout;
 }
 
 
 
-std::string PerfStatBlockStart(const std::string & block_name)
-{
-  return "PERFSTAT: BLOCK_START [" + block_name + "]\n";
+std::string PerfStatBlockStart(const std::string & block_name) {
+    return "PERFSTAT: BLOCK_START [" + block_name + "]\n";
 }
 
-std::string PerfStatBlockStop()
-{
-  return "PERFSTAT: BLOCK_STOP\n";
+std::string PerfStatBlockStop() {
+    return "PERFSTAT: BLOCK_STOP\n";
 }
 

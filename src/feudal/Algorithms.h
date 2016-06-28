@@ -20,11 +20,9 @@
 /// Numbers of kmers in some double-vector
 /// Itr has to point to something that has a size() method.
 template <class Itr>
-inline size_t kmerCount( Itr itr, Itr end, unsigned K )
-{
+inline size_t kmerCount( Itr itr, Itr end, unsigned K ) {
     size_t result = 0;
-    while ( itr != end )
-    {
+    while ( itr != end ) {
         if ( itr->size() >= K )
             result += itr->size() - K + 1;
         ++itr;

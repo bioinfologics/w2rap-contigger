@@ -26,7 +26,7 @@ void FindClosures( const vecKmerPath& paths,
                    const vec<read_pairing>& pairs,
                    const double sdMult,
                    const int K,
-                   vec< HyperKmerPath >& closures, 
+                   vec< HyperKmerPath >& closures,
                    vec<Bool>& fail,
                    const unsigned int max_pseudo_closures = 0,
                    const unsigned int max_closures = 0 );

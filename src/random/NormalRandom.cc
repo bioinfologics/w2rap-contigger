@@ -17,48 +17,49 @@
 //
 
 double
-NormalRandom::value() const
-{
-  // method for getting the next value of the normal random variable  
+NormalRandom::value() const {
+    // method for getting the next value of the normal random variable
 
-  const long   two_pwr_30 = 1073741824;
-  const double two_pwr_31 = 2147483648.0;
-  const double v_denom    = 117732250.0;
-  
-  bool done = false;
-  double answer = 0.0;
-  while (!done) {
+    const long   two_pwr_30 = 1073741824;
+    const double two_pwr_31 = 2147483648.0;
+    const double v_denom    = 117732250.0;
 
-    // Note: next() returns a long value uniformly distributed in [0,2^31-1]
-    long x = rnd_gen_.next();
-    long y = rnd_gen_.next();
+    bool done = false;
+    double answer = 0.0;
+    while (!done) {
 
-    // u is a random variable uniformly distributed in (0,1]
-    // v is a random variable uniformly distributed in (-V,+V),
-    // where V is (a slight over-esitmation of)  2*sqrt(ln(2^30))
-    double u = static_cast<double>(x) / two_pwr_31;
-    double v = static_cast<double>(y - two_pwr_30) / v_denom;
+        // Note: next() returns a long value uniformly distributed in [0,2^31-1]
+        long x = rnd_gen_.next();
+        long y = rnd_gen_.next();
 
-    // avoid any chance that u may be "zero"
-    if (u < 1e-8)
-      continue;
+        // u is a random variable uniformly distributed in (0,1]
+        // v is a random variable uniformly distributed in (-V,+V),
+        // where V is (a slight over-esitmation of)  2*sqrt(ln(2^30))
+        double u = static_cast<double>(x) / two_pwr_31;
+        double v = static_cast<double>(y - two_pwr_30) / v_denom;
 
-    // call NormalDeviate(...) to get a random normal variable in answer;
-    // redo everything if this call fails
-    if (NormalDeviate(u, v, answer))
-      done = true;
-  }
+        // avoid any chance that u may be "zero"
+        if (u < 1e-8)
+            continue;
 
-  return mean_ + stddev_*answer;
+        // call NormalDeviate(...) to get a random normal variable in answer;
+        // redo everything if this call fails
+        if (NormalDeviate(u, v, answer))
+            done = true;
+    }
+
+    return mean_ + stddev_*answer;
 }
 
-double FastNormal() 
-{    static vec<double> normals;
-     if ( normals.empty( ) )
-     {    normals.resize(1000000);
-          NormalRandom r( 0, 1 );
-          for ( int i = 0; i < normals.isize( ); i++ )
-               normals[i] = r.value( );    }
-     static int count(0); 
-     if ( count == normals.isize( ) ) count = 0;
-     return normals[count++];    }
+double FastNormal() {
+    static vec<double> normals;
+    if ( normals.empty( ) ) {
+        normals.resize(1000000);
+        NormalRandom r( 0, 1 );
+        for ( int i = 0; i < normals.isize( ); i++ )
+            normals[i] = r.value( );
+    }
+    static int count(0);
+    if ( count == normals.isize( ) ) count = 0;
+    return normals[count++];
+}

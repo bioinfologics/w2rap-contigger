@@ -13,10 +13,9 @@
 
 using std::cerr;
 
-void TestTypes( )
-{
-  STATIC_ASSERT_M(sizeof(char) == 1, bad_char_size);
-  STATIC_ASSERT_M(sizeof(short) == 2, bad_short_size);
-  STATIC_ASSERT_M(sizeof(int) == 4, bad_int_size);
-  STATIC_ASSERT_M(sizeof(longlong) == 8, bad_longlong_size);
+void TestTypes( ) {
+    STATIC_ASSERT_M(sizeof(char) == 1, bad_char_size);
+    STATIC_ASSERT_M(sizeof(short) == 2, bad_short_size);
+    STATIC_ASSERT_M(sizeof(int) == 4, bad_int_size);
+    STATIC_ASSERT_M(sizeof(longlong) == 8, bad_longlong_size);
 }

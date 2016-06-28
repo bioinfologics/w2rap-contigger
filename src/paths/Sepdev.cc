@@ -76,6 +76,6 @@ template void digraphE<Tsepdev<int> >::DeleteEdgesAtVertex(const int);
 template void digraphE<Tsepdev<int> >::RemoveEdgelessVertices(const vec<int>&);
 template void digraphE<Tsepdev<int> >::ReorderVertices(const vec<int>&);
 
-template Bool digraphE<Tsepdev<double>>::EdgePaths( const vec<int>& left, 
-     const vec<int>& right, const int v, const int w, vec< vec<int> >& paths, 
-     const int max_copies, const int max_paths, const int max_iterations ) const;
+template Bool digraphE<Tsepdev<double>>::EdgePaths( const vec<int>& left,
+        const vec<int>& right, const int v, const int w, vec< vec<int> >& paths,
+        const int max_copies, const int max_paths, const int max_iterations ) const;

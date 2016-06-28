@@ -2,10 +2,10 @@ cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -lz -DNDEBUG")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -lz -DNDEBUG" CACHE STRING "CXX FLAGS" FORCE)
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
-add_definitions(${CMAKE_CXX_FLAGS})
-
+#add_definitions(${CMAKE_CXX_FLAGS})
+add_compile_options(-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -lz -DNDEBUG)
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 

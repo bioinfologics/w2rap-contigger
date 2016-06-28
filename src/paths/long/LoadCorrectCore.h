@@ -21,35 +21,35 @@ void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done );
 
 // zero all quality scores associated with corrections (for reads in file)
 void ZeroCorrectedQuals( String const& readsFile, vecbvec const& creads,
-                            vecqvec* pQuals );
+                         vecqvec* pQuals );
 // zero all quality scores associated with corrections (for reads already in memory)
 void ZeroCorrectedQuals( vecbasevector const& readsFile, vecbvec const& creads,
-                            vecqvec* pQuals );
+                         vecqvec* pQuals );
 
 void SamIAm( const int i, const String& getsam, const String& TMP,
-                bool keepLocs = false, String const& dexterLibs = "",
-                const Bool PF_ONLY = False, const Bool KEEP_NAMES = False );
+             bool keepLocs = false, String const& dexterLibs = "",
+             const Bool PF_ONLY = False, const Bool KEEP_NAMES = False );
 
-void MergeReadSets( const vec<String>& heads, const String& TMP, 
-     const long_logging& logc, const Bool KEEP_NAMES = False );
+void MergeReadSets( const vec<String>& heads, const String& TMP,
+                    const long_logging& logc, const Bool KEEP_NAMES = False );
 
-void SelectRandom( const String& TMP, const double SELECT_FRAC, 
-     const long_logging& logc, const long_data_spec& spec );
+void SelectRandom( const String& TMP, const double SELECT_FRAC,
+                   const long_logging& logc, const long_data_spec& spec );
 
 void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& heur,
-     const long_logging& logc, const long_logging_control& log_control,
-     vecbasevector& creads, VecEFasta& corrected, vec<int>& cid, 
-     vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT, 
-     const double clock, bool useOldLRPMethod );
+                      const long_logging& logc, const long_logging_control& log_control,
+                      vecbasevector& creads, VecEFasta& corrected, vec<int>& cid,
+                      vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
+                      const double clock, bool useOldLRPMethod );
 
 void CorrectionSuite( const String& TMP, const long_heuristics& heur,
-     const long_logging& logc, const long_logging_control& log_control,
-     vecbasevector& creads, VecEFasta& corrected, vec<int>& cid,
-     vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
-     const double clock, bool useOldLRPMethod );
+                      const long_logging& logc, const long_logging_control& log_control,
+                      vecbasevector& creads, VecEFasta& corrected, vec<int>& cid,
+                      vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
+                      const double clock, bool useOldLRPMethod );
 
 void DefinePairingInfo( const LongProtoTmpDirManager& tmp_mgr, const vecbasevector& creads,
-     const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
-     vec<pairing_info>& cpartner, const long_logging& logc );
+                        const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
+                        vec<pairing_info>& cpartner, const long_logging& logc );
 
 #endif

@@ -9,32 +9,40 @@
 #include <iostream>
 
 class color {
-  
- public:
-  
-  color( float r, float g, float b ) : r_(r), g_(g), b_(b) { }
-  
-  color( ) :
-    r_(0.0),
-    g_(0.0),
-    b_(0.0)
-    { }
-  
-  float R( ) const { return r_; }
-  float G( ) const { return g_; }
-  float B( ) const { return b_; }
-  
-  friend bool operator==( const color& lhs, const color& rhs )
-    { return ( lhs.r_ == rhs.r_ && lhs.g_ == rhs.g_ && lhs.b_ == rhs.b_); }
-  
-  friend bool operator!=( const color& lhs, const color& rhs )
-    { return !( lhs == rhs ); }
-  
-  friend std::ostream& operator<<( std::ostream& o, const color& c);
-  
- private:
-  
-  float r_, g_, b_;
+
+  public:
+
+    color( float r, float g, float b ) : r_(r), g_(g), b_(b) { }
+
+    color( ) :
+        r_(0.0),
+        g_(0.0),
+        b_(0.0) {
+    }
+
+    float R( ) const {
+        return r_;
+    }
+    float G( ) const {
+        return g_;
+    }
+    float B( ) const {
+        return b_;
+    }
+
+    friend bool operator==( const color& lhs, const color& rhs ) {
+        return ( lhs.r_ == rhs.r_ && lhs.g_ == rhs.g_ && lhs.b_ == rhs.b_);
+    }
+
+    friend bool operator!=( const color& lhs, const color& rhs ) {
+        return !( lhs == rhs );
+    }
+
+    friend std::ostream& operator<<( std::ostream& o, const color& c);
+
+  private:
+
+    float r_, g_, b_;
 };
 
 const color white  (1, 1, 1), black(0, 0, 0);

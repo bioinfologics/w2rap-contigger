@@ -13,11 +13,10 @@
 namespace {     // ANONYMOUS NAMESPACE
 
 unsigned scoreRightOverlap( bvec const& bases, qvec const& quals,
-						   size_t start, bvec const& edge, int K,
-						   double pDecay,
-						   qual_t mapQ2,
-						   qual_t pLeftOver)
-{
+                            size_t start, bvec const& edge, int K,
+                            double pDecay,
+                            qual_t mapQ2,
+                            qual_t pLeftOver) {
     //      std::cout << "hanging bit of read: " << std::endl;
     //      bases.PrintBases(std::cout, bases.size() - start, start, false, 80 );
     //      std::cout << "possibly matching edge: " <<  std::endl;
@@ -38,34 +37,33 @@ unsigned scoreRightOverlap( bvec const& bases, qvec const& quals,
     unsigned qSum = 0;
     unsigned penalty = 0;
     while ( bitr != bases.end() && qitr != quals.end() && eitr != edge.end() ) {
-	if ( *bitr != *eitr ) {
-	    // transform Q2 -> Q20
-	    auto qscore = ( *qitr == 2 ) ? mapQ2 : *qitr;
-	    penalty += qscore;
-	    qSum += penalty;
-	} else if ( penalty > 0 ) {
-	    penalty -= (pDecay*penalty);
-	}
-	//          PRINT5(Base::val2Char(*bitr), Base::val2Char(*eitr), (int)*qitr, qSum, penalty);
-	bitr++;
-	qitr++;
-	eitr++;
+        if ( *bitr != *eitr ) {
+            // transform Q2 -> Q20
+            auto qscore = ( *qitr == 2 ) ? mapQ2 : *qitr;
+            penalty += qscore;
+            qSum += penalty;
+        } else if ( penalty > 0 ) {
+            penalty -= (pDecay*penalty);
+        }
+        //          PRINT5(Base::val2Char(*bitr), Base::val2Char(*eitr), (int)*qitr, qSum, penalty);
+        bitr++;
+        qitr++;
+        eitr++;
     }
 
     // penalize left over bases on the read
     while ( bitr++ != bases.end() && qitr++ != quals.end() )
-	qSum += pLeftOver;
+        qSum += pLeftOver;
 
     return qSum;
 }
 
 
 unsigned scoreLeftOverlap( bvec const& bases, qvec const& quals,
-						  size_t start, bvec const& edge, int K,
-						   double pDecay,
-						   qual_t mapQ2,
-						   qual_t pLeftOver)
-{
+                           size_t start, bvec const& edge, int K,
+                           double pDecay,
+                           qual_t mapQ2,
+                           qual_t pLeftOver) {
     //      std::cout << "hanging bit of read: " << std::endl;
     //      bases.PrintBases(std::cout, 0, start, false, 80 );
     //      std::cout << "possibly matching edge: " <<  std::endl;
@@ -87,23 +85,23 @@ unsigned scoreLeftOverlap( bvec const& bases, qvec const& quals,
     unsigned qSum = 0;
     unsigned penalty = 0;
     while ( bitr != bases.rend() && qitr != quals.rend() && eitr != edge.rend() ) {
-	if ( *bitr != *eitr ) {
-	    // transform Q2 -> Q20
-	    auto qscore = ( *qitr == 2 ) ? mapQ2 : *qitr;
-	    penalty += qscore;
-	    qSum += penalty;
-	} else if ( penalty > 0 ) {
-	    penalty -= (pDecay*penalty);
-	}
-	//          PRINT5(Base::val2Char(*bitr), Base::val2Char(*eitr), (int)*qitr, qSum, penalty);
-	bitr++;
-	qitr++;
-	eitr++;
+        if ( *bitr != *eitr ) {
+            // transform Q2 -> Q20
+            auto qscore = ( *qitr == 2 ) ? mapQ2 : *qitr;
+            penalty += qscore;
+            qSum += penalty;
+        } else if ( penalty > 0 ) {
+            penalty -= (pDecay*penalty);
+        }
+        //          PRINT5(Base::val2Char(*bitr), Base::val2Char(*eitr), (int)*qitr, qSum, penalty);
+        bitr++;
+        qitr++;
+        eitr++;
     }
 
     // penalize left over bases on the read
     while ( bitr++ != bases.rend() && qitr++ != quals.rend() )
-	qSum += pLeftOver;
+        qSum += pLeftOver;
 
     return qSum;
 }
@@ -112,9 +110,8 @@ unsigned scoreLeftOverlap( bvec const& bases, qvec const& quals,
 
 /////////// CLASS METHODS //////////////
 
-void ExtendReadPath::attemptLeftRightExtension(  ReadPath& path, basevector const& bases, qualvector const& quals )
-{
-    
+void ExtendReadPath::attemptLeftRightExtension(  ReadPath& path, basevector const& bases, qualvector const& quals ) {
+
     while( attemptLeftwardExtension( path, bases, quals) );
     while( attemptRightwardExtension( path, bases, quals) );
 }
@@ -122,12 +119,11 @@ void ExtendReadPath::attemptLeftRightExtension(  ReadPath& path, basevector cons
 
 
 bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
-                        basevector const& bases, qualvector const& quals )
-{
+        basevector const& bases, qualvector const& quals ) {
     if ( !path.size() ) return false;
 
-    if (mDebug) 
-	std::cout << "Leftward from: " << path.getOffset() << ":" << printSeq( path ) << std::endl;
+    if (mDebug)
+        std::cout << "Leftward from: " << path.getOffset() << ":" << printSeq( path ) << std::endl;
 
     if ( path.getOffset() >= 0 ) return false;
 
@@ -139,9 +135,9 @@ bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
 
     // cast to be compatible with the rest of the code, now that we
     // know that we're non-negative
-       
+
     // ********* Should be path.front() ***************
-    size_t hbv_edge_id = path.front(); 
+    size_t hbv_edge_id = path.front();
     vec<int> const& to_left = getToLeft();        // ensure that mpToLeft exists
     size_t vleft = to_left[hbv_edge_id];
 
@@ -157,14 +153,14 @@ bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
     // a short edge is one not capable of "finishing" the read and we ignore
     // short, hanging edges.
     for ( size_t i = 0; i < edges.size(); ++i ) {
-	if ( mHBV.ToSize(vdest[i]) == 0 && mHBV.FromSize(vdest[i]) == 1  )
-	    ehanging[i] = true;
+        if ( mHBV.ToSize(vdest[i]) == 0 && mHBV.FromSize(vdest[i]) == 1  )
+            ehanging[i] = true;
 
-	if ( mHBV.EdgeObject(edges[i]).size() - (K-1) >= lastGap ) elong[i] = true;
+        if ( mHBV.EdgeObject(edges[i]).size() - (K-1) >= lastGap ) elong[i] = true;
 
-	// push back the destination vertex of a short edge
-	if ( !elong[i] && !ehanging[i] )
-	    short_dest.push_back( vdest[i] );
+        // push back the destination vertex of a short edge
+        if ( !elong[i] && !ehanging[i] )
+            short_dest.push_back( vdest[i] );
     }
 
     // we only process "short" edges in the following cases:
@@ -174,13 +170,13 @@ bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
     //   c. there is only one outgoing edge from the vertex to which all
     //      short edges lead.
     if ( !edges.solo() ) {
-	size_t nlong = Sum(elong);
-	if ( short_dest.size() > 0 ) {
-	    if ( nlong > 0 ) return false;
-	    UniqueSort(short_dest);
-	    if ( !short_dest.solo() ) return false;
-	    if ( mHBV.ToSize( short_dest.back() ) != 1 ) return false;
-	}
+        size_t nlong = Sum(elong);
+        if ( short_dest.size() > 0 ) {
+            if ( nlong > 0 ) return false;
+            UniqueSort(short_dest);
+            if ( !short_dest.solo() ) return false;
+            if ( mHBV.ToSize( short_dest.back() ) != 1 ) return false;
+        }
     }
 
 
@@ -189,26 +185,26 @@ bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
     int least_edge = -1;
     unsigned least = std::numeric_limits<unsigned>::max();
     for ( size_t i = 0; i < edges.size(); ++i ) {
-	//            if ( nlong == edges.size() || !ehanging[i] )
-	if ( !ehanging[i] || edges.solo() ) {
-	    auto score = scoreLeftOverlap( bases, quals, lastGap, mHBV.EdgeObject(edges[i]), mHBV.K(),
-	            mPenaltyDecay, mMapQ2, mLeftOverPenalty);
-	    if ( score < least ) {
-		least_edge = edges[i];
-		least = score;
-	    }
-	}
+        //            if ( nlong == edges.size() || !ehanging[i] )
+        if ( !ehanging[i] || edges.solo() ) {
+            auto score = scoreLeftOverlap( bases, quals, lastGap, mHBV.EdgeObject(edges[i]), mHBV.K(),
+                                           mPenaltyDecay, mMapQ2, mLeftOverPenalty);
+            if ( score < least ) {
+                least_edge = edges[i];
+                least = score;
+            }
+        }
     }
 
     if (mDebug) {
         std::cout << "least_edge = " << least_edge << ", score of " << least <<
                   std::string( ( least <= lastGap*10 ) ? " is" : " is NOT" ) <<
-                            " less than lastGap*10 = " <<
-                            lastGap*10 << std::endl;
+                  " less than lastGap*10 = " <<
+                  lastGap*10 << std::endl;
     }
 
     if ( least_edge == -1 || least > lastGap*10 )
-	return false;
+        return false;
 
     //        std::cout << "SUCCESFULL LEFT EXTENSION: " << std::endl;
     //        std::cout << "WAS: " <<  path << std::endl;
@@ -231,12 +227,11 @@ bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
 
 
 bool ExtendReadPath::attemptRightwardExtension( ReadPath& path, basevector const& bases,
-						       qualvector const& quals )
-{
+        qualvector const& quals ) {
     if ( !path.size() ) return false;
-    
+
     if (mDebug)
-	std::cout << "Rightward from: " << path.getOffset() << ":" << printSeq( path ) << std::endl;
+        std::cout << "Rightward from: " << path.getOffset() << ":" << printSeq( path ) << std::endl;
 
     // compute how many bases at the end of the read extend past the
     // last edge
@@ -268,14 +263,14 @@ bool ExtendReadPath::attemptRightwardExtension( ReadPath& path, basevector const
     // a short edge is one not capable of "finishing" the read and we ignore
     // short, hanging edges.
     for ( size_t i = 0; i < edges.size(); ++i ) {
-	if ( mHBV.FromSize(vdest[i]) == 0 && mHBV.ToSize(vdest[i]) == 1  )
-	    ehanging[i] = true;
+        if ( mHBV.FromSize(vdest[i]) == 0 && mHBV.ToSize(vdest[i]) == 1  )
+            ehanging[i] = true;
 
-	if ( mHBV.EdgeObject(edges[i]).size() - (K-1) >= lastGap ) elong[i] = true;
+        if ( mHBV.EdgeObject(edges[i]).size() - (K-1) >= lastGap ) elong[i] = true;
 
-	// push back the destination vertex of a short edge
-	if ( !elong[i] && !ehanging[i] )
-	    short_dest.push_back( vdest[i] );
+        // push back the destination vertex of a short edge
+        if ( !elong[i] && !ehanging[i] )
+            short_dest.push_back( vdest[i] );
     }
 
     // we only process "short" edges in the following cases:
@@ -285,13 +280,13 @@ bool ExtendReadPath::attemptRightwardExtension( ReadPath& path, basevector const
     //   c. there is only one outgoing edge from the vertex to which all
     //      short edges lead.
     if ( !edges.solo() ) {
-	size_t nlong = Sum(elong);
-	if ( short_dest.size() > 0 ) {
-	    if ( nlong > 0 ) return false;
-	    UniqueSort(short_dest);
-	    if ( !short_dest.solo() ) return false;
-	    if ( mHBV.FromSize( short_dest.back() ) != 1 ) return false;
-	}
+        size_t nlong = Sum(elong);
+        if ( short_dest.size() > 0 ) {
+            if ( nlong > 0 ) return false;
+            UniqueSort(short_dest);
+            if ( !short_dest.solo() ) return false;
+            if ( mHBV.FromSize( short_dest.back() ) != 1 ) return false;
+        }
     }
 
     // okay, if we've made it here, we're going to score all
@@ -300,46 +295,45 @@ bool ExtendReadPath::attemptRightwardExtension( ReadPath& path, basevector const
     unsigned least = std::numeric_limits<unsigned>::max();
     vec<int> scores, candidates;
     for ( size_t i = 0; i < edges.size(); ++i ) {
-	//            if ( nlong == edges.size() || !ehanging[i] )
-	if ( !ehanging[i] || edges.solo() ) {
-	    auto score = scoreRightOverlap( bases, quals, lastGap, mHBV.EdgeObject(edges[i]), mHBV.K(),
-	            mPenaltyDecay, mMapQ2, mLeftOverPenalty);
+        //            if ( nlong == edges.size() || !ehanging[i] )
+        if ( !ehanging[i] || edges.solo() ) {
+            auto score = scoreRightOverlap( bases, quals, lastGap, mHBV.EdgeObject(edges[i]), mHBV.K(),
+                                            mPenaltyDecay, mMapQ2, mLeftOverPenalty);
 
-	    scores.push_back( score );
-	    candidates.push_back( edges[i] );
+            scores.push_back( score );
+            candidates.push_back( edges[i] );
 
-	    if ( score < least ) {
-		least_edge = edges[i];
-		least = score;
-	    }
-	}
+            if ( score < least ) {
+                least_edge = edges[i];
+                least = score;
+            }
+        }
     }
 
     if (mDebug) {
-	PRINT(least_edge);
-	std::cout << "original edges: " << printSeq(edges) << std::endl;
-	std::cout << "considered edges: " << printSeq(candidates) << std::endl;
-	std::cout << "scores: " << printSeq(scores) << std::endl;
+        PRINT(least_edge);
+        std::cout << "original edges: " << printSeq(edges) << std::endl;
+        std::cout << "considered edges: " << printSeq(candidates) << std::endl;
+        std::cout << "scores: " << printSeq(scores) << std::endl;
 
         std::cout << "least_edge = " << least_edge << ", score of " << least <<
                   std::string( ( least <= lastGap*10 ) ? " is" : " is NOT" ) <<
-                            " less than lastGap*10 = " <<
-                            lastGap*10 << std::endl;
+                  " less than lastGap*10 = " <<
+                  lastGap*10 << std::endl;
     }
 
     if ( least_edge == -1 || least > lastGap*10 )
-	return false;
+        return false;
 
     // this is a relic from when we passed back lastGap...
     size_t edge_size = mHBV.EdgeObject(least_edge).size();
     path.push_back(least_edge);
     if ( edge_size - (K-1) >= lastGap ) {
-	/* path.setLastSkip(edge_size - (K-1) - lastGap); */
-	lastGap = 0;
-    }
-    else {
-	/* path.setLastSkip(0); */
-	lastGap -= (edge_size - (K-1));
+        /* path.setLastSkip(edge_size - (K-1) - lastGap); */
+        lastGap = 0;
+    } else {
+        /* path.setLastSkip(0); */
+        lastGap -= (edge_size - (K-1));
     }
 
     if ( mDebug ) PRINT(lastGap);

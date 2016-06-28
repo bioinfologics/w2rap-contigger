@@ -14,7 +14,7 @@
 #include "paths/long/ReadPath.h"
 
 void Preclose( vecbvec const& reads, VecPQVec const& quals,
-        String const& work_dir, HyperBasevector& hb, vec<int>& inv,
-        ReadPathVec& paths, const Bool preclose_verbose );
+               String const& work_dir, HyperBasevector& hb, vec<int>& inv,
+               ReadPathVec& paths, const Bool preclose_verbose );
 
 #endif

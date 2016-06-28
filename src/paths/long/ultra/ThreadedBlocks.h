@@ -26,65 +26,79 @@
 
 class threaded_blocks {
 
-     public:
+  public:
 
-     threaded_blocks( ) { }
-     threaded_blocks( const vec<basevector>& blocks, 
-          const vec< vec<basevector> >& threads, const vec<Bool>& alive, 
-          const vec<ho_interval>& thread_range ) : blocks_(blocks), 
-               threads_(threads), alive_(alive), thread_range_(thread_range) { }
+    threaded_blocks( ) { }
+    threaded_blocks( const vec<basevector>& blocks,
+                     const vec< vec<basevector> >& threads, const vec<Bool>& alive,
+                     const vec<ho_interval>& thread_range ) : blocks_(blocks),
+        threads_(threads), alive_(alive), thread_range_(thread_range) { }
 
-     int NBlocks( ) const { return blocks_.size( ); }
-     int NGaps( ) const { return blocks_.isize( ) - 1; }
-     int NReads( ) const { return threads_.size( ); }
-     const basevector& Block( int b ) const { return blocks_[b]; }
-     Bool Alive( const int id ) const { return alive_[id]; }
-     const ho_interval& ThreadRange( int id ) const { return thread_range_[id]; }
-     const basevector& Thread( const int id, const int b ) const
-     {    Assert( Alive(id) );
-          Assert( Member( ThreadRange(id), b ) );
-          return threads_[id][b];    }
-     basevector& Thread( const int id, const int b )
-     {    Assert( Alive(id) );
-          Assert( Member( ThreadRange(id), b ) );
-          return threads_[id][b];    }
+    int NBlocks( ) const {
+        return blocks_.size( );
+    }
+    int NGaps( ) const {
+        return blocks_.isize( ) - 1;
+    }
+    int NReads( ) const {
+        return threads_.size( );
+    }
+    const basevector& Block( int b ) const {
+        return blocks_[b];
+    }
+    Bool Alive( const int id ) const {
+        return alive_[id];
+    }
+    const ho_interval& ThreadRange( int id ) const {
+        return thread_range_[id];
+    }
+    const basevector& Thread( const int id, const int b ) const {
+        Assert( Alive(id) );
+        Assert( Member( ThreadRange(id), b ) );
+        return threads_[id][b];
+    }
+    basevector& Thread( const int id, const int b ) {
+        Assert( Alive(id) );
+        Assert( Member( ThreadRange(id), b ) );
+        return threads_[id][b];
+    }
 
-     void ThreadConsensus( const int g, const Scorer& scorer,
-          const vec<basevector>& gap_truth, vec<basevector>& consensus, 
-          String& report, const ConsensusScoreModel& error_model, std::ostream& xout, 
-          const long_heuristics& heur, const long_logging_control& log_control,
-          const long_logging& logc ) const;
+    void ThreadConsensus( const int g, const Scorer& scorer,
+                          const vec<basevector>& gap_truth, vec<basevector>& consensus,
+                          String& report, const ConsensusScoreModel& error_model, std::ostream& xout,
+                          const long_heuristics& heur, const long_logging_control& log_control,
+                          const long_logging& logc ) const;
 
-     // Build a 'corrected' read by choosing the most common threads, or by
-     // computing consensus, in one of two ways.
+    // Build a 'corrected' read by choosing the most common threads, or by
+    // computing consensus, in one of two ways.
 
-     efasta MakeCorrectedRead( const ConsensusScoreModel& error_model, std::ostream& out,
-          const long_heuristics& heur, const long_logging_control& log_control,
-          const long_logging& logc ) const ;
+    efasta MakeCorrectedRead( const ConsensusScoreModel& error_model, std::ostream& out,
+                              const long_heuristics& heur, const long_logging_control& log_control,
+                              const long_logging& logc ) const ;
 
-     // Get true sequence for gaps.
+    // Get true sequence for gaps.
 
-     void GetGapTruth( const vecbasevector& genome, const int LG,
-          const VecIntPairVec& Glocs,
-          vec< vec<basevector> >& gap_truth ) const;
+    void GetGapTruth( const vecbasevector& genome, const int LG,
+                      const VecIntPairVec& Glocs,
+                      vec< vec<basevector> >& gap_truth ) const;
 
-     // Print out the threads, collecting identical ones together in a single
-     // line.  If genome provided, attempt to print true value for the sequence
-     // that should go between the blocks.
+    // Print out the threads, collecting identical ones together in a single
+    // line.  If genome provided, attempt to print true value for the sequence
+    // that should go between the blocks.
 
-     void PrintThreadSummary( const int g, std::ostream& out,
-          const vecbasevector& genome, const int LG, 
-          const VecIntPairVec& Glocs,
-          const vec< vec<basevector> >& gap_truth ) const;
+    void PrintThreadSummary( const int g, std::ostream& out,
+                             const vecbasevector& genome, const int LG,
+                             const VecIntPairVec& Glocs,
+                             const vec< vec<basevector> >& gap_truth ) const;
 
-     void PrintEdits( ) const;
+    void PrintEdits( ) const;
 
-     private:
+  private:
 
-     vec<basevector> blocks_;
-     vec< vec<basevector> > threads_;
-     vec<Bool> alive_;
-     vec<ho_interval> thread_range_;
+    vec<basevector> blocks_;
+    vec< vec<basevector> > threads_;
+    vec<Bool> alive_;
+    vec<ho_interval> thread_range_;
 
 };
 

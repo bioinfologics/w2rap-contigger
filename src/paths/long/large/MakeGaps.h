@@ -14,8 +14,8 @@
 #include "paths/long/ReadPath.h"
 
 void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
-     VecULongVec& edgeToPathIds, const int MIN_LINE, const int MIN_LINK_COUNT,
-     const String& work_dir, const String& FIN, const Bool verbose,
-     const Bool GAP_CLEANUP );
+               VecULongVec& edgeToPathIds, const int MIN_LINE, const int MIN_LINK_COUNT,
+               const String& work_dir, const String& FIN, const Bool verbose,
+               const Bool GAP_CLEANUP );
 
 #endif

@@ -25,51 +25,64 @@
 /// The static methods random and srandom are thread-safe (via a spin lock):
 /// you'd be better off having a separate RNGen for each thread, but sometimes
 /// that's hard to arrange.
-class RNGen
-{
+class RNGen {
     typedef unsigned long state_t;
-public:
-    RNGen() { *this = gDflt; }
-    RNGen( unsigned seedVal ) { seed(seedVal); }
-    RNGen( RNGen const& that ) { *this = that; }
+  public:
+    RNGen() {
+        *this = gDflt;
+    }
+    RNGen( unsigned seedVal ) {
+        seed(seedVal);
+    }
+    RNGen( RNGen const& that ) {
+        *this = that;
+    }
 
     // compiler-supplied destructor is OK
 
-    RNGen& operator=( RNGen const& that )
-    { std::copy(that.mState,that.mState+STATE_SIZE,mState);
-      mpFront = mState + (that.mpFront-that.mState);
-      mpRear = mState + (that.mpRear-that.mState);
-      return *this; }
+    RNGen& operator=( RNGen const& that ) {
+        std::copy(that.mState,that.mState+STATE_SIZE,mState);
+        mpFront = mState + (that.mpFront-that.mState);
+        mpRear = mState + (that.mpRear-that.mState);
+        return *this;
+    }
 
-    long next()
-    { unsigned result = (*mpFront += *mpRear);
-      if ( ++mpFront >= mState+STATE_SIZE )
-      { mpFront = mState; ++mpRear; }
-      else if ( ++mpRear >= mState+STATE_SIZE )
+    long next() {
+        unsigned result = (*mpFront += *mpRear);
+        if ( ++mpFront >= mState+STATE_SIZE ) {
+            mpFront = mState;
+            ++mpRear;
+        } else if ( ++mpRear >= mState+STATE_SIZE )
+            mpRear = mState;
+        return result >> 1;
+    }
+
+    void seed( unsigned seedVal ) {
+        state_t last = seedVal;
+        mState[0] = last;
+        state_t* ppp = mState;
+        while ( ++ppp < mState+STATE_SIZE )
+            *ppp = last = (last*1103515245 + 12345);
+        mpFront = mState + 3;
         mpRear = mState;
-      return result >> 1; }
+        int nnn = 10*31;
+        while ( nnn-- )
+            next();
+    }
 
-    void seed( unsigned seedVal )
-    { state_t last = seedVal;
-      mState[0] = last;
-      state_t* ppp = mState;
-      while ( ++ppp < mState+STATE_SIZE )
-        *ppp = last = (last*1103515245 + 12345);
-      mpFront = mState + 3;
-      mpRear = mState;
-      int nnn = 10*31;
-      while ( nnn-- )
-        next(); }
+    static long random() {
+        SpinLocker locker(gLock);
+        return gSystem.next();
+    }
 
-    static long random()
-    { SpinLocker locker(gLock); return gSystem.next(); }
-
-    static void srandom( unsigned seedVal )
-    { SpinLocker locker(gLock); gSystem.seed(seedVal); }
+    static void srandom( unsigned seedVal ) {
+        SpinLocker locker(gLock);
+        gSystem.seed(seedVal);
+    }
 
     static long const RNGEN_RAND_MAX = INT_MAX;
 
-private:
+  private:
     static RNGen gDflt;
     static RNGen gSystem;
     static SpinLockedData gLock;

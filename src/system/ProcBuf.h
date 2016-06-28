@@ -14,22 +14,30 @@
 #include <system/file/FileWriter.h>
 
 
-class procbuf : public std::basic_streambuf<char>
-{
+class procbuf : public std::basic_streambuf<char> {
   public:
     procbuf( char const* command, std::ios_base::openmode mode,
-        bool expect_ret_zero = false );
+             bool expect_ret_zero = false );
     procbuf( procbuf const & ) = delete;
     procbuf& operator=( procbuf const& ) = delete;
-    ~procbuf() { close(); delete [] eback(); delete [] pbase(); }
+    ~procbuf() {
+        close();
+        delete [] eback();
+        delete [] pbase();
+    }
 
-    bool is_open() { return mFD != -1; }
-    int close()
-    { if ( is_open() ) mResult = doClose();
-      return mResult; }
+    bool is_open() {
+        return mFD != -1;
+    }
+    int close() {
+        if ( is_open() ) mResult = doClose();
+        return mResult;
+    }
 
     // read as many characters as are immediately available from the pipe
-    size_t read( void* buf, size_t len ) { return mFW.readOnce(buf,len); }
+    size_t read( void* buf, size_t len ) {
+        return mFW.readOnce(buf,len);
+    }
 
   protected:
     int_type overflow( int_type c = traits_type::eof() );

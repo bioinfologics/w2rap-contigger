@@ -12,3 +12,10 @@ src/modules/02_qgraph
 src/modules/01_unipaths
 src/unipaths
 src/libDiscovarDeNovo.a
+.cproject
+.project
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+

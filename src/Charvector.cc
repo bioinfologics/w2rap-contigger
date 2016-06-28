@@ -15,12 +15,10 @@
  */
 #include "Charvector.h"
 
-void StripNewlines( const CharVec &in, CharVec &out )
-{
+void StripNewlines( const CharVec &in, CharVec &out ) {
     out.reserve(in.size()).clear();
     CharVec::const_iterator end(in.end());
-    for ( CharVec::const_iterator itr(in.begin()); itr != end; ++itr )
-    {
+    for ( CharVec::const_iterator itr(in.begin()); itr != end; ++itr ) {
         char val = *itr;
         if ( val != '\n' )
             out.push_back(val);

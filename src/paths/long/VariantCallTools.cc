@@ -30,8 +30,7 @@
 namespace {
 
 bool IsBubbleEdge(int eid, const HyperBasevector& hb, const vec<int>& to_left,
-        const vec<int>& to_right)
-{
+                  const vec<int>& to_right) {
     int node_left = to_left[eid], node_right = to_right[eid];
     bool ends_match = true;
     for (int j = 0; j < hb.FromSize(node_left); j++) {
@@ -42,19 +41,18 @@ bool IsBubbleEdge(int eid, const HyperBasevector& hb, const vec<int>& to_left,
         }
     }
     return ends_match && hb.FromSize(node_left) > 1
-        && hb.ToSize(node_left) == 1 && hb.FromSize(node_right) == 1;
+           && hb.ToSize(node_left) == 1 && hb.FromSize(node_right) == 1;
 }
 
 // Find half of the edges that are most similar to the selected target
 void FindSimilar(const basevector& selected, const vec<basevector>& edges,
-        const vec<int>& edge_ids, vec<int>& similar_edges) 
-{
+                 const vec<int>& edge_ids, vec<int>& similar_edges) {
     if (edges.size() < 2) return;
     const int K = 12;
     const double MinSimilarity = 0.8;
     typedef KMer<K> KmerT;
     vec<KmerT> kmers;
-    for (size_t i = 0; i < selected.size() - K + 1; i++) 
+    for (size_t i = 0; i < selected.size() - K + 1; i++)
         kmers.push(selected.begin() + i);
     UniqueSort(kmers);
     vec<std::pair<double,int>> sim_index;
@@ -90,7 +88,7 @@ void FindSimilar(const basevector& selected, const vec<basevector>& edges,
             }
         }
         double similarity = (double) common/ (double)(common + unique1 + unique2);
-        //std::cout << "common= " << common << " unique1= " << unique1 
+        //std::cout << "common= " << common << " unique1= " << unique1
         //    << " unique2= " << unique2 << " simi= " << similarity << std::endl;
         sim_index.push(similarity, i);
     }
@@ -111,202 +109,224 @@ void FindSimilar(const basevector& selected, const vec<basevector>& edges,
 // offset at the same position on b1 that are within the 90% bounds.  All other
 // offsets are put into a pile called 'extras'.  At first we align, ignoring the
 // extras.  Then we ask if use of any of the extras might possibly have improved
-// the alignment (using a test that is not really airtight).  If so we extend the 
+// the alignment (using a test that is not really airtight).  If so we extend the
 // offset bounds and try again.
 //
 // Note that the kmer lookup is parallelized.
 
-void RestrictedAlign( const basevector& b1, const basevector& b2, 
-     const int offset, const int bandwidth, align& a )
-{
-     // Control.
+void RestrictedAlign( const basevector& b1, const basevector& b2,
+                      const int offset, const int bandwidth, align& a ) {
+    // Control.
 
-     const int L = 40;
-     const int mul = 20;
-     const int bw_add = 10;
-     const int bw_mul = 10;
-     const Bool compare_to_old = False;
-     const Bool exit_bad = True; // not in effect
-     const Bool verbose = False;
+    const int L = 40;
+    const int mul = 20;
+    const int bw_add = 10;
+    const int bw_mul = 10;
+    const Bool compare_to_old = False;
+    const Bool exit_bad = True; // not in effect
+    const Bool verbose = False;
 
 #if 0
-     int smallest = std::min( b1.isize(), b2.isize() );
-     if ( smallest > 5000 ) {
-         int K = 501; //std::max( 60, std::min( smallest/100, 501 ) );
-         alignment al;
-         SmithWatAffineSuper( b1, b2, al, K, false, false );
-         a=align(al);
-         return;
-     }
+    int smallest = std::min( b1.isize(), b2.isize() );
+    if ( smallest > 5000 ) {
+        int K = 501; //std::max( 60, std::min( smallest/100, 501 ) );
+        alignment al;
+        SmithWatAffineSuper( b1, b2, al, K, false, false );
+        a=align(al);
+        return;
+    }
 #endif
 
-     // Find offsets.
+    // Find offsets.
 
-     int low = Max( 0, offset - bandwidth );
-     int high = Min( b2.isize( ), offset + bandwidth + b1.isize( ) );
-     vecbasevector x(2);
-     x[0] = b1, x[1] = basevector( b2, low, high - low );
-     vec< triple<kmer<L>,int,int> > kmers_plus;
-     MakeKmerLookup0( x, kmers_plus );
-     vec<int> offsets, pos;
-     for ( int i = 0; i < kmers_plus.isize( ); i++ )
-     {    int j;
-          for ( j = i + 1; j < kmers_plus.isize( ); j++ )
-               if ( kmers_plus[j].first != kmers_plus[i].first ) break;
-          int m;
-          for ( m = i; m < j; m++ )
-               if ( kmers_plus[m].second == 1 ) break;
-          for ( int k = i; k < m; k++ )
-          for ( int l = m; l < j; l++ )
-          {    offsets.push( kmers_plus[l].third - kmers_plus[k].third + low );    
-               pos.push_back( kmers_plus[k].third );    }
-          i = j - 1;    }
-     int o1 = -1, o2 = -1, offset2, bandwidth2;
-     vec<int> extras;
+    int low = Max( 0, offset - bandwidth );
+    int high = Min( b2.isize( ), offset + bandwidth + b1.isize( ) );
+    vecbasevector x(2);
+    x[0] = b1, x[1] = basevector( b2, low, high - low );
+    vec< triple<kmer<L>,int,int> > kmers_plus;
+    MakeKmerLookup0( x, kmers_plus );
+    vec<int> offsets, pos;
+    for ( int i = 0; i < kmers_plus.isize( ); i++ ) {
+        int j;
+        for ( j = i + 1; j < kmers_plus.isize( ); j++ )
+            if ( kmers_plus[j].first != kmers_plus[i].first ) break;
+        int m;
+        for ( m = i; m < j; m++ )
+            if ( kmers_plus[m].second == 1 ) break;
+        for ( int k = i; k < m; k++ )
+            for ( int l = m; l < j; l++ ) {
+                offsets.push( kmers_plus[l].third - kmers_plus[k].third + low );
+                pos.push_back( kmers_plus[k].third );
+            }
+        i = j - 1;
+    }
+    int o1 = -1, o2 = -1, offset2, bandwidth2;
+    vec<int> extras;
 
-     // If there are no offsets, use the original offset and bandwidth.
+    // If there are no offsets, use the original offset and bandwidth.
 
-     if ( offsets.empty( ) )
-     {    offset2 = offset;
-          bandwidth2 = bandwidth;    }
+    if ( offsets.empty( ) ) {
+        offset2 = offset;
+        bandwidth2 = bandwidth;
+    }
 
-     // Main case.
+    // Main case.
 
-     else
-     {    Sort(offsets);
+    else {
+        Sort(offsets);
 
-          // Get 90% bounds.
+        // Get 90% bounds.
 
-          o1 = offsets[ offsets.size( ) / mul ];
-          o2 = offsets[ ( (mul-1) * offsets.size( ) ) / mul ];
-          std::ostringstream out;
-          out << "90% = [" << o1 << "," << o2 << "]" << std::endl;
+        o1 = offsets[ offsets.size( ) / mul ];
+        o2 = offsets[ ( (mul-1) * offsets.size( ) ) / mul ];
+        std::ostringstream out;
+        out << "90% = [" << o1 << "," << o2 << "]" << std::endl;
 
-          // Look at offsets associated with each position, and find 'extra'
-          // offsets.
+        // Look at offsets associated with each position, and find 'extra'
+        // offsets.
 
-          SortSync( pos, offsets );
-          for ( int i = 0; i < pos.isize( ); i++ )
-          {    int j = pos.NextDiff(i);
-               //Bool inside = False;
-               //for ( int k = i; k < j; k++ )
-               //     if ( o1 <= offsets[k] && offsets[k] <= o2 ) inside = True;
-               // if ( !inside )
-               {    for ( int k = i; k < j; k++ )
-                    {    if ( o1 <= offsets[k] && offsets[k] <= o2 ) continue;
-                         //out << pos[k] << " goes to offset " << offsets[k] << std::endl;
-                         extras.push_back( offsets[k] );    }    }
-               i = j - 1;    }
-          
-          // Define new offset.
+        SortSync( pos, offsets );
+        for ( int i = 0; i < pos.isize( ); i++ ) {
+            int j = pos.NextDiff(i);
+            //Bool inside = False;
+            //for ( int k = i; k < j; k++ )
+            //     if ( o1 <= offsets[k] && offsets[k] <= o2 ) inside = True;
+            // if ( !inside )
+            {
+                for ( int k = i; k < j; k++ ) {
+                    if ( o1 <= offsets[k] && offsets[k] <= o2 ) continue;
+                    //out << pos[k] << " goes to offset " << offsets[k] << std::endl;
+                    extras.push_back( offsets[k] );
+                }
+            }
+            i = j - 1;
+        }
 
-          offset2 = ( o2 + o1 ) / 2;
-          bandwidth2 = Max( o2 - offset2, offset2 - o1 ) + bw_add;
-          if (verbose)
-          {    std::cout << "\n";
-               PRINT2( b1.size( ), b2.size( ) );
-               PRINT2( o1, o2 );
-               PRINT4( offset2, bandwidth2, offset, bandwidth );
-               std::cout << out.str( ) << "\n";    }    }
+        // Define new offset.
 
-     // Align.
+        offset2 = ( o2 + o1 ) / 2;
+        bandwidth2 = Max( o2 - offset2, offset2 - o1 ) + bw_add;
+        if (verbose) {
+            std::cout << "\n";
+            PRINT2( b1.size( ), b2.size( ) );
+            PRINT2( o1, o2 );
+            PRINT4( offset2, bandwidth2, offset, bandwidth );
+            std::cout << out.str( ) << "\n";
+        }
+    }
 
-     align a2;
-     if (verbose) std::cout << Date( ) << ": alignment starting" << std::endl;
-     int nerrors;
-     int err = SmithWatAffineBanded( b1, b2, -offset2, bandwidth2, a2, nerrors );
-     if (verbose)
-     {    std::cout << Date( ) << ": alignment complete" << std::endl;
-          PRINT(err);    }
-     /*
-     if ( exit_bad && err > 10000 )
-     {    PRINT(err);
-          b1.Print( std::cout, "b1" );
-          b2.Print( std::cout, "b2" );
-          Scram(0);     }
-     */
-     
-     // If we might possibly have done better using some of the extra
-     // offsets, add them in and try again.  The test used here is not quite right.
+    // Align.
 
-     Sort(extras);
-     Bool retry = False;
-     int o1_new(o1), o2_new(o2);
-     const int mismatch_penalty = 3;
-     const int gap_open_penalty = 12;
-     const int gap_extend_penalty = 1;
-     for ( int i = 0; i < extras.isize( ); i++ )
-     {    if ( extras[i] < o1_new || extras[i] > o2_new )
-          {    int gap = Max( o2, extras[i] ) - Min( o1, extras[i] );
-               int min_penalty = gap_open_penalty + (gap-1) * gap_extend_penalty;
-               if ( min_penalty < err )
-               {    retry = True;
-                    o1_new = Min( o1_new, extras[i] );
-                    o2_new = Max( o2_new, extras[i] );    }    }    }
-     if (retry)
-     {    int bandwidthx = Max( o2_new - offset2, offset2 - o1_new );
-          int bandwidth3 = bandwidth2;
-          while ( bandwidth3 < bandwidthx )
-          {    bandwidth3 = Min( bandwidthx, bw_mul * bandwidth3 );
-               if (verbose)
-               {    std::cout << "retrying" << std::endl;
-                    PRINT3( err, offset2, bandwidth3 );    }
-               err = SmithWatAffineBanded(b1, b2, -offset2, bandwidth3, a2, nerrors);
-               int gap = 2 * bandwidth3;
-               int min_penalty = gap_open_penalty + (gap-1) * gap_extend_penalty;
-               if ( min_penalty > err ) break;    }    }
+    align a2;
+    if (verbose) std::cout << Date( ) << ": alignment starting" << std::endl;
+    int nerrors;
+    int err = SmithWatAffineBanded( b1, b2, -offset2, bandwidth2, a2, nerrors );
+    if (verbose) {
+        std::cout << Date( ) << ": alignment complete" << std::endl;
+        PRINT(err);
+    }
+    /*
+    if ( exit_bad && err > 10000 )
+    {    PRINT(err);
+         b1.Print( std::cout, "b1" );
+         b2.Print( std::cout, "b2" );
+         Scram(0);     }
+    */
 
-     // Test to see if results are different than old method.
+    // If we might possibly have done better using some of the extra
+    // offsets, add them in and try again.  The test used here is not quite right.
 
-     if (compare_to_old)
-     {    int nerror;
-          int err_old = SmithWatAffineBanded(b1, b2, -offset, bandwidth, a, nerror);
-          if ( !( a2 == a ) ) 
-          {    std::cout << "not equal!\n";
-               PRINT2( err, err_old );
-               std::cout << "offsets in old alignment:\n";
-               int p1 = a.pos1( ), p2 = a.pos2( );
-               std::cout << p2 - p1 << std::endl;
-               for ( int j = 0; j < a.Nblocks( ); j++ ) 
-               {    if ( a.Gaps(j) > 0 )  
-                    {    p2 += a.Gaps(j);
-                         std::cout << p2 - p1 << std::endl;    }
-                    if ( a.Gaps(j) < 0 ) 
-                    {    p1 -= a.Gaps(j);
-                         std::cout << p2 - p1 << std::endl;    }
-                    p1 += a.Lengths(j), p2 += a.Lengths(j);    }
-               // b1.Print( std::cout, "b1" );
-               // b2.Print( std::cout, "b2" );
-               std::cout << "old alignment:\n";
-               PRINT3( a.pos2( ), a.Pos2( ), b2.size( ) );
-               PrintVisualAlignment( True, std::cout, b1, b2, a );
-               std::cout << "new alignment:\n";
-               PrintVisualAlignment( True, std::cout, b1, b2, a2 );
-               Scram(1);    }    }
+    Sort(extras);
+    Bool retry = False;
+    int o1_new(o1), o2_new(o2);
+    const int mismatch_penalty = 3;
+    const int gap_open_penalty = 12;
+    const int gap_extend_penalty = 1;
+    for ( int i = 0; i < extras.isize( ); i++ ) {
+        if ( extras[i] < o1_new || extras[i] > o2_new ) {
+            int gap = Max( o2, extras[i] ) - Min( o1, extras[i] );
+            int min_penalty = gap_open_penalty + (gap-1) * gap_extend_penalty;
+            if ( min_penalty < err ) {
+                retry = True;
+                o1_new = Min( o1_new, extras[i] );
+                o2_new = Max( o2_new, extras[i] );
+            }
+        }
+    }
+    if (retry) {
+        int bandwidthx = Max( o2_new - offset2, offset2 - o1_new );
+        int bandwidth3 = bandwidth2;
+        while ( bandwidth3 < bandwidthx ) {
+            bandwidth3 = Min( bandwidthx, bw_mul * bandwidth3 );
+            if (verbose) {
+                std::cout << "retrying" << std::endl;
+                PRINT3( err, offset2, bandwidth3 );
+            }
+            err = SmithWatAffineBanded(b1, b2, -offset2, bandwidth3, a2, nerrors);
+            int gap = 2 * bandwidth3;
+            int min_penalty = gap_open_penalty + (gap-1) * gap_extend_penalty;
+            if ( min_penalty > err ) break;
+        }
+    }
 
-     // Done.
+    // Test to see if results are different than old method.
 
-     if (verbose) std::cout << "done" << std::endl;
-     a = a2;
+    if (compare_to_old) {
+        int nerror;
+        int err_old = SmithWatAffineBanded(b1, b2, -offset, bandwidth, a, nerror);
+        if ( !( a2 == a ) ) {
+            std::cout << "not equal!\n";
+            PRINT2( err, err_old );
+            std::cout << "offsets in old alignment:\n";
+            int p1 = a.pos1( ), p2 = a.pos2( );
+            std::cout << p2 - p1 << std::endl;
+            for ( int j = 0; j < a.Nblocks( ); j++ ) {
+                if ( a.Gaps(j) > 0 ) {
+                    p2 += a.Gaps(j);
+                    std::cout << p2 - p1 << std::endl;
+                }
+                if ( a.Gaps(j) < 0 ) {
+                    p1 -= a.Gaps(j);
+                    std::cout << p2 - p1 << std::endl;
+                }
+                p1 += a.Lengths(j), p2 += a.Lengths(j);
+            }
+            // b1.Print( std::cout, "b1" );
+            // b2.Print( std::cout, "b2" );
+            std::cout << "old alignment:\n";
+            PRINT3( a.pos2( ), a.Pos2( ), b2.size( ) );
+            PrintVisualAlignment( True, std::cout, b1, b2, a );
+            std::cout << "new alignment:\n";
+            PrintVisualAlignment( True, std::cout, b1, b2, a2 );
+            Scram(1);
+        }
+    }
+
+    // Done.
+
+    if (verbose) std::cout << "done" << std::endl;
+    a = a2;
 }
 
-int CorrelatePositionsRangeChecked( const align& a, const int x1 )
-{    
-     int pos1 = a.pos1( ), pos2 = a.pos2( );
-     if ( x1 < pos1 || x1 > a.Pos1()) return -1; // off the end, shouldn't happen
-     if ( x1 == pos1 ) return pos2;
-     int nblocks = a.Nblocks( );
-     const avector<int> &gaps = a.Gaps( ), &lengths = a.Lengths( );
-     for ( int j = 0; j < nblocks; j++ )
-     {    if ( gaps(j) > 0 ) pos2 += gaps(j);
-          if ( gaps(j) < 0 )
-          {    for ( int x = 0; x < -gaps(j); x++ )
-                    if ( x1 == pos1++ ) return pos2;    } // really in gap
-          if ( x1 < pos1 + lengths(j) ) return pos2 + x1 - pos1;
-          else
-          {    pos1 += lengths(j), pos2 += lengths(j);    }    }
-     return -1; // off the end, shouldn't happen
-} 
+int CorrelatePositionsRangeChecked( const align& a, const int x1 ) {
+    int pos1 = a.pos1( ), pos2 = a.pos2( );
+    if ( x1 < pos1 || x1 > a.Pos1()) return -1; // off the end, shouldn't happen
+    if ( x1 == pos1 ) return pos2;
+    int nblocks = a.Nblocks( );
+    const avector<int> &gaps = a.Gaps( ), &lengths = a.Lengths( );
+    for ( int j = 0; j < nblocks; j++ ) {
+        if ( gaps(j) > 0 ) pos2 += gaps(j);
+        if ( gaps(j) < 0 ) {
+            for ( int x = 0; x < -gaps(j); x++ )
+                if ( x1 == pos1++ ) return pos2;
+        } // really in gap
+        if ( x1 < pos1 + lengths(j) ) return pos2 + x1 - pos1;
+        else {
+            pos1 += lengths(j), pos2 += lengths(j);
+        }
+    }
+    return -1; // off the end, shouldn't happen
+}
 
 template<typename GraphT>
 void DumpGraph(const String filename, const GraphT& shb) {
@@ -318,7 +338,7 @@ void DumpGraph(const String filename, const GraphT& shb) {
     }
     std::ofstream dout(filename);
     shb.PrettyDOT( dout, lengths2, HyperBasevector::edge_label_info(
-                HyperBasevector::edge_label_info::DIRECT, &edge_names2 ) );
+                       HyperBasevector::edge_label_info::DIRECT, &edge_names2 ) );
 }
 
 // Find edits from the alignments, return pos1, pos2, edits triple, where
@@ -328,11 +348,10 @@ void DumpGraph(const String filename, const GraphT& shb) {
 // Generate insertion edits of unaligned head/tail source sequence
 // if head_ins/tail_ins are set. We don't want to call those variants near the
 // begin or end of the chromosome or chromosome segments.
-void GetEditsFromAlign(const basevector& s, const basevector& t, const align& a, 
-        vec<triple<int,int,String>>* edits, vec<std::pair<String,String>>* change = NULL, 
-        char prev_char_s = 'X', char prev_char_t = 'X', bool head_ins = false,
-        bool tail_ins = true)
-{
+void GetEditsFromAlign(const basevector& s, const basevector& t, const align& a,
+                       vec<triple<int,int,String>>* edits, vec<std::pair<String,String>>* change = NULL,
+                       char prev_char_s = 'X', char prev_char_t = 'X', bool head_ins = false,
+                       bool tail_ins = true) {
     // prefix the two sequences by a leading base
     String ss(1, prev_char_t);
     //String ss(1, prev_char_s);
@@ -348,7 +367,7 @@ void GetEditsFromAlign(const basevector& s, const basevector& t, const align& a,
             change->push(ref, alt);
         edits->push(p1, 0, "Ins: " + ss.substr(1,p1));
     }
-    for (int j = 0; j < a.Nblocks(); ++j){
+    for (int j = 0; j < a.Nblocks(); ++j) {
         int gap = a.Gaps(j);
         int len = a.Lengths(j);
         if ( gap > 0 ) {
@@ -406,11 +425,10 @@ struct SubEdgeLoc {
 
 // Given the variants and callers, find the multiple placement of the caller
 // edges and genome location (gid, pos) of the alternative placement.
-void FindVariantFriends(const vec<VariantCallGroup>& vcall_groups, 
-        const vec<vec<align>>& all_aligns, const HyperBasevector& hbp,
-        const vec<std::pair<int,Bool>>& hbp_to_hb,
-        std::map<Variant, vec<std::pair<int,int>>> *p_var_friending)
-{
+void FindVariantFriends(const vec<VariantCallGroup>& vcall_groups,
+                        const vec<vec<align>>& all_aligns, const HyperBasevector& hbp,
+                        const vec<std::pair<int,Bool>>& hbp_to_hb,
+                        std::map<Variant, vec<std::pair<int,int>>> *p_var_friending) {
     std::map<int, vec<SubEdgeLoc>> edge_homes;
     for (size_t grpid = 0; grpid < vcall_groups.size(); grpid++) {
         const VariantCallGroup group = vcall_groups[grpid];
@@ -427,7 +445,7 @@ void FindVariantFriends(const vec<VariantCallGroup>& vcall_groups,
     }
 
     // (grpid, caller) pair for each variant and (grpid, vcall) pair for each
-    std::map<Variant, vec<std::pair<int,Caller>>> vars; 
+    std::map<Variant, vec<std::pair<int,Caller>>> vars;
     for (size_t grpid = 0; grpid < vcall_groups.size(); grpid++) {
         const VariantCallGroup group = vcall_groups[grpid];
         for (int i = 0; i < group.GetNBranch(); i++) {
@@ -449,16 +467,18 @@ void FindVariantFriends(const vec<VariantCallGroup>& vcall_groups,
             int edge_len = hbp.EdgeLengthBases(sub_edge);
 
             std::set<int> grpids; // other groups this sub-edge belongs to
-            for (SubEdgeLoc& loc: edge_homes[edge0]) { grpids.insert(loc.group_id); }
+            for (SubEdgeLoc& loc: edge_homes[edge0]) {
+                grpids.insert(loc.group_id);
+            }
             if (grpids.size() <= 1) continue;
 
             int grpid = x.first;
-            for (const SubEdgeLoc& loc: edge_homes[edge0]) { 
+            for (const SubEdgeLoc& loc: edge_homes[edge0]) {
                 if (loc.group_id == grpid) continue;
                 int pos_friend_edge = (loc.dir == dir ? sub_pos : edge_len - 1 - sub_pos);
                 int gpos = CorrelatePositionsRangeChecked(
-                        vcall_groups[loc.group_id].GetAlign(loc.branch_id),
-                        loc.shift + pos_friend_edge );
+                               vcall_groups[loc.group_id].GetAlign(loc.branch_id),
+                               loc.shift + pos_friend_edge );
                 if (gpos >= 0)
                     (*p_var_friending)[var].push(vcall_groups[loc.group_id].GetGID(), gpos);
             }
@@ -472,54 +492,53 @@ void FindVariantFriends(const vec<VariantCallGroup>& vcall_groups,
 
 // ======================= EdgesOnRef method implementation ====================================
 
-void EdgesOnRef::InitFromBestPath(const vec<int>& path, 
-        const vec<std::pair<int,int>>& ref_pos) 
-{
+void EdgesOnRef::InitFromBestPath(const vec<int>& path,
+                                  const vec<std::pair<int,int>>& ref_pos) {
     ForceAssert(dg_.N() == 0);
-    vec<int> to_right; hb_.ToRight(to_right);
-    vec<int> to_left; hb_.ToLeft(to_left);
+    vec<int> to_right;
+    hb_.ToRight(to_right);
+    vec<int> to_left;
+    hb_.ToLeft(to_left);
     dg_.AddVertices(1); // the first vertex
     for (size_t i = 0; i < path.size(); i++) {
         // additional vertex if two edges are not connected in assembly graph
         if (i > 0 && to_right[path[i-1]] != to_left[path[i]])
             dg_.AddVertices(1);
         dg_.AddVertices(1);
-        dg_.AddEdge(dg_.N()-2, dg_.N()-1, EdgeLoc(path[i], 
+        dg_.AddEdge(dg_.N()-2, dg_.N()-1, EdgeLoc(path[i],
                     ref_pos[i].first + gplus_ext_));
     }
 }
 
-static void make_rc_pairs( const HyperBasevector& hb, const vector<int>& list, vector< std::pair<int,int> >& pair_list)
-{
+static void make_rc_pairs( const HyperBasevector& hb, const vector<int>& list, vector< std::pair<int,int> >& pair_list) {
     pair_list.clear();
     vector<int> tmp(list);
 
     while ( tmp.size() ) {
-	int el = tmp.back();
-	tmp.pop_back();
-	auto hb1 = hb.EdgeObject(el);
-	for ( size_t i = 0; i < tmp.size(); ++i ) {
-	    auto hb2 = hb.EdgeObject(tmp[i]);
-	    if ( hb1 == ReverseComplement(hb2) ) {
-		pair_list.push_back( std::make_pair( el, tmp[i]) );
-		tmp.erase(tmp.begin()+i);
-	    }
-	}
+        int el = tmp.back();
+        tmp.pop_back();
+        auto hb1 = hb.EdgeObject(el);
+        for ( size_t i = 0; i < tmp.size(); ++i ) {
+            auto hb2 = hb.EdgeObject(tmp[i]);
+            if ( hb1 == ReverseComplement(hb2) ) {
+                pair_list.push_back( std::make_pair( el, tmp[i]) );
+                tmp.erase(tmp.begin()+i);
+            }
+        }
     }
 }
 
 
 // Unroll the graph, find alignments of the unrolled edges, find variants,
 // and return the path of the edges.
-void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iHiBound, const bool bCorrection)
-{
+void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iHiBound, const bool bCorrection) {
     std::unordered_set<int> prefered_edges;
-    for(int ii=0;ii<dg_.EdgeObjectCount();++ii){
+    for(int ii=0; ii<dg_.EdgeObjectCount(); ++ii) {
         prefered_edges.insert(ii);
     }
     std::set<int> best_path;
     for ( int i = 0; i < dg_.EdgeObjectCount(); i++ )
-	best_path.insert(GetOriginalId(i));
+        best_path.insert(GetOriginalId(i));
 
     if (verbosity >= 1) {
         std::cout << Date() << ": Start unrolling using best paths" << std::endl;
@@ -534,8 +553,10 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     const int LenMax = 10000;   // for graph traversal
 
 
-    vec<int> to_right; hb_.ToRight(to_right);
-    vec<int> to_left; hb_.ToLeft(to_left);
+    vec<int> to_right;
+    hb_.ToRight(to_right);
+    vec<int> to_left;
+    hb_.ToLeft(to_left);
 
 
     hb_.ToRight(to_right);
@@ -555,8 +576,10 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     while (true) {
         int tail_edge0 = GetOriginalId(tail_edge);
         int tail_edge_end = hb_.EdgeLengthKmers(tail_edge0) + GetStart(tail_edge);
-        if ( size_t(tail_edge_end) >= gplus_.size()){ break;}
-        if (verbosity >= 2) 
+        if ( size_t(tail_edge_end) >= gplus_.size()) {
+            break;
+        }
+        if (verbosity >= 2)
             std::cout << "Trailing edge " << tail_edge << "->" << tail_edge0 << std::endl;
         if (hb_.From(to_right[tail_edge0]).empty()) break;
 
@@ -569,10 +592,10 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
             align ai;
             int Bandwidth = std::max(1, (int)hb_.EdgeObject(eid).size()/2);
             RestrictedAlign(hb_.EdgeObject(eid), gplus_, tail_edge_end,
-                    Bandwidth, ai );
+                            Bandwidth, ai );
             int nmatch = ai.MatchingBases(hb_.EdgeObject(eid), gplus_);
-            double match_rate = (double) nmatch / 
-                std::min(hb_.EdgeObject(eid).size(), gplus_.size()-tail_edge_end);
+            double match_rate = (double) nmatch /
+                                std::min(hb_.EdgeObject(eid).size(), gplus_.size()-tail_edge_end);
 
             if (match_rate > best_match_rate) {
                 best_match_rate = match_rate;
@@ -583,8 +606,10 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
         }
         ReverseSort(alt_edges);
 
-        bool is_loop = any_of(backbone.begin(), backbone.end(), 
-                [=](int x){return GetOriginalId(x) == new_edge0;});
+        bool is_loop = any_of(backbone.begin(), backbone.end(),
+        [=](int x) {
+            return GetOriginalId(x) == new_edge0;
+        });
         if (is_loop) {
             if (verbosity >= 2) std::cout << "loop encountered" << std::endl;
             break;
@@ -592,28 +617,28 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
         int new_edge_start = a.pos2() - a.pos1();
         if (  new_edge_start + MinOverlap > (int)gplus_.size()
                 || best_match_rate < MinMatchRate
-            || a.pos2() > iHiBound || a.Pos2() > iHiBound
+                || a.pos2() > iHiBound || a.Pos2() > iHiBound
            ) break;
 
         if (verbosity >= 2) {
             std::cout << "align at " << a.pos1() << "," << a.Pos1() << " to " << a.pos2() << "," << a.Pos2() << std::endl;
             if ( a.pos2() - a.pos1()+ MinOverlap < (int)gplus_.size() )
-            PrintVisualAlignment(True, std::cout, hb_.EdgeObject(new_edge0), gplus_, a);
+                PrintVisualAlignment(True, std::cout, hb_.EdgeObject(new_edge0), gplus_, a);
         }
         if(   dRequiredAlignedFractionForExtension * hb_.EdgeObject(new_edge0).size() > a.Pos1()-a.pos1()
-           && hb_.EdgeObject(new_edge0).size() > iAcceptableBackExtensionLength
-          ){
+                && hb_.EdgeObject(new_edge0).size() > iAcceptableBackExtensionLength
+          ) {
             break;
         }
 
-        if (verbosity >= 2) 
+        if (verbosity >= 2)
             std::cout << "Adding tail " << new_edge0 << " start " << new_edge_start << std::endl;
         vec<std::pair<int,int>> tail_extension;
         tail_extension.push(new_edge0, new_edge_start );
         AddConnections(tail_edge, -1, tail_extension);
         tail_edge = dg_.EdgeObjectCount() - 1;
         backbone.push_back(tail_edge);
-        if (!IsBubbleEdge(new_edge0, hb_, to_left, to_right)) 
+        if (!IsBubbleEdge(new_edge0, hb_, to_left, to_right))
             alt_edges.clear();
         backbone_extension_alts.push_back(alt_edges);
     }
@@ -623,12 +648,14 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     while (true) {
         int head_edge0 = GetOriginalId(head_edge);
         int start0 = GetStart(head_edge);
-        if ( start0 < 0){ break; }
-        if (verbosity >= 2) 
+        if ( start0 < 0) {
+            break;
+        }
+        if (verbosity >= 2)
             std::cout << "head edge " << head_edge0 << " start at " << start0 << std::endl;
         if(hb_.To(to_left[head_edge0]).empty()) break;
 
-        int new_edge0 = -1; 
+        int new_edge0 = -1;
         double best_match_rate = 0.0;
         align a;
         vec<std::pair<double,int>> alt_edges;
@@ -639,8 +666,8 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
             int start_prev = start0 - hb_.EdgeLengthKmers(eid);
             RestrictedAlign(hb_.EdgeObject(eid), gplus_, start_prev, Bandwidth, ai);
             int nmatch = ai.MatchingBases(hb_.EdgeObject(eid), gplus_);
-            double match_rate = (double) nmatch / std::min(hb_.EdgeObject(eid).isize(), 
-                                                      start0);
+            double match_rate = (double) nmatch / std::min(hb_.EdgeObject(eid).isize(),
+                                start0);
             if (match_rate > best_match_rate) {
                 best_match_rate = match_rate;
                 new_edge0 = eid;
@@ -650,35 +677,37 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
         }
         ReverseSort(alt_edges);
 
-        bool is_loop = any_of(backbone.begin(), backbone.end(), 
-                [=](int x){return GetOriginalId(x) == new_edge0;});
+        bool is_loop = any_of(backbone.begin(), backbone.end(),
+        [=](int x) {
+            return GetOriginalId(x) == new_edge0;
+        });
         if (is_loop) {
-            if (verbosity >= 2) 
+            if (verbosity >= 2)
                 std::cout << "loop encountered" << std::endl;
             break;
         }
         if (a.Pos2() < MinOverlap || best_match_rate < MinMatchRate
-            || a.pos2() < iLoBound || a.Pos2() < iLoBound
+                || a.pos2() < iLoBound || a.Pos2() < iLoBound
            ) break;
         if (verbosity >= 2) {
             std::cout << "align at " << a.pos1() << "," << a.Pos1() << " to " << a.pos2() << "," << a.Pos2() << std::endl;
             PrintVisualAlignment(True, std::cout, hb_.EdgeObject(new_edge0), gplus_, a);
         }
         if(   dRequiredAlignedFractionForExtension * hb_.EdgeObject(new_edge0).size() > a.Pos1()-a.pos1()
-           && hb_.EdgeObject(new_edge0).size() > iAcceptableFrontExtensionLength
-          ){
+                && hb_.EdgeObject(new_edge0).size() > iAcceptableFrontExtensionLength
+          ) {
             break;
         }
 
         int new_edge_start = a.pos2() - a.pos1();
         vec<std::pair<int,int>> head_extension;
         head_extension.push(new_edge0, new_edge_start);
-        if (verbosity >= 2) 
+        if (verbosity >= 2)
             std::cout << "Adding head " << new_edge0 << " starting at " << new_edge_start << std::endl;
         AddConnections(-1, head_edge, head_extension);
         head_edge = dg_.EdgeObjectCount() - 1;
         backbone.push_front(head_edge);
-        if (!IsBubbleEdge(new_edge0, hb_, to_left, to_right)) 
+        if (!IsBubbleEdge(new_edge0, hb_, to_left, to_right))
             alt_edges.clear();
         backbone_extension_alts.push_front(alt_edges);
     }
@@ -694,7 +723,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
         for (int e2 = e+1; e2 < hb_.EdgeObjectCount(); e2++) {
             const basevector& base2 = hb_.EdgeObject(e2);
             if (base_inv.size() == base2.size() &&
-                base_inv == base2) {
+                    base_inv == base2) {
                 to_inv[e] = e2;
                 to_inv[e2] = e;
             }
@@ -710,19 +739,19 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
                 best_match_rate = backbone_extension_alts[i][0].first;
             for (size_t j = 0; j < backbone0.size(); j++) {
                 if( j != i && to_inv[backbone0[i]] == backbone0[j]
-                        && !backbone_extension_alts[j].empty()){
-                   double  best_match_rate2 = backbone_extension_alts[j][0].first;
-                   if (best_match_rate2 < best_match_rate && 
-                           backbone_extension_alts[j].size() >= 2) {
-                       int edge_alt =  backbone_extension_alts[j][1].second; // second best
-                       EdgeLoc& edge_j = dg_.EdgeObjectMutable(backbone[j]);
-                       edge_j.original_edge = edge_alt;
-                       if (verbosity >= 2)
-                           std::cout << "Replacing backbone edge " << backbone[j] << " from " 
-                               << backbone0[j] << " to " << edge_alt << std::endl;
-                       backbone0[j] = edge_alt;
-                       backbone_extension_alts[j].erase(backbone_extension_alts[j].begin());
-                   }
+                        && !backbone_extension_alts[j].empty()) {
+                    double  best_match_rate2 = backbone_extension_alts[j][0].first;
+                    if (best_match_rate2 < best_match_rate &&
+                            backbone_extension_alts[j].size() >= 2) {
+                        int edge_alt =  backbone_extension_alts[j][1].second; // second best
+                        EdgeLoc& edge_j = dg_.EdgeObjectMutable(backbone[j]);
+                        edge_j.original_edge = edge_alt;
+                        if (verbosity >= 2)
+                            std::cout << "Replacing backbone edge " << backbone[j] << " from "
+                                      << backbone0[j] << " to " << edge_alt << std::endl;
+                        backbone0[j] = edge_alt;
+                        backbone_extension_alts[j].erase(backbone_extension_alts[j].begin());
+                    }
                 }
             }
         }
@@ -743,8 +772,8 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
             int comp_id = component_ids[GetOriginalId(backbone[i])];
             if (comp_id != comp_id0) {
                 if (verbosity >= 2) {
-                    std::cout << "joining component " << comp_id << " (" << 
-                        component_edges[comp_id].size() << " edges) to " << comp_id0 << std::endl;
+                    std::cout << "joining component " << comp_id << " (" <<
+                              component_edges[comp_id].size() << " edges) to " << comp_id0 << std::endl;
                 }
                 for (size_t j = 0; j < component_edges[comp_id].size(); j++) {
                     int e = component_edges[comp_id][j];
@@ -752,7 +781,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
                 }
             }
             copy(component_edges[comp_id].begin(), component_edges[comp_id].end(),
-                    back_inserter(component_edges[comp_id0]));
+                 back_inserter(component_edges[comp_id0]));
             component_edges[comp_id].clear();
         }
     }
@@ -769,7 +798,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
         for ( auto el : length_to_edgeid ) {
             std::cout << el.first << " --> ";
             for ( auto l : el.second )
-        	std::cout << l << " ";
+                std::cout << l << " ";
             std::cout << std::endl;
         }
     }
@@ -795,28 +824,28 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
             if ( p1_best && !p2_best ) to_delete.push_back(p2);
             else if ( p2_best && !p1_best ) to_delete.push_back(p1);
             else if ( !p1_best && !p2_best ) {
-        	// look for 2nd order effects
-        	bool p1_adj_best = false;
-        	bool p2_adj_best = false;
-        	for ( int i = 0; i < hb_.FromSize( to_left[p1] ) && !p1_adj_best; i++ ) {
-        	    int eid = hb_.EdgeObjectIndexByIndexFrom(to_left[p1], i);
-        	    if ( best_path.find(eid) != best_path.end() ) p1_adj_best = true;
-        	}
-        	for ( int i = 0; i < hb_.ToSize( to_right[p1] ) && !p1_adj_best; i++ ) {
-        	    int eid = hb_.EdgeObjectIndexByIndexTo(to_right[p1], i);
-        	    if ( best_path.find(eid) != best_path.end() ) p1_adj_best = true;
-        	}
-        	for ( int i = 0; i < hb_.FromSize( to_left[p2] ) && !p2_adj_best; i++ ) {
-        	    int eid = hb_.EdgeObjectIndexByIndexFrom(to_left[p2], i);
-        	    if ( best_path.find(eid) != best_path.end() ) p2_adj_best = true;
-        	}
-        	for ( int i = 0; i < hb_.ToSize( to_right[p2] ) && !p2_adj_best; i++ ) {
-        	    int eid = hb_.EdgeObjectIndexByIndexTo(to_right[p2], i);
-        	    if ( best_path.find(eid) != best_path.end() ) p2_adj_best = true;
-        	}
+                // look for 2nd order effects
+                bool p1_adj_best = false;
+                bool p2_adj_best = false;
+                for ( int i = 0; i < hb_.FromSize( to_left[p1] ) && !p1_adj_best; i++ ) {
+                    int eid = hb_.EdgeObjectIndexByIndexFrom(to_left[p1], i);
+                    if ( best_path.find(eid) != best_path.end() ) p1_adj_best = true;
+                }
+                for ( int i = 0; i < hb_.ToSize( to_right[p1] ) && !p1_adj_best; i++ ) {
+                    int eid = hb_.EdgeObjectIndexByIndexTo(to_right[p1], i);
+                    if ( best_path.find(eid) != best_path.end() ) p1_adj_best = true;
+                }
+                for ( int i = 0; i < hb_.FromSize( to_left[p2] ) && !p2_adj_best; i++ ) {
+                    int eid = hb_.EdgeObjectIndexByIndexFrom(to_left[p2], i);
+                    if ( best_path.find(eid) != best_path.end() ) p2_adj_best = true;
+                }
+                for ( int i = 0; i < hb_.ToSize( to_right[p2] ) && !p2_adj_best; i++ ) {
+                    int eid = hb_.EdgeObjectIndexByIndexTo(to_right[p2], i);
+                    if ( best_path.find(eid) != best_path.end() ) p2_adj_best = true;
+                }
 
-        	if ( p1_adj_best && !p2_adj_best ) to_delete.push_back(p2);
-        	else if ( p2_adj_best && !p1_adj_best ) to_delete.push_back(p1);
+                if ( p1_adj_best && !p2_adj_best ) to_delete.push_back(p2);
+                else if ( p2_adj_best && !p1_adj_best ) to_delete.push_back(p1);
             }
         }
     }
@@ -862,7 +891,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
             backbone_reverted00.push_back(to_inv[*it]);
         }
         if (verbosity >= 2)
-        std::cout << "Reverted backbone: ";
+            std::cout << "Reverted backbone: ";
         backbone_reverted00.Println(std::cout);
         int v = to_left[backbone_reverted00[0]];
         for (size_t i = 0; i < backbone_reverted00.size(); i++) {
@@ -905,7 +934,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     //        if (!Member(to_del3, e1))
     //            prev_edges.push_back(e1);
     //    }
-    //    if (prev_edges.size() != 1) 
+    //    if (prev_edges.size() != 1)
     //        break;
     //    else
     //        backbone00_ext.push_front(prev_edges[0]);
@@ -930,7 +959,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
 
     // END OF INVERSION CODE
     ///////////////////////////////////////////////////////////////////
- 
+
     if (verbosity >= 2) {
         std::cout << "The backbone edges are: ";
         backbone.Println(std::cout);
@@ -946,12 +975,12 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     }
     // each edge belongs to a path between two edges [e1,.., e2], where e1
     // and e2 are all in the backbone
-    std::map<int, std::pair<int,int>> bb_anchors; 
-    for (auto& x: backbone) 
+    std::map<int, std::pair<int,int>> bb_anchors;
+    for (auto& x: backbone)
         bb_anchors[x] = std::make_pair(x,x);
 
 
-    if (verbosity >= 1) 
+    if (verbosity >= 1)
         std::cout << Date() << ": Looking for alternative paths between backbone edges" << std::endl;
     vec<int> backbone_dup(backbone.size(), 0);
     vec<int> backbone0 = ConvertToAssemblyPathFromUnrolled(backbone);
@@ -959,7 +988,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     while (true) {
         bool no_change = true; // keep searching if alternative path is found
         vec<vec<std::pair<int,int>>> known_starts(hb_.EdgeObjectCount());
-        for (int e2 = 0; e2 < dg_.EdgeObjectCount(); e2++) 
+        for (int e2 = 0; e2 < dg_.EdgeObjectCount(); e2++)
             known_starts[GetOriginalId(e2)].push(GetStart(e2), e2);
 
         for (int node2 = 0; node2 < dg_.N() && no_change; node2++) {
@@ -970,7 +999,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
                 int node2_next = dg_.From(node2)[j];
                 int node1_next = to_right[edge1];
                 // start from node1_next in graph1 and find a new path from
-                // known paths starting from node_next in graph2 
+                // known paths starting from node_next in graph2
                 std::set<int> known_edges1;
                 for (size_t k = 0; k < dg_.From(node2_next).size(); k++) {
                     int edge2_next = dg_.EdgeObjectIndexByIndexFrom(node2_next, k);
@@ -984,19 +1013,19 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
                     if (Member(backbone0, edge1_next)) continue;
 
                     if (verbosity >= 2)
-                        std::cout << "try path "<< edge2 << "(" << edge1 << ") -> (" 
-                            << edge1_next << ") " << std::endl;
+                        std::cout << "try path "<< edge2 << "(" << edge1 << ") -> ("
+                                  << edge1_next << ") " << std::endl;
 
                     // Recursively follow the edge until reaching in backbone again
                     // search for possible alternative paths from edge1 to back_edge1:
                     //    (xx) --edge1--> (node1_next) --edge1_next--> (node1_nn) --back_edge1--
                     // (node2) --edge2--> (node2_next) --edge2_next--> (xx)       --back_edge2--
                     int back_edge = -1;
-                    vec<std::pair<int,int>> alternative_path_and_start; 
+                    vec<std::pair<int,int>> alternative_path_and_start;
                     int start_next = GetStart(edge2) + hb_.EdgeLengthKmers(edge1);
                     alternative_path_and_start.push(edge1_next, start_next);
                     if (hb_.To(node1_next).solo() && hb_.From(node1_nn).solo() &&
-                            known_edges1.size() == 1 && 
+                            known_edges1.size() == 1 &&
                             to_right[*known_edges1.begin()] == node1_nn) { // alway add simple bubble
                         int edge1_nn = hb_.EdgeObjectIndexByIndexFrom(node1_nn, 0);
                         if (known_starts[edge1_nn].solo()) {
@@ -1004,15 +1033,14 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
                         }
                     }
                     if (back_edge == -1) {
-                        FindAlternativePath(node1_nn, &alternative_path_and_start, &back_edge, 
-                                known_starts, LenMax, MaxLocDevAllowed, verbosity);
+                        FindAlternativePath(node1_nn, &alternative_path_and_start, &back_edge,
+                                            known_starts, LenMax, MaxLocDevAllowed, verbosity);
                     }
                     if (back_edge != -1) {
-                        if (verbosity >= 2)
-                        {
-                            std::cout << "found alternative path between " << edge2 << "(" << edge1 << ")" << " and " 
-                                << back_edge << "(" << GetOriginalId(back_edge) << ")" << std::endl;
-                            for (auto&x: alternative_path_and_start) 
+                        if (verbosity >= 2) {
+                            std::cout << "found alternative path between " << edge2 << "(" << edge1 << ")" << " and "
+                                      << back_edge << "(" << GetOriginalId(back_edge) << ")" << std::endl;
+                            for (auto&x: alternative_path_and_start)
                                 std::cout << x.first << "@" << x.second << " ";
                             std::cout << std::endl;
                         }
@@ -1022,7 +1050,7 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
 
                         int anchor_start = bb_anchors[edge2].first;
                         int anchor_end = bb_anchors[back_edge].second;
-                        for (int x = new_edge_start; x <= new_edge_end; x++) 
+                        for (int x = new_edge_start; x <= new_edge_end; x++)
                             bb_anchors[x] = std::make_pair(anchor_start, anchor_end);
                         int pos1 = find(backbone.begin(), backbone.end(), anchor_start) - backbone.begin();
                         int pos2 = find(backbone.begin(), backbone.end(), anchor_end) - backbone.begin();
@@ -1044,9 +1072,9 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
     }
 
 
-    if(verbosity >= 2){
+    if(verbosity >= 2) {
         std::cout<< "prefered edges ";
-        for( const auto& entry: prefered_edges){
+        for( const auto& entry: prefered_edges) {
             std::cout << entry << " " ;
         }
         std::cout<< std::endl;
@@ -1054,104 +1082,102 @@ void EdgesOnRef::UnrollAll(const int verbosity, const int iLoBound, const int iH
 
 
 
-for( bool bLoop=bCorrection;bLoop;)
-{
-    bLoop=false;
-    auto dups = count_dg_dups();
-    if( dups.size() > 0){
-        vec<int> dg_to_right; dg_.ToRight(dg_to_right);
-        vec<int> dg_to_left; dg_.ToLeft(dg_to_left);
-        for( auto& entry: dups){
-            std::cout << std::get<0>(entry) << " "
-                      << std::get<1>(entry) << " "
-                      << std::get<2>(entry) << " "
-                      << std::get<3>(entry) << " "
-                      << std::endl;
-        }
-        auto connection_counts = count_dg_prefered_edge_connection(prefered_edges,dg_to_left,dg_to_right);
+    for( bool bLoop=bCorrection; bLoop;) {
+        bLoop=false;
+        auto dups = count_dg_dups();
+        if( dups.size() > 0) {
+            vec<int> dg_to_right;
+            dg_.ToRight(dg_to_right);
+            vec<int> dg_to_left;
+            dg_.ToLeft(dg_to_left);
+            for( auto& entry: dups) {
+                std::cout << std::get<0>(entry) << " "
+                          << std::get<1>(entry) << " "
+                          << std::get<2>(entry) << " "
+                          << std::get<3>(entry) << " "
+                          << std::endl;
+            }
+            auto connection_counts = count_dg_prefered_edge_connection(prefered_edges,dg_to_left,dg_to_right);
 //        std::cout <<"connection count: "<< std::endl;
 //        for(size_t ii=0;ii<connection_counts.size();++ii){
 //            std::cout << ii << " " << connection_counts[ii].first << " " << connection_counts[ii].second << std::endl;
 //        }
-        vec<std::tuple<size_t,int,size_t,bool,int,int,int,int>> dups_counted(dups.size());
-        for(size_t ii=0;ii<dups.size();++ii){
-            const auto& entry= dups[ii];
-            auto vertex = std::get<0>(entry) ;
-            auto vi = std::get<1>(entry) ;
-            auto vj = std::get<2>(entry) ;
-            auto dir = std::get<3>(entry) ;
+            vec<std::tuple<size_t,int,size_t,bool,int,int,int,int>> dups_counted(dups.size());
+            for(size_t ii=0; ii<dups.size(); ++ii) {
+                const auto& entry= dups[ii];
+                auto vertex = std::get<0>(entry) ;
+                auto vi = std::get<1>(entry) ;
+                auto vj = std::get<2>(entry) ;
+                auto dir = std::get<3>(entry) ;
 
-            if( dir==0){ // to
-                auto ei = dg_.EdgeObjectIndexByIndexTo(vertex,vi);
-                auto ej = dg_.EdgeObjectIndexByIndexTo(vertex,vj);
+                if( dir==0) { // to
+                    auto ei = dg_.EdgeObjectIndexByIndexTo(vertex,vi);
+                    auto ej = dg_.EdgeObjectIndexByIndexTo(vertex,vj);
+                    ForceAssert( dg_.EdgeObject(ei).original_edge == dg_.EdgeObject(ej).original_edge);
+
+                    size_t ci = connection_counts[ei].first;
+                    size_t cj = connection_counts[ej].first;
+                    bool bji = cj>ci;
+                    int loser = bji?ei:ej;
+                    dups_counted[ii]=std::make_tuple(std::max(ci,cj),loser,std::min(ci,cj),bji,vertex,vi,vj,dir);
+                } else { // from
+                    auto ei = dg_.EdgeObjectIndexByIndexFrom(vertex,vi);
+                    auto ej = dg_.EdgeObjectIndexByIndexFrom(vertex,vj);
+                    ForceAssert( dg_.EdgeObject(ei).original_edge == dg_.EdgeObject(ej).original_edge);
+
+                    size_t ci = connection_counts[ei].second;
+                    size_t cj = connection_counts[ej].second;
+                    bool bji = cj>ci;
+                    int loser = bji?ei:ej;
+                    dups_counted[ii]=std::make_tuple(std::max(ci,cj),loser,std::min(ci,cj),bji,vertex,vi,vj,dir);
+                }
+            }
+            Sort(dups_counted);
+            for( auto& entry: dups_counted) {
+                auto c1 = std::get<0>(entry) ;
+                auto loser = std::get<1>(entry);
+                auto c2 = std::get<2>(entry) ;
+                auto bji = std::get<3>(entry) ;
+                auto vertex = std::get<4>(entry) ;
+                auto vi = std::get<5>(entry) ;
+                auto vj = std::get<6>(entry) ;
+                auto dir = std::get<7>(entry) ;
+
+                auto ci = (bji)?c2:c1;
+                auto cj = (bji)?c1:c2;
+
+                int ei,ej;
+                if( dir==0) { // to
+                    ei = dg_.EdgeObjectIndexByIndexTo(vertex,vi);
+                    ej = dg_.EdgeObjectIndexByIndexTo(vertex,vj);
+                } else {
+                    ei = dg_.EdgeObjectIndexByIndexFrom(vertex,vi);
+                    ej = dg_.EdgeObjectIndexByIndexFrom(vertex,vj);
+                }
                 ForceAssert( dg_.EdgeObject(ei).original_edge == dg_.EdgeObject(ej).original_edge);
-
-                size_t ci = connection_counts[ei].first;
-                size_t cj = connection_counts[ej].first;
-                bool bji = cj>ci;
-                int loser = bji?ei:ej;
-                dups_counted[ii]=std::make_tuple(std::max(ci,cj),loser,std::min(ci,cj),bji,vertex,vi,vj,dir);
+                std::cout << dg_.EdgeObject(ei).original_edge << " "
+                          << dir << "|"
+                          << loser << " "
+                          << ei << " "
+                          << ej << " "
+                          << ci << " "
+                          << cj << " "<< std::endl;
             }
-            else{ // from
-                auto ei = dg_.EdgeObjectIndexByIndexFrom(vertex,vi);
-                auto ej = dg_.EdgeObjectIndexByIndexFrom(vertex,vj);
-                ForceAssert( dg_.EdgeObject(ei).original_edge == dg_.EdgeObject(ej).original_edge);
-
-                size_t ci = connection_counts[ei].second;
-                size_t cj = connection_counts[ej].second;
-                bool bji = cj>ci;
-                int loser = bji?ei:ej;
-                dups_counted[ii]=std::make_tuple(std::max(ci,cj),loser,std::min(ci,cj),bji,vertex,vi,vj,dir);
+            vec<int> to_delete;
+            clear_dg_branch(to_delete, std::get<1>(dups_counted.back()),std::get<7>(dups_counted.back()),dg_to_left,dg_to_right  );
+            Sort(to_delete);
+            for(auto& entry: backbone) {
+                int count = 0;
+                for(count=0; count<entry; ++count) { }
+                ForceAssert(count<=entry);
+                entry-=count;
             }
+            dg_.DeleteEdges(to_delete);
+            bLoop=true;
         }
-        Sort(dups_counted);
-        for( auto& entry: dups_counted){
-            auto c1 = std::get<0>(entry) ;
-            auto loser = std::get<1>(entry);
-            auto c2 = std::get<2>(entry) ;
-            auto bji = std::get<3>(entry) ;
-            auto vertex = std::get<4>(entry) ;
-            auto vi = std::get<5>(entry) ;
-            auto vj = std::get<6>(entry) ;
-            auto dir = std::get<7>(entry) ;
-
-            auto ci = (bji)?c2:c1;
-            auto cj = (bji)?c1:c2;
-
-            int ei,ej;
-            if( dir==0){ // to
-                ei = dg_.EdgeObjectIndexByIndexTo(vertex,vi);
-                ej = dg_.EdgeObjectIndexByIndexTo(vertex,vj);
-            }
-            else{
-                ei = dg_.EdgeObjectIndexByIndexFrom(vertex,vi);
-                ej = dg_.EdgeObjectIndexByIndexFrom(vertex,vj);
-            }
-            ForceAssert( dg_.EdgeObject(ei).original_edge == dg_.EdgeObject(ej).original_edge);
-            std::cout << dg_.EdgeObject(ei).original_edge << " "
-                      << dir << "|"
-                      << loser << " "
-                      << ei << " "
-                      << ej << " "
-                      << ci << " "
-                      << cj << " "<< std::endl;
-        }
-        vec<int> to_delete;
-        clear_dg_branch(to_delete, std::get<1>(dups_counted.back()),std::get<7>(dups_counted.back()),dg_to_left,dg_to_right  );
-        Sort(to_delete);
-        for(auto& entry: backbone){
-            int count = 0;
-            for(count=0;count<entry;++count){ }
-            ForceAssert(count<=entry);
-            entry-=count;
-        }
-        dg_.DeleteEdges(to_delete);
-        bLoop=true;
     }
-}
 
-    if (verbosity >= 2)
-    {
+    if (verbosity >= 2) {
         std::cout << "Seeding edges are: " ;
         for (size_t i = 0; i < backbone.size(); i++) {
             if (backbone_dup[i] == 0) std::cout << backbone[i] << " ";
@@ -1163,14 +1189,14 @@ for( bool bLoop=bCorrection;bLoop;)
 };
 
 
-vec<std::tuple<int,int,int,int>> EdgesOnRef::count_dg_dups()const{
+vec<std::tuple<int,int,int,int>> EdgesOnRef::count_dg_dups()const {
     vec<std::tuple<int,int,int,int>> out;
     for (int vertex = 0; vertex < dg_.N()  ; vertex++) {
         for (size_t ii = 0; ii < dg_.To(vertex).size(); ii++) {
             auto ei_i = dg_.EdgeObjectIndexByIndexTo(vertex,ii);
             for (size_t jj = ii+1; jj < dg_.To(vertex).size(); jj++) {
                 auto ei_j = dg_.EdgeObjectIndexByIndexTo(vertex,jj);
-                if( dg_.EdgeObject(ei_i).original_edge == dg_.EdgeObject(ei_j).original_edge){
+                if( dg_.EdgeObject(ei_i).original_edge == dg_.EdgeObject(ei_j).original_edge) {
                     std::cout <<  dg_.EdgeObject(ei_i).original_edge << std::endl;
                     out.push_back( std::make_tuple(vertex,ii,jj,0) );
                 }
@@ -1180,7 +1206,7 @@ vec<std::tuple<int,int,int,int>> EdgesOnRef::count_dg_dups()const{
             auto ei_i = dg_.EdgeObjectIndexByIndexFrom(vertex,ii);
             for (size_t jj = ii+1; jj < dg_.From(vertex).size(); jj++) {
                 auto ei_j = dg_.EdgeObjectIndexByIndexFrom(vertex,jj);
-                if( dg_.EdgeObject(ei_i).original_edge == dg_.EdgeObject(ei_j).original_edge){
+                if( dg_.EdgeObject(ei_i).original_edge == dg_.EdgeObject(ei_j).original_edge) {
                     std::cout <<  dg_.EdgeObject(ei_i).original_edge << std::endl;
                     out.push_back( std::make_tuple(vertex,ii,jj,1) );
                 }
@@ -1190,9 +1216,9 @@ vec<std::tuple<int,int,int,int>> EdgesOnRef::count_dg_dups()const{
     return out;
 }
 vec<std::pair<size_t,size_t>> EdgesOnRef::count_dg_prefered_edge_connection(const std::unordered_set<int>& prefered_edges
-                                                                           ,const vec<int>& to_left, const vec<int>& to_right)const{
+,const vec<int>& to_left, const vec<int>& to_right)const {
     vec<std::pair<size_t,size_t>> out(dg_.EdgeObjectCount(),std::make_pair(0ul,0ul));
-    for( auto pe: prefered_edges){
+    for( auto pe: prefered_edges) {
         //going right
         const size_t nBases = hb_.EdgeObject(GetOriginalId(pe)).size();
         {
@@ -1200,15 +1226,15 @@ vec<std::pair<size_t,size_t>> EdgesOnRef::count_dg_prefered_edge_connection(cons
             std::set<int> discovered;
             to_do.push_back(pe);
             discovered.insert(pe);
-            while(!to_do.empty()){
+            while(!to_do.empty()) {
                 auto edge=to_do.front();
                 to_do.pop_front();
 
                 out[edge].first+=nBases;
                 auto w = to_right[edge];
-                for( int ee=0 ; ee < dg_.FromSize(w);++ee){
+                for( int ee=0 ; ee < dg_.FromSize(w); ++ee) {
                     auto ei = dg_.EdgeObjectIndexByIndexFrom(w,ee);
-                    if( discovered.find(ei) == discovered.end()){
+                    if( discovered.find(ei) == discovered.end()) {
                         discovered.insert(ei);
                         to_do.push_back(ei);
                     }
@@ -1221,15 +1247,15 @@ vec<std::pair<size_t,size_t>> EdgesOnRef::count_dg_prefered_edge_connection(cons
             std::set<int> discovered;
             to_do.push_back(pe);
             discovered.insert(pe);
-            while(!to_do.empty()){
+            while(!to_do.empty()) {
                 auto edge=to_do.front();
                 to_do.pop_front();
 
                 out[edge].second+=nBases;
                 auto v = to_left[edge];
-                for( int ee=0 ; ee < dg_.ToSize(v);++ee){
+                for( int ee=0 ; ee < dg_.ToSize(v); ++ee) {
                     auto ei = dg_.EdgeObjectIndexByIndexTo(v,ee);
-                    if( discovered.find(ei) == discovered.end()){
+                    if( discovered.find(ei) == discovered.end()) {
                         discovered.insert(ei);
                         to_do.push_back(ei);
                     }
@@ -1240,46 +1266,44 @@ vec<std::pair<size_t,size_t>> EdgesOnRef::count_dg_prefered_edge_connection(cons
     return out;
 }
 
-void EdgesOnRef::clear_dg_branch(vec<int>& to_delete, int root_edge,int dir,const vec<int>& to_left,const vec<int>&to_right){
+void EdgesOnRef::clear_dg_branch(vec<int>& to_delete, int root_edge,int dir,const vec<int>& to_left,const vec<int>&to_right) {
     to_delete.clear();
     std::set<int> deleted;
     std::deque<int> to_do;
     to_do.push_back(root_edge);
-    while(!to_do.empty()){
+    while(!to_do.empty()) {
         int edge = to_do.front();
         to_do.pop_front();
-        if( deleted.find(edge)== deleted.end()){
+        if( deleted.find(edge)== deleted.end()) {
             deleted.insert(edge);
             to_delete.push_back(edge);
 
 
             size_t nParallelAway=0;
-            if( dir == 0){
+            if( dir == 0) {
                 int vertex = to_left[edge];
-                for(int ee=0;ee<dg_.FromSize(vertex);++ee){
-                    if( deleted.find(dg_.EdgeObjectIndexByIndexFrom(vertex,ee))==deleted.end()){
+                for(int ee=0; ee<dg_.FromSize(vertex); ++ee) {
+                    if( deleted.find(dg_.EdgeObjectIndexByIndexFrom(vertex,ee))==deleted.end()) {
                         ++nParallelAway;
                     }
                 }
-            }
-            else{
+            } else {
                 int vertex = to_right[edge];
-                for(int ee=0;ee<dg_.ToSize(vertex);++ee){
-                    if( deleted.find(dg_.EdgeObjectIndexByIndexTo(vertex,ee))==deleted.end()){
+                for(int ee=0; ee<dg_.ToSize(vertex); ++ee) {
+                    if( deleted.find(dg_.EdgeObjectIndexByIndexTo(vertex,ee))==deleted.end()) {
                         ++nParallelAway;
                     }
                 }
             }
-            if(nParallelAway==0){
-                if( dir == 0){
+            if(nParallelAway==0) {
+                if( dir == 0) {
                     int vertex = to_left[edge];
-                    for(int ee=0;ee<dg_.ToSize(vertex);++ee){
+                    for(int ee=0; ee<dg_.ToSize(vertex); ++ee) {
                         to_do.push_back( dg_.EdgeObjectIndexByIndexTo(vertex,ee));
                     }
-                }
-                else{
+                } else {
                     int vertex = to_right[edge];
-                    for(int ee=0;ee<dg_.FromSize(vertex);++ee){
+                    for(int ee=0; ee<dg_.FromSize(vertex); ++ee) {
                         to_do.push_back( dg_.EdgeObjectIndexByIndexFrom(vertex,ee));
                     }
                 }
@@ -1299,17 +1323,16 @@ void EdgesOnRef::clear_dg_branch(vec<int>& to_delete, int root_edge,int dir,cons
 
 // Starting from an edge, exploring all path until it lands to the unrolled graph and
 // the inferred edge location is consistent with know value.
-bool EdgesOnRef::FindAlternativePath(int node, vec<std::pair<int,int>> *p_edge_starts, int *p_back_edge, 
-        const vec<vec<std::pair<int,int>>>& known_starts, 
-        const int LenMax, const int MaxLocDevAllowed,
-        int verbosity) 
-{
+bool EdgesOnRef::FindAlternativePath(int node, vec<std::pair<int,int>> *p_edge_starts, int *p_back_edge,
+                                     const vec<vec<std::pair<int,int>>>& known_starts,
+                                     const int LenMax, const int MaxLocDevAllowed,
+                                     int verbosity) {
     ForceAssertGt(p_edge_starts->size(), 0u);
     for (size_t i = 0; i < hb_.From(node).size(); i++) {
         int node_new = hb_.From(node)[i];
         int edge_new = hb_.EdgeObjectIndexByIndexFrom(node, i);
-        int start_new = p_edge_starts->back().second + 
-            hb_.EdgeLengthKmers(p_edge_starts->back().first) ;
+        int start_new = p_edge_starts->back().second +
+                        hb_.EdgeLengthKmers(p_edge_starts->back().first) ;
         // do not allow loop
         bool is_loop = false;
         for (auto& x: *p_edge_starts) {
@@ -1335,16 +1358,17 @@ bool EdgesOnRef::FindAlternativePath(int node, vec<std::pair<int,int>> *p_edge_s
         if (start_new - p_edge_starts->front().second > LenMax
                 || starts.size() > 0 || p_edge_starts->size() > 10) {
             if (starts.size() > 0 && verbosity >= 2) {
-                std::cout << "skip mismatch edge  " << edge_new << " expect_start= " << start_new 
-                    << " known_start= " ;
-                for (const auto& x : starts) std::cout << x.first << " "; std::cout << std::endl;
+                std::cout << "skip mismatch edge  " << edge_new << " expect_start= " << start_new
+                          << " known_start= " ;
+                for (const auto& x : starts) std::cout << x.first << " ";
+                std::cout << std::endl;
             }
             continue;
         }
         p_edge_starts->push_back(std::make_pair(edge_new,start_new));
         //std::cout << "follow edge ->" << edge_new << std::endl;
-        if (FindAlternativePath(node_new, p_edge_starts, p_back_edge, known_starts, 
-                    LenMax, MaxLocDevAllowed, verbosity))
+        if (FindAlternativePath(node_new, p_edge_starts, p_back_edge, known_starts,
+                                LenMax, MaxLocDevAllowed, verbosity))
             return true;
     }
     // all branches failed, clear last node, track back.
@@ -1352,10 +1376,11 @@ bool EdgesOnRef::FindAlternativePath(int node, vec<std::pair<int,int>> *p_edge_s
     return false;
 }
 
-void EdgesOnRef::AddConnections(int front_edge, int back_edge, const vec<std::pair<int,int>>& alternative_path_and_start)
-{
-    vec<int> to_right; dg_.ToRight(to_right);
-    vec<int> to_left; dg_.ToLeft(to_left);
+void EdgesOnRef::AddConnections(int front_edge, int back_edge, const vec<std::pair<int,int>>& alternative_path_and_start) {
+    vec<int> to_right;
+    dg_.ToRight(to_right);
+    vec<int> to_left;
+    dg_.ToLeft(to_left);
     // add the missing node if needed
     int last_node = (back_edge == -1 ? dg_.N() : to_left[back_edge]);
     if (back_edge == -1) dg_.AddVertices(1);
@@ -1366,11 +1391,11 @@ void EdgesOnRef::AddConnections(int front_edge, int back_edge, const vec<std::pa
     } else {
         int start_new_vertices = dg_.N();
         dg_.AddVertices(alternative_path_and_start.size() - 1);
-        dg_.AddEdge(first_node, start_new_vertices, 
-                EdgeLoc(alternative_path_and_start.front()));
+        dg_.AddEdge(first_node, start_new_vertices,
+                    EdgeLoc(alternative_path_and_start.front()));
         for (size_t i = 1; i < alternative_path_and_start.size() - 1; ++i) {
-            dg_.AddEdge(start_new_vertices + i-1, start_new_vertices+i, 
-                    EdgeLoc(alternative_path_and_start[i]));
+            dg_.AddEdge(start_new_vertices + i-1, start_new_vertices+i,
+                        EdgeLoc(alternative_path_and_start[i]));
         }
         dg_.AddEdge(dg_.N()-1, last_node, EdgeLoc(alternative_path_and_start.back()));
     }
@@ -1379,9 +1404,8 @@ void EdgesOnRef::AddConnections(int front_edge, int back_edge, const vec<std::pa
 // Align each edge from bubble graph to reference and call variants.
 // Also report the alignment of these edges, which are used to find friend
 // locations.
-void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_groups, 
-        vec<align>* p_edge_aligns, int verbosity) 
-{
+void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_groups,
+        vec<align>* p_edge_aligns, int verbosity) {
     if (verbosity >=1) std::cout << Date() << ": Start calling variants" << std::endl;
     // identify anchoring edges from bubble graph
     vec<int> anchoring_edges;
@@ -1393,7 +1417,7 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
             ForceAssertEq(bubble_graph_.To(n2).size(), 1u);
             anchoring_edges.push_back(e);
             free_ends.push(bubble_graph_.To(n1).empty(),
-                    bubble_graph_.From(n2).empty());
+                           bubble_graph_.From(n2).empty());
         }
     }
     int nedges = bubble_graph_.EdgeObjectCount();
@@ -1401,7 +1425,7 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
     ForceAssert( ngroups >= 0 );
     // if ( ngroups < 0 ) ngroups = 0;
 
-    // to be calculated 
+    // to be calculated
     vec<VariantCallGroup> all_groups(ngroups);
     vec<align>   align_all_edges(nedges);
     for (size_t i = 0; i < anchoring_edges.size(); i++) {
@@ -1411,12 +1435,12 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
         basevector edge_seq = bubble_graph_.EdgeObject(e);
         // trim K-1 base if overlaping with cells
         int trim_start = (free_ends[i].first ? 0 : hb_.K()-1);
-        int trim_end = (free_ends[i].second ? 0 : hb_.K()-1); 
+        int trim_end = (free_ends[i].second ? 0 : hb_.K()-1);
 
-        char edge_prev_base = ( trim_start == 0 ? 'X' : 
-                as_base(edge_seq[trim_start-1]) );
-        edge_seq.SetToSubOf(edge_seq, trim_start, 
-                edge_seq.size() - trim_start - trim_end);
+        char edge_prev_base = ( trim_start == 0 ? 'X' :
+                                as_base(edge_seq[trim_start-1]) );
+        edge_seq.SetToSubOf(edge_seq, trim_start,
+                            edge_seq.size() - trim_start - trim_end);
         int path_offset = GetStart(path.front()) + trim_start;
 
         align a;
@@ -1424,12 +1448,12 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
 
         RestrictedAlign( edge_seq, gplus_, path_offset, bandwidth, a );
         if (verbosity >= 2) {
-            std::cout << "anchoring edge "  << i << " [" <<  a.pos1() << "," 
-                << a.Pos1() << ") aligns to [" << a.pos2() << "," 
-                << a.Pos2() << ") " << std::endl;
+            std::cout << "anchoring edge "  << i << " [" <<  a.pos1() << ","
+                      << a.Pos1() << ") aligns to [" << a.pos2() << ","
+                      << a.Pos2() << ") " << std::endl;
             std::cout << "path0= ";
             path0.Println(std::cout);
-            if (trim_start == 0 || trim_end == 0) 
+            if (trim_start == 0 || trim_end == 0)
                 std::cout << "trims= " << trim_start << "," << trim_end << std::endl;
             PrintVisualAlignment(True, std::cout, edge_seq, gplus_, a);
         }
@@ -1441,17 +1465,22 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
         vec<std::pair<String,String>> change;
         bool head_ins = (trim_start != 0);
         bool tail_ins = (trim_end != 0);
-        GetEditsFromAlign(edge_seq, gplus_, a, &edits, &change, 
-                edge_prev_base, 'X', head_ins, tail_ins);
+        GetEditsFromAlign(edge_seq, gplus_, a, &edits, &change,
+                          edge_prev_base, 'X', head_ins, tail_ins);
         FilterAndModifyEdits(edits, change);
         vec<VariantCall> vcalls;
         for (size_t j = 0; j < edits.size(); j++) {
             vec<std::pair<int,int>> edge0_pos = FindEdgeHome(edits[j].first+trim_start, path0);
             for (size_t kk = 0; kk < edge0_pos.size(); kk++) {
-                VariantCall vcall = { { gid, edits[j].second, edits[j].third, 
-                                        change[j].first, change[j].second}, 
-                                      { e, edits[j].first, 
-                                        edge0_pos[kk].first, edge0_pos[kk].second} }; 
+                VariantCall vcall = { {
+                        gid, edits[j].second, edits[j].third,
+                        change[j].first, change[j].second
+                    },
+                    {
+                        e, edits[j].first,
+                        edge0_pos[kk].first, edge0_pos[kk].second
+                    }
+                };
                 vcalls.push_back(vcall);
             }
         }
@@ -1459,7 +1488,7 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
         a.Setpos2(a.pos2() - gplus_ext_); // related to G
         //new_hb_edge_mapping_.ConvertPathToOld(path0);
         vcall_group.AddBranch(path0, vcalls, a, std::make_pair(trim_start, trim_end),
-                bubble_graph_edge_weight_[e]);
+                              bubble_graph_edge_weight_[e]);
         vcall_group.AddRefWeight(vec<double>(bubble_graph_edge_weight_[e].size(), 0.0));
         all_groups[i*2] = vcall_group;
     }
@@ -1468,27 +1497,42 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
     for (size_t i = 0; i+1 < anchoring_edges.size(); i++) {
         auto& groupL = all_groups[2*i];
         auto& groupR = all_groups[2*i+2];
-        if( groupL.GetEndPos() > groupR.GetStartPos()){
+        if( groupL.GetEndPos() > groupR.GetStartPos()) {
             int64_t l_last_v_pos = std::numeric_limits<int64_t>::min();
-            for( const auto& b: groupL.GetVariantCalls() ){ for( const auto& v: b){ l_last_v_pos=std::max(int64_t(v.variant.pos),l_last_v_pos); } }
+            for( const auto& b: groupL.GetVariantCalls() ) {
+                for( const auto& v: b) {
+                    l_last_v_pos=std::max(int64_t(v.variant.pos),l_last_v_pos);
+                }
+            }
             int64_t r_first_v_pos = std::numeric_limits<int64_t>::max();
-            for( const auto& b: groupR.GetVariantCalls() ){ for( const auto& v: b){ r_first_v_pos=std::min(int64_t(v.variant.pos),r_first_v_pos); } }
-            if ( l_last_v_pos >= r_first_v_pos ){
+            for( const auto& b: groupR.GetVariantCalls() ) {
+                for( const auto& v: b) {
+                    r_first_v_pos=std::min(int64_t(v.variant.pos),r_first_v_pos);
+                }
+            }
+            if ( l_last_v_pos >= r_first_v_pos ) {
                 auto l_pad = abs(groupL.GetEndPos()-l_last_v_pos);
                 auto r_pad = abs(groupR.GetEndPos()-r_first_v_pos);
-                if( r_pad>l_pad ){
+                if( r_pad>l_pad ) {
                     std::cout << "\nremoving calls from group " << 2*i << " located in its overlap with group " << 2*i+2 << "\n" <<std::endl;
-                    for( auto& b: groupL.GetVariantCalls() ){
+                    for( auto& b: groupL.GetVariantCalls() ) {
                         vec<Bool> to_delete(b.size(),False);
-                        for(size_t ii=0;ii<b.size();++ii){ if( b[ii].variant.pos>=r_first_v_pos ){ to_delete[ii]=True; } }
+                        for(size_t ii=0; ii<b.size(); ++ii) {
+                            if( b[ii].variant.pos>=r_first_v_pos ) {
+                                to_delete[ii]=True;
+                            }
+                        }
                         EraseIf(b,to_delete);
                     }
-                }
-                else{
+                } else {
                     std::cout << "\nremoving calls from group " << 2*i+2 << " located in its overlap with group " << 2*i << "\n" <<std::endl;
-                    for( auto& b: groupR.GetVariantCalls() ){
+                    for( auto& b: groupR.GetVariantCalls() ) {
                         vec<Bool> to_delete(b.size(),False);
-                        for(size_t ii=0;ii<b.size();++ii){ if( b[ii].variant.pos<=l_last_v_pos ){ to_delete[ii]=True; } }
+                        for(size_t ii=0; ii<b.size(); ++ii) {
+                            if( b[ii].variant.pos<=l_last_v_pos ) {
+                                to_delete[ii]=True;
+                            }
+                        }
                         EraseIf(b,to_delete);
                     }
                 }
@@ -1498,8 +1542,10 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
     // find all paths between cell region
     int ncells = anchoring_edges.size() - 1;
 
-    vec<int> to_right3; bubble_graph_.ToRight(to_right3);
-    vec<int> to_left3;  bubble_graph_.ToLeft(to_left3);
+    vec<int> to_right3;
+    bubble_graph_.ToRight(to_right3);
+    vec<int> to_left3;
+    bubble_graph_.ToLeft(to_left3);
     for ( int64_t i = 0; i < anchoring_edges.jsize()-1; i++ ) {
         int header_edge = anchoring_edges[i];
         int trailer_edge =  anchoring_edges[i+1];
@@ -1513,7 +1559,7 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
         VariantCallGroup vcall_group(gid, cell_start, cell_end);
         if (cell_start >= cell_end) {
             std::cout << "   skip the overlapping region between "
-                << header_edge << " and " << trailer_edge << std::endl;
+                      << header_edge << " and " << trailer_edge << std::endl;
             all_groups[2*i+1] = vcall_group;
             continue;
         }
@@ -1527,7 +1573,8 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
             basevector branch_base = bubble_graph_.EdgeObject(e);
 
             // Align the edge to reference. penalize end-gaps during alignment
-            int nerror; alignment al;
+            int nerror;
+            alignment al;
 
             /*
             int score = SmithWatAffine(branch_base, cell_ref, al, true, true);
@@ -1544,22 +1591,26 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
             a.PerfectIntervals2( branch_base, cell_ref, p2 );
             const int ML = 20;
             Bool left_ok = False, right_ok = False;
-            for ( int i = 0; i < p1.isize( ); i++ )
-            {    if ( p1[i].Start( ) == 0 && p2[i].Start( ) == 0 
-                    && p1[i].Length( ) >= ML ) 
-                 {    left_ok = True;    }
-                 if ( p1[i].Stop( ) == branch_base.isize( )
-                      && p2[i].Stop( ) == cell_ref.isize( )
-                      && p1[i].Length( ) >= ML ) 
-                 {    right_ok = True;    }    }
-            if ( !left_ok || !right_ok )
-            {    alignment al;
-                 SmithWatAffine(branch_base, cell_ref, al, true, true);
-                 a = align(al);    }
+            for ( int i = 0; i < p1.isize( ); i++ ) {
+                if ( p1[i].Start( ) == 0 && p2[i].Start( ) == 0
+                        && p1[i].Length( ) >= ML ) {
+                    left_ok = True;
+                }
+                if ( p1[i].Stop( ) == branch_base.isize( )
+                        && p2[i].Stop( ) == cell_ref.isize( )
+                        && p1[i].Length( ) >= ML ) {
+                    right_ok = True;
+                }
+            }
+            if ( !left_ok || !right_ok ) {
+                alignment al;
+                SmithWatAffine(branch_base, cell_ref, al, true, true);
+                a = align(al);
+            }
 
             if (verbosity >= 2) {
-                std::cout << "align branch"  << j << " [" <<  a.pos1() << "," << a.Pos1() 
-                    << ") aligns to [" << a.pos2() << "," << a.Pos2() << ") " << std::endl;
+                std::cout << "align branch"  << j << " [" <<  a.pos1() << "," << a.Pos1()
+                          << ") aligns to [" << a.pos2() << "," << a.Pos2() << ") " << std::endl;
                 std::cout << "path0= ";
                 path0.Println(std::cout);
                 PrintVisualAlignment(True, std::cout, branch_base, cell_ref, a);
@@ -1571,18 +1622,23 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
             vec<triple<int,int,String>> edits;
             vec<std::pair<String,String>> change;
             char prev_base = as_base(*(header.end() - bubble_graph_.K()));
-            GetEditsFromAlign(branch_base, gplus_, a, &edits, &change, 
-                    prev_base, 'X', true, true);
+            GetEditsFromAlign(branch_base, gplus_, a, &edits, &change,
+                              prev_base, 'X', true, true);
             FilterAndModifyEdits(edits, change);
 
             vec<VariantCall> vcalls;
             for (size_t k = 0; k < edits.size(); k++) {
                 vec<std::pair<int,int>> edge0_pos = FindEdgeHome(edits[k].first, path0);
                 for (size_t kk = 0; kk < edge0_pos.size(); kk++) {
-                    VariantCall vcall = { { gid, edits[k].second, edits[k].third, 
-                                            change[k].first, change[k].second }, 
-                                          { e, edits[k].first, 
-                                            edge0_pos[kk].first, edge0_pos[kk].second } }; 
+                    VariantCall vcall = { {
+                            gid, edits[k].second, edits[k].third,
+                            change[k].first, change[k].second
+                        },
+                        {
+                            e, edits[k].first,
+                            edge0_pos[kk].first, edge0_pos[kk].second
+                        }
+                    };
                     vcalls.push_back(vcall);
                 }
             }
@@ -1591,7 +1647,7 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
                 //new_hb_edge_mapping_.ConvertPathToOld(path0);
                 vcall_group.AddBranch(path0, vcalls, a, std::make_pair(0, 0), bubble_graph_edge_weight_[e]);
             }
-            if (bubble_graph_edge_is_ref_[e]) 
+            if (bubble_graph_edge_is_ref_[e])
                 ref_weight = bubble_graph_edge_weight_[e];
         }
         vcall_group.AddRefWeight(ref_weight);
@@ -1605,15 +1661,14 @@ void EdgesOnRef::CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_g
 
 // Determine the location on sub-edges given a position in the untrimmed path edge,
 // The sub-edges are the edge id from hbp
-vec<std::pair<int,int>> EdgesOnRef::FindEdgeHome(int pos_on_edge, const vec<int>& path0) const
-{
+vec<std::pair<int,int>> EdgesOnRef::FindEdgeHome(int pos_on_edge, const vec<int>& path0) const {
     vec<std::pair<int,int>> edge0_start;
     int sub_start = 0, sub_end = 0;
     for (size_t i = 0; i < path0.size(); i++) {
         sub_start = (i == 0 ? 0 : sub_end - hb_.K() + 1);
         sub_end = sub_start + hb_.EdgeLengthBases(path0[i]);
         if (sub_start >= pos_on_edge) break;
-        if (pos_on_edge < sub_end ) 
+        if (pos_on_edge < sub_end )
             edge0_start.push(path0[i], pos_on_edge - sub_start);
     }
     for (auto& p: edge0_start) {
@@ -1624,9 +1679,8 @@ vec<std::pair<int,int>> EdgesOnRef::FindEdgeHome(int pos_on_edge, const vec<int>
     return edge0_start;
 }
 
-void EdgesOnRef::DumpUnrolled(String filename, 
-        const vec<std::pair<int,Bool>>* p_hbp_to_hb) const
-{
+void EdgesOnRef::DumpUnrolled(String filename,
+                              const vec<std::pair<int,Bool>>* p_hbp_to_hb) const {
     vec<String> edge_names2(dg_.EdgeObjectCount(),"");
     vec<double> lengths2( dg_.EdgeObjectCount( ) );
     for (size_t i = 0; i < edge_names2.size(); ++i) {
@@ -1634,18 +1688,17 @@ void EdgesOnRef::DumpUnrolled(String filename,
         if (p_hbp_to_hb != NULL)
             eid = (*p_hbp_to_hb)[eid].first;
         edge_names2[i] = ToString(i) + "->" + ToString(eid) + "@"
-            + ToString(GetStart(i));
+                         + ToString(GetStart(i));
         lengths2[i] = hb_.EdgeLengthKmers(GetOriginalId(i));
     }
     std::ofstream dout(filename);
     dg_.PrettyDOT( dout, lengths2, digraphE<EdgeLoc>::edge_label_info(digraphE<EdgeLoc>
-                ::edge_label_info::DIRECT, &edge_names2 ) );
+                   ::edge_label_info::DIRECT, &edge_names2 ) );
 }
 
-// Linearize the graph to a string of bubbles connected by single-edge 
-// anchoring edges. 
-void EdgesOnRef::MakeBubbleGraph(int verbosity) 
-{
+// Linearize the graph to a string of bubbles connected by single-edge
+// anchoring edges.
+void EdgesOnRef::MakeBubbleGraph(int verbosity) {
     if (verbosity >=1)
         std::cout << Date() << ": Make bubble graph" << std::endl;
     vec<vec<int>> single_edges;
@@ -1693,7 +1746,7 @@ void EdgesOnRef::MakeBubbleGraph(int verbosity)
         if (entrance_base == ReverseComplement(exit_base)) {
             if (verbosity >=1) {
                 std::cout << "Try to remove inversion between dg_ edge " <<
-                    entrance_edge  << " and " << exit_edge << std::endl; 
+                          entrance_edge  << " and " << exit_edge << std::endl;
             }
             RemoveInversion(cell_paths, branches);
         }
@@ -1705,7 +1758,9 @@ void EdgesOnRef::MakeBubbleGraph(int verbosity)
             bubble_graph_edge_path_.push_back(cell_paths[j]);
             bubble_graph_edge_is_ref_.push_back(edge == ref_seg);
             bubble_graph_edge_is_assembly_.push_back(true);
-            if (edge == ref_seg) { has_ref = true; }
+            if (edge == ref_seg) {
+                has_ref = true;
+            }
         }
         if (!has_ref) {
             bubble_graph_.AddEdge(i*2+1, i*2+2, ref_seg);
@@ -1718,8 +1773,7 @@ void EdgesOnRef::MakeBubbleGraph(int verbosity)
     bubble_graph_edge_weight_.assign(bubble_graph_edge_path_.size(), vec<double>());
 }
 
-void EdgesOnRef::DumpBubbleGraph(String filename) const
-{
+void EdgesOnRef::DumpBubbleGraph(String filename) const {
     vec<double> lengths(bubble_graph_.EdgeObjectCount());
     vec<String> edge_names(bubble_graph_.EdgeObjectCount());
     for (size_t e = 0; e < lengths.size(); e++) {
@@ -1734,16 +1788,15 @@ void EdgesOnRef::DumpBubbleGraph(String filename) const
     }
     std::ofstream dout(filename);
     bubble_graph_.PrettyDOT(dout, lengths, HyperBasevector::edge_label_info(
-                HyperBasevector::edge_label_info::DIRECT, &edge_names) );
+                                HyperBasevector::edge_label_info::DIRECT, &edge_names) );
 }
 
 // Calculate probability of being real for each paths.
-void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals, 
-        int verbosity) 
-{
-    if (verbosity >= 1) 
+void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals,
+                          int verbosity) {
+    if (verbosity >= 1)
         std::cout << Date() << ": Calculate probabilities of edges" << std::endl;
-    
+
     // { { (rid11, diff11), (rid12, diff12), ...} // for edge1
     //   { (rid21, diff21), (rid22, diff22), ...} // for edge2
     //   ...  // }
@@ -1752,7 +1805,7 @@ void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals
     vec<String> samples = p_read_tracker_->getSampleList();
     int nsamples = p_read_tracker_->getSampleList().size();
     if (verbosity >= 2) {
-        for (size_t i = 0; i < samples.size(); i++) 
+        for (size_t i = 0; i < samples.size(); i++)
             std::cout << "sample " << i << " " << samples[i] << std::endl;
     }
     vec<vec<int>> supports(bubble_graph_.EdgeObjectCount(), vec<int>(nsamples,0));
@@ -1761,7 +1814,7 @@ void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals
         if (bubble_graph_.From(n1).size() < 1) continue;
         int n2 = bubble_graph_.From(n1)[0];
         vec<int> branches(bubble_graph_.From(n1).size());
-        for (size_t j = 0; j < bubble_graph_.From(n1).size(); j++) 
+        for (size_t j = 0; j < bubble_graph_.From(n1).size(); j++)
             branches[j] = bubble_graph_.EdgeObjectIndexByIndexFrom(n1,j);
         const int qgood = 4;
         for (size_t j = 0; j < branches.size(); j++) {
@@ -1771,7 +1824,7 @@ void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals
                 for (auto& x: homes_index[e]) {
                     int rid = x.first;
                     int sample_id = p_read_tracker_->getSampleID(rid);
-                    if (x.second/1000 >= qgood && sample_id >= 0) 
+                    if (x.second/1000 >= qgood && sample_id >= 0)
                         std::cout << x.first << "," << x.second << " ";
                 }
                 std::cout << std::endl;
@@ -1780,15 +1833,15 @@ void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals
                 int rid = x.first;
                 int sample_id = p_read_tracker_->getSampleID(rid);
                 if (x.second/1000 >= qgood && sample_id >= 0) {
-                    supports[e][sample_id] += x.second/1000;    
-                    probs[e][sample_id] += x.second/1000;    
+                    supports[e][sample_id] += x.second/1000;
+                    probs[e][sample_id] += x.second/1000;
                 }
             }
         }
     }
     bubble_graph_edge_weight_ = probs;
     bubble_graph_edge_supports_ = supports;
-    if (verbosity >=1 ) 
+    if (verbosity >=1 )
         DumpBubbleGraph("bubble.dot");
 }
 
@@ -1804,12 +1857,13 @@ struct PartialPath {
 }
 
 template<typename GraphT>
-void EdgesOnRef::FindAllPathsNoLoop(const GraphT& dg, int entrace_edge, int exit_edge, 
-        vec<vec<int>>* allpaths, const int NMaxPath) const
-{
+void EdgesOnRef::FindAllPathsNoLoop(const GraphT& dg, int entrace_edge, int exit_edge,
+                                    vec<vec<int>>* allpaths, const int NMaxPath) const {
     const int MaxDepth = 100;
-    vec<int> to_right2; dg.ToRight(to_right2);
-    vec<int> to_left2; dg.ToLeft(to_left2);
+    vec<int> to_right2;
+    dg.ToRight(to_right2);
+    vec<int> to_left2;
+    dg.ToLeft(to_left2);
     int n1 = to_right2[entrace_edge];
     int n2 = to_left2[exit_edge];
 
@@ -1821,9 +1875,11 @@ void EdgesOnRef::FindAllPathsNoLoop(const GraphT& dg, int entrace_edge, int exit
         PartialPath p0 = visited.top();
         visited.pop();
         int node = p0.nodes.back();
-        if (node == n2) { allpaths->push_back(p0.edges); }
+        if (node == n2) {
+            allpaths->push_back(p0.edges);
+        }
         if ((int)p0.edges.size() < MaxDepth) {
-            for (int i = dg.From(node).size() -1; i >= 0; i--){
+            for (int i = dg.From(node).size() -1; i >= 0; i--) {
                 int node_new = dg.From(node)[i];
                 int edge_new = dg.EdgeObjectIndexByIndexFrom(node, i);
                 if (!Member(p0.edges, edge_new)
@@ -1839,13 +1895,12 @@ void EdgesOnRef::FindAllPathsNoLoop(const GraphT& dg, int entrace_edge, int exit
 }
 
 // We apply the following filters:
-// 1. Delete edits that are outof range. 
+// 1. Delete edits that are outof range.
 // 2. make corrections to  position of edits as original alignment was with Gplus.
 // 3. change the position of insertion and deletion to previous base.
 // 4. Delete the large clumps of edits from inverted region or mis-alignments
-void EdgesOnRef::FilterAndModifyEdits( vec<triple<int,int,String>>& edits, 
-        vec<std::pair<String,String>>& change)
-{
+void EdgesOnRef::FilterAndModifyEdits( vec<triple<int,int,String>>& edits,
+                                       vec<std::pair<String,String>>& change) {
     ForceAssertEq(edits.size(), change.size());
     // only take edits in the genome_ region
     vec<Bool> todel(edits.size(), false);
@@ -1856,7 +1911,7 @@ void EdgesOnRef::FilterAndModifyEdits( vec<triple<int,int,String>>& edits,
             edits[j].first -= 1;
         }
         if ( edits[j].second < 0 || edits[j].second >= (int)genome_.size())
-            todel[j] = True; 
+            todel[j] = True;
     }
     // detect and remove large clumps of edits
     const int MinClumpSep = 30;
@@ -1868,25 +1923,25 @@ void EdgesOnRef::FilterAndModifyEdits( vec<triple<int,int,String>>& edits,
         bool i_is_indel = (change[i].first.size() != change[i].second.size());
         if (i_is_indel) inserted_base += change[i].second.size()-1;
         size_t j = i + 1;
-        while (j < edits.size() && abs(edits[j].second - edits[j-1].second 
-                    - change[j-1].first.size()) < MinClumpSep) {
+        while (j < edits.size() && abs(edits[j].second - edits[j-1].second
+                                       - change[j-1].first.size()) < MinClumpSep) {
             nmatch += edits[j].second - edits[j-1].second - change[j-1].first.size();
             bool j_is_indel = (change[j].first.size() != change[j].second.size());
-            if (j_is_indel) 
+            if (j_is_indel)
                 inserted_base += change[j].second.size()-1;
             j++;
         }
-        int total_bases = edits[j-1].second + change[j-1].first.size() 
-            - edits[i].second + inserted_base;
+        int total_bases = edits[j-1].second + change[j-1].first.size()
+                          - edits[i].second + inserted_base;
         double fraction_base_change = 1 - (double)nmatch/ total_bases;
-        if (int(j - i) > MinEditsInClump && 
+        if (int(j - i) > MinEditsInClump &&
                 fraction_base_change > MinFractionBaseChangeInClump) {
             for (size_t k = i; k < j; k++)
                 todel[k] = True;
         }
         /*
         std::cout << "i= " << i << " total_base= " << total_bases
-            << " nmatch= " <<nmatch 
+            << " nmatch= " <<nmatch
             << " nedits= " << j-i << std::endl;
         */
         i = j - 1;
@@ -1895,25 +1950,25 @@ void EdgesOnRef::FilterAndModifyEdits( vec<triple<int,int,String>>& edits,
     EraseIf(change, todel);
 }
 
-vec<int> EdgesOnRef::ConvertToAssemblyPathFromUnrolled(const vec<int>& unrolled_path) const
-{
+vec<int> EdgesOnRef::ConvertToAssemblyPathFromUnrolled(const vec<int>& unrolled_path) const {
     vec<int> path0;
-    for (auto& x: unrolled_path) path0.push_back(GetOriginalId(x)); 
+    for (auto& x: unrolled_path) path0.push_back(GetOriginalId(x));
     return path0;
 }
 
 // Prepair backbone of the bubble graph. The backbone is single edged part in
 // the graph.  Also remove any edge if the length is shorter than K after
 // trimming the overlapping K-1 bases on both ends, or cannot be anchored in
-// the genome (to be implemented). 
-void EdgesOnRef::FindAnchoringEdges(vec<vec<int>>& single_edges) const
-{
+// the genome (to be implemented).
+void EdgesOnRef::FindAnchoringEdges(vec<vec<int>>& single_edges) const {
     single_edges.clear();
-    vec<int> to_right2; dg_.ToRight(to_right2);
-    vec<int> to_left2; dg_.ToLeft(to_left2);
+    vec<int> to_right2;
+    dg_.ToRight(to_right2);
+    vec<int> to_left2;
+    dg_.ToLeft(to_left2);
     // backboen that are not covered by alternative path
     vec<int> backbone;
-    for (size_t i = 0; i < backbone_.size(); i++) 
+    for (size_t i = 0; i < backbone_.size(); i++)
         if (backbone_dup_[i] == 0) backbone.push_back(backbone_[i]);
     // stitch continuous backbone edges
     for (size_t i = 0; i < backbone.size(); i++) {
@@ -1939,10 +1994,11 @@ void EdgesOnRef::FindAnchoringEdges(vec<vec<int>>& single_edges) const
 // Remove short edges. Also remove edges that cannot be anchored in reference,
 // which are probably due to large insertions.
 void EdgesOnRef::AlignAnchoringEdges(vec<vec<int>>& single_edges,
-        vec<align>& single_edge_aligns, int verbosity) 
-{
-    vec<int> to_right2; dg_.ToRight(to_right2);
-    vec<int> to_left2; dg_.ToLeft(to_left2);
+                                     vec<align>& single_edge_aligns, int verbosity) {
+    vec<int> to_right2;
+    dg_.ToRight(to_right2);
+    vec<int> to_left2;
+    dg_.ToLeft(to_left2);
     single_edge_aligns.clear();
     single_edge_aligns.resize(single_edges.size());
     vec<Bool> todel(single_edges.size(), False);
@@ -1959,9 +2015,9 @@ void EdgesOnRef::AlignAnchoringEdges(vec<vec<int>>& single_edges,
         if ((int)edge.size() - trim_left - trim_right < MinAlignedBase) {
             todel[i] = True;
             if (verbosity >= 2) {
-                std::cout << "Erasing short anchoring edge " << i << " len=" 
-                    << edge.size() << " trim_left= " << trim_left 
-                    << " trim_right= " << trim_right << std::endl;
+                std::cout << "Erasing short anchoring edge " << i << " len="
+                          << edge.size() << " trim_left= " << trim_left
+                          << " trim_right= " << trim_right << std::endl;
                 std::cout << " path= ";
                 path.Println(std::cout);
                 std::cout << " path0= ";
@@ -1969,8 +2025,8 @@ void EdgesOnRef::AlignAnchoringEdges(vec<vec<int>>& single_edges,
             }
         } else {
             // make the alignment
-            basevector edge_trimmed(edge.begin()+trim_left, 
-                    edge.end() - trim_right);
+            basevector edge_trimmed(edge.begin()+trim_left,
+                                    edge.end() - trim_right);
             align a;
 
             int bandwidth = std::max(1, (int)edge_trimmed.size() /2 );
@@ -1981,24 +2037,24 @@ void EdgesOnRef::AlignAnchoringEdges(vec<vec<int>>& single_edges,
             single_edge_aligns[i] = a;
             if (verbosity >=2) {
                 std::cout << "anchoring edge " << i << " trim_left= " << trim_left
-                    << " trim_right= " << trim_right  << " path0= ";
+                          << " trim_right= " << trim_right  << " path0= ";
                 path0.Println(std::cout);
-                std::cout << "    found alignment " << " [" <<  a.pos1() << "," << a.Pos1() << ") to [" 
-                    << a.pos2() << "," << a.Pos2() << ") " << std::endl;
+                std::cout << "    found alignment " << " [" <<  a.pos1() << "," << a.Pos1() << ") to ["
+                          << a.pos2() << "," << a.Pos2() << ") " << std::endl;
             }
             if (a.Pos1() - a.pos1() < MinAlignedBase ||
-                    a.Pos2() - a.pos2() < MinAlignedBase ){
+                    a.Pos2() - a.pos2() < MinAlignedBase ) {
                 todel[i] = True;
                 if (verbosity >=2) {
                     std::cout << "    Unable to align anchoring edge " << i << "to reference: "
-                        << " alignment= " << " [" <<  a.pos1() << "," << a.Pos1() << ") to [" 
-                        << a.pos2() << "," << a.Pos2() << ") " << std::endl;
+                              << " alignment= " << " [" <<  a.pos1() << "," << a.Pos1() << ") to ["
+                              << a.pos2() << "," << a.Pos2() << ") " << std::endl;
                     std::cout << "   path0= ";
                     path0.Println(std::cout);
                     std::cout << "   path= ";
                     path.Println(std::cout);
                 }
-            } 
+            }
         }
     }
     if (todel.CountValue(True) > 0) {
@@ -2017,14 +2073,13 @@ void EdgesOnRef::AlignAnchoringEdges(vec<vec<int>>& single_edges,
     ForceAssertEq(single_edges.size(), single_edge_aligns.size());
 }
 
-void EdgesOnRef::RemoveInversion(vec<vec<int>>& paths, vec<basevector>& edges) const 
-{
+void EdgesOnRef::RemoveInversion(vec<vec<int>>& paths, vec<basevector>& edges) const {
     ForceAssertEq(paths.size(), edges.size());
     vec<int> backbone_counts(paths.size(), 0);
     for (size_t i = 0; i < paths.size(); i++) {
         int total = 0;
-        for (auto& x: paths[i]) 
-           if (Member(backbone_, x)) total++;
+        for (auto& x: paths[i])
+            if (Member(backbone_, x)) total++;
         backbone_counts[i] = total;
     }
     vec<Bool> todel(paths.size(), False);
@@ -2032,7 +2087,7 @@ void EdgesOnRef::RemoveInversion(vec<vec<int>>& paths, vec<basevector>& edges) c
         basevector rc_i = ReverseComplement(edges[i]);
         for (size_t j = i+1; j < edges.size(); j++) {
             if (todel[j]) continue;
-            if (edges[j] == rc_i) 
+            if (edges[j] == rc_i)
                 todel[backbone_counts[i] < backbone_counts[j] ? i:j] = True;
         }
     }

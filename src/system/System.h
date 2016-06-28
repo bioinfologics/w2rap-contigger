@@ -22,13 +22,13 @@
 #include "system/file/TempFile.h"
 
 #ifndef InputErr
-     #define InputErr(message)                                \
+#define InputErr(message)                                \
      std::cout << "\nFatal error at " << Date() << ": " << message \
           << "\n\nInvalid input detected.\n" << std::endl,CRD::exit(1)
 #endif
 
 #ifndef FatalErr
-     #define FatalErr(message)                            \
+#define FatalErr(message)                            \
      std::cout << "\nFatal error (pid=" << getpid() << ") at " \
           << Date() << ":\n" << message << '\n' << std::endl,CRD::exit(1)
 #endif
@@ -160,8 +160,9 @@ void CpAppend( String file1, std::ostream& file2 );
 ///
 void Cp2( String const& file1, String const& file2, bool append = false );
 
-inline void CpAppend2( String const& file1, String const& file2 )
-{ Cp2(file1,file2,true); }
+inline void CpAppend2( String const& file1, String const& file2 ) {
+    Cp2(file1,file2,true);
+}
 
 /// CpIfNeIfExists: if file1 = file2 (as strings) or file1 does not exist, do
 /// nothing.  Otherwise, call Cp2.
@@ -169,8 +170,10 @@ inline void CpAppend2( String const& file1, String const& file2 )
 void CpIfNeIfExists( String const& file1, String const& file2 );
 
 /// Concatenate files.
-inline void Cat( String const& in1, String const& in2, String const& out )
-{ Cp2(in1,out); Cp2(in2,out,true); }
+inline void Cat( String const& in1, String const& in2, String const& out ) {
+    Cp2(in1,out);
+    Cp2(in2,out,true);
+}
 
 
 /// Symlink creates a soft link.  It fails if name_of_symbolic_link
@@ -223,14 +226,17 @@ bool AreSameFile( String fn1, String fn2 );
 
 int LastModified( const String& fn );
 
-inline double AgeInMinutes( const String& fn )
-{   return double( time(0) - LastModified(fn) ) / ( 60.0 );    }
+inline double AgeInMinutes( const String& fn ) {
+    return double( time(0) - LastModified(fn) ) / ( 60.0 );
+}
 
-inline double AgeInDays( const String& fn )
-{   return double( time(0) - LastModified(fn) ) / ( 24.0 * 3600.0 );    }
+inline double AgeInDays( const String& fn ) {
+    return double( time(0) - LastModified(fn) ) / ( 24.0 * 3600.0 );
+}
 
-inline double AgeInYears( const String& fn )
-{   return AgeInDays(fn)/365.0;    }
+inline double AgeInYears( const String& fn ) {
+    return AgeInDays(fn)/365.0;
+}
 
 // Return current date and local time in the following formats:
 // default:  Fri Jan 16 14:19:03 2009
@@ -328,7 +334,7 @@ String FilenameSafeString( String wannabe_fn );
 void OpenIfstream( std::ifstream& i, String const& f );
 void OpenOfstream( std::ofstream& o, String const& f );
 void OpenOfstream( std::ofstream& o, String const& s, String const& f,
-                        std::ios_base::openmode mode = std::ios_base::out );
+                   std::ios_base::openmode mode = std::ios_base::out );
 
 #define Ifstream(STREAMNAME, FILENAME)                         \
      std::ifstream STREAMNAME;                                      \
@@ -466,7 +472,7 @@ void Dot( std::ostream& log, unsigned int pass );
 
 /// Print a dot only every mod counts of pass.
 inline void DotMod (std::ostream & log, unsigned int pass, unsigned int mod) {
-  if (0 == pass % mod) Dot(log, pass / mod);
+    if (0 == pass % mod) Dot(log, pass / mod);
 }
 
 /// Macro: DotPerc
@@ -490,30 +496,33 @@ inline void DotMod (std::ostream & log, unsigned int pass, unsigned int mod) {
 .....10%.....20%.....30%.....40%.....50%.....60%.....70%.....80%.....90%....100%
 */
 
-inline 
-void dots_pct(const size_t i, const size_t n, const bool verbose = true) 
-{
-  if (verbose) {
-    unsigned u0 =  i      * 80 / n;
-    unsigned u1 = (i + 1) * 80 / n;
-    String s = "";
-    for (unsigned u = u0 + 1; u <= u1; u++) {
-      if      (u % 8 ==  0) s += "%";
-      else if (u % 8 ==  7) s += "0";
-      else if (u % 8 ==  6) s += ToString((u / 8 + 1) % 10);
-      else if (u     == 77) s += "1";
-      else                  s += ".";
-      if (u == 80)          s += "\n";
+inline
+void dots_pct(const size_t i, const size_t n, const bool verbose = true) {
+    if (verbose) {
+        unsigned u0 =  i      * 80 / n;
+        unsigned u1 = (i + 1) * 80 / n;
+        String s = "";
+        for (unsigned u = u0 + 1; u <= u1; u++) {
+            if      (u % 8 ==  0) s += "%";
+            else if (u % 8 ==  7) s += "0";
+            else if (u % 8 ==  6) s += ToString((u / 8 + 1) % 10);
+            else if (u     == 77) s += "1";
+            else                  s += ".";
+            if (u == 80)          s += "\n";
+        }
+        std::cout << s << std::flush;
     }
-    std::cout << s << std::flush;
-  }
 }
 
 /// Memory usage.
 
 int64_t MemUsageBytes();
-inline int64_t MemUsage() { return MemUsageBytes()/1024ul; } // in kb
-inline double MemUsageGB() { return double( MemUsage( ) ) / (1024*1024); }
+inline int64_t MemUsage() {
+    return MemUsageBytes()/1024ul;    // in kb
+}
+inline double MemUsageGB() {
+    return double( MemUsage( ) ) / (1024*1024);
+}
 String MemUsageGBString( );
 
 // Peak number of bytes used.
@@ -541,22 +550,24 @@ size_t GetMaxMemory();
 size_t MemAvailable( double fract = 1. );
 
 /// Print memory usage in kB to out
-inline void PrintMemUsage( std::ostream &out = std::cout )
-{    out << "Memory used so far: " << MemUsage( ) << "k." << std::endl;    }
+inline void PrintMemUsage( std::ostream &out = std::cout ) {
+    out << "Memory used so far: " << MemUsage( ) << "k." << std::endl;
+}
 
-inline void PrintMemUsage( String stage, std::ostream &out = std::cout )
-{    out << "Memory used (" << stage << "): " << MemUsage( ) << "k." << std::endl;    }
+inline void PrintMemUsage( String stage, std::ostream &out = std::cout ) {
+    out << "Memory used (" << stage << "): " << MemUsage( ) << "k." << std::endl;
+}
 
 /// Print a timestamp, and memory usage in MB, to out
 inline void
 PrintDateAndMemUsage( std::ostream &out = std::cout ) {
-  out << Date( ) << ": Memory used: " << ((MemUsage( )/1024)+1) << "M." << std::endl;
+    out << Date( ) << ": Memory used: " << ((MemUsage( )/1024)+1) << "M." << std::endl;
 }
 
 /// Print a timestamp, and memory usage in MB, to out
 inline void
 PrintDateAndMemUsage( String stage, std::ostream &out = std::cout ) {
-  out << Date( ) << ": Memory used (" << stage << "): " << ((MemUsage( )/1024)+1) << "M." << std::endl;
+    out << Date( ) << ": Memory used (" << stage << "): " << ((MemUsage( )/1024)+1) << "M." << std::endl;
 }
 
 
@@ -582,54 +593,49 @@ float SafeQuotient( longlong numerator, longlong denominator );
  *
  *****************************************************************/
 
-template<class T> Bool FstreamRead(const String & fn, T & data)
-{
-  if (IsRegularFile(fn)) {
-    std::ifstream in_st;
-    OpenIfstream(in_st, fn);
-    in_st >> data;
-    return True;
-  }
-  if (IsRegularFile(fn + ".gz")) {
-    String pipe_command = "gzip -dc " + fn + ".gz";
-    procbuf inp(pipe_command.c_str(), std::ios::in);
-    std::istream in_st(&inp);
-    if (!in_st)
-      FatalErr( "Problem opening " << fn << ".gz." );
-    in_st >> data;
-    inp.close();
-    return True;
-  }
-  return False;
+template<class T> Bool FstreamRead(const String & fn, T & data) {
+    if (IsRegularFile(fn)) {
+        std::ifstream in_st;
+        OpenIfstream(in_st, fn);
+        in_st >> data;
+        return True;
+    }
+    if (IsRegularFile(fn + ".gz")) {
+        String pipe_command = "gzip -dc " + fn + ".gz";
+        procbuf inp(pipe_command.c_str(), std::ios::in);
+        std::istream in_st(&inp);
+        if (!in_st)
+            FatalErr( "Problem opening " << fn << ".gz." );
+        in_st >> data;
+        inp.close();
+        return True;
+    }
+    return False;
 }
 
-template<class T> void FstreamReadOrFatal(const String & fn, T & data)
-{
-  if (!FstreamRead(fn, data))
-    FatalErr( "Neither " << fn << " nor " << fn << ".gz found.\n" );
+template<class T> void FstreamReadOrFatal(const String & fn, T & data) {
+    if (!FstreamRead(fn, data))
+        FatalErr( "Neither " << fn << " nor " << fn << ".gz found.\n" );
 }
 
-template<class T> void FstreamReadOrContinue(const String & fn, T & data)
-{
-  if (!FstreamRead(fn, data)) {} // just ignore 'file not found'
+template<class T> void FstreamReadOrContinue(const String & fn, T & data) {
+    if (!FstreamRead(fn, data)) {} // just ignore 'file not found'
 }
 
-template<class T> void FstreamWrite(const String & fn, const T & data)
-{
-  Remove(fn + ".gz");  // make sure that there's no '<fn>.gz' to conflict with 'fn'
-  std::ofstream out_st;
-  OpenOfstream(out_st, fn);
-  out_st << data;
+template<class T> void FstreamWrite(const String & fn, const T & data) {
+    Remove(fn + ".gz");  // make sure that there's no '<fn>.gz' to conflict with 'fn'
+    std::ofstream out_st;
+    OpenOfstream(out_st, fn);
+    out_st << data;
 }
 
-template<class T> void FstreamWriteGZ(const String & fn, const T & data)
-{
-  Remove(fn);  // make sure that there's no 'fn' to conflict with '<fn>.gz' 
-  String pipe_command = "gzip -1 > " + fn + ".gz";
-  procbuf outp(pipe_command.c_str(), std::ios::out);
-  std::ostream out_st(&outp);
-  out_st << data;
-  outp.close();
+template<class T> void FstreamWriteGZ(const String & fn, const T & data) {
+    Remove(fn);  // make sure that there's no 'fn' to conflict with '<fn>.gz'
+    String pipe_command = "gzip -1 > " + fn + ".gz";
+    procbuf outp(pipe_command.c_str(), std::ios::out);
+    std::ostream out_st(&outp);
+    out_st << data;
+    outp.close();
 }
 
 
@@ -751,9 +757,12 @@ template<class T> void FstreamWriteGZ(const String & fn, const T & data)
 
 /// Echo(s, filename): write string s (and a newline) to filename.
 
-inline void Echo( String s, String filename )
-{    {    std::ofstream temporary_write_stream( filename.c_str( ), std::ios::app );
-          temporary_write_stream << s << "\n";    }    }
+inline void Echo( String s, String filename ) {
+    {
+        std::ofstream temporary_write_stream( filename.c_str( ), std::ios::app );
+        temporary_write_stream << s << "\n";
+    }
+}
 
 void WriteBytes( int filedes, const void* buffer, longlong nbytes );
 
@@ -787,10 +796,10 @@ double WallClockTime( );
 /// scale by it.  TimeSinceWithReset() will assign WallClockTime() to start
 /// just before returning.
 
-String TimeSince( const double start, const double mult = 1.0, 
-     const String& top = "" );
-String TimeSinceWithReset( double& start, const double mult = 1.0, 
-     const String& top = "" );
+String TimeSince( const double start, const double mult = 1.0,
+                  const String& top = "" );
+String TimeSinceWithReset( double& start, const double mult = 1.0,
+                           const String& top = "" );
 
 // START_TIMER, STOP_TIMER usage, by example:
 //
@@ -802,7 +811,7 @@ String TimeSinceWithReset( double& start, const double mult = 1.0,
 // out, every 100 calls, so long as "USE_TIMERS" is defined.
 
 #ifdef USE_TIMERS
-     #define START_TIMER( timer_name, freq )                              \
+#define START_TIMER( timer_name, freq )                              \
           static int timer_name ## _call_count(0);                        \
           ++timer_name ## _call_count;                                    \
           static double timer_name(0);                                    \
@@ -813,11 +822,11 @@ String TimeSinceWithReset( double& start, const double mult = 1.0,
                     << " on timer " << #timer_name << " =====" << std::endl;   \
                timer_name = 0;    }                                       \
           timer_name -= WallClockTime( );
-     #define STOP_TIMER( timer_name )                                     \
+#define STOP_TIMER( timer_name )                                     \
           timer_name += WallClockTime( );
 #else
-     #define START_TIMER( timer_name, freq )
-     #define STOP_TIMER( timer_name )
+#define START_TIMER( timer_name, freq )
+#define STOP_TIMER( timer_name )
 #endif
 
 // EXIT_MAIN_NORMALLY: this is intended as a universal way to std::flush buffers
@@ -833,7 +842,7 @@ String TimeSinceWithReset( double& start, const double mult = 1.0,
 // CheckForCommand: test if the shell command can be found in the current path
 
 inline bool IsCommandInPath(const String &cmd) {
-  return (System("which " + cmd + " > /dev/null") == 0);
+    return (System("which " + cmd + " > /dev/null") == 0);
 }
 
 // ===============================================================================
@@ -866,21 +875,23 @@ String command_name_of_process( int pid );
 // ===============================================================================
 
 #ifdef __GNUC__
-inline void SafeMemcpy( void* to, void* from, size_t nbytes )
-{    const longlong two_billion = (longlong) 2000000 * (longlong) 1000;
-     while(1)
-     {    if ( nbytes <= (size_t) two_billion )
-          {    memcpy( to, from, nbytes );
-               break;    }
-          else
-          {    memcpy( to, from, two_billion );
-               to = ((char*) to) + two_billion;
-               from = ((char*) from) + two_billion;
-               nbytes -= two_billion;    }    }    }
+inline void SafeMemcpy( void* to, void* from, size_t nbytes ) {
+    const longlong two_billion = (longlong) 2000000 * (longlong) 1000;
+    while(1) {
+        if ( nbytes <= (size_t) two_billion ) {
+            memcpy( to, from, nbytes );
+            break;
+        } else {
+            memcpy( to, from, two_billion );
+            to = ((char*) to) + two_billion;
+            from = ((char*) from) + two_billion;
+            nbytes -= two_billion;
+        }
+    }
+}
 #else
-inline void SafeMemcpy( void* to, void* from, size_t nbytes )
-{
-  memcpy( to, from, nbytes );
+inline void SafeMemcpy( void* to, void* from, size_t nbytes ) {
+    memcpy( to, from, nbytes );
 }
 #endif
 
@@ -900,45 +911,53 @@ void PrintWithSep(std::ostream & out, unsigned int val, char sep=',');
 
 // Utilities to test if an executable exists.
 
-inline void TestExecutableByRunningIt( String executable, String options )
-{    if ( System( executable + " " + options + " > /dev/null 2>&1" ) != 0 )
-          FatalErr( "\nIt appears that " << executable
-               << " is not properly installed on this system.\n"
-               << "The reason why I think this is that when I ran "
-               << "\"" << executable << " " << options << "\", it failed.\n"
-               << "(Note that one possibility is that you have " << executable
-	       << ", but your path does not include it.)\n" );    }
+inline void TestExecutableByRunningIt( String executable, String options ) {
+    if ( System( executable + " " + options + " > /dev/null 2>&1" ) != 0 )
+        FatalErr( "\nIt appears that " << executable
+                  << " is not properly installed on this system.\n"
+                  << "The reason why I think this is that when I ran "
+                  << "\"" << executable << " " << options << "\", it failed.\n"
+                  << "(Note that one possibility is that you have " << executable
+                  << ", but your path does not include it.)\n" );
+}
 
-inline void TestExecutableByWhich( String executable )
-{    if ( System( "which " + executable + " > /dev/null 2>&1" ) != 0 )
-	  FatalErr( "\nIt appears that " << executable 
-               << " is not properly installed on this system.\n"
-               << "The reason why I think this is that when I ran "
-               << "\"which " << executable << "\", it failed.\n"
-               << "(Note that one possibility is that you have " << executable
-               << ", but your path does not include it.)\n" );    }
+inline void TestExecutableByWhich( String executable ) {
+    if ( System( "which " + executable + " > /dev/null 2>&1" ) != 0 )
+        FatalErr( "\nIt appears that " << executable
+                  << " is not properly installed on this system.\n"
+                  << "The reason why I think this is that when I ran "
+                  << "\"which " << executable << "\", it failed.\n"
+                  << "(Note that one possibility is that you have " << executable
+                  << ", but your path does not include it.)\n" );
+}
 
 // ARG macro.  This is a tool to simplify system calls to executables that are
 // invoked with arguments in name=value form.  For example, instead of writing e.g.
 //     + " LEN=" + ToString(len) + " OUT=" + OUTFILE
 // you can write
 //     + ARG(LEN, len) + ARG(OUT, OUTFILE)
-// Values that are ints are automatically converted via ToString, and Bools are 
+// Values that are ints are automatically converted via ToString, and Bools are
 // also converted appropriately.  Note the possibility that a value could be
 // converted inappropriately.  See also ParsedArgs.h.
 
-inline String NameValueArg( char const* name, String const& value )
-{    return String(" ") + name + "=" + value;    }
-inline String NameValueArg( char const* name, int value )
-{    return NameValueArg( name, ToString(value) );    }
-inline String NameValueArg( char const* name, unsigned value )
-{    return NameValueArg( name, ToString(value) );    }
-inline String NameValueArg( char const* name, longlong value )
-{    return NameValueArg( name, ToString(value) );    }
-inline String NameValueArg( char const* name, double value )
-{    return NameValueArg( name, ToString(value) );    }
-inline String NameValueArg( char const* name, Bool value )
-{    return NameValueArg( name, ToStringBool(value) ); }
+inline String NameValueArg( char const* name, String const& value ) {
+    return String(" ") + name + "=" + value;
+}
+inline String NameValueArg( char const* name, int value ) {
+    return NameValueArg( name, ToString(value) );
+}
+inline String NameValueArg( char const* name, unsigned value ) {
+    return NameValueArg( name, ToString(value) );
+}
+inline String NameValueArg( char const* name, longlong value ) {
+    return NameValueArg( name, ToString(value) );
+}
+inline String NameValueArg( char const* name, double value ) {
+    return NameValueArg( name, ToString(value) );
+}
+inline String NameValueArg( char const* name, Bool value ) {
+    return NameValueArg( name, ToStringBool(value) );
+}
 
 #define ARG( NAME, VALUE ) NameValueArg( #NAME, VALUE )
 #define ARGC(NAME) NameValueArg( #NAME, NAME )

@@ -15,50 +15,58 @@
 #include "system/SortInPlace.h"
 
 template<int K> void MakeKmerLookup0Pre( const vecbasevector& unibases,
-     const String& prefix, vec< triple<kmer<K>,int,int> >& kmers_plus );
+        const String& prefix, vec< triple<kmer<K>,int,int> >& kmers_plus );
 
 template<int K> void MakeKmerLookup2x( const vecbasevector& unibases,
-     vec< triple<kmer<K>,int,int> >& kmers_plus )
-{    vec<int64_t> starts;
-     starts.push_back(0);
-     for ( size_t i = 0; i < unibases.size( ); i++ )
-     {    const basevector& u = unibases[i];
-          starts.push_back( starts.back( ) + Max( 0, u.isize( ) - K + 1 ) );    }
-     kmers_plus.resize( starts.back( ) );
-     #pragma omp parallel for
-     for ( size_t i = 0; i < unibases.size( ); i++ )
-     {    const basevector& u = unibases[i];
-          kmer<K> x, xrc;
-          for ( int j = 0; j <= u.isize( ) - K; j++ )
-          {    int64_t r = starts[i] + j;
-               x.SetToSubOf( u, j );
-               xrc = x;
-               xrc.ReverseComplement( );
-               Bool fw = ( x < xrc );
-               kmers_plus[r].first = ( fw ? x : xrc );
-               kmers_plus[r].second = i;
-               kmers_plus[r].third = ( fw ? j : -j-1 );    }    }
-     sortInPlaceParallel( kmers_plus.begin( ), kmers_plus.end( ) );    }
+                                       vec< triple<kmer<K>,int,int> >& kmers_plus ) {
+    vec<int64_t> starts;
+    starts.push_back(0);
+    for ( size_t i = 0; i < unibases.size( ); i++ ) {
+        const basevector& u = unibases[i];
+        starts.push_back( starts.back( ) + Max( 0, u.isize( ) - K + 1 ) );
+    }
+    kmers_plus.resize( starts.back( ) );
+    #pragma omp parallel for
+    for ( size_t i = 0; i < unibases.size( ); i++ ) {
+        const basevector& u = unibases[i];
+        kmer<K> x, xrc;
+        for ( int j = 0; j <= u.isize( ) - K; j++ ) {
+            int64_t r = starts[i] + j;
+            x.SetToSubOf( u, j );
+            xrc = x;
+            xrc.ReverseComplement( );
+            Bool fw = ( x < xrc );
+            kmers_plus[r].first = ( fw ? x : xrc );
+            kmers_plus[r].second = i;
+            kmers_plus[r].third = ( fw ? j : -j-1 );
+        }
+    }
+    sortInPlaceParallel( kmers_plus.begin( ), kmers_plus.end( ) );
+}
 
 template<int K> void MakeKmerLookup0x( const vecbasevector& unibases,
-     vec< triple<kmer<K>,int,int> >& kmers_plus )
-{    vec<int64_t> starts;
-     starts.push_back(0);
-     for ( size_t i = 0; i < unibases.size( ); i++ )
-     {    const basevector& u = unibases[i];
-          starts.push_back( starts.back( ) + Max( 0, u.isize( ) - K + 1 ) );    }
-     kmers_plus.resize( starts.back( ) );
-     #pragma omp parallel for
-     for ( size_t i = 0; i < unibases.size( ); i++ )
-     {    const basevector& u = unibases[i];
-          kmer<K> x;
-          for ( int j = 0; j <= u.isize( ) - K; j++ )
-          {    int64_t r = starts[i] + j;
-               x.SetToSubOf( u, j ); 
-               kmers_plus[r].first = x;
-               kmers_plus[r].second = i; 
-               kmers_plus[r].third = j;    }    }
-     std::cout << Date( ) << ": sorting kmers" << std::endl;
-     sortInPlaceParallel( kmers_plus.begin( ), kmers_plus.end( ) );    }
+                                       vec< triple<kmer<K>,int,int> >& kmers_plus ) {
+    vec<int64_t> starts;
+    starts.push_back(0);
+    for ( size_t i = 0; i < unibases.size( ); i++ ) {
+        const basevector& u = unibases[i];
+        starts.push_back( starts.back( ) + Max( 0, u.isize( ) - K + 1 ) );
+    }
+    kmers_plus.resize( starts.back( ) );
+    #pragma omp parallel for
+    for ( size_t i = 0; i < unibases.size( ); i++ ) {
+        const basevector& u = unibases[i];
+        kmer<K> x;
+        for ( int j = 0; j <= u.isize( ) - K; j++ ) {
+            int64_t r = starts[i] + j;
+            x.SetToSubOf( u, j );
+            kmers_plus[r].first = x;
+            kmers_plus[r].second = i;
+            kmers_plus[r].third = j;
+        }
+    }
+    std::cout << Date( ) << ": sorting kmers" << std::endl;
+    sortInPlaceParallel( kmers_plus.begin( ), kmers_plus.end( ) );
+}
 
 #endif

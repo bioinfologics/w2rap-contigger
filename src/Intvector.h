@@ -7,7 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-// This file defines the typedef "intvector", which stores 
+// This file defines the typedef "intvector", which stores
 // a vector of ints, and the typedef "vecintvector", which
 // stores a vector of intvectors.
 

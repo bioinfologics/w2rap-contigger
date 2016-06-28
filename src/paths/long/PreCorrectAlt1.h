@@ -18,6 +18,6 @@
 #include "Basevector.h"
 
 void precorrectAlt1( vecbvec* pReads, unsigned COVERAGE=50,
-                        int VERBOSITY=0, unsigned NUM_THREADS=0 );
+                     int VERBOSITY=0, unsigned NUM_THREADS=0 );
 
 #endif /* PATHS_LONG_PRECORRECTALT1_H_ */

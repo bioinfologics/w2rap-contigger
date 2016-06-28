@@ -19,7 +19,7 @@
 #include "sort_kmers/SortKmersD.h"
 
 void DEFAULT_SORT_KMERS_END_PASS( int pass ) {
-  Dot( cout, pass );
+    Dot( cout, pass );
 }
 
 void (*SORT_KMERS_END_PASS)( int pass ) = DEFAULT_SORT_KMERS_END_PASS;

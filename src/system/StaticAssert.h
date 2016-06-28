@@ -24,7 +24,9 @@ template<bool> struct CompileTimeChecker;
 ///a compiler error message.
 template<> struct CompileTimeChecker<false>  {};
 ///Helper class for compile-time assert with message partial specialization.
-template<> struct CompileTimeChecker<true>  { CompileTimeChecker(...) {} };
+template<> struct CompileTimeChecker<true>  {
+    CompileTimeChecker(...) {}
+};
 ///Compile-time assert macro with message (must be valid C++ identifier).
 ///Adapted from Alexandrescu's book Modern C++ Design
 #if __sun == 1

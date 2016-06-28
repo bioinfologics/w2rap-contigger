@@ -37,519 +37,547 @@ const int Infinity = 100000000;
 // Unmatched ends in source read are not penalized
 // Unmatched ends in target read are optionally penalized
 unsigned int SmithWatAffineBandedCore( const basevector& S, const basevector& T,
-			     align* a, int offset, int bandwidth,
-                             bool penalize_left_gap, bool penalize_right_gap,
-                             const int mismatch_penalty,
-                             const int gap_open_penalty,
-                             const int gap_extend_penalty )
-{
-     ForceAssertGt( S.size(), 0u );
-     ForceAssertGt( T.size(), 0u );
+                                       align* a, int offset, int bandwidth,
+                                       bool penalize_left_gap, bool penalize_right_gap,
+                                       const int mismatch_penalty,
+                                       const int gap_open_penalty,
+                                       const int gap_extend_penalty ) {
+    ForceAssertGt( S.size(), 0u );
+    ForceAssertGt( T.size(), 0u );
 
-     int n = S.size( ), N = T.size( );
+    int n = S.size( ), N = T.size( );
 
-     avector<char> s, t;
-     s.resize(n);
-     for (int i = 0; i < n; i++)
-          s(i) = S[i];
-     t.resize(N);
-     for (int i = 0; i < N; i++)
-          t(i) = T[i];
+    avector<char> s, t;
+    s.resize(n);
+    for (int i = 0; i < n; i++)
+        s(i) = S[i];
+    t.resize(N);
+    for (int i = 0; i < N; i++)
+        t(i) = T[i];
 
-     const int Infinity = 100000000;
-     int best_score = Infinity;
-     RecArray<unsigned int> score_x(n+1, N+1, Infinity);
-     RecArray<unsigned int> score_y(n+1, N+1, Infinity);
-     RecArray<unsigned int> score_z(n+1, N+1, Infinity);
+    const int Infinity = 100000000;
+    int best_score = Infinity;
+    RecArray<unsigned int> score_x(n+1, N+1, Infinity);
+    RecArray<unsigned int> score_y(n+1, N+1, Infinity);
+    RecArray<unsigned int> score_z(n+1, N+1, Infinity);
 
-     RecArray<unsigned char> x_from(n+1, N+1, 's');
-     RecArray<unsigned char> y_from(n+1, N+1, 's');
-     RecArray<unsigned char> z_from(n+1, N+1, 's');
+    RecArray<unsigned char> x_from(n+1, N+1, 's');
+    RecArray<unsigned char> y_from(n+1, N+1, 's');
+    RecArray<unsigned char> z_from(n+1, N+1, 's');
 
-     // y and z are for the gap extending in target and source, respectively
-     // x is for base substitution
-     score_x[0][0] = 0;
-     score_y[0][0] = Infinity;
-     score_z[0][0] = Infinity;
-     for (int i = 1; i <= n; i++ ) {
-         if ( 0 < i - offset - bandwidth || 0  > i - offset + bandwidth)
-             continue;
-         score_z[i][0] = 0;
-     }
-     if (!penalize_left_gap) {
-         for (int j = 1; j <= N; j++) {
-             if (j < 0 - offset - bandwidth || j > 0 - offset + bandwidth)
-                 continue;
-             score_y[0][j] = 0;
-         }
-     }
-     for (int i = 1; i <= n; i++ )
-     {    int low = Max( 1, i - offset - bandwidth );
-          int high = Min( N, i - offset + bandwidth );
-          for (int j = low; j <= high; j++ )
-	  {
-               // if (j < i - offset - bandwidth || j > i - offset + bandwidth)
-               //     continue;
+    // y and z are for the gap extending in target and source, respectively
+    // x is for base substitution
+    score_x[0][0] = 0;
+    score_y[0][0] = Infinity;
+    score_z[0][0] = Infinity;
+    for (int i = 1; i <= n; i++ ) {
+        if ( 0 < i - offset - bandwidth || 0  > i - offset + bandwidth)
+            continue;
+        score_z[i][0] = 0;
+    }
+    if (!penalize_left_gap) {
+        for (int j = 1; j <= N; j++) {
+            if (j < 0 - offset - bandwidth || j > 0 - offset + bandwidth)
+                continue;
+            score_y[0][j] = 0;
+        }
+    }
+    for (int i = 1; i <= n; i++ ) {
+        int low = Max( 1, i - offset - bandwidth );
+        int high = Min( N, i - offset + bandwidth );
+        for (int j = low; j <= high; j++ ) {
+            // if (j < i - offset - bandwidth || j > i - offset + bandwidth)
+            //     continue;
 
-               unsigned int x_x = score_x[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
-	       unsigned int x_y = score_y[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
-	       unsigned int x_z = score_z[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
-	       unsigned int y_x = score_x[i][j-1] + (penalize_right_gap || i != n ? gap_open_penalty : 0);
-	       unsigned int y_y = score_y[i][j-1] + (penalize_right_gap || i != n ? gap_extend_penalty : 0);
-	       unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
-	       unsigned int z_x = score_x[i-1][j] + (j != N ? gap_open_penalty : 0);
-	       unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
-	       unsigned int z_z = score_z[i-1][j] + (j != N ? gap_extend_penalty: 0);
+            unsigned int x_x = score_x[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
+            unsigned int x_y = score_y[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
+            unsigned int x_z = score_z[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
+            unsigned int y_x = score_x[i][j-1] + (penalize_right_gap || i != n ? gap_open_penalty : 0);
+            unsigned int y_y = score_y[i][j-1] + (penalize_right_gap || i != n ? gap_extend_penalty : 0);
+            unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
+            unsigned int z_x = score_x[i-1][j] + (j != N ? gap_open_penalty : 0);
+            unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
+            unsigned int z_z = score_z[i-1][j] + (j != N ? gap_extend_penalty: 0);
 
-	       score_x[i][j] = Min( Min( x_x, x_y ), x_z );
-	       score_y[i][j] = Min( Min( y_x, y_y ), y_z );
-	       score_z[i][j] = Min( Min( z_x, z_y ), z_z );
-               if ((int)score_x[i][j] > Infinity) score_x[i][j] = Infinity;
+            score_x[i][j] = Min( Min( x_x, x_y ), x_z );
+            score_y[i][j] = Min( Min( y_x, y_y ), y_z );
+            score_z[i][j] = Min( Min( z_x, z_y ), z_z );
+            if ((int)score_x[i][j] > Infinity) score_x[i][j] = Infinity;
 
-	       if ( x_x <= x_y )
-	       {    if ( x_x <= x_z ) x_from[i][j] = 'x';
-	            else x_from[i][j] =  'z';    }
-	       else
-	       {    if ( x_y <= x_z ) x_from[i][j] = 'y';
-	            else x_from[i][j] =  'z';    }
+            if ( x_x <= x_y ) {
+                if ( x_x <= x_z ) x_from[i][j] = 'x';
+                else x_from[i][j] =  'z';
+            } else {
+                if ( x_y <= x_z ) x_from[i][j] = 'y';
+                else x_from[i][j] =  'z';
+            }
 
-	       if ( y_x <= y_y )
-	       {    if ( y_x <= y_z ) y_from[i][j] = 'x';
-	            else y_from[i][j] =  'z';    }
-	       else
-	       {    if ( y_y <= y_z ) y_from[i][j] = 'y';
-	            else y_from[i][j] =  'z';    }
+            if ( y_x <= y_y ) {
+                if ( y_x <= y_z ) y_from[i][j] = 'x';
+                else y_from[i][j] =  'z';
+            } else {
+                if ( y_y <= y_z ) y_from[i][j] = 'y';
+                else y_from[i][j] =  'z';
+            }
 
-	       if ( z_x <= z_y )
-	       {    if ( z_x <= z_z ) z_from[i][j] = 'x';
-	            else z_from[i][j] =  'z';    }
-	       else
-	       {    if ( z_y <= z_z ) z_from[i][j] = 'y';
-	            else z_from[i][j] =  'z';    }    }    }
+            if ( z_x <= z_y ) {
+                if ( z_x <= z_z ) z_from[i][j] = 'x';
+                else z_from[i][j] =  'z';
+            } else {
+                if ( z_y <= z_z ) z_from[i][j] = 'y';
+                else z_from[i][j] =  'z';
+            }
+        }
+    }
 
-     best_score = Min( score_x[n][N], Min( score_y[n][N], score_z[n][N] ) );
+    best_score = Min( score_x[n][N], Min( score_y[n][N], score_z[n][N] ) );
 
-     // Find the end point of the best matching trace
-     int ii = n, jj = N;
-     for(int k = n; k >= 0; k--){
-         int best_score_k = Min( score_x[k][N], Min( score_y[k][N], score_z[k][N] ) );
-         if (best_score_k < best_score) {
-             best_score = best_score_k;
-             ii = k;
-             jj = N;
-         }
-     }
-     if (!penalize_right_gap) {
-     for(int k = N; k >= 0; k--){
-         int best_score_k = Min( score_x[n][k], Min( score_y[n][k], score_z[n][k] ) );
-         if (best_score_k < best_score) {
-             best_score = best_score_k;
-             ii = n;
-             jj = k;
-         }
-     }
-     }
-     if (best_score == Infinity) return best_score;
+    // Find the end point of the best matching trace
+    int ii = n, jj = N;
+    for(int k = n; k >= 0; k--) {
+        int best_score_k = Min( score_x[k][N], Min( score_y[k][N], score_z[k][N] ) );
+        if (best_score_k < best_score) {
+            best_score = best_score_k;
+            ii = k;
+            jj = N;
+        }
+    }
+    if (!penalize_right_gap) {
+        for(int k = N; k >= 0; k--) {
+            int best_score_k = Min( score_x[n][k], Min( score_y[n][k], score_z[n][k] ) );
+            if (best_score_k < best_score) {
+                best_score = best_score_k;
+                ii = n;
+                jj = k;
+            }
+        }
+    }
+    if (best_score == Infinity) return best_score;
 
-     //std::cout << "ii= " << ii << std::endl;
-     //std::cout << "jj= " << jj << std::endl;
-     //std::cout << "best_score= " << best_score << std::endl;
-     //vec< vec<unsigned char> > *from;
-     RecArray<unsigned char> *from;
-     if ( score_x[ii][jj] <= score_y[ii][jj] )
-     {    if ( score_x[ii][jj] <= score_z[ii][jj] ) from = &x_from;
-          else from = &z_from;    }
-     else
-     {    if ( score_y[ii][jj] <= score_z[ii][jj] ) from = &y_from;
-          else from = &z_from;    }
-     int i = ii;
-     int j = jj;
+    //std::cout << "ii= " << ii << std::endl;
+    //std::cout << "jj= " << jj << std::endl;
+    //std::cout << "best_score= " << best_score << std::endl;
+    //vec< vec<unsigned char> > *from;
+    RecArray<unsigned char> *from;
+    if ( score_x[ii][jj] <= score_y[ii][jj] ) {
+        if ( score_x[ii][jj] <= score_z[ii][jj] ) from = &x_from;
+        else from = &z_from;
+    } else {
+        if ( score_y[ii][jj] <= score_z[ii][jj] ) from = &y_from;
+        else from = &z_from;
+    }
+    int i = ii;
+    int j = jj;
 
-     int lcount = 0, g1count = 0, g2count = 0;
-     int last_length = 0;
-     avector<int> gaps(0), lengths(0);
-     while(1)
-     {
-          unsigned char dir = (*from)[i][j];
-	  //std::cout << dir;
-          if ( from == &x_from )
-          {    if ( g1count > 0 )
-               {    if ( last_length > 0 )
-		    {    gaps.Prepend( g1count );
-		         lengths.Prepend( last_length );    }
-	            g1count = 0;    }
-               if ( g2count > 0 )
-               {    if ( last_length > 0 )
-	            {    gaps.Prepend( -g2count );
-                         lengths.Prepend( last_length );    }
-                    g2count = 0;    }
-               ++lcount;
-               --i;
-               --j;   }
-          else if ( from == &z_from )  // gap on long sequence
-          {    if ( lcount > 0 )
-               {    last_length = lcount;
-                    lcount = 0;    }
-               ForceAssert( g1count == 0 );
-               ++g2count;
-               --i;    }
-          else                           // gap on short sequence
-          {    if ( lcount > 0 )
-               {    last_length = lcount;
-                    lcount = 0;    }
-               ForceAssert( g2count == 0 );
-               ++g1count;
-               --j;    }
+    int lcount = 0, g1count = 0, g2count = 0;
+    int last_length = 0;
+    avector<int> gaps(0), lengths(0);
+    while(1) {
+        unsigned char dir = (*from)[i][j];
+        //std::cout << dir;
+        if ( from == &x_from ) {
+            if ( g1count > 0 ) {
+                if ( last_length > 0 ) {
+                    gaps.Prepend( g1count );
+                    lengths.Prepend( last_length );
+                }
+                g1count = 0;
+            }
+            if ( g2count > 0 ) {
+                if ( last_length > 0 ) {
+                    gaps.Prepend( -g2count );
+                    lengths.Prepend( last_length );
+                }
+                g2count = 0;
+            }
+            ++lcount;
+            --i;
+            --j;
+        } else if ( from == &z_from ) { // gap on long sequence
+            if ( lcount > 0 ) {
+                last_length = lcount;
+                lcount = 0;
+            }
+            ForceAssert( g1count == 0 );
+            ++g2count;
+            --i;
+        } else {                       // gap on short sequence
+            if ( lcount > 0 ) {
+                last_length = lcount;
+                lcount = 0;
+            }
+            ForceAssert( g2count == 0 );
+            ++g1count;
+            --j;
+        }
 
-	  if ( dir == 'x') from = &x_from;
-	  else if ( dir == 'y') from = &y_from;
-	  else from = &z_from;
+        if ( dir == 'x') from = &x_from;
+        else if ( dir == 'y') from = &y_from;
+        else from = &z_from;
 
-	  if( (*from)[i][j] == 's' ) break;
+        if( (*from)[i][j] == 's' ) break;
 
     }
 
-     if ( g1count != 0 ) gaps.Prepend( g1count );
-     else if ( g2count != 0 ) gaps.Prepend( -g2count );
-     else gaps.Prepend(0);
+    if ( g1count != 0 ) gaps.Prepend( g1count );
+    else if ( g2count != 0 ) gaps.Prepend( -g2count );
+    else gaps.Prepend(0);
 
-     lengths.Prepend( lcount );
+    lengths.Prepend( lcount );
 
-     int pos1 = i;
-     int pos2 = j;
+    int pos1 = i;
+    int pos2 = j;
 
-     if ( gaps(0) < 0 )
-     {   pos2 -= gaps(0);
-         gaps(0) = 0;    }
+    if ( gaps(0) < 0 ) {
+        pos2 -= gaps(0);
+        gaps(0) = 0;
+    }
 
-     if ( gaps(0) > 0 )
-     {   pos1 += gaps(0);
-         gaps(0) = 0;    }
+    if ( gaps(0) > 0 ) {
+        pos1 += gaps(0);
+        gaps(0) = 0;
+    }
 
-     *a = align( pos1, pos2, gaps, lengths );
-     return best_score;
+    *a = align( pos1, pos2, gaps, lengths );
+    return best_score;
 }
 
 unsigned int SmithWatAffineBandedCoreFast( const basevector& S, const basevector& T,
-			     align* a, int offset, int bandwidth,
-                             bool penalize_left_gap, bool penalize_right_gap,
-                             const int mismatch_penalty,
-                             const int gap_open_penalty,
-                             const int gap_extend_penalty )
-{
-     ForceAssertGt( S.size(), 0u );
-     ForceAssertGt( T.size(), 0u );
+        align* a, int offset, int bandwidth,
+        bool penalize_left_gap, bool penalize_right_gap,
+        const int mismatch_penalty,
+        const int gap_open_penalty,
+        const int gap_extend_penalty ) {
+    ForceAssertGt( S.size(), 0u );
+    ForceAssertGt( T.size(), 0u );
 
-     int n = S.size( ), N = T.size( );
+    int n = S.size( ), N = T.size( );
 
-     avector<char> s, t;
-     s.resize(n);
-     for (int i = 0; i < n; i++)
-          s(i) = S[i];
-     t.resize(N);
-     for (int i = 0; i < N; i++)
-          t(i) = T[i];
+    avector<char> s, t;
+    s.resize(n);
+    for (int i = 0; i < n; i++)
+        s(i) = S[i];
+    t.resize(N);
+    for (int i = 0; i < N; i++)
+        t(i) = T[i];
 
-     int best_score = Infinity;
-     typedef BandedArray<unsigned int, Infinity> ScoringArrayT;
-     ScoringArrayT score_x(n+1, N+1, offset, bandwidth);
-     ScoringArrayT score_y(n+1, N+1, offset, bandwidth);
-     ScoringArrayT score_z(n+1, N+1, offset, bandwidth);
+    int best_score = Infinity;
+    typedef BandedArray<unsigned int, Infinity> ScoringArrayT;
+    ScoringArrayT score_x(n+1, N+1, offset, bandwidth);
+    ScoringArrayT score_y(n+1, N+1, offset, bandwidth);
+    ScoringArrayT score_z(n+1, N+1, offset, bandwidth);
 
-     typedef BandedArray<unsigned char, 's'> DirArrayT;
-     DirArrayT x_from(n+1, N+1, offset, bandwidth);
-     DirArrayT y_from(n+1, N+1, offset, bandwidth);
-     DirArrayT z_from(n+1, N+1, offset, bandwidth);
+    typedef BandedArray<unsigned char, 's'> DirArrayT;
+    DirArrayT x_from(n+1, N+1, offset, bandwidth);
+    DirArrayT y_from(n+1, N+1, offset, bandwidth);
+    DirArrayT z_from(n+1, N+1, offset, bandwidth);
 
-     // y and z are for the gap extending in target and source, respectively
-     // x is for base substitution
-     //score_x[0][0] = 0;
-     //score_y[0][0] = Infinity;
-     //score_z[0][0] = Infinity;
-     // valid only if (j >= i - offset - bandwidth && j <= i - offset + bandwidth)
-     if ( 0 >= 0 - offset - bandwidth && 0 <= 0 - offset + bandwidth)
-         score_x.Mutable(0,0) = 0;
-     for (int i = 1; i <= n; i++ ) {
-         if ( 0 < i - offset - bandwidth || 0  > i - offset + bandwidth)
-             continue;
-         score_z.Mutable(i,0) = 0;
-     }
-     if (!penalize_left_gap) {
-         for (int j = 1; j <= N; j++) {
-             if (j < 0 - offset - bandwidth || j > 0 - offset + bandwidth)
-                 continue;
-             score_y.Mutable(0,j) = 0;
-         }
-     }
-     double time = WallClockTime();
-     for (int i = 1; i <= n; i++ )
-     {
-          const int left = i - offset - bandwidth;
-          const int right = i - offset + bandwidth;
-          int low = Max( 1, left );
-          int high = Min( N, right );
-          for (int j = low; j <= high; j++ )
-	  {
-               //if (j < i - offset - bandwidth || j > i - offset + bandwidth) continue;
-               // if (j < left || j > right) continue;
-               int mismatch_score = (s(i-1) == t(j-1) ? 0 : mismatch_penalty);
-               unsigned int x_x = score_x[i-1][j-1] + mismatch_score;
-	       unsigned int x_y = score_y[i-1][j-1] + mismatch_score;
-	       unsigned int x_z = score_z[i-1][j-1] + mismatch_score;
-	       unsigned int y_x = score_x[i][j-1] + (penalize_right_gap || i != n ? gap_open_penalty : 0);
-	       unsigned int y_y = score_y[i][j-1] + (penalize_right_gap || i != n ? gap_extend_penalty : 0);
-	       unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
-	       unsigned int z_x = score_x[i-1][j] + (j != N ? gap_open_penalty : 0);
-	       unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
-	       unsigned int z_z = score_z[i-1][j] + (j != N ? gap_extend_penalty: 0);
+    // y and z are for the gap extending in target and source, respectively
+    // x is for base substitution
+    //score_x[0][0] = 0;
+    //score_y[0][0] = Infinity;
+    //score_z[0][0] = Infinity;
+    // valid only if (j >= i - offset - bandwidth && j <= i - offset + bandwidth)
+    if ( 0 >= 0 - offset - bandwidth && 0 <= 0 - offset + bandwidth)
+        score_x.Mutable(0,0) = 0;
+    for (int i = 1; i <= n; i++ ) {
+        if ( 0 < i - offset - bandwidth || 0  > i - offset + bandwidth)
+            continue;
+        score_z.Mutable(i,0) = 0;
+    }
+    if (!penalize_left_gap) {
+        for (int j = 1; j <= N; j++) {
+            if (j < 0 - offset - bandwidth || j > 0 - offset + bandwidth)
+                continue;
+            score_y.Mutable(0,j) = 0;
+        }
+    }
+    double time = WallClockTime();
+    for (int i = 1; i <= n; i++ ) {
+        const int left = i - offset - bandwidth;
+        const int right = i - offset + bandwidth;
+        int low = Max( 1, left );
+        int high = Min( N, right );
+        for (int j = low; j <= high; j++ ) {
+            //if (j < i - offset - bandwidth || j > i - offset + bandwidth) continue;
+            // if (j < left || j > right) continue;
+            int mismatch_score = (s(i-1) == t(j-1) ? 0 : mismatch_penalty);
+            unsigned int x_x = score_x[i-1][j-1] + mismatch_score;
+            unsigned int x_y = score_y[i-1][j-1] + mismatch_score;
+            unsigned int x_z = score_z[i-1][j-1] + mismatch_score;
+            unsigned int y_x = score_x[i][j-1] + (penalize_right_gap || i != n ? gap_open_penalty : 0);
+            unsigned int y_y = score_y[i][j-1] + (penalize_right_gap || i != n ? gap_extend_penalty : 0);
+            unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
+            unsigned int z_x = score_x[i-1][j] + (j != N ? gap_open_penalty : 0);
+            unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
+            unsigned int z_z = score_z[i-1][j] + (j != N ? gap_extend_penalty: 0);
 
-	       score_x.Mutable(i,j) = Min( Min( x_x, x_y ), x_z );
-	       score_y.Mutable(i,j) = Min( Min( y_x, y_y ), y_z );
-	       score_z.Mutable(i,j) = Min( Min( z_x, z_y ), z_z );
-               if ((int)score_x[i][j] > Infinity) {
-                   std::cout << "Renormalized at " << " i= " << i << " j= " << j
-                      << " score_x[i][j]= " << score_x[i][j] << std::endl;
-                   score_x.Mutable(i,j) = Infinity;
-               }
-	       if ( x_x <= x_y )
-	       {    if ( x_x <= x_z ) x_from.Mutable(i,j) = 'x';
-	            else x_from.Mutable(i,j) =  'z';    }
-	       else
-	       {    if ( x_y <= x_z ) x_from.Mutable(i,j) = 'y';
-	            else x_from.Mutable(i,j) =  'z';    }
+            score_x.Mutable(i,j) = Min( Min( x_x, x_y ), x_z );
+            score_y.Mutable(i,j) = Min( Min( y_x, y_y ), y_z );
+            score_z.Mutable(i,j) = Min( Min( z_x, z_y ), z_z );
+            if ((int)score_x[i][j] > Infinity) {
+                std::cout << "Renormalized at " << " i= " << i << " j= " << j
+                          << " score_x[i][j]= " << score_x[i][j] << std::endl;
+                score_x.Mutable(i,j) = Infinity;
+            }
+            if ( x_x <= x_y ) {
+                if ( x_x <= x_z ) x_from.Mutable(i,j) = 'x';
+                else x_from.Mutable(i,j) =  'z';
+            } else {
+                if ( x_y <= x_z ) x_from.Mutable(i,j) = 'y';
+                else x_from.Mutable(i,j) =  'z';
+            }
 
-	       if ( y_x <= y_y )
-	       {    if ( y_x <= y_z ) y_from.Mutable(i,j) = 'x';
-	            else y_from.Mutable(i,j) =  'z';    }
-	       else
-	       {    if ( y_y <= y_z ) y_from.Mutable(i,j) = 'y';
-	            else y_from.Mutable(i,j) =  'z';    }
+            if ( y_x <= y_y ) {
+                if ( y_x <= y_z ) y_from.Mutable(i,j) = 'x';
+                else y_from.Mutable(i,j) =  'z';
+            } else {
+                if ( y_y <= y_z ) y_from.Mutable(i,j) = 'y';
+                else y_from.Mutable(i,j) =  'z';
+            }
 
-	       if ( z_x <= z_y )
-	       {    if ( z_x <= z_z ) z_from.Mutable(i,j) = 'x';
-	            else z_from.Mutable(i,j) =  'z';    }
-	       else
-	       {    if ( z_y <= z_z ) z_from.Mutable(i,j) = 'y';
-	            else z_from.Mutable(i,j) =  'z';    }    }    }
+            if ( z_x <= z_y ) {
+                if ( z_x <= z_z ) z_from.Mutable(i,j) = 'x';
+                else z_from.Mutable(i,j) =  'z';
+            } else {
+                if ( z_y <= z_z ) z_from.Mutable(i,j) = 'y';
+                else z_from.Mutable(i,j) =  'z';
+            }
+        }
+    }
 
-     best_score = Min( score_x[n][N], Min( score_y[n][N], score_z[n][N] ) );
+    best_score = Min( score_x[n][N], Min( score_y[n][N], score_z[n][N] ) );
 
-     // Find the end point of the best matching trace
-     int ii = n, jj = N;
-     for(int k = n; k >= 0; k--){
-         int best_score_k = Min( score_x[k][N], Min( score_y[k][N], score_z[k][N] ) );
-         if (best_score_k < best_score) {
-             best_score = best_score_k;
-             ii = k;
-             jj = N;
-         }
-     }
-     if (!penalize_right_gap) {
-     for(int k = N; k >= 0; k--){
-         int best_score_k = Min( score_x[n][k], Min( score_y[n][k], score_z[n][k] ) );
-         if (best_score_k < best_score) {
-             best_score = best_score_k;
-             ii = n;
-             jj = k;
-         }
-     }
-     }
-     if (best_score == Infinity) return best_score;
+    // Find the end point of the best matching trace
+    int ii = n, jj = N;
+    for(int k = n; k >= 0; k--) {
+        int best_score_k = Min( score_x[k][N], Min( score_y[k][N], score_z[k][N] ) );
+        if (best_score_k < best_score) {
+            best_score = best_score_k;
+            ii = k;
+            jj = N;
+        }
+    }
+    if (!penalize_right_gap) {
+        for(int k = N; k >= 0; k--) {
+            int best_score_k = Min( score_x[n][k], Min( score_y[n][k], score_z[n][k] ) );
+            if (best_score_k < best_score) {
+                best_score = best_score_k;
+                ii = n;
+                jj = k;
+            }
+        }
+    }
+    if (best_score == Infinity) return best_score;
 
-     DirArrayT *from;
-     if ( score_x[ii][jj] <= score_y[ii][jj] )
-     {    if ( score_x[ii][jj] <= score_z[ii][jj] ) from = &x_from;
-          else from = &z_from;    }
-     else
-     {    if ( score_y[ii][jj] <= score_z[ii][jj] ) from = &y_from;
-          else from = &z_from;    }
-     int i = ii;
-     int j = jj;
+    DirArrayT *from;
+    if ( score_x[ii][jj] <= score_y[ii][jj] ) {
+        if ( score_x[ii][jj] <= score_z[ii][jj] ) from = &x_from;
+        else from = &z_from;
+    } else {
+        if ( score_y[ii][jj] <= score_z[ii][jj] ) from = &y_from;
+        else from = &z_from;
+    }
+    int i = ii;
+    int j = jj;
 
-     int lcount = 0, g1count = 0, g2count = 0;
-     int last_length = 0;
-     avector<int> gaps(0), lengths(0);
-     while(1)
-     {
-          unsigned char dir = (*from)[i][j];
-	  //std::cout << dir;
-          if ( from == &x_from )
-          {    if ( g1count > 0 )
-               {    if ( last_length > 0 )
-		    {    gaps.Prepend( g1count );
-		         lengths.Prepend( last_length );    }
-	            g1count = 0;    }
-               if ( g2count > 0 )
-               {    if ( last_length > 0 )
-	            {    gaps.Prepend( -g2count );
-                         lengths.Prepend( last_length );    }
-                    g2count = 0;    }
-               ++lcount;
-               --i;
-               --j;   }
-          else if ( from == &z_from )  // gap on long sequence
-          {    if ( lcount > 0 )
-               {    last_length = lcount;
-                    lcount = 0;    }
-               ForceAssert( g1count == 0 );
-               ++g2count;
-               --i;    }
-          else                           // gap on short sequence
-          {    if ( lcount > 0 )
-               {    last_length = lcount;
-                    lcount = 0;    }
-               ForceAssert( g2count == 0 );
-               ++g1count;
-               --j;    }
+    int lcount = 0, g1count = 0, g2count = 0;
+    int last_length = 0;
+    avector<int> gaps(0), lengths(0);
+    while(1) {
+        unsigned char dir = (*from)[i][j];
+        //std::cout << dir;
+        if ( from == &x_from ) {
+            if ( g1count > 0 ) {
+                if ( last_length > 0 ) {
+                    gaps.Prepend( g1count );
+                    lengths.Prepend( last_length );
+                }
+                g1count = 0;
+            }
+            if ( g2count > 0 ) {
+                if ( last_length > 0 ) {
+                    gaps.Prepend( -g2count );
+                    lengths.Prepend( last_length );
+                }
+                g2count = 0;
+            }
+            ++lcount;
+            --i;
+            --j;
+        } else if ( from == &z_from ) { // gap on long sequence
+            if ( lcount > 0 ) {
+                last_length = lcount;
+                lcount = 0;
+            }
+            ForceAssert( g1count == 0 );
+            ++g2count;
+            --i;
+        } else {                       // gap on short sequence
+            if ( lcount > 0 ) {
+                last_length = lcount;
+                lcount = 0;
+            }
+            ForceAssert( g2count == 0 );
+            ++g1count;
+            --j;
+        }
 
-	  if ( dir == 'x') from = &x_from;
-	  else if ( dir == 'y') from = &y_from;
-	  else from = &z_from;
+        if ( dir == 'x') from = &x_from;
+        else if ( dir == 'y') from = &y_from;
+        else from = &z_from;
 
-	  if( (*from)[i][j] == 's' ) break;
+        if( (*from)[i][j] == 's' ) break;
 
     }
 
-     if ( g1count != 0 ) gaps.Prepend( g1count );
-     else if ( g2count != 0 ) gaps.Prepend( -g2count );
-     else gaps.Prepend(0);
+    if ( g1count != 0 ) gaps.Prepend( g1count );
+    else if ( g2count != 0 ) gaps.Prepend( -g2count );
+    else gaps.Prepend(0);
 
-     lengths.Prepend( lcount );
+    lengths.Prepend( lcount );
 
-     int pos1 = i;
-     int pos2 = j;
+    int pos1 = i;
+    int pos2 = j;
 
-     if ( gaps(0) < 0 )
-     {   pos2 -= gaps(0);
-         gaps(0) = 0;    }
+    if ( gaps(0) < 0 ) {
+        pos2 -= gaps(0);
+        gaps(0) = 0;
+    }
 
-     if ( gaps(0) > 0 )
-     {   pos1 += gaps(0);
-         gaps(0) = 0;    }
+    if ( gaps(0) > 0 ) {
+        pos1 += gaps(0);
+        gaps(0) = 0;
+    }
 
-     *a = align( pos1, pos2, gaps, lengths );
-     return best_score;
+    *a = align( pos1, pos2, gaps, lengths );
+    return best_score;
 }
 
 } // end anonymous namespace
 
 unsigned int SmithWatAffine( const basevector& S, const basevector& T,
-			     alignment& a,
-			     bool penalize_left_gap,
-			     bool penalize_right_gap,
+                             alignment& a,
+                             bool penalize_left_gap,
+                             bool penalize_right_gap,
                              const int mismatch_penalty,
                              const int gap_open_penalty,
-                             const int gap_extend_penalty )
-{
-     ForceAssertGt( S.size(), 0u );
-     ForceAssertGt( T.size(), 0u );
+                             const int gap_extend_penalty ) {
+    ForceAssertGt( S.size(), 0u );
+    ForceAssertGt( T.size(), 0u );
 
-     unsigned int n = S.size( ), N = T.size( );
+    unsigned int n = S.size( ), N = T.size( );
 
-     //     ForceAssertLe( n, N );
+    //     ForceAssertLe( n, N );
 
-     avector<char> s, t;
-     s.resize(n);
-     for ( unsigned int i = 0; i < n; i++ )
-          s(i) = S[i];
-     t.resize(N);
-     for ( unsigned int i = 0; i < N; i++ )
-          t(i) = T[i];
+    avector<char> s, t;
+    s.resize(n);
+    for ( unsigned int i = 0; i < n; i++ )
+        s(i) = S[i];
+    t.resize(N);
+    for ( unsigned int i = 0; i < N; i++ )
+        t(i) = T[i];
 
-     int best_score = Infinity;
-     vec< vec<unsigned int> > score_x;
-     vec< vec<unsigned int> > score_y;
-     vec< vec<unsigned int> > score_z;
+    int best_score = Infinity;
+    vec< vec<unsigned int> > score_x;
+    vec< vec<unsigned int> > score_y;
+    vec< vec<unsigned int> > score_z;
 
-     vec< vec<unsigned char> > x_from;
-     vec< vec<unsigned char> > y_from;
-     vec< vec<unsigned char> > z_from;
+    vec< vec<unsigned char> > x_from;
+    vec< vec<unsigned char> > y_from;
+    vec< vec<unsigned char> > z_from;
 
-     score_x.resize( n+1 );
-     score_y.resize( n+1 );
-     score_z.resize( n+1 );
-     x_from.resize( n+1 );
-     y_from.resize( n+1 );
-     z_from.resize( n+1 );
+    score_x.resize( n+1 );
+    score_y.resize( n+1 );
+    score_z.resize( n+1 );
+    x_from.resize( n+1 );
+    y_from.resize( n+1 );
+    z_from.resize( n+1 );
 
-     for ( unsigned int i = 0; i <= n; ++i )
-     {
-         score_x[i].resize( N+1 );
-         score_y[i].resize( N+1 );
-         score_z[i].resize( N+1 );
-         x_from[i].resize( N+1 );
-         y_from[i].resize( N+1 );
-         z_from[i].resize( N+1 );
-     }
+    for ( unsigned int i = 0; i <= n; ++i ) {
+        score_x[i].resize( N+1 );
+        score_y[i].resize( N+1 );
+        score_z[i].resize( N+1 );
+        x_from[i].resize( N+1 );
+        y_from[i].resize( N+1 );
+        z_from[i].resize( N+1 );
+    }
 
-     score_x[0][0] = 0;
-     score_y[0][0] = Infinity;
-     score_z[0][0] = Infinity;
-     x_from[0][0] = 's';
-     y_from[0][0] = 's';
-     z_from[0][0] = 's';
+    score_x[0][0] = 0;
+    score_y[0][0] = Infinity;
+    score_z[0][0] = Infinity;
+    x_from[0][0] = 's';
+    y_from[0][0] = 's';
+    z_from[0][0] = 's';
 
-     for ( unsigned int i = 1; i <= n; i++ )
-     {    score_x[i][0] = Infinity;
-	  score_y[i][0] = Infinity;
-          score_z[i][0] = gap_open_penalty + gap_extend_penalty * i;
-	  x_from[i][0] = 's';
-	  y_from[i][0] = 's';
-	  z_from[i][0] = 's';   }
+    for ( unsigned int i = 1; i <= n; i++ ) {
+        score_x[i][0] = Infinity;
+        score_y[i][0] = Infinity;
+        score_z[i][0] = gap_open_penalty + gap_extend_penalty * i;
+        x_from[i][0] = 's';
+        y_from[i][0] = 's';
+        z_from[i][0] = 's';
+    }
 
-     for ( unsigned int j = 1; j <= N; j++)
-       {  score_x[0][j] = Infinity;
-          score_y[0][j] = (penalize_left_gap ? gap_open_penalty + gap_extend_penalty * j : 0);
-	  score_z[0][j] = Infinity;
-	  x_from[0][j] = 's';
-	  y_from[0][j] = 's';
-	  z_from[0][j] = 's';   }
+    for ( unsigned int j = 1; j <= N; j++) {
+        score_x[0][j] = Infinity;
+        score_y[0][j] = (penalize_left_gap ? gap_open_penalty + gap_extend_penalty * j : 0);
+        score_z[0][j] = Infinity;
+        x_from[0][j] = 's';
+        y_from[0][j] = 's';
+        z_from[0][j] = 's';
+    }
 
-     for ( unsigned int i = 1; i <= n; i++ )
-     {   for ( unsigned int j = 1; j <= N; j++ )
-	  {    unsigned int x_x = score_x[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
-	       unsigned int x_y = score_y[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
-	       unsigned int x_z = score_z[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
-	       unsigned int y_x = score_x[i][j-1] + (i != n || penalize_right_gap ? gap_open_penalty : 0);
-	       unsigned int y_y = score_y[i][j-1] + (i != n || penalize_right_gap ? gap_extend_penalty : 0);
-	       unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
-	       unsigned int z_x = score_x[i-1][j] + gap_open_penalty;
-	       unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
-	       unsigned int z_z = score_z[i-1][j] + gap_extend_penalty;
+    for ( unsigned int i = 1; i <= n; i++ ) {
+        for ( unsigned int j = 1; j <= N; j++ ) {
+            unsigned int x_x = score_x[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
+            unsigned int x_y = score_y[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
+            unsigned int x_z = score_z[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
+            unsigned int y_x = score_x[i][j-1] + (i != n || penalize_right_gap ? gap_open_penalty : 0);
+            unsigned int y_y = score_y[i][j-1] + (i != n || penalize_right_gap ? gap_extend_penalty : 0);
+            unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
+            unsigned int z_x = score_x[i-1][j] + gap_open_penalty;
+            unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
+            unsigned int z_z = score_z[i-1][j] + gap_extend_penalty;
 
-	       score_x[i][j] = Min( Min( x_x, x_y ), x_z );
-	       score_y[i][j] = Min( Min( y_x, y_y ), y_z );
-	       score_z[i][j] = Min( Min( z_x, z_y ), z_z );
+            score_x[i][j] = Min( Min( x_x, x_y ), x_z );
+            score_y[i][j] = Min( Min( y_x, y_y ), y_z );
+            score_z[i][j] = Min( Min( z_x, z_y ), z_z );
 
-	       if ( x_x <= x_y )
-	       {    if ( x_x <= x_z ) x_from[i][j] = 'x';
-	            else x_from[i][j] =  'z';    }
-	       else
-	       {    if ( x_y <= x_z ) x_from[i][j] = 'y';
-	            else x_from[i][j] =  'z';    }
+            if ( x_x <= x_y ) {
+                if ( x_x <= x_z ) x_from[i][j] = 'x';
+                else x_from[i][j] =  'z';
+            } else {
+                if ( x_y <= x_z ) x_from[i][j] = 'y';
+                else x_from[i][j] =  'z';
+            }
 
-	       if ( y_x <= y_y )
-	       {    if ( y_x <= y_z ) y_from[i][j] = 'x';
-	            else y_from[i][j] =  'z';    }
-	       else
-	       {    if ( y_y <= y_z ) y_from[i][j] = 'y';
-	            else y_from[i][j] =  'z';    }
+            if ( y_x <= y_y ) {
+                if ( y_x <= y_z ) y_from[i][j] = 'x';
+                else y_from[i][j] =  'z';
+            } else {
+                if ( y_y <= y_z ) y_from[i][j] = 'y';
+                else y_from[i][j] =  'z';
+            }
 
-	       if ( z_x <= z_y )
-	       {    if ( z_x <= z_z ) z_from[i][j] = 'x';
-	            else z_from[i][j] =  'z';    }
-	       else
-	       {    if ( z_y <= z_z ) z_from[i][j] = 'y';
-	            else z_from[i][j] =  'z';    }    }    }
+            if ( z_x <= z_y ) {
+                if ( z_x <= z_z ) z_from[i][j] = 'x';
+                else z_from[i][j] =  'z';
+            } else {
+                if ( z_y <= z_z ) z_from[i][j] = 'y';
+                else z_from[i][j] =  'z';
+            }
+        }
+    }
 
-     best_score = Min( score_x[n][N], Min( score_y[n][N], score_z[n][N] ) );
-     int ii = n;
-     int jj = N;
+    best_score = Min( score_x[n][N], Min( score_y[n][N], score_z[n][N] ) );
+    int ii = n;
+    int jj = N;
 
 #ifdef  FIX_RIGHT_GAP
     int right = Min(n,N);
     if (!penalize_right_gap) {
-        for(int k = N; k >= right; k--){
+        for(int k = N; k >= right; k--) {
             int best_score_k = Min( score_x[n][k], Min( score_y[n][k], score_z[n][k] ) );
             if (best_score_k < best_score) {
                 best_score = best_score_k;
@@ -560,94 +588,103 @@ unsigned int SmithWatAffine( const basevector& S, const basevector& T,
     }
 #endif
 
-     vec< vec<unsigned char> > *from;
-     if ( score_x[n][N] <= score_y[n][N] )
-     {    if ( score_x[n][N] <= score_z[n][N] ) from = &x_from;
-          else from = &z_from;    }
-     else
-     {    if ( score_y[n][N] <= score_z[n][N] ) from = &y_from;
-          else from = &z_from;    }
+    vec< vec<unsigned char> > *from;
+    if ( score_x[n][N] <= score_y[n][N] ) {
+        if ( score_x[n][N] <= score_z[n][N] ) from = &x_from;
+        else from = &z_from;
+    } else {
+        if ( score_y[n][N] <= score_z[n][N] ) from = &y_from;
+        else from = &z_from;
+    }
 
-     int i = ii;
-     int j = jj;
-     int lcount = 0, g1count = 0, g2count = 0;
-     int last_length = 0;
-     avector<int> gaps(0), lengths(0);
-     while(1)
-     {
-          unsigned char dir = (*from)[i][j];
-	  //std::cout << dir;
-          if ( from == &x_from )
-          {    if ( g1count > 0 )
-               {    if ( last_length > 0 )
-		    {    gaps.Prepend( g1count );
-		         lengths.Prepend( last_length );    }
-	            g1count = 0;    }
-               if ( g2count > 0 )
-               {    if ( last_length > 0 )
-	            {    gaps.Prepend( -g2count );
-                         lengths.Prepend( last_length );    }
-                    g2count = 0;    }
-               ++lcount;
-               --i;
-               --j;   }
-          else if ( from == &z_from )  // gap on long sequence
-          {    if ( lcount > 0 )
-               {    last_length = lcount;
-                    lcount = 0;    }
-               ForceAssert( g1count == 0 );
-               ++g2count;
-               --i;    }
-          else                           // gap on short sequence
-          {    if ( lcount > 0 )
-               {    last_length = lcount;
-                    lcount = 0;    }
-               ForceAssert( g2count == 0 );
-               ++g1count;
-               --j;    }
+    int i = ii;
+    int j = jj;
+    int lcount = 0, g1count = 0, g2count = 0;
+    int last_length = 0;
+    avector<int> gaps(0), lengths(0);
+    while(1) {
+        unsigned char dir = (*from)[i][j];
+        //std::cout << dir;
+        if ( from == &x_from ) {
+            if ( g1count > 0 ) {
+                if ( last_length > 0 ) {
+                    gaps.Prepend( g1count );
+                    lengths.Prepend( last_length );
+                }
+                g1count = 0;
+            }
+            if ( g2count > 0 ) {
+                if ( last_length > 0 ) {
+                    gaps.Prepend( -g2count );
+                    lengths.Prepend( last_length );
+                }
+                g2count = 0;
+            }
+            ++lcount;
+            --i;
+            --j;
+        } else if ( from == &z_from ) { // gap on long sequence
+            if ( lcount > 0 ) {
+                last_length = lcount;
+                lcount = 0;
+            }
+            ForceAssert( g1count == 0 );
+            ++g2count;
+            --i;
+        } else {                       // gap on short sequence
+            if ( lcount > 0 ) {
+                last_length = lcount;
+                lcount = 0;
+            }
+            ForceAssert( g2count == 0 );
+            ++g1count;
+            --j;
+        }
 
-	  if ( dir == 'x') from = &x_from;
-	  else if ( dir == 'y') from = &y_from;
-	  else from = &z_from;
+        if ( dir == 'x') from = &x_from;
+        else if ( dir == 'y') from = &y_from;
+        else from = &z_from;
 
-	  if( (*from)[i][j] == 's' ) break;
+        if( (*from)[i][j] == 's' ) break;
 
     }
 
-     //std::cout << "\n";
+    //std::cout << "\n";
 
-     if ( g1count != 0 ) gaps.Prepend( g1count );
-     else if ( g2count != 0 ) gaps.Prepend( -g2count );
-     else gaps.Prepend(0);
+    if ( g1count != 0 ) gaps.Prepend( g1count );
+    else if ( g2count != 0 ) gaps.Prepend( -g2count );
+    else gaps.Prepend(0);
 
-     lengths.Prepend( lcount );
+    lengths.Prepend( lcount );
 
-     int pos1 = i;
-     int pos2 = j;
+    int pos1 = i;
+    int pos2 = j;
 
-     if ( gaps(0) < 0 )
-     {   pos2 -= gaps(0);
-         gaps(0) = 0;    }
+    if ( gaps(0) < 0 ) {
+        pos2 -= gaps(0);
+        gaps(0) = 0;
+    }
 
-     if ( gaps(0) > 0 )
-     {   pos1 += gaps(0);
-         gaps(0) = 0;    }
+    if ( gaps(0) > 0 ) {
+        pos1 += gaps(0);
+        gaps(0) = 0;
+    }
 
-     int errors = best_score;
-     a = alignment( pos1, pos2, errors, gaps, lengths );
+    int errors = best_score;
+    a = alignment( pos1, pos2, errors, gaps, lengths );
 
-     return best_score;    }
+    return best_score;
+}
 
 
 unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
-                            alignment & a,
-                            bool penalize_left_gap,
-                            bool penalize_right_gap,
-                            const int mismatch_penalty,
-                            const int gap_open_penalty,
-                            const int gap_extend_penalty
-                            )
-{
+                                    alignment & a,
+                                    bool penalize_left_gap,
+                                    bool penalize_right_gap,
+                                    const int mismatch_penalty,
+                                    const int gap_open_penalty,
+                                    const int gap_extend_penalty
+                                   ) {
 
     ForceAssertGt(S.size(), 0u);
     ForceAssertGt(T.size(), 0u);
@@ -695,7 +732,7 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
     for (unsigned int j = 1; j <= N; j++) {
         score_x[0][j] = Infinity;
         score_y[0][j] = (penalize_left_gap ? gap_open_penalty +
-                gap_extend_penalty * j :0);
+                         gap_extend_penalty * j :0);
         score_z[0][j] = Infinity;
         x_from[0][j] = 's';
         y_from[0][j] = 's';
@@ -717,99 +754,96 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
     //std::cout <<  Date( ) << ": start the main loop" << std::endl;
     //std::cout <<  Date( ) << ": time used = " << TimeSince(clock) << std::endl;
     for ( int level = 0; level < n_block_s + n_block_t; ++level ) {
-    // number of blocks in the diagonal that are independent to each other
-    // start and stop of the block index
-    // i_block_s in [0, n_block_s)
-    // i_block_t in [0, n_block_t)
-    // where i_block_s + i_block_t = level
+        // number of blocks in the diagonal that are independent to each other
+        // start and stop of the block index
+        // i_block_s in [0, n_block_s)
+        // i_block_t in [0, n_block_t)
+        // where i_block_s + i_block_t = level
 
-    // in other words i_block_s is in ( level - n_block_t, level ] && [0, n_block_s)
+        // in other words i_block_s is in ( level - n_block_t, level ] && [0, n_block_s)
 
-    #pragma omp parallel for
-    for ( int i_block_s = std::max( 0, level - n_block_t + 1 );
-          i_block_s < std::min( n_block_s, level + 1 ); i_block_s++ ) {
-        int i_block_t = level - i_block_s;
-        ForceAssertGe( i_block_t , 0 );
-        ForceAssertLt( i_block_t , n_block_t );
+        #pragma omp parallel for
+        for ( int i_block_s = std::max( 0, level - n_block_t + 1 );
+                i_block_s < std::min( n_block_s, level + 1 ); i_block_s++ ) {
+            int i_block_t = level - i_block_s;
+            ForceAssertGe( i_block_t , 0 );
+            ForceAssertLt( i_block_t , n_block_t );
 
-        int istart = i_block_s * block_size + 1;
-        int istop = std::min( istart + block_size, (int)n + 1 );
-        int jstart = i_block_t * block_size + 1;
-        int jstop = std::min( jstart + block_size, (int)N + 1 );
+            int istart = i_block_s * block_size + 1;
+            int istop = std::min( istart + block_size, (int)n + 1 );
+            int jstart = i_block_t * block_size + 1;
+            int jstop = std::min( jstart + block_size, (int)N + 1 );
 
 
-    for ( int i = istart; i < istop; i++) {
-        for ( int j = jstart; j < jstop; j++) {
-            unsigned int x_x =
-                score_x[i - 1][j - 1] + mismatch_penalty * (s(i - 1) !=
-                                                            t(j - 1));
-            unsigned int x_y =
-                score_y[i - 1][j - 1] + mismatch_penalty * (s(i - 1) !=
-                                                            t(j - 1));
-            unsigned int x_z =
-                score_z[i - 1][j - 1] + mismatch_penalty * (s(i - 1) !=
-                                                            t(j - 1));
-            //unsigned int y_x = score_x[i][j - 1] + gap_open_penalty;
-            //unsigned int y_y = score_y[i][j - 1] + gap_extend_penalty;
-            unsigned int y_x = score_x[i][j-1] +
-                (penalize_right_gap || i != (int)n ? gap_open_penalty : 0);
-            unsigned int y_y = score_y[i][j-1] +
-                (penalize_right_gap || i != (int)n ? gap_extend_penalty : 0);
+            for ( int i = istart; i < istop; i++) {
+                for ( int j = jstart; j < jstop; j++) {
+                    unsigned int x_x =
+                        score_x[i - 1][j - 1] + mismatch_penalty * (s(i - 1) !=
+                                t(j - 1));
+                    unsigned int x_y =
+                        score_y[i - 1][j - 1] + mismatch_penalty * (s(i - 1) !=
+                                t(j - 1));
+                    unsigned int x_z =
+                        score_z[i - 1][j - 1] + mismatch_penalty * (s(i - 1) !=
+                                t(j - 1));
+                    //unsigned int y_x = score_x[i][j - 1] + gap_open_penalty;
+                    //unsigned int y_y = score_y[i][j - 1] + gap_extend_penalty;
+                    unsigned int y_x = score_x[i][j-1] +
+                                       (penalize_right_gap || i != (int)n ? gap_open_penalty : 0);
+                    unsigned int y_y = score_y[i][j-1] +
+                                       (penalize_right_gap || i != (int)n ? gap_extend_penalty : 0);
 
-            unsigned int y_z = Infinity;        //score_z[i][j-1] + gap_open_penalty;
-            unsigned int z_x = score_x[i - 1][j] + gap_open_penalty;
-            unsigned int z_y = Infinity;        //score_y[i-1][j] + gap_open_penalty;
-            unsigned int z_z = score_z[i - 1][j] + gap_extend_penalty;
+                    unsigned int y_z = Infinity;        //score_z[i][j-1] + gap_open_penalty;
+                    unsigned int z_x = score_x[i - 1][j] + gap_open_penalty;
+                    unsigned int z_y = Infinity;        //score_y[i-1][j] + gap_open_penalty;
+                    unsigned int z_z = score_z[i - 1][j] + gap_extend_penalty;
 
-            score_x[i][j] = Min(Min(x_x, x_y), x_z);
-            score_y[i][j] = Min(Min(y_x, y_y), y_z);
-            score_z[i][j] = Min(Min(z_x, z_y), z_z);
+                    score_x[i][j] = Min(Min(x_x, x_y), x_z);
+                    score_y[i][j] = Min(Min(y_x, y_y), y_z);
+                    score_z[i][j] = Min(Min(z_x, z_y), z_z);
 
-            if (x_x <= x_y) {
-                if (x_x <= x_z)
-                    x_from[i][j] = 'x';
-                else
-                    x_from[i][j] = 'z';
+                    if (x_x <= x_y) {
+                        if (x_x <= x_z)
+                            x_from[i][j] = 'x';
+                        else
+                            x_from[i][j] = 'z';
+                    } else {
+                        if (x_y <= x_z)
+                            x_from[i][j] = 'y';
+                        else
+                            x_from[i][j] = 'z';
+                    }
+
+                    if (y_x <= y_y) {
+                        if (y_x <= y_z)
+                            y_from[i][j] = 'x';
+                        else
+                            y_from[i][j] = 'z';
+                    } else {
+                        if (y_y <= y_z)
+                            y_from[i][j] = 'y';
+                        else
+                            y_from[i][j] = 'z';
+                    }
+
+                    if (z_x <= z_y) {
+                        if (z_x <= z_z)
+                            z_from[i][j] = 'x';
+                        else
+                            z_from[i][j] = 'z';
+                    } else {
+                        if (z_y <= z_z)
+                            z_from[i][j] = 'y';
+                        else
+                            z_from[i][j] = 'z';
+                    }
+                }
             }
-            else {
-                if (x_y <= x_z)
-                    x_from[i][j] = 'y';
-                else
-                    x_from[i][j] = 'z';
-            }
 
-            if (y_x <= y_y) {
-                if (y_x <= y_z)
-                    y_from[i][j] = 'x';
-                else
-                    y_from[i][j] = 'z';
-            }
-            else {
-                if (y_y <= y_z)
-                    y_from[i][j] = 'y';
-                else
-                    y_from[i][j] = 'z';
-            }
 
-            if (z_x <= z_y) {
-                if (z_x <= z_z)
-                    z_from[i][j] = 'x';
-                else
-                    z_from[i][j] = 'z';
-            }
-            else {
-                if (z_y <= z_z)
-                    z_from[i][j] = 'y';
-                else
-                    z_from[i][j] = 'z';
-            }
+
+            // end parallelization
         }
-    }
-
-
-
-    // end parallelization
-    }
     }
 
     int ii = n, jj = N;
@@ -820,7 +854,7 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
     int right = 0;
 #endif
     if (!penalize_right_gap) {
-        for(int k = N; k >= right; k--){
+        for(int k = N; k >= right; k--) {
             int best_score_k = Min( score_x[n][k], Min( score_y[n][k], score_z[n][k] ) );
             if (best_score_k < best_score) {
                 best_score = best_score_k;
@@ -837,8 +871,7 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
             from = &x_from;
         else
             from = &z_from;
-    }
-    else {
+    } else {
         if (score_y[ii][jj] <= score_z[ii][jj])
             from = &y_from;
         else
@@ -871,9 +904,7 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
             ++lcount;
             --i;
             --j;
-        }
-        else if (from == &z_from)       // gap on long sequence
-        {
+        } else if (from == &z_from) {   // gap on long sequence
             if (lcount > 0) {
                 last_length = lcount;
                 lcount = 0;
@@ -881,9 +912,7 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
             ForceAssert(g1count == 0);
             ++g2count;
             --i;
-        }
-        else                    // gap on short sequence
-        {
+        } else {                // gap on short sequence
             if (lcount > 0) {
                 last_length = lcount;
                 lcount = 0;
@@ -942,12 +971,11 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
 // Unmatched ends on both S and T are not penalized. Meaningful alignments
 // outputs are guaranteed only if reasonable offset and bandwidth are given.
 unsigned int SmithWatAffineBanded( const basevector& S, const basevector& T,
-                             int offset, int bandwidth,
-			     align& a, int& error,
-                             const int mismatch_penalty,
-                             const int gap_open_penalty,
-                             const int gap_extend_penalty )
-{
+                                   int offset, int bandwidth,
+                                   align& a, int& error,
+                                   const int mismatch_penalty,
+                                   const int gap_open_penalty,
+                                   const int gap_extend_penalty ) {
     ForceAssertGt(S.isize(), 0);
     ForceAssertGt(T.isize(), 0);
     ForceAssertGt(bandwidth, 0);
@@ -961,7 +989,7 @@ unsigned int SmithWatAffineBanded( const basevector& S, const basevector& T,
     basevector T2(T, t_start, t_stop - t_start);
     // new offset = s_pos - (t_pos - t_start) = offset + t_start
     int score = SmithWatAffineBandedCoreFast(S, T2, &a, t_start + offset, bandwidth,
-            false, false, mismatch_penalty, gap_open_penalty, gap_extend_penalty);
+                false, false, mismatch_penalty, gap_open_penalty, gap_extend_penalty);
     error = a.Errors(S, T2);
     a.Setpos2(a.pos2()  + t_start);
     if ( a.pos1() < 0 || a.pos2() < 0 || a.Pos1() > (int)S.size()
@@ -1023,8 +1051,7 @@ static std::ostream& operator<< (std::ostream &os, const perf_interval& p) {
 // non-overlapping and non-crossing with respect to pos2, however pos1
 // may cross over.  This code removes that.
 
-static size_t score_perfect_intervals( vec<perf_interval>& perf_intervals, size_t skip = 0 )
-{
+static size_t score_perfect_intervals( vec<perf_interval>& perf_intervals, size_t skip = 0 ) {
     ForceAssertGe( perf_intervals.size(), 1U );
 
     size_t badness = 0;
@@ -1042,8 +1069,7 @@ static size_t score_perfect_intervals( vec<perf_interval>& perf_intervals, size_
     return badness;
 }
 
-static void filter_perfect_intervals( vec<perf_interval>& input, int verbose = 0 )
-{
+static void filter_perfect_intervals( vec<perf_interval>& input, int verbose = 0 ) {
     ForceAssertGe( input.size(), 1U );
 
     perf_interval last = input[0];
@@ -1071,8 +1097,7 @@ static void filter_perfect_intervals( vec<perf_interval>& input, int verbose = 0
                     std::cout << ", curr=" << curr << std::endl;
                     PRINT3( score_drop_last, score_drop_curr, drop_last );
                 }
-            } else
-               if ( verbose >= 2 ) std::cout << "case 3" << std::endl;
+            } else if ( verbose >= 2 ) std::cout << "case 3" << std::endl;
 
             // okay, so if we're dropping 'last', we don't push back and
             // we make curr the new last.  If we're dropping 'curr',
@@ -1093,8 +1118,7 @@ static void filter_perfect_intervals( vec<perf_interval>& input, int verbose = 0
 
 // okay, try to drop seeds that imply a massive gap
 // run AFTER removing non-affine
-static void filter_perfect_intervals3( vec<perf_interval>& input, bool penalize_left_gap, bool penalize_right_gap )
-{
+static void filter_perfect_intervals3( vec<perf_interval>& input, bool penalize_left_gap, bool penalize_right_gap ) {
     vec<Bool> delete_if( input.size(), False );
 
     size_t start = penalize_left_gap ? 1 : 2;
@@ -1120,12 +1144,11 @@ static void filter_perfect_intervals3( vec<perf_interval>& input, bool penalize_
 }
 
 // toss non-affine relationships
-static void filter_perfect_intervals2( vec<perf_interval>& input )
-{
+static void filter_perfect_intervals2( vec<perf_interval>& input ) {
     // so the intervals come sorted by pos1 by design
     ForceAssert( std::is_sorted(
-              input.begin(), input.end(),
-              perf_interval::sort_by_pos1() ) );
+                     input.begin(), input.end(),
+                     perf_interval::sort_by_pos1() ) );
     // let's sort by pos2 and see what happens
     vec<perf_interval> input_tmp( input );
     vec<size_t> ident( input_tmp.size(), vec<size_t>::IDENTITY );
@@ -1156,8 +1179,7 @@ static void filter_perfect_intervals2( vec<perf_interval>& input )
 }
 
 
-static void normalize_gaps_lengths( size_t& pos1, size_t& pos2, avector<int>& gaps, avector<int>& lengths )
-{
+static void normalize_gaps_lengths( size_t& pos1, size_t& pos2, avector<int>& gaps, avector<int>& lengths ) {
     ForceAssertEq(gaps.length, lengths.length);
 
     std::vector<int> new_gaps, new_lengths;
@@ -1208,8 +1230,7 @@ static void normalize_gaps_lengths( size_t& pos1, size_t& pos2, avector<int>& ga
 
 
 static void find_perfect_seeds( const basevector& S, const basevector& T, int K,
-        bool penalize_left_gap, bool penalize_right_gap, vec<perf_interval>& perf_intervals, int verbose = 0 )
-{
+                                bool penalize_left_gap, bool penalize_right_gap, vec<perf_interval>& perf_intervals, int verbose = 0 ) {
     // seeding threshold is the minimum size problem (in bases (S.size()*T.size())
     // for which we will seed.  For smaller problems, say a 4k edge versus a 40k
     // reference, we will pass on to the "subaligner".  This is generally just
@@ -1287,10 +1308,10 @@ static void find_perfect_seeds( const basevector& S, const basevector& T, int K,
         // 4. is in the position we expect
         bool valid = \
 //            hit2.freq() == 1 &&
-            subs.not_done() &&
-            hit.is_valid_kmer() &&
-            hit.locs().size() == 1 &&
-            subs.is_canonical_fw() == hit.locs()[0].is_fw();
+                     subs.not_done() &&
+                     hit.is_valid_kmer() &&
+                     hit.locs().size() == 1 &&
+                     subs.is_canonical_fw() == hit.locs()[0].is_fw();
 
         if ( valid ) {
             // we shouldn't ever have this problem as the test for a
@@ -1308,7 +1329,7 @@ static void find_perfect_seeds( const basevector& S, const basevector& T, int K,
             in_match = false;
             if ( verbose >= 2 ) {
                 std::cout << "perfect unique match from pos1=["
-                         <<  match_start_pos1 << "," <<
+                          <<  match_start_pos1 << "," <<
                           match_end_pos1 << ") to " << std::endl;
                 std::cout << "\tpos2=[" << match_start_pos2 << "," <<
                           subs.index_start()+K-1 << ")" << std::endl;
@@ -1316,7 +1337,8 @@ static void find_perfect_seeds( const basevector& S, const basevector& T, int K,
             // push back result here
             if ( match_end_pos1 - match_start_pos1 > static_cast<unsigned int>(K) )
                 new_perf_intervals.push_back( { match_start_pos2, match_start_pos1,
-                    match_end_pos1 - match_start_pos1 } );
+                                                match_end_pos1 - match_start_pos1
+                                              } );
 
         } else if ( !in_match && valid ) {
 
@@ -1356,16 +1378,16 @@ static void find_perfect_seeds( const basevector& S, const basevector& T, int K,
     perf_intervals.clear();
     const int trim_size = 15;
     for ( auto const& pi : new_perf_intervals ) {
-	if ( pi.len == 0 )
-	    perf_intervals.push_back( pi );
-	else  {
-	    size_t trim_left = trim_size;
-	    size_t trim_right = trim_size;
-	    if ( pi.pos1 == 0 || pi.pos2 == 0 ) trim_left = 0;
-	    if ( pi.pos1 + pi.len == S.size() || pi.pos2 + pi.len == T.size() ) trim_right = 0;
-	    if ( pi.len > trim_left + trim_right )
-		perf_intervals.push_back( {pi.pos1 + trim_left, pi.pos2 + trim_left, pi.len - trim_left - trim_right});
-	}
+        if ( pi.len == 0 )
+            perf_intervals.push_back( pi );
+        else  {
+            size_t trim_left = trim_size;
+            size_t trim_right = trim_size;
+            if ( pi.pos1 == 0 || pi.pos2 == 0 ) trim_left = 0;
+            if ( pi.pos1 + pi.len == S.size() || pi.pos2 + pi.len == T.size() ) trim_right = 0;
+            if ( pi.len > trim_left + trim_right )
+                perf_intervals.push_back( {pi.pos1 + trim_left, pi.pos2 + trim_left, pi.len - trim_left - trim_right});
+        }
     }
 
     // okay, now remove any non-affine relationships implied by the
@@ -1402,27 +1424,27 @@ static void find_perfect_seeds( const basevector& S, const basevector& T, int K,
 // the point here is that we need to add a bunch of alignments together
 // and while you can add gaps and lengths, there's only one pos1/pos2
 // pair per alignment
-static void convert_offset_initial_gap( alignment& al )
-{
+static void convert_offset_initial_gap( alignment& al ) {
     avector<int> gaps, lengths;
     int pos1, pos2, errors;
     al.Unpack( pos1, pos2, errors, gaps, lengths );
-    if ( pos1 == 0 )
-    { if ( pos2 )
-      { ForceAssertGt(gaps.length,0u);
-        gaps(0) += pos2; } }
-    else if ( pos2 == 0 )
-    { if ( pos1 )
-      { ForceAssertGt(gaps.length,0u);
-        gaps(0) -= pos1; } }
-    else
-      FatalErr("neither pos1 nor pos2 is 0");
+    if ( pos1 == 0 ) {
+        if ( pos2 ) {
+            ForceAssertGt(gaps.length,0u);
+            gaps(0) += pos2;
+        }
+    } else if ( pos2 == 0 ) {
+        if ( pos1 ) {
+            ForceAssertGt(gaps.length,0u);
+            gaps(0) -= pos1;
+        }
+    } else
+        FatalErr("neither pos1 nor pos2 is 0");
     al.Set( 0, 0, errors, gaps, lengths );
 }
 
 
-static void set_pos1pos2( alignment& al, int pos1, int pos2 )
-{
+static void set_pos1pos2( alignment& al, int pos1, int pos2 ) {
     avector<int> gaps, lengths;
     int dummy1, dummy2, errors;
     al.Unpack( dummy1, dummy2, errors, gaps, lengths );
@@ -1431,8 +1453,7 @@ static void set_pos1pos2( alignment& al, int pos1, int pos2 )
 
 
 // add an initial gap to an existing alignment and score the penalty
-static void alignment_add_gap( alignment& al, int gap, int gap_open_penalty, int gap_extend_penalty )
-{
+static void alignment_add_gap( alignment& al, int gap, int gap_open_penalty, int gap_extend_penalty ) {
     avector<int> gaps, lengths;
     int pos1, pos2, errors;
     al.Unpack( pos1, pos2, errors, gaps, lengths );
@@ -1442,8 +1463,7 @@ static void alignment_add_gap( alignment& al, int gap, int gap_open_penalty, int
 }
 
 
-static void dumpit ( const alignment& a )
-{
+static void dumpit ( const alignment& a ) {
     avector<int> gaps, lengths;
     int errors;
     int pos1;
@@ -1463,15 +1483,14 @@ static void dumpit ( const alignment& a )
 
 
 unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
-			     alignment& a, int K,
-			     bool penalize_left_gap,
-			     bool penalize_right_gap,
-                             const int verbose,
-                             const int mismatch_penalty,
-                             const int gap_open_penalty,
-                             const int gap_extend_penalty,
-                             SubAlignFuncPtr subalign)
-{
+                                  alignment& a, int K,
+                                  bool penalize_left_gap,
+                                  bool penalize_right_gap,
+                                  const int verbose,
+                                  const int mismatch_penalty,
+                                  const int gap_open_penalty,
+                                  const int gap_extend_penalty,
+                                  SubAlignFuncPtr subalign) {
     float heuristic_size_min = 10.;        // require at least heuristic_size_min*K size for each
 
     ForceAssertGt(K, 0);
@@ -1480,8 +1499,8 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
 
     if ( verbose >= 1 ) {
         std::cout << Date() << ": SmithWatAffineSuper align S.len=" << S.size()  <<
-            " T.len=" << T.size() << ", K=" << K << ", penalize L,R=" <<
-            penalize_left_gap << "," << penalize_right_gap << std::endl;
+                  " T.len=" << T.size() << ", K=" << K << ", penalize L,R=" <<
+                  penalize_left_gap << "," << penalize_right_gap << std::endl;
     }
 
     // find seed intervals of extended perfect matches
@@ -1506,15 +1525,15 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
 
     for ( size_t pi = 1; pi < perf_intervals.size(); pi++ ) {
 
-	bool const final = ( pi == perf_intervals.size() - 1);
+        bool const final = ( pi == perf_intervals.size() - 1);
 
         auto const& last = perf_intervals[pi-1];
         auto const& cur = perf_intervals[pi];
         if ( verbose >= 2 ) {
             std::cout << "last " << pi-1 << ": pos1=" << last.pos1 << " pos2=" << last.pos2 <<
-                " len=" << last.len << std::endl;
+                      " len=" << last.len << std::endl;
             std::cout << "cur " << pi << ": pos1=" << cur.pos1 << " pos2=" << cur.pos2 <<
-                " len=" << cur.len << std::endl;
+                      " len=" << cur.len << std::endl;
         }
         // set up subsequences S' & T' between the start of the current
         // interval and the end of the previous interval
@@ -1528,63 +1547,63 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
 
         if ( len1 > 0 || len2 > 0 ) {
             alignment tmp_align;
-	    if (len1 > 0 && len2 > 0) {
-		if (verbose >= 2)
-		    std::cout << "SetToSubOf S: " << last.pos1 + last.len << " len "
-			    << cur.pos1 - last.pos1 - last.len << std::endl;
-		Spr.SetToSubOf(S, last.pos1 + last.len,
-			cur.pos1 - last.pos1 - last.len);
-		if (verbose >= 2)
-		    std::cout << "SetToSubOf T: " << last.pos2 + last.len << " len "
-			    << cur.pos2 - last.pos2 - last.len << std::endl;
-		Tpr.SetToSubOf(T, last.pos2 + last.len,
-			cur.pos2 - last.pos2 - last.len);
+            if (len1 > 0 && len2 > 0) {
+                if (verbose >= 2)
+                    std::cout << "SetToSubOf S: " << last.pos1 + last.len << " len "
+                              << cur.pos1 - last.pos1 - last.len << std::endl;
+                Spr.SetToSubOf(S, last.pos1 + last.len,
+                               cur.pos1 - last.pos1 - last.len);
+                if (verbose >= 2)
+                    std::cout << "SetToSubOf T: " << last.pos2 + last.len << " len "
+                              << cur.pos2 - last.pos2 - last.len << std::endl;
+                Tpr.SetToSubOf(T, last.pos2 + last.len,
+                               cur.pos2 - last.pos2 - last.len);
 
-		// call SmithWatAffine on the subsequences
-		bool t_left_gap = true, t_right_gap = true;
-		if (pi == 1)
-		    t_left_gap = penalize_left_gap;
-		if (pi == perf_intervals.size() - 1)
-		    t_right_gap = penalize_right_gap;
-		if (verbose >= 2)
-		    std::cout << "sw-align on ref [" << last.pos1 + last.len << ","
-			    << cur.pos1 << ")  sizes " << Spr.size() << " to "
-			    << Tpr.size() << std::endl << "L,R gap penalty="
-			    << t_left_gap << "," << t_right_gap << std::endl;
+                // call SmithWatAffine on the subsequences
+                bool t_left_gap = true, t_right_gap = true;
+                if (pi == 1)
+                    t_left_gap = penalize_left_gap;
+                if (pi == perf_intervals.size() - 1)
+                    t_right_gap = penalize_right_gap;
+                if (verbose >= 2)
+                    std::cout << "sw-align on ref [" << last.pos1 + last.len << ","
+                              << cur.pos1 << ")  sizes " << Spr.size() << " to "
+                              << Tpr.size() << std::endl << "L,R gap penalty="
+                              << t_left_gap << "," << t_right_gap << std::endl;
 //		unsigned int tmp_score = SmithWatAffineParallel2(Spr, Tpr,
-		unsigned int tmp_score = subalign(Spr, Tpr,
-			tmp_align, t_left_gap, t_right_gap, mismatch_penalty,
-			gap_open_penalty, gap_extend_penalty);
-		if (verbose >= 2) {
-		    std::cout << "\tscore=" << tmp_score << std::endl;
-		    PRINT4(tmp_align.pos1(), tmp_align.Pos1(), tmp_align.pos2(),
-			    tmp_align.Pos2());
-		}
-		if (verbose >= 3)
-		    PrintVisualAlignment(True, std::cout, Spr, Tpr, tmp_align);
+                unsigned int tmp_score = subalign(Spr, Tpr,
+                                                  tmp_align, t_left_gap, t_right_gap, mismatch_penalty,
+                                                  gap_open_penalty, gap_extend_penalty);
+                if (verbose >= 2) {
+                    std::cout << "\tscore=" << tmp_score << std::endl;
+                    PRINT4(tmp_align.pos1(), tmp_align.Pos1(), tmp_align.pos2(),
+                           tmp_align.Pos2());
+                }
+                if (verbose >= 3)
+                    PrintVisualAlignment(True, std::cout, Spr, Tpr, tmp_align);
 
 //		if ( tmp_align.extent1() == 0 && tmp_align.extent2() == 0 ) {
 //		    tmp_align = alignment(0, 0, 0, avector<int>(1,0), avector<int>(1,len1) );
 //		}
 
-	    } else if (len1 == 0 && len2 != 0) {
-		if (pi == 1 && !penalize_left_gap) {
-		    // introduce an offset only
-		    tmp_align = alignment(0, len2, 0, avector<int>(1, 0),
-			    avector<int>(1, 0));
-		} else if (!final || penalize_right_gap) {
-		    // introduce a gap
-		    int tmp_errors = gap_open_penalty
-			    + (len2-1) * gap_extend_penalty;
-		    tmp_align = alignment(0, 0, tmp_errors,
-			    avector<int>(1, len2), avector<int>(1, 0));
-		}
-	    } else if (len1 != 0 && len2 == 0) {
-		// introduce a gap
-		int tmp_errors = gap_open_penalty + (len1-1) * gap_extend_penalty;
-		tmp_align = alignment(0, 0, tmp_errors, avector<int>(1, -len1),
-			avector<int>(1, 0));
-	    }
+            } else if (len1 == 0 && len2 != 0) {
+                if (pi == 1 && !penalize_left_gap) {
+                    // introduce an offset only
+                    tmp_align = alignment(0, len2, 0, avector<int>(1, 0),
+                                          avector<int>(1, 0));
+                } else if (!final || penalize_right_gap) {
+                    // introduce a gap
+                    int tmp_errors = gap_open_penalty
+                                     + (len2-1) * gap_extend_penalty;
+                    tmp_align = alignment(0, 0, tmp_errors,
+                                          avector<int>(1, len2), avector<int>(1, 0));
+                }
+            } else if (len1 != 0 && len2 == 0) {
+                // introduce a gap
+                int tmp_errors = gap_open_penalty + (len1-1) * gap_extend_penalty;
+                tmp_align = alignment(0, 0, tmp_errors, avector<int>(1, -len1),
+                                      avector<int>(1, 0));
+            }
 
             // fix up the front of the alignment:
             // convert the offset to an initial gap, unless it's the
@@ -1634,8 +1653,8 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
         int next_gap_abs = abs( next_gap-1 );
         int next_gap_errors = next_gap_abs ? ( gap_open_penalty+gap_extend_penalty*next_gap_abs ) : 0;
         new_aligns.push_back( alignment( cur.pos1+cur.len, cur.pos2+cur.len, next_gap_errors,
-                                avector<int>(1, 0),
-                                avector<int>(1, cur.len) ) );
+                                         avector<int>(1, 0),
+                                         avector<int>(1, cur.len) ) );
         extra_gaps.push_back(0);
     }
 
@@ -1643,10 +1662,10 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
     //NIW
     std::cout << "NEIL ALIGNS:" << std::endl;
     for ( auto const& align : new_aligns )
-	align.Print(std::cout);
+        align.Print(std::cout);
     std::cout << "NEIL EXTRA GAPS:" << std::endl;
     for ( auto const& gap : extra_gaps )
-	std::cout << gap << std::endl;
+        std::cout << gap << std::endl;
     std::cout << std::endl;
 #endif
 
@@ -1694,7 +1713,7 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
             for (size_t i = 1; i < left; ++i )
                 erase[i] = True;
             new_aligns[0] = alignment( 0, 0, proposed_errors,
-                        avector<int>(1, proposed_gap), avector<int>(1, 0) );
+                                       avector<int>(1, proposed_gap), avector<int>(1, 0) );
             extra_gaps[0] = 0;
             EraseIf( new_aligns, erase);
             EraseIf( extra_gaps, erase);
@@ -1787,125 +1806,124 @@ unsigned int SmithWatAffineSuper( const basevector& S, const basevector& T,
 
 
 #if 0
-        // before we add the pefect interval, we can calculate the cost
-        // of *everything* that we've done so far compared with the cost
-        // of simply introducing a gap here and incrementing the offset.
-        if ( !penalize_left_gap && cur.len > 0 ) {
-            int gap_cost_one = gap_open_penalty+cur.pos1*gap_extend_penalty;
-            int gap_cost_two = gap_open_penalty+cur.pos2*gap_extend_penalty;
+    // before we add the pefect interval, we can calculate the cost
+    // of *everything* that we've done so far compared with the cost
+    // of simply introducing a gap here and incrementing the offset.
+    if ( !penalize_left_gap && cur.len > 0 ) {
+        int gap_cost_one = gap_open_penalty+cur.pos1*gap_extend_penalty;
+        int gap_cost_two = gap_open_penalty+cur.pos2*gap_extend_penalty;
+        if ( verbose >= 2 )
+            PRINT3(gap_cost_one, gap_cost_two, new_align_errors );
+
+        if ( gap_cost_one <= gap_cost_two && gap_cost_one < new_align_errors ) {
             if ( verbose >= 2 )
-                PRINT3(gap_cost_one, gap_cost_two, new_align_errors );
-
-            if ( gap_cost_one <= gap_cost_two && gap_cost_one < new_align_errors ) {
-                if ( verbose >= 2 )
-                    std::cout << "introducing offset on two and gap on one" << std::endl;
-                new_align_lengths.Setsize(1);
-                new_align_lengths(0) = 0;
-                new_align_gaps.Setsize(1);
-                new_align_gaps(0) = -cur.pos1;
-                new_align_errors= gap_cost_one;
-                new_pos1 = 0;
-                new_pos2 = cur.pos2;
-            } else if (  gap_cost_two < new_align_errors ) {
-                if ( verbose >= 2 )
-                    std::cout << "introducing offset on one and gap on two" << std::endl;
-                new_align_lengths.Setsize(1);
-                new_align_lengths(0) = 0;
-                new_align_gaps.Setsize(1);
-                new_align_gaps(0) = cur.pos2;
-                new_align_errors= gap_cost_two;
-                new_pos1 = cur.pos1;
-                new_pos2 = 0;
-            }
+                std::cout << "introducing offset on two and gap on one" << std::endl;
+            new_align_lengths.Setsize(1);
+            new_align_lengths(0) = 0;
+            new_align_gaps.Setsize(1);
+            new_align_gaps(0) = -cur.pos1;
+            new_align_errors= gap_cost_one;
+            new_pos1 = 0;
+            new_pos2 = cur.pos2;
+        } else if (  gap_cost_two < new_align_errors ) {
+            if ( verbose >= 2 )
+                std::cout << "introducing offset on one and gap on two" << std::endl;
+            new_align_lengths.Setsize(1);
+            new_align_lengths(0) = 0;
+            new_align_gaps.Setsize(1);
+            new_align_gaps(0) = cur.pos2;
+            new_align_errors= gap_cost_two;
+            new_pos1 = cur.pos1;
+            new_pos2 = 0;
         }
+    }
 
-        // add the perfect interval, if it's of non-zero length
-        if ( cur.len > 0 ) {
-                new_align_lengths.Append(cur.len);
-                new_align_gaps.Append(0);
-        }
+    // add the perfect interval, if it's of non-zero length
+    if ( cur.len > 0 ) {
+        new_align_lengths.Append(cur.len);
+        new_align_gaps.Append(0);
+    }
 
-        ForceAssertEq( new_align_gaps.length, new_align_lengths.length );
-    } // foreach perf_interval
+    ForceAssertEq( new_align_gaps.length, new_align_lengths.length );
+} // foreach perf_interval
 #endif
 
-    if ( verbose >= 2 ) {
-        PRINT3( new_pos1, new_pos2, new_align_errors );
-        std::cout << "before NORMALIZATION...." << std::endl;
-        std::cout << "GAPS LENGTHS" << std::endl;
+if ( verbose >= 2 ) {
+    PRINT3( new_pos1, new_pos2, new_align_errors );
+    std::cout << "before NORMALIZATION...." << std::endl;
+    std::cout << "GAPS LENGTHS" << std::endl;
+    for ( size_t i = 0; i < new_align_gaps.length; ++i )
+        std::cout << new_align_gaps(i) << " " << new_align_lengths(i) << std::endl;
+}
+
+normalize_gaps_lengths( new_pos1, new_pos2, new_align_gaps, new_align_lengths );
+
+if ( verbose >= 2 ) {
+    PRINT3( new_pos1, new_pos2, new_align_errors );
+    std::cout << "after NORMALIZATION...." << std::endl;
+    std::cout << "GAPS LENGTHS" << std::endl;
+    for ( size_t i = 0; i < new_align_gaps.length; ++i )
+        std::cout << new_align_gaps(i) << " " << new_align_lengths(i) << std::endl;
+}
+
+
+// construct the resulting alignment
+a.Set(new_pos1, new_pos2, new_align_errors, new_align_gaps,
+      new_align_lengths, new_align_lengths.length );
+
+if ( verbose >= 3 ) {
+    PrintVisualAlignment( True, std::cout, S, T, a );
+}
+
+if ( verbose >= 1 ) {
+    std::cout << Date() << ": SmithWatAffineSuper END OF ALIGNMENT S.size()=" << S.size() << " vs. T.size()=" << T.size() <<
+              ", penalize L,R=" << penalize_left_gap << "," << penalize_right_gap << std::endl;
+    PRINT5(a.pos1(), a.Pos1(), a.pos2(), a.Pos2(), new_align_errors);
+}
+
+if ( verbose >= 4 ) {
+    alignment tmp_align(a);
+
+    static size_t do_compare = 0;
+    if ( ++do_compare > 0 ) {
+        std::cout << "ORIGINAL GAPS LENGTHS" << std::endl;
         for ( size_t i = 0; i < new_align_gaps.length; ++i )
             std::cout << new_align_gaps(i) << " " << new_align_lengths(i) << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "RUNNING COMPARISON " << do_compare << ": " << std::endl;
+        SmithWatAffine( S, T, tmp_align, penalize_left_gap, penalize_right_gap );
+        std::cout << "COMPARISON: " << std::endl;
+        PrintVisualAlignment( True, std::cout, S, T, tmp_align );
+        int pos1, pos2, errors;
+        int Pos1, Pos2;
+        Pos1 = tmp_align.Pos1();
+        Pos2 = tmp_align.Pos2();
+        avector<int> gaps, lengths;
+        tmp_align.Unpack(pos1, pos2, errors, gaps, lengths);
+        PRINT5( pos1, Pos1, pos2, Pos2, errors );
+        for ( size_t i = 0; i < gaps.length; ++i )
+            std::cout << gaps(i) << " " << lengths(i) << std::endl;
     }
+}
 
-    normalize_gaps_lengths( new_pos1, new_pos2, new_align_gaps, new_align_lengths );
-
-    if ( verbose >= 2 ) {
-        PRINT3( new_pos1, new_pos2, new_align_errors );
-        std::cout << "after NORMALIZATION...." << std::endl;
-        std::cout << "GAPS LENGTHS" << std::endl;
-        for ( size_t i = 0; i < new_align_gaps.length; ++i )
-            std::cout << new_align_gaps(i) << " " << new_align_lengths(i) << std::endl;
-    }
-
-
-    // construct the resulting alignment
-    a.Set(new_pos1, new_pos2, new_align_errors, new_align_gaps,
-            new_align_lengths, new_align_lengths.length );
-
-    if ( verbose >= 3 ) {
-        PrintVisualAlignment( True, std::cout, S, T, a );
-    }
-
-    if ( verbose >= 1 ) {
-        std::cout << Date() << ": SmithWatAffineSuper END OF ALIGNMENT S.size()=" << S.size() << " vs. T.size()=" << T.size() <<
-        ", penalize L,R=" << penalize_left_gap << "," << penalize_right_gap << std::endl;
-        PRINT5(a.pos1(), a.Pos1(), a.pos2(), a.Pos2(), new_align_errors);
-    }
-
-    if ( verbose >= 4 ) {
-        alignment tmp_align(a);
-
-        static size_t do_compare = 0;
-        if ( ++do_compare > 0 ) {
-            std::cout << "ORIGINAL GAPS LENGTHS" << std::endl;
-            for ( size_t i = 0; i < new_align_gaps.length; ++i )
-                std::cout << new_align_gaps(i) << " " << new_align_lengths(i) << std::endl;
-            std::cout << std::endl;
-
-            std::cout << "RUNNING COMPARISON " << do_compare << ": " << std::endl;
-            SmithWatAffine( S, T, tmp_align, penalize_left_gap, penalize_right_gap );
-            std::cout << "COMPARISON: " << std::endl;
-            PrintVisualAlignment( True, std::cout, S, T, tmp_align );
-            int pos1, pos2, errors;
-            int Pos1, Pos2;
-            Pos1 = tmp_align.Pos1();
-            Pos2 = tmp_align.Pos2();
-            avector<int> gaps, lengths;
-            tmp_align.Unpack(pos1, pos2, errors, gaps, lengths);
-            PRINT5( pos1, Pos1, pos2, Pos2, errors );
-            for ( size_t i = 0; i < gaps.length; ++i )
-                std::cout << gaps(i) << " " << lengths(i) << std::endl;
-        }
-    }
-
-    return new_align_errors;
+return new_align_errors;
 }
 unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
-                            alignment & a,
-                            bool penalize_left_gap,
-                            bool penalize_right_gap,
-                            const int mismatch_penalty,
-                            const int gap_open_penalty,
-                            const int gap_extend_penalty
-                            )
-{
+                                     alignment & a,
+                                     bool penalize_left_gap,
+                                     bool penalize_right_gap,
+                                     const int mismatch_penalty,
+                                     const int gap_open_penalty,
+                                     const int gap_extend_penalty
+                                    ) {
 
     ForceAssertGt(S.size(), 0u);
     ForceAssertGt(T.size(), 0u);
 
     unsigned int n = S.size(), N = T.size();
 
-    if( S.size() > 120000 && T.size() > 120000){
+    if( S.size() > 120000 && T.size() > 120000) {
         std::cout << "WARNING: SWA aligning two sequences of length "
                   << S.size() << " and " << T.size()
                   << std::endl;
@@ -1923,17 +1941,17 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
 
     const int Infinity = 100000000;
     int best_score = Infinity;
-/*
-    RecArray<int> score_x( n+1, N+1 );
-    RecArray<int> score_y( n+1, N+1 );
-    RecArray<int> score_z( n+1, N+1 );
+    /*
+        RecArray<int> score_x( n+1, N+1 );
+        RecArray<int> score_y( n+1, N+1 );
+        RecArray<int> score_z( n+1, N+1 );
 
-    RecArray<unsigned char> x_from( n+1, N+1 );
-    RecArray<unsigned char> y_from( n+1, N+1 );
-    RecArray<unsigned char> z_from( n+1, N+1 );
-    */
+        RecArray<unsigned char> x_from( n+1, N+1 );
+        RecArray<unsigned char> y_from( n+1, N+1 );
+        RecArray<unsigned char> z_from( n+1, N+1 );
+        */
 
-    struct elem_t{
+    struct elem_t {
         int score[3];
         unsigned char from[3];
     };
@@ -1959,7 +1977,7 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
     for (unsigned int j = 1; j <= N; j++) {
         matrix[0][j].score[0] = Infinity;
         matrix[0][j].score[1] = (penalize_left_gap ? gap_open_penalty +
-                gap_extend_penalty * j :0);
+                                 gap_extend_penalty * j :0);
         matrix[0][j].score[2] = Infinity;
         matrix[0][j].from[0] = 's';
         matrix[0][j].from[1] = 's';
@@ -1982,101 +2000,98 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
     //std::cout <<  Date( ) << ": time used = " << TimeSince(clock) << std::endl;
     #pragma omp parallel
     {
-    for ( int level = 0; level < n_block_s + n_block_t; ++level ) {
-    // number of blocks in the diagonal that are independent to each other
-    // start and stop of the block index
-    // i_block_s in [0, n_block_s)
-    // i_block_t in [0, n_block_t)
-    // where i_block_s + i_block_t = level
+        for ( int level = 0; level < n_block_s + n_block_t; ++level ) {
+            // number of blocks in the diagonal that are independent to each other
+            // start and stop of the block index
+            // i_block_s in [0, n_block_s)
+            // i_block_t in [0, n_block_t)
+            // where i_block_s + i_block_t = level
 
-    // in other words i_block_s is in ( level - n_block_t, level ] && [0, n_block_s)
+            // in other words i_block_s is in ( level - n_block_t, level ] && [0, n_block_s)
 
-    #pragma omp for schedule(dynamic,1)
-    for ( int i_block_s = std::max( 0, level - n_block_t + 1 );
-          i_block_s < std::min( n_block_s, level + 1 ); i_block_s++ ) {
-        int i_block_t = level - i_block_s;
-        ForceAssertGe( i_block_t , 0 );
-        ForceAssertLt( i_block_t , n_block_t );
+            #pragma omp for schedule(dynamic,1)
+            for ( int i_block_s = std::max( 0, level - n_block_t + 1 );
+                    i_block_s < std::min( n_block_s, level + 1 ); i_block_s++ ) {
+                int i_block_t = level - i_block_s;
+                ForceAssertGe( i_block_t , 0 );
+                ForceAssertLt( i_block_t , n_block_t );
 
-        int istart = i_block_s * block_size + 1;
-        int istop = std::min( istart + block_size, (int)n + 1 );
-        int jstart = i_block_t * block_size + 1;
-        int jstop = std::min( jstart + block_size, (int)N + 1 );
+                int istart = i_block_s * block_size + 1;
+                int istop = std::min( istart + block_size, (int)n + 1 );
+                int jstart = i_block_t * block_size + 1;
+                int jstop = std::min( jstart + block_size, (int)N + 1 );
 
 
-    for ( int i = istart; i < istop; i++) {
-        for ( int j = jstart; j < jstop; j++) {
-            unsigned int x_x =
-                matrix[i - 1][j - 1].score[0] + mismatch_penalty * (s(i - 1) !=
-                                                            t(j - 1));
-            unsigned int x_y =
-                matrix[i - 1][j - 1].score[1] + mismatch_penalty * (s(i - 1) !=
-                                                            t(j - 1));
-            unsigned int x_z =
-                matrix[i - 1][j - 1].score[2] + mismatch_penalty * (s(i - 1) !=
-                                                            t(j - 1));
-            //unsigned int y_x = score_x[i][j - 1] + gap_open_penalty;
-            //unsigned int y_y = score_y[i][j - 1] + gap_extend_penalty;
-            unsigned int y_x = matrix[i][j-1].score[0] +
-                (penalize_right_gap || i != (int)n ? gap_open_penalty : 0);
-            unsigned int y_y = matrix[i][j-1].score[1] +
-                (penalize_right_gap || i != (int)n ? gap_extend_penalty : 0);
+                for ( int i = istart; i < istop; i++) {
+                    for ( int j = jstart; j < jstop; j++) {
+                        unsigned int x_x =
+                            matrix[i - 1][j - 1].score[0] + mismatch_penalty * (s(i - 1) !=
+                                    t(j - 1));
+                        unsigned int x_y =
+                            matrix[i - 1][j - 1].score[1] + mismatch_penalty * (s(i - 1) !=
+                                    t(j - 1));
+                        unsigned int x_z =
+                            matrix[i - 1][j - 1].score[2] + mismatch_penalty * (s(i - 1) !=
+                                    t(j - 1));
+                        //unsigned int y_x = score_x[i][j - 1] + gap_open_penalty;
+                        //unsigned int y_y = score_y[i][j - 1] + gap_extend_penalty;
+                        unsigned int y_x = matrix[i][j-1].score[0] +
+                                           (penalize_right_gap || i != (int)n ? gap_open_penalty : 0);
+                        unsigned int y_y = matrix[i][j-1].score[1] +
+                                           (penalize_right_gap || i != (int)n ? gap_extend_penalty : 0);
 
-            unsigned int y_z = Infinity;        //score_z[i][j-1] + gap_open_penalty;
-            unsigned int z_x = matrix[i - 1][j].score[0] + gap_open_penalty;
-            unsigned int z_y = Infinity;        //score_y[i-1][j] + gap_open_penalty;
-            unsigned int z_z = matrix[i - 1][j].score[2] + gap_extend_penalty;
+                        unsigned int y_z = Infinity;        //score_z[i][j-1] + gap_open_penalty;
+                        unsigned int z_x = matrix[i - 1][j].score[0] + gap_open_penalty;
+                        unsigned int z_y = Infinity;        //score_y[i-1][j] + gap_open_penalty;
+                        unsigned int z_z = matrix[i - 1][j].score[2] + gap_extend_penalty;
 
-            matrix[i][j].score[0] = Min(Min(x_x, x_y), x_z);
-            matrix[i][j].score[1] = Min(Min(y_x, y_y), y_z);
-            matrix[i][j].score[2] = Min(Min(z_x, z_y), z_z);
+                        matrix[i][j].score[0] = Min(Min(x_x, x_y), x_z);
+                        matrix[i][j].score[1] = Min(Min(y_x, y_y), y_z);
+                        matrix[i][j].score[2] = Min(Min(z_x, z_y), z_z);
 
-            if (x_x <= x_y) {
-                if (x_x <= x_z)
-                    matrix[i][j].from[0] = 'x';
-                else
-                    matrix[i][j].from[0] = 'z';
-            }
-            else {
-                if (x_y <= x_z)
-                    matrix[i][j].from[0] = 'y';
-                else
-                    matrix[i][j].from[0] = 'z';
-            }
+                        if (x_x <= x_y) {
+                            if (x_x <= x_z)
+                                matrix[i][j].from[0] = 'x';
+                            else
+                                matrix[i][j].from[0] = 'z';
+                        } else {
+                            if (x_y <= x_z)
+                                matrix[i][j].from[0] = 'y';
+                            else
+                                matrix[i][j].from[0] = 'z';
+                        }
 
-            if (y_x <= y_y) {
-                if (y_x <= y_z)
-                    matrix[i][j].from[1] = 'x';
-                else
-                    matrix[i][j].from[1] = 'z';
-            }
-            else {
-                if (y_y <= y_z)
-                    matrix[i][j].from[1] = 'y';
-                else
-                    matrix[i][j].from[1] = 'z';
-            }
+                        if (y_x <= y_y) {
+                            if (y_x <= y_z)
+                                matrix[i][j].from[1] = 'x';
+                            else
+                                matrix[i][j].from[1] = 'z';
+                        } else {
+                            if (y_y <= y_z)
+                                matrix[i][j].from[1] = 'y';
+                            else
+                                matrix[i][j].from[1] = 'z';
+                        }
 
-            if (z_x <= z_y) {
-                if (z_x <= z_z)
-                    matrix[i][j].from[2] = 'x';
-                else
-                    matrix[i][j].from[2] = 'z';
-            }
-            else {
-                if (z_y <= z_z)
-                    matrix[i][j].from[2] = 'y';
-                else
-                    matrix[i][j].from[2] = 'z';
+                        if (z_x <= z_y) {
+                            if (z_x <= z_z)
+                                matrix[i][j].from[2] = 'x';
+                            else
+                                matrix[i][j].from[2] = 'z';
+                        } else {
+                            if (z_y <= z_z)
+                                matrix[i][j].from[2] = 'y';
+                            else
+                                matrix[i][j].from[2] = 'z';
+                        }
+                    }
+                }
+
+
+
+                // end parallelization
             }
         }
-    }
-
-
-
-    // end parallelization
-    }
-    }
     }//omp parallel
 
     int ii = n, jj = N;
@@ -2087,7 +2102,7 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
     int right = 0;
 #endif
     if (!penalize_right_gap) {
-        for(int k = N; k >= right; k--){
+        for(int k = N; k >= right; k--) {
             int best_score_k = Min( matrix[n][k].score[0], Min( matrix[n][k].score[1], matrix[n][k].score[2] ) );
             if (best_score_k < best_score) {
                 best_score = best_score_k;
@@ -2105,8 +2120,7 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
             from_idx=0;//from = &x_from;
         else
             from_idx=2;//from = &z_from;
-    }
-    else {
+    } else {
         if (matrix[ii][jj].score[1] <= matrix[ii][jj].score[2])
             from_idx=1;//from = &y_from;
         else
@@ -2139,9 +2153,7 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
             ++lcount;
             --i;
             --j;
-        }
-        else if (from_idx==2/*from == &z_from*/)       // gap on long sequence
-        {
+        } else if (from_idx==2/*from == &z_from*/) {   // gap on long sequence
             if (lcount > 0) {
                 last_length = lcount;
                 lcount = 0;
@@ -2149,9 +2161,7 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
             ForceAssert(g1count == 0);
             ++g2count;
             --i;
-        }
-        else                    // gap on short sequence
-        {
+        } else {                // gap on short sequence
             if (lcount > 0) {
                 last_length = lcount;
                 lcount = 0;

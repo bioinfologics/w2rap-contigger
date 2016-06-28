@@ -23,11 +23,11 @@
 #include "paths/long/CreateGenome.h"
 #include "paths/long/LongProtoTools.h"
 
-void EvalCorrected( 
-     const VecEFasta& corrected0,                // corrected reads
-     const vec<int>& cid,                        // ids of corrected reads
-     const ref_data& ref,
-     const long_logging_control& log_control,
-     const long_logging& logc );
+void EvalCorrected(
+    const VecEFasta& corrected0,                // corrected reads
+    const vec<int>& cid,                        // ids of corrected reads
+    const ref_data& ref,
+    const long_logging_control& log_control,
+    const long_logging& logc );
 
 #endif

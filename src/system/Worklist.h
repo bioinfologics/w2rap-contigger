@@ -113,11 +113,9 @@
 /// rather than just the thread that caused the exception, and the author has
 /// been unable to figure out a way around this problem.
 template<class Workitem, class Processor>
-class Worklist
-{
-public:
-    struct ProgressMonitor
-    {
+class Worklist {
+  public:
+    struct ProgressMonitor {
         ProgressMonitor() : mTime(0) {}
         Workitem mWorkitem;
         time_t mTime;
@@ -135,18 +133,20 @@ public:
     Worklist( Processor const& p,
               size_t nThreads = getConfiguredNumThreads(),
               size_t threadStackSize = 0 )
-    : mProcessor(p), mNThreads(boundNumThreads(nThreads)),
-      mProgressMonitors(new ProgressMonitor[mNThreads]),
-      mTP(mNThreads,threadStackSize,threadFunc,this)
-    {}
+        : mProcessor(p), mNThreads(boundNumThreads(nThreads)),
+          mProgressMonitors(new ProgressMonitor[mNThreads]),
+          mTP(mNThreads,threadStackSize,threadFunc,this) {
+    }
 
     Worklist( Worklist const& )=delete;
     Worklist& operator=( Worklist const& )=delete;
 
     /// This will wait until all Workitems have been processed, and all threads
     /// have been terminated.  That might be a long time!
-    ~Worklist()
-    { waitForDone(); delete [] mProgressMonitors; }
+    ~Worklist() {
+        waitForDone();
+        delete [] mProgressMonitors;
+    }
 
     /// Start up a separate thread to monitor thread death.
     /// This thread wakes up every howOftenToCheckInSecs seconds, and replaces
@@ -157,65 +157,80 @@ public:
     /// If reportRestarts is true, an error message is written to cerr to inform
     /// you of a thread restart.
     void threadDeathMonitor( long howOftenToCheckInSecs,
-                             bool reportRestarts = true )
-    { mTP.threadDeathMonitor(howOftenToCheckInSecs,reportRestarts); }
+                             bool reportRestarts = true ) {
+        mTP.threadDeathMonitor(howOftenToCheckInSecs,reportRestarts);
+    }
 
     /// Add a single Workitem to the Worklist.
     /// The number of unprocessed Workitems is returned.
-    size_t add( Workitem const& workitem )
-    { QueueStateManipulator qsm(mQS);
-      Assert(!qsm.isDone());
-      mList.push_back(workitem);
-      return qsm.incSize(); }
+    size_t add( Workitem const& workitem ) {
+        QueueStateManipulator qsm(mQS);
+        Assert(!qsm.isDone());
+        mList.push_back(workitem);
+        return qsm.incSize();
+    }
 
     /// Add a mess of Workitems to the Worklist.
     /// The type of (*first) must be a Workitem or a reference to one.
     /// The number of unprocessed Workitems is returned.
     template<class InputIterator>
-    size_t add( InputIterator first, InputIterator last )
-    { QueueStateManipulator qsm(mQS);
-      Assert(!qsm.isDone());
-      while ( first != last )
-      { mList.push_back(*first); ++first; }
-      size_t sz = mList.size(); qsm.setSize(sz); return sz; }
+    size_t add( InputIterator first, InputIterator last ) {
+        QueueStateManipulator qsm(mQS);
+        Assert(!qsm.isDone());
+        while ( first != last ) {
+            mList.push_back(*first);
+            ++first;
+        }
+        size_t sz = mList.size();
+        qsm.setSize(sz);
+        return sz;
+    }
 
     /// Return the number of unprocessed Workitems.
-    size_t size()
-    { QueueStateManipulator qsm(mQS);
-      return qsm.getSize(); }
+    size_t size() {
+        QueueStateManipulator qsm(mQS);
+        return qsm.getSize();
+    }
 
     /// Wait until the Worklist is empty.  An empty queue does NOT mean that all
     /// the work is complete.  It's just a good time to add more work if there
     /// is any.  It might be convenient if you can't afford the memory needed to
     /// add all the Workitems at once.
-    void waitForEmpty()
-    { QueueStateManipulator(mQS).waitForEmpty(); }
+    void waitForEmpty() {
+        QueueStateManipulator(mQS).waitForEmpty();
+    }
 
     /// Note:  you don't have to call this -- the destructor will automatically
     /// wait until all the work is complete.  You may call this for
     /// entertainment value, if you'd like.
-    void waitForDone()
-    { mTP.threadDeathMonitor(0); // shut down the monitor.
-      QueueStateManipulator(mQS).setDone(); // tell threads to quit
-      mTP.shutdown(); }
+    void waitForDone() {
+        mTP.threadDeathMonitor(0); // shut down the monitor.
+        QueueStateManipulator(mQS).setDone(); // tell threads to quit
+        mTP.shutdown();
+    }
 
     /// Clear the worklist of all unprocessed items.
     /// If you need to quit early, this is the only way to do it.
     /// The destructor is still going to wait for in-progress work to complete.
-    void clear()
-    { QueueStateManipulator qsm(mQS); mList.clear(); qsm.setSize(0); }
+    void clear() {
+        QueueStateManipulator qsm(mQS);
+        mList.clear();
+        qsm.setSize(0);
+    }
 
     /// How many threads are there to process the work.
-    size_t getNThreads()
-    { return mTP.getNThreads(); }
+    size_t getNThreads() {
+        return mTP.getNThreads();
+    }
 
     /// What happening with a thread.
     /// ThreadIdx runs from 0 to getNThreads()-1.
-    ProgressMonitor getProgress( size_t threadIdx )
-    { QueueStateManipulator qsm(mQS);
-      return mProgressMonitors[threadIdx]; }
+    ProgressMonitor getProgress( size_t threadIdx ) {
+        QueueStateManipulator qsm(mQS);
+        return mProgressMonitors[threadIdx];
+    }
 
-private:
+  private:
     void doWork();
     static void* threadFunc( void* );
 
@@ -226,26 +241,23 @@ private:
     size_t mNThreads;
     ProgressMonitor* mProgressMonitors;
     ThreadPool mTP; // this needs to be the last member because we don't want
-                    // to start threads until everything else is ready
+    // to start threads until everything else is ready
 };
 
 template<class Workitem, class Processor>
-void Worklist<Workitem,Processor>::doWork()
-{
+void Worklist<Workitem,Processor>::doWork() {
     size_t idx = mTP.findThreadIndex(pthread_self());
     ProgressMonitor& progressMonitor = mProgressMonitors[idx];
     Processor processor(mProcessor);
 
-    while ( true )
-    {
-        if ( true ) // empty block just to control lifetime of qsm
-        {
+    while ( true ) {
+        if ( true ) { // empty block just to control lifetime of qsm
             QueueStateManipulator qsm(mQS);
             qsm.waitForWork();
             if ( !qsm.getSize() ) // wait for work only returns when there's
-                                  // work, or when the done flag is set
+                // work, or when the done flag is set
                 break;            // so break if there's no work
-                                  // (because that means we're all done)
+            // (because that means we're all done)
 
             time(&progressMonitor.mTime);
             using std::swap;
@@ -258,8 +270,7 @@ void Worklist<Workitem,Processor>::doWork()
 }
 
 template<class Workitem, class Processor>
-void* Worklist<Workitem,Processor>::threadFunc( void* ptr )
-{
+void* Worklist<Workitem,Processor>::threadFunc( void* ptr ) {
     reinterpret_cast<Worklist*>(ptr)->doWork();
     return 0;
 }

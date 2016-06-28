@@ -18,14 +18,12 @@
 #include <sstream>
 
 ErrNo::ErrNo()
-: mErrNo(errno)
-{
+    : mErrNo(errno) {
 }
 
 // we don't know whether we're going to get the GNU version or the XOPEN version
 // of strerror_r, so we're going to code so that either will work
-std::string ErrNo::text() const
-{
+std::string ErrNo::text() const {
     char buf[8192];
     long val = (long)strerror_r(mErrNo,buf,sizeof(buf));
 

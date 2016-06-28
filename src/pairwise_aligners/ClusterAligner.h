@@ -14,7 +14,7 @@
 //
 // It takes as input an argument Glocs that can be created as follows:
 //
-//   Glocs.resize( IPow( 4, K ) ); 
+//   Glocs.resize( IPow( 4, K ) );
 //   for ( size_t i = 0; i < G.size( ); i++ )
 //   {    for ( int j = 0; j <= G[i].isize( ) - K; j++ )
 //        {    int n = KmerId( G[i], K, j );
@@ -25,13 +25,13 @@
 #include "IntPairVec.h"
 #include "lookup/LookAlign.h"
 
-void ClusterAligner( basevector q, const vecbasevector& G, const int K, 
-     const VecIntPairVec& Glocs, vec<look_align>& aligns,
-     const Bool FW_ONLY = False,
-     const int BW_ADD = 10,
-     const int MIN_CLUSTER = 0,
-     const int MAX_OFFSET_DIFF = 500,
-     const int MISMATCH_PENALTY = 1,
-     const int GAP_PENALTY = 1 );
+void ClusterAligner( basevector q, const vecbasevector& G, const int K,
+                     const VecIntPairVec& Glocs, vec<look_align>& aligns,
+                     const Bool FW_ONLY = False,
+                     const int BW_ADD = 10,
+                     const int MIN_CLUSTER = 0,
+                     const int MAX_OFFSET_DIFF = 500,
+                     const int MISMATCH_PENALTY = 1,
+                     const int GAP_PENALTY = 1 );
 
 #endif

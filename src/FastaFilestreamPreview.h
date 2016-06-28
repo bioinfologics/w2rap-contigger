@@ -21,19 +21,19 @@
 
 class FastaFilestreamPreview {
 
-public:
+  public:
 
-  FastaFilestreamPreview(std::istream& fasta_istream);
+    FastaFilestreamPreview(std::istream& fasta_istream);
 
-  const std::streampos getMaxSequenceSize();  
-  const std::streampos getStartOffset();  
+    const std::streampos getMaxSequenceSize();
+    const std::streampos getStartOffset();
 
-  vec<std::streampos>& getSequenceSizes();
+    vec<std::streampos>& getSequenceSizes();
 
-private:
+  private:
 
-  std::streampos max_sequence_size_, start_offset_;
-  vec<std::streampos> sequence_sizes_;
+    std::streampos max_sequence_size_, start_offset_;
+    vec<std::streampos> sequence_sizes_;
 
 };
 

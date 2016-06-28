@@ -27,35 +27,28 @@
 std::string File::CWD(".");
 std::string File::ROOT("/");
 
-Directory File::asDir() const
-{
+Directory File::asDir() const {
     return Directory(mPath);
 }
 
-SymLink File::asLink() const
-{
+SymLink File::asLink() const {
     return SymLink(mPath);
 }
 
-Directory File::directory() const
-{
+Directory File::directory() const {
     return Directory(dirname());
 }
 
-void File::remove() const
-{
-    if ( ::remove(mPath.c_str()) == -1 )
-    {
+void File::remove() const {
+    if ( ::remove(mPath.c_str()) == -1 ) {
         ErrNo err;
         FatalErr("Can't remove file " << mPath << err);
     }
     clearStat();
 }
 
-void File::rename( File const& file ) const
-{
-    if ( ::rename(mPath.c_str(),file.mPath.c_str()) == -1 )
-    {
+void File::rename( File const& file ) const {
+    if ( ::rename(mPath.c_str(),file.mPath.c_str()) == -1 ) {
         ErrNo err;
         FatalErr("Can't rename file " << mPath << " to " << file.mPath << err);
     }
@@ -63,8 +56,7 @@ void File::rename( File const& file ) const
     file.clearStat();
 }
 
-void File::patchPath()
-{
+void File::patchPath() {
     size_t pos = 0;
     while ( (pos = mPath.find("//",pos)) != std::string::npos )
         mPath.erase(pos,1);
@@ -79,20 +71,15 @@ void File::patchPath()
         mPath.resize(pos-1);
 }
 
-void File::setStat() const
-{
+void File::setStat() const {
     if ( !mpStat ) mpStat = new struct stat;
-    if ( lstat(mPath.c_str(),mpStat) == -1 )
-    {
+    if ( lstat(mPath.c_str(),mpStat) == -1 ) {
         mType = NOT_A_FILE;
         delete mpStat;
         mpStat = 0;
-    }
-    else
-    {
+    } else {
         mType = static_cast<FILETYPE>(mpStat->st_mode & S_IFMT);
-        if ( mType == SYM_LINK && ::stat(mPath.c_str(),mpStat) == -1 )
-        {
+        if ( mType == SYM_LINK && ::stat(mPath.c_str(),mpStat) == -1 ) {
             delete mpStat;
             mpStat = 0;
         }

@@ -25,56 +25,80 @@
 /// Has a 1-byte alignment requirement.  (I.e., packs nicely.)
 /// The largest value is reserved as a null ID.
 template <unsigned N>
-class ID
-{
-public:
-    ID() { memset(mVal,-1,N); }
+class ID {
+  public:
+    ID() {
+        memset(mVal,-1,N);
+    }
 
-    explicit ID( size_t val ) { setVal(val); }
+    explicit ID( size_t val ) {
+        setVal(val);
+    }
 
     // compiler-generated copying and destructor are OK
 
-    size_t val() const
-    { size_t result; memcpy(&result,mVal,N); return result & MASK; }
+    size_t val() const {
+        size_t result;
+        memcpy(&result,mVal,N);
+        return result & MASK;
+    }
 
-    void setVal( size_t val )
-    { AssertNot(val & ~MASK); memcpy(mVal,&val,N); }
+    void setVal( size_t val ) {
+        AssertNot(val & ~MASK);
+        memcpy(mVal,&val,N);
+    }
 
-    bool isNull() const { return *this == gNull; }
+    bool isNull() const {
+        return *this == gNull;
+    }
 
-    static size_t nullVal() { return gNull.val(); }
+    static size_t nullVal() {
+        return gNull.val();
+    }
 
-    friend bool operator==( ID const& id1, ID const& id2 )
-    { return !memcmp(id1.mVal,id2.mVal,N); }
+    friend bool operator==( ID const& id1, ID const& id2 ) {
+        return !memcmp(id1.mVal,id2.mVal,N);
+    }
 
-    friend bool operator!=( ID const& id1, ID const& id2 )
-    { return memcmp(id1.mVal,id2.mVal,N); }
+    friend bool operator!=( ID const& id1, ID const& id2 ) {
+        return memcmp(id1.mVal,id2.mVal,N);
+    }
 
-    friend bool operator<( ID const& id1, ID const& id2 )
-    { return id1.val() < id2.val(); }
+    friend bool operator<( ID const& id1, ID const& id2 ) {
+        return id1.val() < id2.val();
+    }
 
-    friend bool operator<=( ID const& id1, ID const& id2 )
-    { return id1.val() <= id2.val(); }
+    friend bool operator<=( ID const& id1, ID const& id2 ) {
+        return id1.val() <= id2.val();
+    }
 
-    friend bool operator>( ID const& id1, ID const& id2 )
-    { return id1.val() > id2.val(); }
+    friend bool operator>( ID const& id1, ID const& id2 ) {
+        return id1.val() > id2.val();
+    }
 
-    friend bool operator>=( ID const& id1, ID const& id2 )
-    { return id1.val() >= id2.val(); }
+    friend bool operator>=( ID const& id1, ID const& id2 ) {
+        return id1.val() >= id2.val();
+    }
 
-    friend int compare( ID const& id1, ID const& id2 )
-    { return compare(id1.val(),id2.val()); }
+    friend int compare( ID const& id1, ID const& id2 ) {
+        return compare(id1.val(),id2.val());
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, ID const& id )
-    { return os << id.val(); }
+    friend std::ostream& operator<<( std::ostream& os, ID const& id ) {
+        return os << id.val();
+    }
 
-private:
-    ID( bool )
-    { STATIC_ASSERT(N <= 8); assertLittleEndian(); memset(mVal,-1,N); }
+  private:
+    ID( bool ) {
+        STATIC_ASSERT(N <= 8);
+        assertLittleEndian();
+        memset(mVal,-1,N);
+    }
 
-    void assertLittleEndian()
-    { long foo = 1;
-      ForceAssertEq(*reinterpret_cast<char*>(&foo),1); }
+    void assertLittleEndian() {
+        long foo = 1;
+        ForceAssertEq(*reinterpret_cast<char*>(&foo),1);
+    }
 
     unsigned char mVal[N];
     static ID gNull;

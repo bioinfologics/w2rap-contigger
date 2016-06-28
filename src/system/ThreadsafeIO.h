@@ -24,19 +24,20 @@
 #include <ostream>
 
 /// Streambuf which locks a mutex and then writes to a wrapped ostream on overflow and sync.
-class ThreadsafeStreambuf : public std::streambuf
-{
-public:
+class ThreadsafeStreambuf : public std::streambuf {
+  public:
     ThreadsafeStreambuf( std::ostream& os )
-    : mOS(os)
-    { setp(mBuf,mBuf+sizeof(mBuf)-1); }
+        : mOS(os) {
+        setp(mBuf,mBuf+sizeof(mBuf)-1);
+    }
 
     ThreadsafeStreambuf( ThreadsafeStreambuf const& )=delete;
 
-    ~ThreadsafeStreambuf()
-    { sync(); }
+    ~ThreadsafeStreambuf() {
+        sync();
+    }
 
-private:
+  private:
     int_type overflow( int_type ch );
     int sync();
 
@@ -47,16 +48,15 @@ private:
 
 /// An ostream that wraps another.
 /// If each thread uses a separate one of these, then access to the wrapped ostream becomes threadsafe.
-class ThreadsafeOStream : public std::ostream
-{
-public:
+class ThreadsafeOStream : public std::ostream {
+  public:
     ThreadsafeOStream( std::ostream& os )
-    : std::ostream(&mSB), mSB(os)
-    {}
+        : std::ostream(&mSB), mSB(os) {
+    }
 
     ThreadsafeOStream( ThreadsafeOStream const& )=delete;
 
-private:
+  private:
     ThreadsafeStreambuf mSB;
 };
 

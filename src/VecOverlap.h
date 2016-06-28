@@ -19,30 +19,30 @@
 
 template<class T> class vec_overlap {
 
- public:
-  
-  // The constructor builds the data structures needed to compute overlaps.
-  
-  vec_overlap( const vec< vec<T> >& x );
+  public:
 
-  ~vec_overlap();
-  
-  // GetOverlaps returns a sorted list of pairs (j,o) where j is an index to one 
-  // of the x's and o is the offset in the alignment, e.g.
-  // ---------y---------
-  //  ----------xi----------
-  // has an offset of 1.
-  //
-  // If allow_subset_x = False, then xi has to extend past y on at
-  // least one end.
-  
-  void GetOverlaps( const vec<T>& y, vec< std::pair<int,int> >& overlaps,
-                    Bool allow_subset_x = True ) const;
-  
- private:
-  class imp;
+    // The constructor builds the data structures needed to compute overlaps.
 
-  imp* m_pImp;
+    vec_overlap( const vec< vec<T> >& x );
+
+    ~vec_overlap();
+
+    // GetOverlaps returns a sorted list of pairs (j,o) where j is an index to one
+    // of the x's and o is the offset in the alignment, e.g.
+    // ---------y---------
+    //  ----------xi----------
+    // has an offset of 1.
+    //
+    // If allow_subset_x = False, then xi has to extend past y on at
+    // least one end.
+
+    void GetOverlaps( const vec<T>& y, vec< std::pair<int,int> >& overlaps,
+                      Bool allow_subset_x = True ) const;
+
+  private:
+    class imp;
+
+    imp* m_pImp;
 };
 
 #endif

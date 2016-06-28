@@ -9,14 +9,14 @@
 // A 'uniseq' is a sequence of unibases, with defined overlap between them,
 // usually K-1, but possibly smaller.
 //
-// A 'snark' is a kind of assembly in progress, that is a graph encoded in terms of 
+// A 'snark' is a kind of assembly in progress, that is a graph encoded in terms of
 // unibases, and which can contain gaps and ambiguities.
 //
-// More specifically, let a 'gapster' denote either a gap (represented by separation 
-// and deviation), or a list of uniseq closures.  Then a snark is a directed graph 
+// More specifically, let a 'gapster' denote either a gap (represented by separation
+// and deviation), or a list of uniseq closures.  Then a snark is a directed graph
 // whose vertices are uniseq objects and whose edges are gapster objects.  A snark
-// may have at most one edge between two vertices.  It is understood that within a 
-// snark, the uniseqs in a closed gapster share one unibase with the connecting 
+// may have at most one edge between two vertices.  It is understood that within a
+// snark, the uniseqs in a closed gapster share one unibase with the connecting
 // uniseqs on either end, as in
 //
 //               (1,2,3) --{ (3,4,5,6), (3,4,5,4,5,6) }--> (6,7,8)
@@ -42,276 +42,355 @@
 
 class uniseq {
 
-     public:
+  public:
 
-     uniseq( ) { }
-     uniseq( const vec<int>& u, const vec<int>& overlap )
-          : u_(u), overlap_(overlap)
-     {    AssertEq( u.size( ), overlap.size( ) + 1 );    }
+    uniseq( ) { }
+    uniseq( const vec<int>& u, const vec<int>& overlap )
+        : u_(u), overlap_(overlap) {
+        AssertEq( u.size( ), overlap.size( ) + 1 );
+    }
 
-     Bool Dead( ) const { return u_.empty( ) && overlap_.empty( ); }
-     Bool Alive( ) const { return !Dead( ); }
-     void Kill( ) { u_.clear( ); overlap_.clear( ); }
+    Bool Dead( ) const {
+        return u_.empty( ) && overlap_.empty( );
+    }
+    Bool Alive( ) const {
+        return !Dead( );
+    }
+    void Kill( ) {
+        u_.clear( );
+        overlap_.clear( );
+    }
 
-     const vecbasevector& Unibases( ) const 
-     {    Assert( unibases_ != 0 );
-          return *unibases_;    }
-     const basevector& Unibase( int k ) const 
-     {    Assert( unibases_ != 0 );
-          return Unibases( )[k];    }
-     void SetUnibases( const vecbasevector& unibases ) { unibases_ = &unibases; }
+    const vecbasevector& Unibases( ) const {
+        Assert( unibases_ != 0 );
+        return *unibases_;
+    }
+    const basevector& Unibase( int k ) const {
+        Assert( unibases_ != 0 );
+        return Unibases( )[k];
+    }
+    void SetUnibases( const vecbasevector& unibases ) {
+        unibases_ = &unibases;
+    }
 
-     int N( ) const { return u_.size( ); }
-     const vec<int>& U( ) const { return u_; }
-     vec<int>& UMutable( ) { return u_; }
-     int U( int k ) const { return u_[k]; }
-     const vec<int>& Over( ) const { return overlap_; }
-     vec<int>& OverMutable( ) { return overlap_; }
-     int Over( int k ) const { return overlap_[k]; }
+    int N( ) const {
+        return u_.size( );
+    }
+    const vec<int>& U( ) const {
+        return u_;
+    }
+    vec<int>& UMutable( ) {
+        return u_;
+    }
+    int U( int k ) const {
+        return u_[k];
+    }
+    const vec<int>& Over( ) const {
+        return overlap_;
+    }
+    vec<int>& OverMutable( ) {
+        return overlap_;
+    }
+    int Over( int k ) const {
+        return overlap_[k];
+    }
 
-     int Len( ) const; // return length in bases
+    int Len( ) const; // return length in bases
 
-     int ClosureLen( ) const 
-     {   return Len( ) - Unibase( U( ).front( ) ).isize( )
-               - Unibase( U( ).back( ) ).isize( );    }
+    int ClosureLen( ) const {
+        return Len( ) - Unibase( U( ).front( ) ).isize( )
+               - Unibase( U( ).back( ) ).isize( );
+    }
 
-     basevector Bases( ) const;
+    basevector Bases( ) const;
 
-     // TrimLeft: remove n unibases from the left.
-     // TrimRight: remove n unibases from the left.
+    // TrimLeft: remove n unibases from the left.
+    // TrimRight: remove n unibases from the left.
 
-     void TrimLeft( const int n );
-     void TrimRight( const int n );
-     
-     void TrimEnds( const int n, const int m );
+    void TrimLeft( const int n );
+    void TrimRight( const int n );
 
-     void ReverseMe( const vec<int>& to_rc );
-     uniseq Reverse( const vec<int>& to_rc ) const;
+    void TrimEnds( const int n, const int m );
 
-     friend std::ostream& operator<<( std::ostream& out, const uniseq& q );
+    void ReverseMe( const vec<int>& to_rc );
+    uniseq Reverse( const vec<int>& to_rc ) const;
 
-     void Print( std::ostream& out, const int K ) const;
+    friend std::ostream& operator<<( std::ostream& out, const uniseq& q );
 
-     friend void Print( std::ostream& out, const vec< vec<uniseq> >& ul, const int K );
+    void Print( std::ostream& out, const int K ) const;
 
-     // Concatenate two uniseqs, assuming that they share a unibase in the middle
-     // that should be deleted.  Ditto for three.
+    friend void Print( std::ostream& out, const vec< vec<uniseq> >& ul, const int K );
 
-     friend uniseq Cat( const uniseq& s1, const uniseq& s2 );
-     friend uniseq Cat( const uniseq& u1, const uniseq& u2, const uniseq& u3 );
+    // Concatenate two uniseqs, assuming that they share a unibase in the middle
+    // that should be deleted.  Ditto for three.
 
-     Bool Contains( const uniseq& x ) const;
+    friend uniseq Cat( const uniseq& s1, const uniseq& s2 );
+    friend uniseq Cat( const uniseq& u1, const uniseq& u2, const uniseq& u3 );
 
-     // Contains( x, p ).  You must have either p = 0 or p = -1.  If p = 0,
-     // return True if *this contains x at its beginning.  If p = -1, return True
-     // if *this contains x at its end.
+    Bool Contains( const uniseq& x ) const;
 
-     Bool Contains( const uniseq& x, int p ) const
-     {    ForceAssert( p == 0 || p == -1 );
-          if ( p == 0 )
-               return U( ).Contains( x.U( ), 0 ) && Over( ).Contains( x.Over( ), 0 );
-          else
-          {    if ( !U( ).Contains( x.U( ), N( ) - x.N( ) ) ) return False;
-               return Over( ).Contains( x.Over( ), N( ) - x.N( ) );    }    }
+    // Contains( x, p ).  You must have either p = 0 or p = -1.  If p = 0,
+    // return True if *this contains x at its beginning.  If p = -1, return True
+    // if *this contains x at its end.
 
-     friend vec<int> Common( const vec<uniseq>& v );
+    Bool Contains( const uniseq& x, int p ) const {
+        ForceAssert( p == 0 || p == -1 );
+        if ( p == 0 )
+            return U( ).Contains( x.U( ), 0 ) && Over( ).Contains( x.Over( ), 0 );
+        else {
+            if ( !U( ).Contains( x.U( ), N( ) - x.N( ) ) ) return False;
+            return Over( ).Contains( x.Over( ), N( ) - x.N( ) );
+        }
+    }
 
-     friend Bool operator==( const uniseq& u1, const uniseq& u2 )
-     {    return u1.U( ) == u2.U( ) && u1.Over( ) == u2.Over( );    }
-     friend Bool operator!=( const uniseq& u1, const uniseq& u2 )
-     {    return !( u1 == u2 );    }
+    friend vec<int> Common( const vec<uniseq>& v );
 
-     friend Bool operator<( const uniseq& u1, const uniseq& u2 )
-     {    if ( u1.U( ) < u2.U( ) ) return True;
-          if ( u1.U( ) > u2.U( ) ) return False;
-          return u1.Over( ) < u2.Over( );    }
+    friend Bool operator==( const uniseq& u1, const uniseq& u2 ) {
+        return u1.U( ) == u2.U( ) && u1.Over( ) == u2.Over( );
+    }
+    friend Bool operator!=( const uniseq& u1, const uniseq& u2 ) {
+        return !( u1 == u2 );
+    }
 
-     void writeBinary( BinaryWriter& writer ) const;
-     void readBinary( BinaryReader& reader );
+    friend Bool operator<( const uniseq& u1, const uniseq& u2 ) {
+        if ( u1.U( ) < u2.U( ) ) return True;
+        if ( u1.U( ) > u2.U( ) ) return False;
+        return u1.Over( ) < u2.Over( );
+    }
 
-     private:
+    void writeBinary( BinaryWriter& writer ) const;
+    void readBinary( BinaryReader& reader );
 
-     vec<int> u_;       // unibases ids
-     vec<int> overlap_; // overlap between successive unibases
-     const static vecbasevector* unibases_;
+  private:
+
+    vec<int> u_;       // unibases ids
+    vec<int> overlap_; // overlap between successive unibases
+    const static vecbasevector* unibases_;
 
 };
 
-template<> struct Serializability<uniseq> { typedef SelfSerializable type; }; 
+template<> struct Serializability<uniseq> {
+    typedef SelfSerializable type;
+};
 
 class gapster {
-  
-     public:
 
-     gapster( ) : open_(True), sep_(0), dev_(0) { }
-     gapster( const int sep, const int dev ) : open_(True), sep_(sep), dev_(dev) { }
+  public:
 
-     gapster( const uniseq& u ) : open_(False), sep_(0), dev_(0) {
-       closures_.push_back(u); 
-     }
+    gapster( ) : open_(True), sep_(0), dev_(0) { }
+    gapster( const int sep, const int dev ) : open_(True), sep_(sep), dev_(dev) { }
 
-     gapster( vec<uniseq> c ) : open_(False), sep_(0), dev_(0) {
-       closures_ = c; 
-     } 
+    gapster( const uniseq& u ) : open_(False), sep_(0), dev_(0) {
+        closures_.push_back(u);
+    }
 
-     Bool Open( ) const { return open_; }
-     Bool Closed( ) const { return !open_; }
+    gapster( vec<uniseq> c ) : open_(False), sep_(0), dev_(0) {
+        closures_ = c;
+    }
 
-     void Close( const vec<uniseq>& closures )
-     {    closures_ = closures;
-          open_ = False;    }
+    Bool Open( ) const {
+        return open_;
+    }
+    Bool Closed( ) const {
+        return !open_;
+    }
 
-     void RemoveSomeClosures( const vec<Bool>& to_delete )
-     {    EraseIf( closures_, to_delete );
-          if ( closures_.empty( ) ) open_ = True;    }
+    void Close( const vec<uniseq>& closures ) {
+        closures_ = closures;
+        open_ = False;
+    }
 
-     int Sep( ) const
-     {    Assert( Open( ) );
-          return sep_;    }
-     int Dev( ) const
-     {    Assert( Open( ) );
-          return dev_;    }
+    void RemoveSomeClosures( const vec<Bool>& to_delete ) {
+        EraseIf( closures_, to_delete );
+        if ( closures_.empty( ) ) open_ = True;
+    }
 
-     // The implementations of MinLen and MaxLen are probably wrong.
-     int MinLen( const double dev_mult ) const;
-     int MaxLen( const double dev_mult ) const;
-     int MidLen( ) const 
-     {    return int( round( double( MinLen(3.0) + MaxLen(3.0) ) / 2.0 ) );    }
+    int Sep( ) const {
+        Assert( Open( ) );
+        return sep_;
+    }
+    int Dev( ) const {
+        Assert( Open( ) );
+        return dev_;
+    }
 
-     const vec<uniseq>& Closures( ) const { return closures_; }
+    // The implementations of MinLen and MaxLen are probably wrong.
+    int MinLen( const double dev_mult ) const;
+    int MaxLen( const double dev_mult ) const;
+    int MidLen( ) const {
+        return int( round( double( MinLen(3.0) + MaxLen(3.0) ) / 2.0 ) );
+    }
 
-     int ClosureCount( ) const // OK to call for open or closed
-     {    return closures_.size( );    }
+    const vec<uniseq>& Closures( ) const {
+        return closures_;
+    }
 
-     const uniseq& Closure( int n ) const
-     {    Assert( Closed( ) );
-          return closures_[n];    }      
-     uniseq& ClosureMutable( int n )
-     {    Assert( Closed( ) );
-          return closures_[n];    }      
+    int ClosureCount( ) const { // OK to call for open or closed
+        return closures_.size( );
+    }
 
-     friend Bool operator==( const gapster& g1, const gapster& g2 )
-     {    if ( g1.open_ != g2.open_ ) return False;
-          if ( g1.open_ ) return g1.sep_ == g2.sep_ && g1.dev_ == g2.dev_;
-          else return g1.closures_ == g2.closures_;    }
+    const uniseq& Closure( int n ) const {
+        Assert( Closed( ) );
+        return closures_[n];
+    }
+    uniseq& ClosureMutable( int n ) {
+        Assert( Closed( ) );
+        return closures_[n];
+    }
 
-     void writeBinary( BinaryWriter& writer ) const;
-     void readBinary( BinaryReader& reader );
+    friend Bool operator==( const gapster& g1, const gapster& g2 ) {
+        if ( g1.open_ != g2.open_ ) return False;
+        if ( g1.open_ ) return g1.sep_ == g2.sep_ && g1.dev_ == g2.dev_;
+        else return g1.closures_ == g2.closures_;
+    }
 
-     private:
+    void writeBinary( BinaryWriter& writer ) const;
+    void readBinary( BinaryReader& reader );
 
-     Bool open_;
-     int sep_;
-     int dev_;
-     vec<uniseq> closures_;
+  private:
+
+    Bool open_;
+    int sep_;
+    int dev_;
+    vec<uniseq> closures_;
 
 };
 
-template<> struct Serializability<gapster> { typedef SelfSerializable type; }; 
+template<> struct Serializability<gapster> {
+    typedef SelfSerializable type;
+};
 extern template class digraphE<gapster>;
 
 class snark {
 
-     public:
+  public:
 
-     snark( ) { }
-     snark( const digraphE<gapster>& G, const vec<uniseq>& seq )
-          : G_(G), seq_(seq) { }
+    snark( ) { }
+    snark( const digraphE<gapster>& G, const vec<uniseq>& seq )
+        : G_(G), seq_(seq) { }
 
-     const digraphE<gapster>& G( ) const { return G_; }
-     digraphE<gapster>& Gmutable( ) { return G_; }
+    const digraphE<gapster>& G( ) const {
+        return G_;
+    }
+    digraphE<gapster>& Gmutable( ) {
+        return G_;
+    }
 
-     const vec<int>& From( int j ) const { return G_.From(j); }
-     const vec<int>& To( int j ) const { return G_.To(j); }
+    const vec<int>& From( int j ) const {
+        return G_.From(j);
+    }
+    const vec<int>& To( int j ) const {
+        return G_.To(j);
+    }
 
-     int VertN( ) const { return G( ).N( ); }
-     int EdgeN( ) const { return G( ).EdgeObjectCount( ); }
+    int VertN( ) const {
+        return G( ).N( );
+    }
+    int EdgeN( ) const {
+        return G( ).EdgeObjectCount( );
+    }
 
-     const uniseq& Vert( int k ) const { return seq_[k]; }
-     uniseq& VertMutable( int k ) { return seq_[k]; }
-     const gapster& Edge( int k ) const { return G( ).EdgeObject(k); }
+    const uniseq& Vert( int k ) const {
+        return seq_[k];
+    }
+    uniseq& VertMutable( int k ) {
+        return seq_[k];
+    }
+    const gapster& Edge( int k ) const {
+        return G( ).EdgeObject(k);
+    }
 
-     const vecbasevector& Unibases( ) const 
-     {    Assert( unibases_ != 0 );
-          return *unibases_;    }
-     const basevector& Unibase( int u ) const 
-     {    Assert( unibases_ != 0 );
-          return Unibases( )[u];    }
-     void SetUnibases( const vecbasevector& unibases ) { unibases_ = &unibases; }
+    const vecbasevector& Unibases( ) const {
+        Assert( unibases_ != 0 );
+        return *unibases_;
+    }
+    const basevector& Unibase( int u ) const {
+        Assert( unibases_ != 0 );
+        return Unibases( )[u];
+    }
+    void SetUnibases( const vecbasevector& unibases ) {
+        unibases_ = &unibases;
+    }
 
-     /*
-     const vec<int>& ToRc( ) const
-     {    Assert( to_rc_ != 0 );
-          return *to_rc_;    }
-     int ToRc( int u ) const
-     {    Assert( to_rc_ != 0 );
-          return ToRc( )[u];    }
-     void SetToRc( const vec<int>& to_rc ) { to_rc_ = &to_rc; }
-     */
-     const vec<int>& ToRc( ) const
-     {    return to_rc_;    }
-     int ToRc( int u ) const
-     {    return to_rc_[u];    }
-     void SetToRc( const vec<int>& to_rc ) { to_rc_ = to_rc; }
+    /*
+    const vec<int>& ToRc( ) const
+    {    Assert( to_rc_ != 0 );
+         return *to_rc_;    }
+    int ToRc( int u ) const
+    {    Assert( to_rc_ != 0 );
+         return ToRc( )[u];    }
+    void SetToRc( const vec<int>& to_rc ) { to_rc_ = &to_rc; }
+    */
+    const vec<int>& ToRc( ) const {
+        return to_rc_;
+    }
+    int ToRc( int u ) const {
+        return to_rc_[u];
+    }
+    void SetToRc( const vec<int>& to_rc ) {
+        to_rc_ = to_rc;
+    }
 
-     void CloseGap( const int v1, const int v2, const vec<uniseq>& closures );
+    void CloseGap( const int v1, const int v2, const vec<uniseq>& closures );
 
-     // SwallowSimpleGaps finds and eliminates certain gaps having single closures.
+    // SwallowSimpleGaps finds and eliminates certain gaps having single closures.
 
-     void SwallowSimpleGaps( );
+    void SwallowSimpleGaps( );
 
-     // Attempt to remove fw/rc duplication.
+    // Attempt to remove fw/rc duplication.
 
-     void DeleteComplements( );
+    void DeleteComplements( );
 
-     // Remove dead vertices:
+    // Remove dead vertices:
 
-     void BringOutTheDead( );
+    void BringOutTheDead( );
 
-     // Simple inverted repeats.  Look for an assembly whose global structure
-     // can be expressed as:
-     // X ----> X'
-     //   ---->
-     //   <----
-     //   <----.
-     // In such cases, we can delete one of the arrows.  We delete one of the
-     // *shorter* edges.  This might be generalized.
+    // Simple inverted repeats.  Look for an assembly whose global structure
+    // can be expressed as:
+    // X ----> X'
+    //   ---->
+    //   <----
+    //   <----.
+    // In such cases, we can delete one of the arrows.  We delete one of the
+    // *shorter* edges.  This might be generalized.
 
-     void HandleSimpleInvertedRepeats( );
+    void HandleSimpleInvertedRepeats( );
 
-     void RemoveSubsumedStuff( );
+    void RemoveSubsumedStuff( );
 
-     // EstimatedGenomeSize returns the sum of the lengths of the vertices and
-     // the "mid" lengths of the edges.
+    // EstimatedGenomeSize returns the sum of the lengths of the vertices and
+    // the "mid" lengths of the edges.
 
-     int64_t EstimatedGenomeSize( ) const;
+    int64_t EstimatedGenomeSize( ) const;
 
-     // Compute scaffolds
+    // Compute scaffolds
 
-     void ComputeScaffolds( vec<superb>& superbs, VecEFasta& econtigs,
-          digraphE<sepdev>& SG ) const;
+    void ComputeScaffolds( vec<superb>& superbs, VecEFasta& econtigs,
+                           digraphE<sepdev>& SG ) const;
 
-     // AssignVertexColors.  Let 0 = black, 1 = blue, 2 = red.  Initially all
-     // vertices are black.  Try to color fw/rc pairs of vertices as blue/red,
-     // in such a way that the blues are in a contiguous block and the reds are in
-     // a contiguous block.
+    // AssignVertexColors.  Let 0 = black, 1 = blue, 2 = red.  Initially all
+    // vertices are black.  Try to color fw/rc pairs of vertices as blue/red,
+    // in such a way that the blues are in a contiguous block and the reds are in
+    // a contiguous block.
 
-     void AssignVertexColors( vec<int>& color ) const;
+    void AssignVertexColors( vec<int>& color ) const;
 
-     void writeBinary( BinaryWriter& writer ) const;
-     void readBinary( BinaryReader& reader );
+    void writeBinary( BinaryWriter& writer ) const;
+    void readBinary( BinaryReader& reader );
 
-     private:
+  private:
 
-     digraphE<gapster> G_;
-     vec<uniseq> seq_;
-     const static vecbasevector* unibases_;
-     // const static vec<int>* to_rc_;
-     vec<int> to_rc_;
+    digraphE<gapster> G_;
+    vec<uniseq> seq_;
+    const static vecbasevector* unibases_;
+    // const static vec<int>* to_rc_;
+    vec<int> to_rc_;
 
 };
 
-template<> struct Serializability<snark> { typedef SelfSerializable type; }; 
+template<> struct Serializability<snark> {
+    typedef SelfSerializable type;
+};
 
 // A placement_on describes the position of read on a snark.  When placed on a
 // closed edge object, we do not track the closure that the read lies on, and thus
@@ -321,20 +400,20 @@ template<> struct Serializability<snark> { typedef SelfSerializable type; };
 // id - #vertices is an edge id.
 
 class placement_on {
-     
-     public:
 
-     placement_on( ) { }
-     placement_on( const int id, const int pos, const int apos, const Bool fw )
-          : id(id), pos(pos), apos(apos), fw(fw) { }
+  public:
 
-     int id;    // object identifier (vertex if < #vertices, else edge, offset)
-     int pos;   // start position on object, in bases
-     int apos;  // object length - stop position on object
-     Bool fw;   // placed forward?
+    placement_on( ) { }
+    placement_on( const int id, const int pos, const int apos, const Bool fw )
+        : id(id), pos(pos), apos(apos), fw(fw) { }
 
-     void Print( std::ostream& out, const snark& S, const vec<int>& to_left,
-          const vec<int>& to_right );
+    int id;    // object identifier (vertex if < #vertices, else edge, offset)
+    int pos;   // start position on object, in bases
+    int apos;  // object length - stop position on object
+    Bool fw;   // placed forward?
+
+    void Print( std::ostream& out, const snark& S, const vec<int>& to_left,
+                const vec<int>& to_right );
 
 };
 
@@ -346,65 +425,65 @@ class placement_on {
 
 void GetPairPlacements(
 
-     // assembly:
+    // assembly:
 
-     const snark& S, const vec<int>& to_right,
-     const vec<int>& min_len, const vec<int>& max_len,
+    const snark& S, const vec<int>& to_right,
+    const vec<int>& min_len, const vec<int>& max_len,
 
-     // input pair:
+    // input pair:
 
-     const int64_t pid,
+    const int64_t pid,
 
-     // reads and pairs:
+    // reads and pairs:
 
-     const vecbasevector& bases,
-     const PairsManager& pairs,
+    const vecbasevector& bases,
+    const PairsManager& pairs,
 
-     // read placements on unipaths -- read --> ( unipath, pos, fw? ):
+    // read placements on unipaths -- read --> ( unipath, pos, fw? ):
 
-     const vec< vec< triple<int,int,Bool> > >& placements_by_read,
+    const vec< vec< triple<int,int,Bool> > >& placements_by_read,
 
-     // edge_id --> ( u, pos, apos ):
+    // edge_id --> ( u, pos, apos ):
 
-     const vec< vec< triple<int,int,int> > >& u_pos_apos,
+    const vec< vec< triple<int,int,int> > >& u_pos_apos,
 
-     // placements of the reads -- pos_on[0] provides placements of the first read
-     // and pos_on[1] provided placements of the second read:
+    // placements of the reads -- pos_on[0] provides placements of the first read
+    // and pos_on[1] provided placements of the second read:
 
-     vec< vec<placement_on> >& pos_on,
+    vec< vec<placement_on> >& pos_on,
 
-     // placements of the pairs -- the first and second entries are indices in
-     // pos_on[0] and pos_on[1], respectively; the third entry is set if the second
-     // read is fw rather than the first:
+    // placements of the pairs -- the first and second entries are indices in
+    // pos_on[0] and pos_on[1], respectively; the third entry is set if the second
+    // read is fw rather than the first:
 
-     vec< triple<int,int,Bool> >& placements );
+    vec< triple<int,int,Bool> >& placements );
 
 void FindPartnersInGap(
 
-     // vertices to look between
+    // vertices to look between
 
-     const int x1, const int x2,
+    const int x1, const int x2,
 
-     // distance to scan on left and right
+    // distance to scan on left and right
 
-     const int flank,
+    const int flank,
 
-     // assembly
+    // assembly
 
-     const snark& S,
+    const snark& S,
 
-     // reads and pairs
+    // reads and pairs
 
-     const vecbasevector& bases, const PairsManager& pairs,
+    const vecbasevector& bases, const PairsManager& pairs,
 
-     // 1. read --> ( unipath, pos, fw? )
-     // 2. unipath --> ( read_id, pos, fw? )
+    // 1. read --> ( unipath, pos, fw? )
+    // 2. unipath --> ( read_id, pos, fw? )
 
-     const vec< vec< triple<int,int,Bool> > >& placements_by_read,
-     const vec< vec< triple<int64_t,int,Bool> > >& placements_by_unipath,
+    const vec< vec< triple<int,int,Bool> > >& placements_by_read,
+    const vec< vec< triple<int64_t,int,Bool> > >& placements_by_unipath,
 
-     // ( unipath, start, stop )
+    // ( unipath, start, stop )
 
-     vec< triple<int,int,int> >& between );
+    vec< triple<int,int,int> >& between );
 
 #endif

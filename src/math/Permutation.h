@@ -16,10 +16,10 @@
 
 class Permutation : public vec<int> {
 
-     public:
+  public:
 
-     Permutation(int);   // construct the identity Permutation
-     Permutation( ) { }
+    Permutation(int);   // construct the identity Permutation
+    Permutation( ) { }
 
 };
 

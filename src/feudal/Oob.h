@@ -21,8 +21,7 @@
 
 #include <cstddef>
 
-struct OutOfBoundsReporter
-{
+struct OutOfBoundsReporter {
     static void oob( char const* className, size_t idx, size_t siz );
 };
 

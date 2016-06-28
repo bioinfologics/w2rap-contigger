@@ -13,15 +13,15 @@
 #include "paths/HyperKmerPath.h"
 
 class HyperKmerPathCleaner {
-public:
-  void CleanUpGraph( HyperKmerPath& ans ) const;
+  public:
+    void CleanUpGraph( HyperKmerPath& ans ) const;
 
-  void Zip( HyperKmerPath& ans ) const;
+    void Zip( HyperKmerPath& ans ) const;
 
-  void ZipLeft( HyperKmerPath& ans ) const;
-  void ZipRight( HyperKmerPath& ans ) const;
-  // Maybe this should be a HyperKmerPath member function
-  bool ZipVertexRight( int vx, HyperKmerPath& ans ) const;
+    void ZipLeft( HyperKmerPath& ans ) const;
+    void ZipRight( HyperKmerPath& ans ) const;
+    // Maybe this should be a HyperKmerPath member function
+    bool ZipVertexRight( int vx, HyperKmerPath& ans ) const;
 };
 
 

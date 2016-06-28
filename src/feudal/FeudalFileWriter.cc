@@ -26,41 +26,35 @@ FeudalFileWriter::FeudalFileWriter( char const* filename,
                                     FeudalFileWriter::size_type eltSize,
                                     FeudalFileWriter::size_type fixedLenDataLen,
                                     unsigned long estimatedNElements )
-: mWriter(filename,false),
-  mVecSize(vecSize),
-  mEltSize(eltSize),
-  mFixedLenDataLen(fixedLenDataLen)
-{
+    : mWriter(filename,false),
+      mVecSize(vecSize),
+      mEltSize(eltSize),
+      mFixedLenDataLen(fixedLenDataLen) {
     mOffsets.reserve(estimatedNElements);
     mFixedLenData.reserve(fixedLenDataLen*estimatedNElements);
     mWriter.write(gInvalidFCB);
     mOffsets.push_back(mWriter.tell());
 }
 
-FeudalFileWriter::~FeudalFileWriter()
-{
+FeudalFileWriter::~FeudalFileWriter() {
     if ( mWriter.isOpen() )
         close();
 }
 
-void FeudalFileWriter::addElement( void const* fixedLenData )
-{
+void FeudalFileWriter::addElement( void const* fixedLenData ) {
     mOffsets.push_back(mWriter.tell());
 
-    if ( mFixedLenDataLen )
-    {
+    if ( mFixedLenDataLen ) {
         char const* fStart = reinterpret_cast<char const*>(fixedLenData);
         mFixedLenData.insert( mFixedLenData.end(), fStart,
-                                fStart+mFixedLenDataLen );
+                              fStart+mFixedLenDataLen );
     }
 }
 
-void FeudalFileWriter::checkPoint()
-{
-    if ( !mWriter.isOpen() )
-    {
+void FeudalFileWriter::checkPoint() {
+    if ( !mWriter.isOpen() ) {
         cout << "You can't checkpoint a FeudalFileWriter after you've closed "
-                "it." << std::endl;
+             "it." << std::endl;
         CRD::exit(1);
     }
     size_t pos = mWriter.tell();
@@ -68,20 +62,17 @@ void FeudalFileWriter::checkPoint()
     mWriter.seek(pos);
 }
 
-void FeudalFileWriter::close()
-{
+void FeudalFileWriter::close() {
     if ( !mWriter.isOpen() )
         cout << "Warning:  closing feudal file " << mWriter.getFilename()
              << " that is already closed." << std::endl;
-    else
-    {
+    else {
         finish(mWriter.tell());
         mWriter.close();
     }
 }
 
-void FeudalFileWriter::finish( size_t pos )
-{
+void FeudalFileWriter::finish( size_t pos ) {
     mWriter.write(&*mOffsets.begin(),&*mOffsets.end());
     if ( mFixedLenData.size() )
         mWriter.write(&*mFixedLenData.begin(),&*mFixedLenData.end());

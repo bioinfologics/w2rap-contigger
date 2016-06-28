@@ -1,22 +1,22 @@
 // Copyright (c) 2000-2003 Whitehead Institute for Biomedical Research
-// 
+//
 
 
-//  Id: MainArrays.h,v 1.26 2000/07/17 15:30:22 serafim Exp $             
+//  Id: MainArrays.h,v 1.26 2000/07/17 15:30:22 serafim Exp $
 #ifndef MAIN_ARRAYS_H
 #define MAIN_ARRAYS_H
 
 #define cken cnull
 #define cser cnull
 #define cdav cnull
-#ifdef KEN 
+#ifdef KEN
 #undef cken
 #define cken cloga
 #endif
 #ifdef KEN
 #define KENSPRINTVAL(NAME) cken << #NAME << " = " << NAME << std::endl ;
 #else
-#define KENSPRINTVAL(NAME) 
+#define KENSPRINTVAL(NAME)
 #endif
 #ifdef DAVE
 #undef cdav
@@ -46,21 +46,21 @@ enum genome_mark { /* This code for marking the genome is used
 		      provides a display of the layout, after ./Arachne
 		      is run. That function is not used too much lately
 		      (i.e. as of May 25, 2001). */
-  SC_START               =   1, 
-  SC_STOP                =   2, 
-  FILLED_GAP             =   4, 
-  UNFILLED_GAP           =   8, 
-  CLEAN_SEQUENCE         =  16, 
-  FEW_MISPLACED          =  32, // < 1%
-  SOME_MISPLACED         =  64, // 1% to 10%
-  MANY_MISPLACED         = 128, // 10% to 50%
-  MOST_MISPLACED         = 256, // 50% to 90%
-  ALL_MISPLACED          = 512, // 90% to 100%
-  COVERED_WITH_READ      = 1024,
-  COVERED_WITH_TWO_READS = 2048
+    SC_START               =   1,
+    SC_STOP                =   2,
+    FILLED_GAP             =   4,
+    UNFILLED_GAP           =   8,
+    CLEAN_SEQUENCE         =  16,
+    FEW_MISPLACED          =  32, // < 1%
+    SOME_MISPLACED         =  64, // 1% to 10%
+    MANY_MISPLACED         = 128, // 10% to 50%
+    MOST_MISPLACED         = 256, // 50% to 90%
+    ALL_MISPLACED          = 512, // 90% to 100%
+    COVERED_WITH_READ      = 1024,
+    COVERED_WITH_TWO_READS = 2048
 };
 
-const int ReadNotSet = - 1; 
+const int ReadNotSet = - 1;
 extern int rcnt;      // Total number of reads;
 extern int rcnt_main; /* Number of main reads, excluding auxiliary fake reads
 			 that may be added to provide our knowledge of pairing
@@ -69,7 +69,7 @@ extern int rcnt_main; /* Number of main reads, excluding auxiliary fake reads
 			 logodd ratio of a contig being unique. Also, only the
 			 main reads give coordinates for determining the actual
 			 location of a contig. The main reads are assumed to be
-			 the first rcnt_main reads in the read array. 
+			 the first rcnt_main reads in the read array.
 			 -- Serafim, July 12, 2001. */
 
 class rawgraph;

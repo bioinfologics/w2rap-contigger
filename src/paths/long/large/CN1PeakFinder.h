@@ -14,9 +14,9 @@
 
 class CN1PeakFinder {
 
-public:
+  public:
 
-    vec<size_t> candidates;  // list of candidate peaks    
+    vec<size_t> candidates;  // list of candidate peaks
 
     vec<size_t> cn_peaks;  // list of peaks
     vec<int> cn_values;    // list of peak CNs
@@ -29,8 +29,8 @@ public:
     bool debug = false;
 
     double FindPeak (const vec<double>& coverage, const vec<int64_t>& mass);
-    
-private:
+
+  private:
     bool MatchPeak(const vec<double>& coverage, vec<int>& used, double base, double multiplier = 1);
 
     // find the largest peak, assume this is CN1 or near to it

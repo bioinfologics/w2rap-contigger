@@ -16,16 +16,16 @@
 
 class ShortKmerReadPather {
 
-public:
+  public:
 
     static std::tuple<unsigned, unsigned, unsigned>  // score, mismatch, length
     ScoreEdge( bvec const& bases, qvec const& quals,
-	       int offset, bvec const& edge) ;
+               int offset, bvec const& edge) ;
 
     static void FindPaths(const vecbasevector& bases, const VecPQVec& quals,
-			  const HyperBasevector& hbv, ReadPathVec& paths,
-			  const int k, const int num_threads, 
-			  const vec<size_t>& ids = vec<size_t>(), bool debug = false) ;
+                          const HyperBasevector& hbv, ReadPathVec& paths,
+                          const int k, const int num_threads,
+                          const vec<size_t>& ids = vec<size_t>(), bool debug = false) ;
 
 };
 

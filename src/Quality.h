@@ -15,8 +15,9 @@
 //
 
 inline void WriteQualityScores( String score_file, const vecqualvector& Q,
-                                Bool ignored )
-{ Q.WriteAll(score_file); }
+                                Bool ignored ) {
+    Q.WriteAll(score_file);
+}
 
 //
 // Reads the quality scores Q from score_file, where read lengths are given in
@@ -25,15 +26,16 @@ inline void WriteQualityScores( String score_file, const vecqualvector& Q,
 //
 
 void ReadQualityScores( String score_file, const vec<int>& lengths,
-     vecqualvector& Q, vecqualvector& Qrc,
-     Bool noQrc = False, Bool append = False );
+                        vecqualvector& Q, vecqualvector& Qrc,
+                        Bool noQrc = False, Bool append = False );
 
 inline void ReadQualityScores( String score_file, const vec<int>& lengths,
-     vecqualvector& Q, Bool append = False )
-{    vecqualvector Qrc;
-     ReadQualityScores( score_file, lengths, Q, Qrc, True, append );   }
+                               vecqualvector& Q, Bool append = False ) {
+    vecqualvector Qrc;
+    ReadQualityScores( score_file, lengths, Q, Qrc, True, append );
+}
 
 void ReadSubsetOfQualityScores( String score_file, const vec<int>& lengths,
-     vecqualvector& Q, vec<int> use, int extra_space = 0, Bool append = False );
+                                vecqualvector& Q, vec<int> use, int extra_space = 0, Bool append = False );
 
 #endif

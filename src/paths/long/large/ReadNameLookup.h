@@ -25,25 +25,27 @@
 
 class readname_lookup {
 
-     public:
+  public:
 
-     readname_lookup( ) { fcpos_ = 0; }
-     readname_lookup( const vecString& names );
+    readname_lookup( ) {
+        fcpos_ = 0;
+    }
+    readname_lookup( const vecString& names );
 
-     uint64_t GetReadId( const String& n );
+    uint64_t GetReadId( const String& n );
 
-     void writeBinary( BinaryWriter& writer ) const;
-     void readBinary( BinaryReader& reader );
+    void writeBinary( BinaryWriter& writer ) const;
+    void readBinary( BinaryReader& reader );
 
-     private:
+  private:
 
-     int fcpos_;
-     vec<uint64_t> top_;
-     vec<String> fcnames_;
-     vec<uint64_t> keys_;
-     vec<uint32_t> pids_;
+    int fcpos_;
+    vec<uint64_t> top_;
+    vec<String> fcnames_;
+    vec<uint64_t> keys_;
+    vec<uint32_t> pids_;
 
-     uint64_t KeyFromName( String name );
+    uint64_t KeyFromName( String name );
 
 };
 

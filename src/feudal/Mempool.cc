@@ -22,10 +22,8 @@ using std::endl;
 
 MempoolFinder* MempoolFinder::gpInstance;
 
-void* Mempool::allocate( size_t siz, size_t alignmentReq )
-{
-    if ( tooBig(siz) )
-    {
+void* Mempool::allocate( size_t siz, size_t alignmentReq ) {
+    if ( tooBig(siz) ) {
 #ifdef TRACK_MEMUSE
         mpMemUse->alloc(siz);
 #endif
@@ -34,15 +32,11 @@ void* Mempool::allocate( size_t siz, size_t alignmentReq )
 
     SpinLocker locker(*this);
     void* result;
-    if ( !mpChunk || !(result = mpChunk->allocate(siz,alignmentReq)) )
-    {
-        if ( mpPreallocatedChunk )
-        {
+    if ( !mpChunk || !(result = mpChunk->allocate(siz,alignmentReq)) ) {
+        if ( mpPreallocatedChunk ) {
             mpChunk = mpPreallocatedChunk;
             mpPreallocatedChunk = 0;
-        }
-        else
-        {
+        } else {
             void* ppp = new char[mChunkSize+sizeof(Chunk)];
             mpChunk = new (ppp) Chunk(mpChunk,mChunkSize);
 #ifdef TRACK_MEMUSE
@@ -59,10 +53,8 @@ void* Mempool::allocate( size_t siz, size_t alignmentReq )
     return result;
 }
 
-void Mempool::free( void* ppp, size_t siz )
-{
-    if ( tooBig(siz) )
-    {
+void Mempool::free( void* ppp, size_t siz ) {
+    if ( tooBig(siz) ) {
         delete [] static_cast<char*>(ppp);
 #ifdef TRACK_MEMUSE
         mpMemUse->free(siz);
@@ -73,14 +65,12 @@ void Mempool::free( void* ppp, size_t siz )
     Chunk* pPre = 0;
     Chunk* pChunk = 0;
 
-    if ( true )
-    {
+    if ( true ) {
         SpinLocker locker(*this);
         mFreeSize += siz;
         mpChunk->free(ppp,siz);
         AssertLe(mFreeSize,mTotalSize);
-        if ( mFreeSize >= mTotalSize )
-        {
+        if ( mFreeSize >= mTotalSize ) {
             pPre = mpPreallocatedChunk;
             pChunk = mpChunk;
             mpPreallocatedChunk = mpChunk = 0;
@@ -91,60 +81,49 @@ void Mempool::free( void* ppp, size_t siz )
         }
     }
 
-    if ( pPre )
-    {
+    if ( pPre ) {
         reportUnusedPreallocation(pPre);
         killChunkChain(pPre);
-    }
-    else if ( pChunk )
-    {
+    } else if ( pChunk ) {
         killChunkChain(pChunk);
     }
 }
 
-void Mempool::preAllocate( size_t nBytes )
-{
+void Mempool::preAllocate( size_t nBytes ) {
     char* ppp = new char[nBytes+sizeof(Chunk)];
 #ifdef TRACK_MEMUSE
     mpMemUse->alloc(nBytes);
 #endif
 
     SpinLocker locker(*this);
-    if ( mpPreallocatedChunk )
-    {
+    if ( mpPreallocatedChunk ) {
         delete [] ppp;
 #ifdef TRACK_MEMUSE
         mpMemUse->free(nBytes);
 #endif
-    }
-    else
-    {
+    } else {
         mpPreallocatedChunk = new (ppp) Chunk(mpChunk,nBytes);
         mTotalSize += nBytes;
         mFreeSize += nBytes;
     }
 }
 
-void Mempool::killChunkChain( Chunk* pChunk )
-{
+void Mempool::killChunkChain( Chunk* pChunk ) {
     if ( pChunk->mpNext )
         killChunkChain(pChunk->mpNext);
     pChunk->~Chunk();
     delete [] reinterpret_cast<char*>(pChunk);
 }
 
-void Mempool::reportUnusedPreallocation( Chunk* pChunk )
-{
+void Mempool::reportUnusedPreallocation( Chunk* pChunk ) {
     cout << "Warning: Mempool has an unused " << pChunk->size() <<
-            "-byte preallocation." << std::endl;
+         "-byte preallocation." << std::endl;
 }
 
-void MempoolFinder::leakReport() const
-{
+void MempoolFinder::leakReport() const {
     unsigned int trouble = 0;
     Mempool const* end = mMempools + N_POOLS;
-    for ( Mempool const* pPool = mMempools; pPool != end; ++pPool )
-    {
+    for ( Mempool const* pPool = mMempools; pPool != end; ++pPool ) {
         size_t nUsed = pPool->bytesInUse();
         if ( nUsed )
             cout << "Warning: Mempool " << pPool-mMempools
@@ -154,6 +133,6 @@ void MempoolFinder::leakReport() const
     }
     if ( trouble )
         cout << "Warning: There were " << trouble <<
-        " leaked mempools which were cleaned up at the end of the program run."
-        << std::endl;
+             " leaked mempools which were cleaned up at the end of the program run."
+             << std::endl;
 }

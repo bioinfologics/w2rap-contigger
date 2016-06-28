@@ -22,11 +22,11 @@
 //
 // PerfectMark.  Same but return vec<Bool> telling which reads are perfect.
 
-int PerfectCount( const vecbasevector& query, const String& lookup_file, 
-     const AlignDir direction );
+int PerfectCount( const vecbasevector& query, const String& lookup_file,
+                  const AlignDir direction );
 
 void PerfectMark( const vecbasevector& query, const String& lookup_file,
-     const AlignDir direction, vec<Bool>& perfect );
+                  const AlignDir direction, vec<Bool>& perfect );
 
 // PerfectCountPlaces.  For each of a given set of sequences, count the number of
 // perfect end-to-end placements on a given "genome".
@@ -34,8 +34,8 @@ void PerfectMark( const vecbasevector& query, const String& lookup_file,
 // Inaccurate.  This will double-count placements occurring in overlapping segments
 // of the lookup table.
 
-void PerfectCountPlaces( const vecbasevector& query, const String& lookup_file, 
-     const AlignDir direction, vec<int>& places );
+void PerfectCountPlaces( const vecbasevector& query, const String& lookup_file,
+                         const AlignDir direction, vec<int>& places );
 
 /// PerfectPick.  For each read, pick at random one of its perfect placements on
 /// a "genome".  Return a vector consisting of all the places on the genome that
@@ -48,16 +48,17 @@ void PerfectCountPlaces( const vecbasevector& query, const String& lookup_file,
 /// (as places[i].second).
 
 void PerfectPick( const vecbasevector& query, const String& lookup_file,
-		  const AlignDir direction, vec<placement_mark>& places,
-		  vec<Bool> & queryHasPerfect );
+                  const AlignDir direction, vec<placement_mark>& places,
+                  vec<Bool> & queryHasPerfect );
 
 inline void PerfectPick( const vecbasevector& query, const String& lookup_file,
-		  const AlignDir direction, vec<placement_mark>& places )
-{    vec<Bool> queryHasPerfect;
-     PerfectPick( query, lookup_file, direction, places, queryHasPerfect );    }
+                         const AlignDir direction, vec<placement_mark>& places ) {
+    vec<Bool> queryHasPerfect;
+    PerfectPick( query, lookup_file, direction, places, queryHasPerfect );
+}
 
 void PerfectPick( const vecbasevector& query, const String& lookup_file,
-		  const AlignDir direction, vec< std::pair<placement_mark,int> >& places,
-		  vec<Bool> & queryHasPerfect );
+                  const AlignDir direction, vec< std::pair<placement_mark,int> >& places,
+                  vec<Bool> & queryHasPerfect );
 
 #endif

@@ -24,26 +24,25 @@
 template<typename sequenceT>
 class FastaConverter {
 
- public:
-  FastaConverter( FastaNameParser* name_parser )
-    : name_parser_(name_parser) { }
+  public:
+    FastaConverter( FastaNameParser* name_parser )
+        : name_parser_(name_parser) { }
 
-  virtual ~FastaConverter() {};
+    virtual ~FastaConverter() {};
 
-  void setNameParser( FastaNameParser* name_parser )
-    { 
-      name_parser_ = name_parser;
-      std::cout << name_parser_ << std::endl;
+    void setNameParser( FastaNameParser* name_parser ) {
+        name_parser_ = name_parser;
+        std::cout << name_parser_ << std::endl;
     }
 
-  void extractNameFromBuffer(char* buffer, String &name );
+    void extractNameFromBuffer(char* buffer, String &name );
 
-  bool extractDatumFromBuffer(char* buffer, sequenceT &sequence );
+    bool extractDatumFromBuffer(char* buffer, sequenceT &sequence );
 
-  void extractAllFromBuffer(char* buffer, String &name, sequenceT &sequence );
+    void extractAllFromBuffer(char* buffer, String &name, sequenceT &sequence );
 
- protected:
-  FastaNameParser* name_parser_;
+  protected:
+    FastaNameParser* name_parser_;
 };
 
 // FastaNullConverter knows nothing other than that the data is stored

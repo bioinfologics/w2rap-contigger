@@ -24,73 +24,84 @@
 /// Describes the header information for a feudal file.
 /// A feudal file pickles a vector of Xs, where X is some vector-like type
 /// that contains an indefinite number of elements of type A.
-class FeudalControlBlock
-{
-public:
+class FeudalControlBlock {
+  public:
     /// read one from a file that you won't otherwise be using
     /// final arg is set to the file length, if supplied
     FeudalControlBlock( char const* filename, bool validate=true,
-                        size_t* pFileLen=0 )
-    { init(FileReader(filename),validate,pFileLen); }
+                        size_t* pFileLen=0 ) {
+        init(FileReader(filename),validate,pFileLen);
+    }
 
 
     /// read one from a file that you're going to use subsequently.
     /// final arg is set to the file length, if supplied
     FeudalControlBlock( FileReader const& fr, bool validate=true,
-                        size_t* pFileLen=0 )
-    { init(fr,validate,pFileLen); }
+                        size_t* pFileLen=0 ) {
+        init(fr,validate,pFileLen);
+    }
 
     /// make a brand new one from scratch.
     FeudalControlBlock( size_t nElements, size_t variableDataLen,
                         unsigned char sizeofFixed, unsigned char sizeofX,
                         unsigned char sizeofA, unsigned int nFiles=1,
                         bool isCompressed=false )
-    : mN(nElements), mBitFlags(nFiles&3), mSizeofFixed(sizeofFixed),
-      mSizeofX(sizeofX), mSizeofA(sizeofA),
-      mVarOffset(variableDataLen+sizeof(*this)),
-      mFixedOffset(mVarOffset+(nElements+1)*sizeof(size_t))
-    { AssertLt(nFiles,4u);
-      if ( isCompressed ) mBitFlags |= 4; }
+        : mN(nElements), mBitFlags(nFiles&3), mSizeofFixed(sizeofFixed),
+          mSizeofX(sizeofX), mSizeofA(sizeofA),
+          mVarOffset(variableDataLen+sizeof(*this)),
+          mFixedOffset(mVarOffset+(nElements+1)*sizeof(size_t)) {
+        AssertLt(nFiles,4u);
+        if ( isCompressed ) mBitFlags |= 4;
+    }
 
     // compiler-supplied copying and destructor are OK
 
     /// number of Xs
-    size_t getNElements() const
-    { return getNFiles()==3 ?
-                    mN :
-                    ((mFixedOffset - mVarOffset)/sizeof(size_t) - 1UL); }
+    size_t getNElements() const {
+        return getNFiles()==3 ?
+               mN :
+               ((mFixedOffset - mVarOffset)/sizeof(size_t) - 1UL);
+    }
 
     /// format of feudal file:  1 file or 3
-    unsigned int getNFiles() const
-    { return mBitFlags & 3; }
+    unsigned int getNFiles() const {
+        return mBitFlags & 3;
+    }
 
     /// marker for compressed mastervec
-    bool isCompressed() const
-    { return mBitFlags & 4; }
+    bool isCompressed() const {
+        return mBitFlags & 4;
+    }
 
     /// set marker for compressed mastervec
-    void setCompressed( bool isCompressed )
-    { if ( isCompressed ) mBitFlags |= 4; else mBitFlags &= ~4; }
+    void setCompressed( bool isCompressed ) {
+        if ( isCompressed ) mBitFlags |= 4;
+        else mBitFlags &= ~4;
+    }
 
     /// not in use, but here to show you where the bit used to be
-    bool isBigEndian() const
-    { return mBitFlags & 8; }
+    bool isBigEndian() const {
+        return mBitFlags & 8;
+    }
 
     /// not in use, but here to show you where the bits used to be
-    unsigned int getVersion() const
-    { return mBitFlags >> 4; }
+    unsigned int getVersion() const {
+        return mBitFlags >> 4;
+    }
 
     /*
      * first chunk of a feudal file after the header:  the variable-length data
      */
 
     /// offset of the variable-length data
-    size_t getVarDataOffset() const
-    { return sizeof(*this); }
+    size_t getVarDataOffset() const {
+        return sizeof(*this);
+    }
 
     /// total number of bytes of variable-length data
-    size_t getVarDataLen() const
-    { return mVarOffset - sizeof(*this); }
+    size_t getVarDataLen() const {
+        return mVarOffset - sizeof(*this);
+    }
 
     /*
      * second chunk of a feudal file after the header:  the table of offsets
@@ -99,24 +110,28 @@ public:
      */
 
     /// offset of the table of variable-length data offsets
-    size_t getVarTabOffset() const
-    { return mVarOffset; }
+    size_t getVarTabOffset() const {
+        return mVarOffset;
+    }
 
     /// get the offset of the specified element's variable-length data offset
-    size_t getVarTabOffset( size_t idx )
-    { return mVarOffset + idx*sizeof(size_t); }
+    size_t getVarTabOffset( size_t idx ) {
+        return mVarOffset + idx*sizeof(size_t);
+    }
 
     /// length of the offsets table
-    size_t getVarTabLen() const
-    { return mFixedOffset - mVarOffset; }
+    size_t getVarTabLen() const {
+        return mFixedOffset - mVarOffset;
+    }
 
     /*
      * third chunk of a feudal file after the header:  the fixed-length data
      */
 
     /// offset in file to the fixed-length data
-    size_t getFixedOffset() const
-    { return mFixedOffset; }
+    size_t getFixedOffset() const {
+        return mFixedOffset;
+    }
 
     // we don't actually have any way of calculating the length of the
     // fixed-length data.  if it's not a compressed feudal file, it'll
@@ -130,30 +145,35 @@ public:
      */
     /// number of bytes of fixed-len data per X.
     /// may be 0, may be truncated to 8 bits!
-    unsigned char getSizeofFixed() const
-    { return mSizeofFixed; }
+    unsigned char getSizeofFixed() const {
+        return mSizeofFixed;
+    }
 
     /// sizeof(X) -- may be 0 or truncated to 8 bits!
-    unsigned char getSizeofX() const
-    { return mSizeofX; }
+    unsigned char getSizeofX() const {
+        return mSizeofX;
+    }
 
     /// sizeof(A) -- may be 0 or truncated to 8 bits!
-    unsigned char getSizeofA() const
-    { return mSizeofA; }
+    unsigned char getSizeofA() const {
+        return mSizeofA;
+    }
 
     /// does all the internal consistency checking we can think of
     bool isValid( char const* fileName, size_t fileLen,
-                    bool verbose=false ) const;
+                  bool verbose=false ) const;
 
     /// sets the fixed and variable data offsets to 0, sets number of files to 3
-    void to3FileFormat()
-    { mFixedOffset = mVarOffset = 0; mBitFlags |= 3; }
+    void to3FileFormat() {
+        mFixedOffset = mVarOffset = 0;
+        mBitFlags |= 3;
+    }
 
     /// opens the file, reads and validates the control block
     /// if verbose is true, reports anomalies to cout
     static bool isGoodFeudalFile( char const* fileName, bool verbose=false );
 
-private:
+  private:
     void init( FileReader const& fr, bool validate, size_t* pFileLen );
 
     unsigned int mN; // the number of elements, modulo the size of a uint

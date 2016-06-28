@@ -14,8 +14,7 @@
  */
 #include "feudal/QualNibbleVec.h"
 
-QualNibbleVec& QualNibbleVec::squash( unsigned radius )
-{
+QualNibbleVec& QualNibbleVec::squash( unsigned radius ) {
     size_t nnn = size();
     value_type* vals = new value_type[nnn];
     value_type* end = vals + nnn;
@@ -35,24 +34,22 @@ QualNibbleVec& QualNibbleVec::squash( unsigned radius )
     return *this;
 }
 
-void WriteAll(QualNibbleVecVec const& quals, String const& fn)
-{
-  IncrementalWriter<QualVec> writer(fn.c_str());
-  for (size_t i = 0; i < quals.size(); ++i)
-    writer.add(quals[i].GetQualvector());
-  writer.close();
+void WriteAll(QualNibbleVecVec const& quals, String const& fn) {
+    IncrementalWriter<QualVec> writer(fn.c_str());
+    for (size_t i = 0; i < quals.size(); ++i)
+        writer.add(quals[i].GetQualvector());
+    writer.close();
 }
 
 void LoadQualNibbleVec(const String & fn,
-                       QualNibbleVecVec * quals)
-{
-  typedef VirtualMasterVec<QualVec> VVQV;
-  typedef VVQV::const_iterator Itr;
+                       QualNibbleVecVec * quals) {
+    typedef VirtualMasterVec<QualVec> VVQV;
+    typedef VVQV::const_iterator Itr;
 
-  VVQV vvqv(fn.c_str());
-  quals->clear().reserve(vvqv.size());
-  for (Itr itr(vvqv.begin()), end(vvqv.end()); itr != end; ++itr )
-    quals->push_back(QualNibbleVec(*itr));
+    VVQV vvqv(fn.c_str());
+    quals->clear().reserve(vvqv.size());
+    for (Itr itr(vvqv.begin()), end(vvqv.end()); itr != end; ++itr )
+        quals->push_back(QualNibbleVec(*itr));
 }
 
 #include "feudal/OuterVecDefs.h"

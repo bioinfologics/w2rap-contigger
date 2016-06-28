@@ -17,9 +17,9 @@
 // they extend up to the ends of the repeat.
 
 void PushBoundaries( basevector b1, basevector b2,
-     int& left1, int& right1, int& left2, int& right2 );
+                     int& left1, int& right1, int& left2, int& right2 );
 
 void DecomposeAlign( const align& a, const basevector& b1, const basevector& b2,
-     vec< std::pair<int,int> > & P1, vec< std::pair<int,int> >& P2 );
+                     vec< std::pair<int,int> > & P1, vec< std::pair<int,int> >& P2 );
 
 #endif

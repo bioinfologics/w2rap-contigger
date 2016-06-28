@@ -15,8 +15,8 @@
  *          const vec< std::pair<int,int> > & aligns,
  */
 
-//  Kmer alignment between two reads. 
-//  Input 
+//  Kmer alignment between two reads.
+//  Input
 //        Kmer-matching offset list, which has the positions of the kmers in
 //        read1 (pos1), and the offsets of the matching kmer position in read2 (
 //        pos1 - pos2 )
@@ -26,43 +26,43 @@
 //  Method:
 //    First we devide all the offsets into different groups. Within each group
 //    are kmer-matchings do not have pos1 and offset difference larger than a
-//    threold.  
+//    threold.
 //    Then we order the groups by the size, biggest group first. We
 //    iterate through all the groups to add kmer-matchings one by one as long
 //    as it does not conflict with previously added kmer-matching.  Two
 //    alignments a1 and a2 are non-conflict if a1.pos1 > a2.pos1 && a1.pos2 >
 //    a2.pos2 or a1.pos1 < a2.pos1 && a1.pos2 < a2.pos2.
-//    
+//
 // Todo:
 //   If we need more than one plausible answer for output.
 void KmerAlign(
-        const vec< std::pair<int,int> > & offset, 
-        vec< std::pair<int,int> > & aligns, int VERBOSITY = 0 );
+    const vec< std::pair<int,int> > & offset,
+    vec< std::pair<int,int> > & aligns, int VERBOSITY = 0 );
 
 
 void KmerAlign2(
-        const vec< std::pair<int,int> > & offset, 
-        vec< std::pair<int,int> > & aligns, int VERBOSITY = 0 );
+    const vec< std::pair<int,int> > & offset,
+    vec< std::pair<int,int> > & aligns, int VERBOSITY = 0 );
 
 void KmerAlign3(
-        const vec< std::pair<int,int> > & offset, 
-        vec< std::pair<int,int> > & aligns, int VERBOSITY = 0 );
+    const vec< std::pair<int,int> > & offset,
+    vec< std::pair<int,int> > & aligns, int VERBOSITY = 0 );
 
-void GroupAndSelect( 
-        const vec< std::pair<int,int> > & offset_in, 
-        vec< std::pair<int,int> > & offset_out,
-        int Max_Pos_Diff, double Max_Offset_Diff ,
-        int VERBOSITY);
+void GroupAndSelect(
+    const vec< std::pair<int,int> > & offset_in,
+    vec< std::pair<int,int> > & offset_out,
+    int Max_Pos_Diff, double Max_Offset_Diff ,
+    int VERBOSITY);
 
-void LargestOffsetCluster( 
-        const vec< std::pair<int,int> > & offset_in, 
-        vec< std::pair<int,int> > & offset_out,
-        int Max_Pos_Diff, double Max_Offset_Diff);
+void LargestOffsetCluster(
+    const vec< std::pair<int,int> > & offset_in,
+    vec< std::pair<int,int> > & offset_out,
+    int Max_Pos_Diff, double Max_Offset_Diff);
 
 
 // Assessment by comparison between two kmer alignment methods
-void KmerAlignCompare( 
-        const vec< std::pair<int,int> > & aligns, 
-        const vec< std::pair<int,int> > & ref_align ) ;
+void KmerAlignCompare(
+    const vec< std::pair<int,int> > & aligns,
+    const vec< std::pair<int,int> > & ref_align ) ;
 
 #endif

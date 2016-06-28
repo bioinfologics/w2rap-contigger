@@ -21,54 +21,65 @@
 
 #ifdef NDEBUG
 /// A spin-lock.
-class SpinLockedData
-{
-public:
+class SpinLockedData {
+  public:
     SpinLockedData() : mLockByte(false) {}
     SpinLockedData( SpinLockedData const& )=delete;
     SpinLockedData& operator=( SpinLockedData const& )=delete;
-    void lock() { while ( mLockByte.exchange(true) ) {} }
-    void unlock() { mLockByte = false; }
+    void lock() {
+        while ( mLockByte.exchange(true) ) {}
+    }
+    void unlock() {
+        mLockByte = false;
+    }
 
-private:
+  private:
     std::atomic_bool mLockByte;
 };
 #else
 /// A spin-lock.
-class SpinLockedData
-{
-public:
+class SpinLockedData {
+  public:
     SpinLockedData() : mLockByte(false), mBusyCount(0) {}
     SpinLockedData( SpinLockedData const& )=delete;
     SpinLockedData& operator=( SpinLockedData const& )=delete;
 
-    ~SpinLockedData()
-    { AssertEq(bool(mLockByte),false);
-      if ( mBusyCount >= 1024 )
-        std::cout << "Busy spin lock: " << mBusyCount << std::endl; }
+    ~SpinLockedData() {
+        AssertEq(bool(mLockByte),false);
+        if ( mBusyCount >= 1024 )
+            std::cout << "Busy spin lock: " << mBusyCount << std::endl;
+    }
 
-    void lock()
-    { size_t count = 0;
-      while ( mLockByte.exchange(true) )
-      { ++count; }
-      mBusyCount += count >> 10; }
+    void lock() {
+        size_t count = 0;
+        while ( mLockByte.exchange(true) ) {
+            ++count;
+        }
+        mBusyCount += count >> 10;
+    }
 
-    void unlock() { AssertEq(bool(mLockByte),true); mLockByte = false; }
+    void unlock() {
+        AssertEq(bool(mLockByte),true);
+        mLockByte = false;
+    }
 
-private:
+  private:
     std::atomic_bool mLockByte;
     unsigned mBusyCount;
 };
 #endif
 
 /// Something that operates a spin-lock, and never forgets to unlock it.
-class SpinLocker
-{
-public:
-    SpinLocker( SpinLockedData& lock ) : mLock(lock) { mLock.lock(); }
-    ~SpinLocker() { mLock.unlock(); }
+class SpinLocker {
+  public:
+    SpinLocker( SpinLockedData& lock ) : mLock(lock) {
+        mLock.lock();
+    }
+    ~SpinLocker() {
+        mLock.unlock();
+    }
 
-private:
+  private:
     SpinLocker( SpinLocker const& ); // unimplemented -- no copying
     SpinLocker& operator=( SpinLocker const& ); // unimplemented -- no copying
 

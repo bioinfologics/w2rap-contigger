@@ -16,8 +16,7 @@
 #include "system/SysConf.h"
 #include "system/System.h"
 
-std::string getHostName()
-{
+std::string getHostName() {
     size_t len = maxHostNameLen()+1; // 1 extra for null
 
     char* buf = new char[len+1]; // 1 extra beyond that

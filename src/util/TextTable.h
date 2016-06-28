@@ -19,12 +19,12 @@
 //    table << "Marvin" << Tab << 1 << EndRow;
 //    table << DoubleLine ;
 //    table.Print( std::cout, 5, "r" );
-// output: 
+// output:
 //    =========================
 //      Name     Age     Weight
 //    +++++++++++++++++++++++++
-//     Jason     3       25.3  
-//    Marvin     1  
+//     Jason     3       25.3
+//    Marvin     1
 //    =========================
 #ifndef UTIL_TEXT_TABLE_H
 #define UTIL_TEXT_TABLE_H
@@ -34,42 +34,63 @@
 #include "feudal/TrackingAllocator.h"
 
 class TextTable {
-public:
+  public:
     // == Special types to draw line and manipulate tables ==
     // A row filled with same char to draw lines
-    struct CharLineT { char c; };               
+    struct CharLineT {
+        char c;
+    };
     // Table manipulator
-    typedef TextTable& (*TableMan) ( TextTable& ); 
+    typedef TextTable& (*TableMan) ( TextTable& );
 
     // Default constructor
-    TextTable() { raw_line = false; };
+    TextTable() {
+        raw_line = false;
+    };
 
     // == Basic table operations ==
     template< typename T >
-    TextTable& operator<< ( const T& t ) 
-    {   os << t; return *this;  }
+    TextTable& operator<< ( const T& t ) {
+        os << t;
+        return *this;
+    }
 
-    TextTable& operator<< ( const CharLineT& t ) 
-    {   AddCharLine(t.c) ; return *this; }
+    TextTable& operator<< ( const CharLineT& t ) {
+        AddCharLine(t.c) ;
+        return *this;
+    }
 
-    TextTable& operator<< ( const TableMan& f ) 
-    {   f(*this); return *this; }
+    TextTable& operator<< ( const TableMan& f ) {
+        f(*this);
+        return *this;
+    }
 
-    TextTable& AddColumn ()     
-    {   line.push_back( os.str() ); os.str(""); return *this;   }
+    TextTable& AddColumn () {
+        line.push_back( os.str() );
+        os.str("");
+        return *this;
+    }
 
-    TextTable& AddRow ()        
-    {   AddColumn(); lines.push_back( std::make_pair( line, raw_line ? '\0': ' ' ) ); 
-        line.clear(); raw_line = false; return *this; }
+    TextTable& AddRow () {
+        AddColumn();
+        lines.push_back( std::make_pair( line, raw_line ? '\0': ' ' ) );
+        line.clear();
+        raw_line = false;
+        return *this;
+    }
 
-    TextTable& SetRawLine ()        
-    {   raw_line = true; return *this; }
+    TextTable& SetRawLine () {
+        raw_line = true;
+        return *this;
+    }
 
-    TextTable& AddCharLine (char c) 
-    {   lines.push_back( std::make_pair( std::vector<std::string>(), c ) ); return *this; }
+    TextTable& AddCharLine (char c) {
+        lines.push_back( std::make_pair( std::vector<std::string>(), c ) );
+        return *this;
+    }
 
     // Get the vec<vec<String> > copy for external prettyfier
-    vec<vec<String> > GetTable() const; 
+    vec<vec<String> > GetTable() const;
 
     void Print( std::ostream& out, int padding= 1, const std::string& alignments="", const bool ragged_right = false );
 
@@ -77,7 +98,7 @@ public:
     // skip some number of leading lines (e.g. for a header)
     void Sort( size_t column, bool numeric = false, size_t header_skip_size = 0);
 
-private:
+  private:
     // diable copy and assign constructors
     TextTable(const TextTable&);
     TextTable& operator= (const TextTable&);
@@ -89,14 +110,14 @@ private:
     bool raw_line;
 };
 
-// Table manipulators 
+// Table manipulators
 template< typename TableT >
-TableT& Tab( TableT& tb ) { 
+TableT& Tab( TableT& tb ) {
     return tb.AddColumn();
 }
 
 template< typename TableT >
-TableT& EndRow( TableT& tb ) { 
+TableT& EndRow( TableT& tb ) {
     return tb.AddRow();
 }
 

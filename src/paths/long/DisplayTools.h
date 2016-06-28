@@ -16,23 +16,23 @@
 #include "paths/HyperBasevector.h"
 
 void ParseSeeds( const HyperBasevector& hb, const vec<int>& to_right,
-     const String& SEEDS, const int RANDOM_SEED, const String& SEEDS_MINUS,
-     vec<int>& seeds );
+                 const String& SEEDS, const int RANDOM_SEED, const String& SEEDS_MINUS,
+                 vec<int>& seeds );
 
 Bool ParseSeeds( const HyperBasevectorX& hb, const vec<int>& inv,
-     const vec< triple<kmer<20>,int,int> >& kmers_plus,
-     const vec<vec<vec<vec<int>>>>& lines,
-     const vec<String>& genome_names, const vec< std::pair<int,ho_interval> >& ambint,
-     Bool& ambflag,
-     const vec< vec< std::pair<int,int> > >& hits, const String& SEEDS,
-     const int RANDOM_SEED, const String& SEEDS_MINUS, vec<int>& seeds,
-     const int max_seeds, std::ostream& tout );
+                 const vec< triple<kmer<20>,int,int> >& kmers_plus,
+                 const vec<vec<vec<vec<int>>>>& lines,
+                 const vec<String>& genome_names, const vec< std::pair<int,ho_interval> >& ambint,
+                 Bool& ambflag,
+                 const vec< vec< std::pair<int,int> > >& hits, const String& SEEDS,
+                 const int RANDOM_SEED, const String& SEEDS_MINUS, vec<int>& seeds,
+                 const int max_seeds, std::ostream& tout );
 
 void BuildNhood( const HyperBasevector& hb, const vec<int>& to_left,
-     const vec<int>& to_right, const vec<int>& seeds, const int DEPTH, 
-     vec<Bool>& invisible );
+                 const vec<int>& to_right, const vec<int>& seeds, const int DEPTH,
+                 vec<Bool>& invisible );
 
-void BuildNhood( const HyperBasevectorX& hb, const vec<int>& seeds, 
-     const int DEPTH, vec<Bool>& invisible, const int max_edges );
+void BuildNhood( const HyperBasevectorX& hb, const vec<int>& seeds,
+                 const int DEPTH, vec<Bool>& invisible, const int max_edges );
 
 #endif

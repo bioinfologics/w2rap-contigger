@@ -15,51 +15,44 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-namespace
-{
+namespace {
 size_t const BUFFER_SIZE = 8192;
 
-std::string getName( char const* cmd, std::ios_base::openmode mode )
-{
+std::string getName( char const* cmd, std::ios_base::openmode mode ) {
     return std::string("pipe ") +
-            ((mode & std::ios_base::in) ? "from" : "to") +
-            " the command '" + cmd + "'";
+           ((mode & std::ios_base::in) ? "from" : "to") +
+           " the command '" + cmd + "'";
 }
 }
 
 
 procbuf::procbuf( const char *command, std::ios_base::openmode mode,
-    bool expect_ret_zero ) : mFD(doOpen(command,mode)), mResult(0),
+                  bool expect_ret_zero ) : mFD(doOpen(command,mode)), mResult(0),
     mPID(0), mFW(mFD,getName(command,mode).c_str()), mCMD(command),
     mExpectRetZero(expect_ret_zero) {}
 
-procbuf::int_type procbuf::overflow( int_type c )
-{
+procbuf::int_type procbuf::overflow( int_type c ) {
     if ( traits_type::eq_int_type(c,traits_type::eof()) )
         return c;
 
-    if ( pbase() == epptr() )
-    {
+    if ( pbase() == epptr() ) {
         char* putBuf = new char[BUFFER_SIZE];
         setp(putBuf,putBuf+BUFFER_SIZE);
-    }
-    else if ( !flush() )
+    } else if ( !flush() )
         return traits_type::eof();
 
     return sputc(c);
 }
 
 
-procbuf::int_type procbuf::underflow()
-{
+procbuf::int_type procbuf::underflow() {
     if ( gptr() < egptr() || fill() )
         return traits_type::to_int_type( *gptr() );
     return traits_type::eof();
 }
 
 
-procbuf::int_type procbuf::pbackfail( int_type c )
-{
+procbuf::int_type procbuf::pbackfail( int_type c ) {
     // If the character is EOF, then the caller isn't telling us what it is.
     // If we lost the buffer... return failure
     bool bKnowsChar = !traits_type::eq_int_type(c,traits_type::eof());
@@ -74,28 +67,24 @@ procbuf::int_type procbuf::pbackfail( int_type c )
     return traits_type::not_eof(c);
 }
 
-procbuf::int_type procbuf::sync()
-{
+procbuf::int_type procbuf::sync() {
     if ( pptr() != pbase() && !flush() )
         return traits_type::eof();
     return traits_type::not_eof(0);
 }
 
-bool procbuf::flush()
-{
+bool procbuf::flush() {
     if ( pptr() != pbase() )
         mFW.write(pbase(),pptr()-pbase());
     setp(pbase(),epptr());
     return true;
 }
 
-bool procbuf::fill()
-{
-    if ( eback() == egptr() )
-    {
+bool procbuf::fill() {
+    if ( eback() == egptr() ) {
         char* putBuf = new char[BUFFER_SIZE+1];
         char* putBufEnd = putBuf + BUFFER_SIZE + 1;
-	setg(putBuf,putBufEnd,putBufEnd);
+        setg(putBuf,putBufEnd,putBufEnd);
     }
     char* buf = eback()+1;
     size_t len = mFW.readOnce(buf,BUFFER_SIZE);
@@ -103,44 +92,34 @@ bool procbuf::fill()
     return len;
 }
 
-int procbuf::doOpen( char const* command, std::ios_base::openmode mode )
-{
+int procbuf::doOpen( char const* command, std::ios_base::openmode mode ) {
     int pipe_fds[2];
-    if ( pipe(pipe_fds) )
-    {
+    if ( pipe(pipe_fds) ) {
         ErrNo err;
         FatalErr("Opening " << getName(command,mode) << " failed" << err);
     }
 
     pid_t pid = fork();
-    if ( !pid )
-    {
-        if ( (mode & std::ios_base::in) )
-        {
-            while ( dup2(pipe_fds[1], 1) == -1 )
-            {
+    if ( !pid ) {
+        if ( (mode & std::ios_base::in) ) {
+            while ( dup2(pipe_fds[1], 1) == -1 ) {
                 ErrNo err;
                 if ( err.val() != EINTR )
                     FatalErr("Can't dup child's pipe fd to stdout.");
             }
-        }
-        else
-        {
-            while ( dup2(pipe_fds[0], 0) == -1 )
-            {
+        } else {
+            while ( dup2(pipe_fds[0], 0) == -1 ) {
                 ErrNo err;
                 if ( err.val() != EINTR )
                     FatalErr("Can't dup child's pipe fd to stdin.");
             }
         }
-        while ( ::close(pipe_fds[0]) == -1 )
-        {
+        while ( ::close(pipe_fds[0]) == -1 ) {
             ErrNo err;
             if ( err.val() != EINTR )
                 FatalErr("Can't close parent's pipe fd 0 in child.");
         }
-        while ( ::close(pipe_fds[1]) == -1 )
-        {
+        while ( ::close(pipe_fds[1]) == -1 ) {
             ErrNo err;
             if ( err.val() != EINTR )
                 FatalErr("Can't close parent's pipe fd 1 in child.");
@@ -150,8 +129,7 @@ int procbuf::doOpen( char const* command, std::ios_base::openmode mode )
         _exit(-1);
     }
 
-    if ( pid == -1 )
-    {
+    if ( pid == -1 ) {
         ErrNo err;
         FatalErr("Forking child to make a pipeline failed" << err);
     }
@@ -159,21 +137,16 @@ int procbuf::doOpen( char const* command, std::ios_base::openmode mode )
     mPID = pid;
 
     int result;
-    if ( (mode & std::ios_base::in) )
-    {
+    if ( (mode & std::ios_base::in) ) {
         result = pipe_fds[0];
-        while ( ::close(pipe_fds[1]) == -1 )
-        {
+        while ( ::close(pipe_fds[1]) == -1 ) {
             ErrNo err;
             if ( err.val() != EINTR )
                 FatalErr("Can't close child's pipe fd 1 in parent.");
         }
-    }
-    else
-    {
+    } else {
         result = pipe_fds[1];
-        while ( ::close(pipe_fds[0]) == -1 )
-        {
+        while ( ::close(pipe_fds[0]) == -1 ) {
             ErrNo err;
             if ( err.val() != EINTR )
                 FatalErr("Can't close parent's pipe fd 0 in child.");
@@ -183,12 +156,10 @@ int procbuf::doOpen( char const* command, std::ios_base::openmode mode )
     return result;
 }
 
-int procbuf::doClose()
-{
+int procbuf::doClose() {
     flush();
     mFW.close();
-    while ( ::close(mFD) == -1 )
-    {
+    while ( ::close(mFD) == -1 ) {
         ErrNo err;
         if ( err.val() != EINTR )
             FatalErr("Unable to close pipe" << err);
@@ -197,23 +168,18 @@ int procbuf::doClose()
 
     /* While there is no child complete, or an interrupt, wait: */
     int wstatus;
-    while ( waitpid(mPID,&wstatus,0) == -1 )
-    {
+    while ( waitpid(mPID,&wstatus,0) == -1 ) {
         ErrNo err;
         if ( err.val() != EINTR )
             FatalErr("Unable to wait for procbuf's child" << err);
     }
-    
-    if ( WIFEXITED(wstatus) )
-    {
-        if ( mExpectRetZero && WEXITSTATUS(wstatus) != 0 )
-        {
+
+    if ( WIFEXITED(wstatus) ) {
+        if ( mExpectRetZero && WEXITSTATUS(wstatus) != 0 ) {
             FatalErr(mCMD << " [" << mPID << "] exited with "
-                << WEXITSTATUS(wstatus) << "\n");
+                     << WEXITSTATUS(wstatus) << "\n");
         }
-    }
-    else
-    {
+    } else {
         FatalErr(mCMD << " [" << mPID << "] exited abnormally\n");
     }
     return wstatus;

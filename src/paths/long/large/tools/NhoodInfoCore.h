@@ -22,14 +22,15 @@
 
 void NhoodInfoCore( int argc, char *argv[] );
 
-inline void NhoodInfoCore( const String& args )
-{    vec<String> tokens;
-     Tokenize( "NhoodInfo " + args, tokens );
-     int argc = tokens.size( );
-     vec<char*> argv(argc);
-     for ( int i = 0; i < argc; i++ )
-          argv[i] = const_cast<char*>(tokens[i].c_str());
+inline void NhoodInfoCore( const String& args ) {
+    vec<String> tokens;
+    Tokenize( "NhoodInfo " + args, tokens );
+    int argc = tokens.size( );
+    vec<char*> argv(argc);
+    for ( int i = 0; i < argc; i++ )
+        argv[i] = const_cast<char*>(tokens[i].c_str());
 
-     NhoodInfoCore( argc, &argv[0] );    }
+    NhoodInfoCore( argc, &argv[0] );
+}
 
 #endif

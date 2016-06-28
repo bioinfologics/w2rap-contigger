@@ -6,7 +6,7 @@
 //   Institute is not responsible for its use, misuse, or functionality.     //
 ///////////////////////////////////////////////////////////////////////////////
 // author: Filipe Ribeiro      03/2011
-// 
+//
 //
 //
 
@@ -18,41 +18,41 @@
 
 #include "math/IntFunction.h"
 
-class IntFrequencies : public IntFunction<size_t>
-{
-public:
-  size_t freq(const int x) const { return (*this)[x]; }
-
-  void to_text_file(const String & head) const
-  {
-    const String fn = head + ".freq";
-
-    std::ofstream os;
-    os.open(fn.c_str());
-    os << "# 1:x  2:freq(x) 3:cum(x) 4:freq_norm(x) 5:cum_norm(x)" << std::endl;
-
-    const int x0 = x_min();
-    const int x1 = x_max();
-
-    os << std::fixed;
-    size_t total = 0;
-    size_t cum = 0;
-    for (int x = x0; x <= x1; x++) cum += freq(x);
-    double cum_double = cum;
-
-    cum = 0;
-    for (int x = x0; x != x1; x++) {
-      const size_t fx = freq(x);
-      cum += fx;
-      os << std::setw(10) << x << " "
-         << std::setw(16) << fx << " "
-         << std::setw(16) << cum << " " 
-         << std::setw(16) << std::setprecision(12) << double(fx) / cum_double << " "
-         << std::setw(16) << std::setprecision(12) << double(cum) / cum_double << std::endl;
+class IntFrequencies : public IntFunction<size_t> {
+  public:
+    size_t freq(const int x) const {
+        return (*this)[x];
     }
 
-    os.close();
-  }
+    void to_text_file(const String & head) const {
+        const String fn = head + ".freq";
+
+        std::ofstream os;
+        os.open(fn.c_str());
+        os << "# 1:x  2:freq(x) 3:cum(x) 4:freq_norm(x) 5:cum_norm(x)" << std::endl;
+
+        const int x0 = x_min();
+        const int x1 = x_max();
+
+        os << std::fixed;
+        size_t total = 0;
+        size_t cum = 0;
+        for (int x = x0; x <= x1; x++) cum += freq(x);
+        double cum_double = cum;
+
+        cum = 0;
+        for (int x = x0; x != x1; x++) {
+            const size_t fx = freq(x);
+            cum += fx;
+            os << std::setw(10) << x << " "
+               << std::setw(16) << fx << " "
+               << std::setw(16) << cum << " "
+               << std::setw(16) << std::setprecision(12) << double(fx) / cum_double << " "
+               << std::setw(16) << std::setprecision(12) << double(cum) / cum_double << std::endl;
+        }
+
+        os.close();
+    }
 };
 
 

@@ -27,7 +27,7 @@ class KmerPathLoc;  // forward declaration
 /**
    Class: KmerPath
 
-   A path of kmers where each kmer is shifted by one base relative to the 
+   A path of kmers where each kmer is shifted by one base relative to the
    previous kmer.  For example (using 4-mers):
 
    (begin example)
@@ -37,20 +37,20 @@ class KmerPathLoc;  // forward declaration
        ....
    (end example)
 
-   The path is represented as a sequence of <kmer numbers>, rather than the 
-   actual sequence of the path;  use <KmerBaseBroker> to get the sequence.   
+   The path is represented as a sequence of <kmer numbers>, rather than the
+   actual sequence of the path;  use <KmerBaseBroker> to get the sequence.
    The sequence of kmer numbers is represented using ranges:
 
       >[23-30][55-67][4-4][13-15] ...
 
-   Each range is represented as one <KmerPathInterval>.  A KmerPathInterval 
-   may also represent a gap, though right now (4-03-07) this functionality is 
+   Each range is represented as one <KmerPathInterval>.  A KmerPathInterval
+   may also represent a gap, though right now (4-03-07) this functionality is
    not used in ALLPATHS.
 
-   To iterate over the kmers in a KmerPath without worrying where <segments> 
+   To iterate over the kmers in a KmerPath without worrying where <segments>
    start and end, use <Begin()>/<End()>;  see <KmerPathLoc>.
 
-   There may be several ways to represent the same kmer path in this 
+   There may be several ways to represent the same kmer path in this
    representation; but see <Canonicalize()>.
 
    See also: <vecKmerPath>, <KmerPathInterval>
@@ -59,247 +59,310 @@ class KmerPath : public SerfVec<KmerPathInterval> {
     typedef MempoolAllocator<KmerPathInterval> Alloc;
     typedef SerfVec<KmerPathInterval> Base;
 
-public:
+  public:
 
-  typedef KmerPathInterval value_type;
+    typedef KmerPathInterval value_type;
 
-  KmerPath() {}
+    KmerPath() {}
 
-  KmerPath( kmer_id_t kmerStart, kmer_id_t kmerStop )
-  { Assign(kmerStart,kmerStop); }
+    KmerPath( kmer_id_t kmerStart, kmer_id_t kmerStop ) {
+        Assign(kmerStart,kmerStop);
+    }
 
-  KmerPath( String s );
+    KmerPath( String s );
 
-  KmerPath(const vec<kmer_id_t>& path );
+    KmerPath(const vec<kmer_id_t>& path );
 
-  KmerPath( Alloc alloc )
-  : Base(alloc) {}
+    KmerPath( Alloc alloc )
+        : Base(alloc) {}
 
-  KmerPath& Assign( kmer_id_t kmerStart, kmer_id_t kmerStop )
-  { clear(); return Append(kmerStart,kmerStop); }
+    KmerPath& Assign( kmer_id_t kmerStart, kmer_id_t kmerStop ) {
+        clear();
+        return Append(kmerStart,kmerStop);
+    }
 
-  KmerPath& Append( kmer_id_t kmerStart, kmer_id_t kmerStop )
-  { long const MAXDIFF = KmerPathInterval::maxLength - 1;
-    reserve(size()+(kmerStop-kmerStart+MAXDIFF-1)/MAXDIFF);
-    while ( kmerStop-kmerStart > MAXDIFF )
-    { kmer_id_t stop = kmerStart + MAXDIFF;
-      AddSegmentNoConcatenate(KmerPathInterval(kmerStart,stop));
-      kmerStart = stop+1; }
-    AddSegmentNoConcatenate(KmerPathInterval(kmerStart,kmerStop));
-    return *this; }
+    KmerPath& Append( kmer_id_t kmerStart, kmer_id_t kmerStop ) {
+        long const MAXDIFF = KmerPathInterval::maxLength - 1;
+        reserve(size()+(kmerStop-kmerStart+MAXDIFF-1)/MAXDIFF);
+        while ( kmerStop-kmerStart > MAXDIFF ) {
+            kmer_id_t stop = kmerStart + MAXDIFF;
+            AddSegmentNoConcatenate(KmerPathInterval(kmerStart,stop));
+            kmerStart = stop+1;
+        }
+        AddSegmentNoConcatenate(KmerPathInterval(kmerStart,kmerStop));
+        return *this;
+    }
 
-  int NSegments( ) const { return size( ); }
-  Bool InRange( int i ) const { return (0<=i && i<NSegments()); }
+    int NSegments( ) const {
+        return size( );
+    }
+    Bool InRange( int i ) const {
+        return (0<=i && i<NSegments());
+    }
 
-  void Clear( ) { clear( ); }
+    void Clear( ) {
+        clear( );
+    }
 
-  bool IsEmpty( ) const { return empty( ); }
+    bool IsEmpty( ) const {
+        return empty( );
+    }
 
-  KmerPathLoc BasePosToSegmentPos( int base_pos ) const;
+    KmerPathLoc BasePosToSegmentPos( int base_pos ) const;
 
-  void SetNSegments( int n ) { resize(n); }
-  void Reserve( int n ) { reserve(n); }
+    void SetNSegments( int n ) {
+        resize(n);
+    }
+    void Reserve( int n ) {
+        reserve(n);
+    }
 
-  const KmerPathInterval& Segment( int i ) const { return (*this)[i]; }
+    const KmerPathInterval& Segment( int i ) const {
+        return (*this)[i];
+    }
 
-  const KmerPathInterval& FirstSegment( ) const { return (*this)[0]; }
-  const KmerPathInterval& LastSegment( ) const { return (*this)[ (int) size( ) - 1 ]; }
+    const KmerPathInterval& FirstSegment( ) const {
+        return (*this)[0];
+    }
+    const KmerPathInterval& LastSegment( ) const {
+        return (*this)[ (int) size( ) - 1 ];
+    }
 
-  Bool isGap( int i ) const { return (InRange(i) && (*this)[i].isGap( )); }
-  Bool isSeq( int i ) const { return (InRange(i) && (*this)[i].isSeq( )); }
+    Bool isGap( int i ) const {
+        return (InRange(i) && (*this)[i].isGap( ));
+    }
+    Bool isSeq( int i ) const {
+        return (InRange(i) && (*this)[i].isSeq( ));
+    }
 
-  void Reverse( );
-  void ReverseNoConcatenate();
+    void Reverse( );
+    void ReverseNoConcatenate();
 
-  // Method: GetKmer
-  // Get the nth kmer from a gap-free KmerPath:
-  kmer_id_t GetKmer( int n ) const;
+    // Method: GetKmer
+    // Get the nth kmer from a gap-free KmerPath:
+    kmer_id_t GetKmer( int n ) const;
 
-  // Method: Canonicalize
-  // Merge consecutive gaps and consecutive mergable sequence segments.
-  void Canonicalize( );
+    // Method: Canonicalize
+    // Merge consecutive gaps and consecutive mergable sequence segments.
+    void Canonicalize( );
 
-  kmer_id_t Start( int i ) const { return (*this)[i].Start( ); }
-  kmer_id_t Stop( int i ) const { return (*this)[i].Stop( ); }
-  int Length( int i ) const { return (*this)[i].Length( ); }
-  int TotalLength( ) const {
-    int len = 0;
-    for (int ii=0; ii<this->NSegments( ); ii++) len += this->Length( ii );
-    return len;
-  }
+    kmer_id_t Start( int i ) const {
+        return (*this)[i].Start( );
+    }
+    kmer_id_t Stop( int i ) const {
+        return (*this)[i].Stop( );
+    }
+    int Length( int i ) const {
+        return (*this)[i].Length( );
+    }
+    int TotalLength( ) const {
+        int len = 0;
+        for (int ii=0; ii<this->NSegments( ); ii++) len += this->Length( ii );
+        return len;
+    }
 
-  kmer_id_t Start() const { return FirstSegment().Start(); }
-  kmer_id_t Stop() const { return LastSegment().Stop(); }
+    kmer_id_t Start() const {
+        return FirstSegment().Start();
+    }
+    kmer_id_t Stop() const {
+        return LastSegment().Stop();
+    }
 
-  // same functions with different names, for thinking about gaps:
-  kmer_id_t Minimum( int i ) const { return (*this)[i].Start( ); }
-  kmer_id_t Maximum( int i ) const { return (*this)[i].Stop( ); }
-  int Stretch( int i ) const { return (*this)[i].Stretch( ); }
+    // same functions with different names, for thinking about gaps:
+    kmer_id_t Minimum( int i ) const {
+        return (*this)[i].Start( );
+    }
+    kmer_id_t Maximum( int i ) const {
+        return (*this)[i].Stop( );
+    }
+    int Stretch( int i ) const {
+        return (*this)[i].Stretch( );
+    }
 
-  // AddSegment will concatenate abutting KmerPathIntervals.
-  void AddSegment( KmerPathInterval rpi );
-  void AddSegmentNoConcatenate( KmerPathInterval rpi );
-  void AddSegment( kmer_id_t start, kmer_id_t stop, Bool is_gap = False )
-  { AddSegment( KmerPathInterval(start, stop, is_gap) ); }
-  void AddGap( kmer_id_t start, kmer_id_t stop)
-  { AddSegment( KmerPathInterval(start, stop, True) ); }
+    // AddSegment will concatenate abutting KmerPathIntervals.
+    void AddSegment( KmerPathInterval rpi );
+    void AddSegmentNoConcatenate( KmerPathInterval rpi );
+    void AddSegment( kmer_id_t start, kmer_id_t stop, Bool is_gap = False ) {
+        AddSegment( KmerPathInterval(start, stop, is_gap) );
+    }
+    void AddGap( kmer_id_t start, kmer_id_t stop) {
+        AddSegment( KmerPathInterval(start, stop, True) );
+    }
 
-  void Append( const KmerPath& other, int begin=0, int end=-1 );
-  void append( const KmerPath& other, int begin=0, int end=-1 )
-  {    return Append( other, begin, end );    }
-  void AppendNoFirstKmer( const KmerPath& other, int begin=0, int end=-1 );
-  // Don't call AppendNoFirstKmer on a KmerPath starting with a gap!
+    void Append( const KmerPath& other, int begin=0, int end=-1 );
+    void append( const KmerPath& other, int begin=0, int end=-1 ) {
+        return Append( other, begin, end );
+    }
+    void AppendNoFirstKmer( const KmerPath& other, int begin=0, int end=-1 );
+    // Don't call AppendNoFirstKmer on a KmerPath starting with a gap!
 
-  void SetStart( int i, kmer_id_t x )
-    { (*this)[i].Set( x, Stop(i), isGap(i) ); }
-  void SetStop( int i, kmer_id_t x )
-    { (*this)[i].Set( Start(i), x, isGap(i) ); }
-  // same functions with different names, for thinking about gaps:
-  void SetMinimum( int i, kmer_id_t x )
-    { (*this)[i].Set( x, Maximum(i), isGap(i) ); }
-  void SetMaximum( int i, kmer_id_t x )
-    { (*this)[i].Set( Minimum(i), x, isGap(i) ); }
-  void SetGap( int i, kmer_id_t x1, kmer_id_t x2 )
-    { (*this)[i].Set( x1, x2, True ); }
+    void SetStart( int i, kmer_id_t x ) {
+        (*this)[i].Set( x, Stop(i), isGap(i) );
+    }
+    void SetStop( int i, kmer_id_t x ) {
+        (*this)[i].Set( Start(i), x, isGap(i) );
+    }
+    // same functions with different names, for thinking about gaps:
+    void SetMinimum( int i, kmer_id_t x ) {
+        (*this)[i].Set( x, Maximum(i), isGap(i) );
+    }
+    void SetMaximum( int i, kmer_id_t x ) {
+        (*this)[i].Set( Minimum(i), x, isGap(i) );
+    }
+    void SetGap( int i, kmer_id_t x1, kmer_id_t x2 ) {
+        (*this)[i].Set( x1, x2, True );
+    }
 
 
-  // Group: Things mentioning KmerPathLocs.
-  //
-  // Actual code can't appear until after
-  // the complete declaration of KmerPathLoc, so Subpath()s are in
-  // KmerPath.cc, and the others appear below (for inlining).
+    // Group: Things mentioning KmerPathLocs.
+    //
+    // Actual code can't appear until after
+    // the complete declaration of KmerPathLoc, so Subpath()s are in
+    // KmerPath.cc, and the others appear below (for inlining).
 
-  // NOTE: End() points to the last k-mer, not one-past-the-end.
-  // Two KmerPathLoc's represent a closed interval, not a half-open one.
-  // (Hence the need for the ...NoFirstKmer variant.  Oh well.)
-  KmerPathLoc Begin() const;
-  KmerPathLoc End() const;
+    // NOTE: End() points to the last k-mer, not one-past-the-end.
+    // Two KmerPathLoc's represent a closed interval, not a half-open one.
+    // (Hence the need for the ...NoFirstKmer variant.  Oh well.)
+    KmerPathLoc Begin() const;
+    KmerPathLoc End() const;
 
-  // Method: CopySubpath
-  // appends subpath to answer; loc1 and loc2 are locs in *this
-  void CopySubpath( KmerPathLoc loc1, KmerPathLoc loc2, KmerPath& ans ) const;
-  void CopySubpathNoFirstKmer( KmerPathLoc loc1, KmerPathLoc loc2,
-			       KmerPath& ans ) const;
-  void CopySubpathNoLastKmer( KmerPathLoc loc1, KmerPathLoc loc2,
-			      KmerPath& ans ) const;
+    // Method: CopySubpath
+    // appends subpath to answer; loc1 and loc2 are locs in *this
+    void CopySubpath( KmerPathLoc loc1, KmerPathLoc loc2, KmerPath& ans ) const;
+    void CopySubpathNoFirstKmer( KmerPathLoc loc1, KmerPathLoc loc2,
+                                 KmerPath& ans ) const;
+    void CopySubpathNoLastKmer( KmerPathLoc loc1, KmerPathLoc loc2,
+                                KmerPath& ans ) const;
 
-  void CopyHead( const KmerPathLoc& loc, KmerPath& ans ) const;
-  void CopyTail( const KmerPathLoc& loc, KmerPath& ans ) const;
-  void CopyHeadNoLastKmer( const KmerPathLoc& loc, KmerPath& ans ) const;
-  void CopyTailNoFirstKmer( const KmerPathLoc& loc, KmerPath& ans ) const;
-  // Copy the interval [loc1,loc2] adjusting the individual gap sizes
-  // so that it fits in the space of a gap with bounds given_{min,max}
-  void CopySubpathAdjustGaps( KmerPathLoc loc1, KmerPathLoc loc2,
-			      int given_min, int given_max,
-			      KmerPath& ans ) const;
+    void CopyHead( const KmerPathLoc& loc, KmerPath& ans ) const;
+    void CopyTail( const KmerPathLoc& loc, KmerPath& ans ) const;
+    void CopyHeadNoLastKmer( const KmerPathLoc& loc, KmerPath& ans ) const;
+    void CopyTailNoFirstKmer( const KmerPathLoc& loc, KmerPath& ans ) const;
+    // Copy the interval [loc1,loc2] adjusting the individual gap sizes
+    // so that it fits in the space of a gap with bounds given_{min,max}
+    void CopySubpathAdjustGaps( KmerPathLoc loc1, KmerPathLoc loc2,
+                                int given_min, int given_max,
+                                KmerPath& ans ) const;
 
-  // Method: KmerCount
-  // Return the number of kmers in this kmer path, ignoring any gaps.
-  // renamed from Length(), to avoid confusion: this ignores gaps.
-  int KmerCount( ) const {
-    int sum = 0;
-    for ( int i = 0; i < NSegments( ); i++ )
-      if (isSeq(i)) sum += Length(i);
-    return sum;
-  }
+    // Method: KmerCount
+    // Return the number of kmers in this kmer path, ignoring any gaps.
+    // renamed from Length(), to avoid confusion: this ignores gaps.
+    int KmerCount( ) const {
+        int sum = 0;
+        for ( int i = 0; i < NSegments( ); i++ )
+            if (isSeq(i)) sum += Length(i);
+        return sum;
+    }
 
-  int MinLength(int i) const { return ( isSeq(i) ? Length(i) : Minimum(i) ); }
-  int MaxLength(int i) const { return ( isSeq(i) ? Length(i) : Maximum(i) ); }
+    int MinLength(int i) const {
+        return ( isSeq(i) ? Length(i) : Minimum(i) );
+    }
+    int MaxLength(int i) const {
+        return ( isSeq(i) ? Length(i) : Maximum(i) );
+    }
 
-  int AveLength(int i) const { return ( MinLength(i) + MaxLength(i) ) / 2; }
+    int AveLength(int i) const {
+        return ( MinLength(i) + MaxLength(i) ) / 2;
+    }
 
-  int MinLength() const { return MinLength(0, NSegments()-1); }
-  int MaxLength() const { return MaxLength(0, NSegments()-1); }
+    int MinLength() const {
+        return MinLength(0, NSegments()-1);
+    }
+    int MaxLength() const {
+        return MaxLength(0, NSegments()-1);
+    }
 
-  // Length of the path if all the gaps are as small as they can be
-  int MinLength(int seg1, int seg2) const {
-    int sum = 0;
-    for ( int i = seg1; i <= seg2; ++i )
-      sum += MinLength(i);
-    return sum;
-  }
+    // Length of the path if all the gaps are as small as they can be
+    int MinLength(int seg1, int seg2) const {
+        int sum = 0;
+        for ( int i = seg1; i <= seg2; ++i )
+            sum += MinLength(i);
+        return sum;
+    }
 
-  // Length of the path if all the gaps are as large as they can be
-  int MaxLength(int seg1, int seg2) const {
-    int sum = 0;
-    for ( int i = seg1; i <= seg2; ++i )
-      sum += MaxLength(i);
-    return sum;
-  }
+    // Length of the path if all the gaps are as large as they can be
+    int MaxLength(int seg1, int seg2) const {
+        int sum = 0;
+        for ( int i = seg1; i <= seg2; ++i )
+            sum += MaxLength(i);
+        return sum;
+    }
 
-  float MidLength( ) const
-  {    float len = 0.0;
-       for ( int u = 0; u < NSegments( ); u++ )
-       {    const KmerPathInterval& x = Segment(u);
+    float MidLength( ) const {
+        float len = 0.0;
+        for ( int u = 0; u < NSegments( ); u++ ) {
+            const KmerPathInterval& x = Segment(u);
             if ( x.isSeq( ) ) len += x.Length( );
-            else len += float( x.Maximum( ) + x.Minimum( ) ) / 2.0;    }
-       return len;    }
+            else len += float( x.Maximum( ) + x.Minimum( ) ) / 2.0;
+        }
+        return len;
+    }
 
-  Bool GapFree( ) const
-  {    for ( int i = 0; i < NSegments( ); i++ )
+    Bool GapFree( ) const {
+        for ( int i = 0; i < NSegments( ); i++ )
             if ( isGap(i) ) return False;
-       return True;    }
+        return True;
+    }
 
-  // Predicate: Proper
-  // A KmerPath is "proper" if it is nonempty, has no gaps on either end, and it
-  // does not have adjacent segments which are mergeable.
-  Bool Proper( ) const;
+    // Predicate: Proper
+    // A KmerPath is "proper" if it is nonempty, has no gaps on either end, and it
+    // does not have adjacent segments which are mergeable.
+    Bool Proper( ) const;
 
-  // TODO: potentially dangerous truncation of index by next three methods
-  void AppendToDatabase( vec<tagged_rpint>& segs, int i ) const;
-  void AppendToDatabase( vec<big_tagged_rpint>& segs, int i ) const;
-  void AppendToDatabase( vec<new_tagged_rpint>& segs, int i ) const;
+    // TODO: potentially dangerous truncation of index by next three methods
+    void AppendToDatabase( vec<tagged_rpint>& segs, int i ) const;
+    void AppendToDatabase( vec<big_tagged_rpint>& segs, int i ) const;
+    void AppendToDatabase( vec<new_tagged_rpint>& segs, int i ) const;
 
-  // Method: IsSubpathAnchoredLeft
-  // Determine if path 1 formally matches subset of path 2, anchored on left:
-  // >   ------1-------
-  // >   ----------2----------
-  // Read code to see exact handling of subtleties.
-  friend Bool IsSubpathAnchoredLeft( const KmerPath& p1, const KmerPath& p2 );
+    // Method: IsSubpathAnchoredLeft
+    // Determine if path 1 formally matches subset of path 2, anchored on left:
+    // >   ------1-------
+    // >   ----------2----------
+    // Read code to see exact handling of subtleties.
+    friend Bool IsSubpathAnchoredLeft( const KmerPath& p1, const KmerPath& p2 );
 
-  // Pretty-printed output:
-  friend std::ostream& operator<<(std::ostream& out, const KmerPath& p);
-  friend void PrintFolded( std::ostream& out, const KmerPath& p );
+    // Pretty-printed output:
+    friend std::ostream& operator<<(std::ostream& out, const KmerPath& p);
+    friend void PrintFolded( std::ostream& out, const KmerPath& p );
 
-  #define KMER_PATH_HASH_CONST 123456789
-  ulonglong GetHash(ulonglong seed=0) const
-  {
-    for ( int i = 0; i < this->NSegments(); ++i )
-      seed = seed * KMER_PATH_HASH_CONST + this->Segment(i).GetHash();
-    return seed;
-  }
+#define KMER_PATH_HASH_CONST 123456789
+    ulonglong GetHash(ulonglong seed=0) const {
+        for ( int i = 0; i < this->NSegments(); ++i )
+            seed = seed * KMER_PATH_HASH_CONST + this->Segment(i).GetHash();
+        return seed;
+    }
 
-  friend Bool operator==( const KmerPath& p1, const KmerPath& p2 ) {
-    if( p1.NSegments( ) != p2.NSegments( ) ) return False;
-    for( int i=0; i<p1.NSegments( ); i++ )
-      if( ! (p1.Segment(i)==p2.Segment(i)) ) return False;
-    return True;
-  }
+    friend Bool operator==( const KmerPath& p1, const KmerPath& p2 ) {
+        if( p1.NSegments( ) != p2.NSegments( ) ) return False;
+        for( int i=0; i<p1.NSegments( ); i++ )
+            if( ! (p1.Segment(i)==p2.Segment(i)) ) return False;
+        return True;
+    }
 
-  friend Bool operator!=( const KmerPath& p1, const KmerPath& p2 ) {
-    return !(p1==p2);
-  }
+    friend Bool operator!=( const KmerPath& p1, const KmerPath& p2 ) {
+        return !(p1==p2);
+    }
 
-  // Sorting according to this will leave == KmerPaths adjacent:
-  friend Bool operator<( const KmerPath& p1, const KmerPath& p2 ) {
-    if( p1.NSegments( ) != p2.NSegments( ) )
-      return( p1.NSegments( ) < p2.NSegments( ) );
-    for( int i=0; i<p1.NSegments( ); i++ )
-      if( ! (p1.Segment(i)==p2.Segment(i)) )
-	return( p1.Segment(i)<p2.Segment(i) );
-    // If we get here, these are == (not <).
-    return False;
-  }
+    // Sorting according to this will leave == KmerPaths adjacent:
+    friend Bool operator<( const KmerPath& p1, const KmerPath& p2 ) {
+        if( p1.NSegments( ) != p2.NSegments( ) )
+            return( p1.NSegments( ) < p2.NSegments( ) );
+        for( int i=0; i<p1.NSegments( ); i++ )
+            if( ! (p1.Segment(i)==p2.Segment(i)) )
+                return( p1.Segment(i)<p2.Segment(i) );
+        // If we get here, these are == (not <).
+        return False;
+    }
 
-  friend Bool operator<=( const KmerPath& p1, const KmerPath& p2 ) {
-    if( p1.NSegments( ) != p2.NSegments( ) )
-      return( p1.NSegments( ) < p2.NSegments( ) );
-    for( int i=0; i<p1.NSegments( ); i++ )
-      if( ! (p1.Segment(i)==p2.Segment(i)) )
-	return( p1.Segment(i)<p2.Segment(i) );
-    // If we get here, these are == (not <).
-    return True;
-  }
+    friend Bool operator<=( const KmerPath& p1, const KmerPath& p2 ) {
+        if( p1.NSegments( ) != p2.NSegments( ) )
+            return( p1.NSegments( ) < p2.NSegments( ) );
+        for( int i=0; i<p1.NSegments( ); i++ )
+            if( ! (p1.Segment(i)==p2.Segment(i)) )
+                return( p1.Segment(i)<p2.Segment(i) );
+        // If we get here, these are == (not <).
+        return True;
+    }
 };
 
 SELF_SERIALIZABLE(KmerPath);
@@ -308,11 +371,11 @@ extern template class OuterVec<KmerPath>;
 extern template class digraphE<KmerPath>;
 
 inline nbases_t Kmers2Bases( nkmers_t nkmers, nbases_t K ) {
-  return nkmers + K - 1;
+    return nkmers + K - 1;
 }
 
 inline nkmers_t Bases2Kmers( nbases_t nbases, nbases_t K ) {
-  return nbases - K + 1;
+    return nbases - K + 1;
 }
 
 /*
@@ -327,38 +390,37 @@ typedef MasterVec<KmerPath> vecKmerPath;
 // Function: VecOfKmerPath
 // Convert a <vecKmerPath> to an ordinary vec<KmerPath>.
 inline
-vec<KmerPath> VecOfKmerPath( const vecKmerPath& v )
-{    vec<KmerPath> p;
-     p.resize( v.size( ) );
-     for ( size_t i = 0; i < v.size( ); i++ )
-       p[i] = v[i];
-     return p;    }
+vec<KmerPath> VecOfKmerPath( const vecKmerPath& v ) {
+    vec<KmerPath> p;
+    p.resize( v.size( ) );
+    for ( size_t i = 0; i < v.size( ); i++ )
+        p[i] = v[i];
+    return p;
+}
 
 // Function: FeudalOfKmerPath
 // Convert a vec<KmerPath> to a vecKmerPath.
 inline
-vecKmerPath FeudalOfKmerPath( const vec<KmerPath>& v )
-{
-  vecKmerPath paths;
-  size_t nseqs = v.size();
-  longlong rawsize = 0;
-  for (size_t ii=0; ii<nseqs; ii++)
-    rawsize += v[ii].NSegments( );
-  paths.Reserve( rawsize + nseqs, nseqs );
-  for (size_t ii=0; ii<v.size(); ii++)
-    paths.push_back( v[ii] );
-  return paths;
+vecKmerPath FeudalOfKmerPath( const vec<KmerPath>& v ) {
+    vecKmerPath paths;
+    size_t nseqs = v.size();
+    longlong rawsize = 0;
+    for (size_t ii=0; ii<nseqs; ii++)
+        rawsize += v[ii].NSegments( );
+    paths.Reserve( rawsize + nseqs, nseqs );
+    for (size_t ii=0; ii<v.size(); ii++)
+        paths.push_back( v[ii] );
+    return paths;
 }
 
 // Returns a vector contain lengths of the corresponding base sequences
 
 inline
-vec<int> KmerPathSeqLength( const vecKmerPath& v, const int K )
-{
-  vec<int> lengths(v.size());
-  for (size_t i = 0; i < v.size(); i++)
-    lengths[i] = v[i].TotalLength() + (K - 1);
-  return lengths;
+vec<int> KmerPathSeqLength( const vecKmerPath& v, const int K ) {
+    vec<int> lengths(v.size());
+    for (size_t i = 0; i < v.size(); i++)
+        lengths[i] = v[i].TotalLength() + (K - 1);
+    return lengths;
 }
 
 /**
@@ -395,177 +457,238 @@ vec<int> KmerPathSeqLength( const vecKmerPath& v, const int K )
     in a gap, it may silently give you garbage answers.
 */
 class KmerPathLoc {
- public:
+  public:
 
-  KmerPathLoc(const KmerPath& path, int index, int loc=0)
-    : mp_path(&path), m_index(index), m_loc(loc) { }
-  KmerPathLoc(const KmerPath* pathp, int index, int loc=0)
-    : mp_path(pathp), m_index(index), m_loc(loc) { }
-  KmerPathLoc(const KmerPathLoc& other)
-    : mp_path(other.mp_path), m_index(other.m_index), m_loc(other.m_loc) { }
-  KmerPathLoc( ) : mp_path(0), m_index(0), m_loc(0) { }
+    KmerPathLoc(const KmerPath& path, int index, int loc=0)
+        : mp_path(&path), m_index(index), m_loc(loc) { }
+    KmerPathLoc(const KmerPath* pathp, int index, int loc=0)
+        : mp_path(pathp), m_index(index), m_loc(loc) { }
+    KmerPathLoc(const KmerPathLoc& other)
+        : mp_path(other.mp_path), m_index(other.m_index), m_loc(other.m_loc) { }
+    KmerPathLoc( ) : mp_path(0), m_index(0), m_loc(0) { }
 
-  void Set(const KmerPath& path, int index, int loc)
-  {    mp_path = &path;
-       m_index = index;
-       m_loc = loc;    }
+    void Set(const KmerPath& path, int index, int loc) {
+        mp_path = &path;
+        m_index = index;
+        m_loc = loc;
+    }
 
-  const KmerPath& GetPath() const { return *mp_path; }
-  const KmerPath* GetPathPtr() const { return mp_path; }
-  int GetIndex() const { return m_index; }
-  int GetLoc() const { return m_loc; }
-  std::pair<int,int> Where() const { return std::make_pair(GetIndex(),GetLoc()); }
-  KmerPathInterval GetSegment(int off=0) const
-  { return mp_path->Segment(m_index+off); }
-  // Are you on the first/last segment in the KmerPath?
-  Bool atFirst() const { return (m_index == 0); }
-  Bool atLast() const { return (m_index == mp_path->NSegments() - 1); }
-  // Are you at the left/right edge of your interval?
-  Bool atIntervalLeft() const { return (m_loc==0); }
-  Bool atIntervalRight() const { return (m_loc==Length()-1); }
-  // Are you at the first/last base of the entire KmerPath?
-  Bool atBegin() const { return (atFirst() && atIntervalLeft()); }
-  Bool atEnd() const { return (atLast() && atIntervalRight()); }
-  // Is there a gap just before/after this kmer?
-  Bool GapToLeft() const { return (atIntervalLeft() && isGap(-1)); }
-  Bool GapToRight() const { return (atIntervalRight() && isGap(+1)); }
+    const KmerPath& GetPath() const {
+        return *mp_path;
+    }
+    const KmerPath* GetPathPtr() const {
+        return mp_path;
+    }
+    int GetIndex() const {
+        return m_index;
+    }
+    int GetLoc() const {
+        return m_loc;
+    }
+    std::pair<int,int> Where() const {
+        return std::make_pair(GetIndex(),GetLoc());
+    }
+    KmerPathInterval GetSegment(int off=0) const {
+        return mp_path->Segment(m_index+off);
+    }
+    // Are you on the first/last segment in the KmerPath?
+    Bool atFirst() const {
+        return (m_index == 0);
+    }
+    Bool atLast() const {
+        return (m_index == mp_path->NSegments() - 1);
+    }
+    // Are you at the left/right edge of your interval?
+    Bool atIntervalLeft() const {
+        return (m_loc==0);
+    }
+    Bool atIntervalRight() const {
+        return (m_loc==Length()-1);
+    }
+    // Are you at the first/last base of the entire KmerPath?
+    Bool atBegin() const {
+        return (atFirst() && atIntervalLeft());
+    }
+    Bool atEnd() const {
+        return (atLast() && atIntervalRight());
+    }
+    // Is there a gap just before/after this kmer?
+    Bool GapToLeft() const {
+        return (atIntervalLeft() && isGap(-1));
+    }
+    Bool GapToRight() const {
+        return (atIntervalRight() && isGap(+1));
+    }
 
-  Bool isSeq(int off=0) const { return mp_path->isSeq(m_index+off); }
-  Bool isGap(int off=0) const { return mp_path->isGap(m_index+off); }
-  // If you're in sequence, use these:
-  kmer_id_t Start(int off=0) const { return mp_path->Start(m_index+off); }
-  kmer_id_t Stop(int off=0) const { return mp_path->Stop(m_index+off); }
-  longlong Length(int off=0) const { return mp_path->Length(m_index+off); }
-  kmer_id_t GetKmer() const { return(mp_path->Start(m_index)+m_loc); }
-  // If you're in a gap, use these:
-  kmer_id_t Minimum(int off=0) const { return mp_path->Minimum(m_index+off); }
-  kmer_id_t Maximum(int off=0) const { return mp_path->Maximum(m_index+off); }
-  // Use these in either situation:
-  longlong MinLength(int off=0) const { return mp_path->MinLength(m_index+off); }
-  longlong MaxLength(int off=0) const { return mp_path->MaxLength(m_index+off); }
+    Bool isSeq(int off=0) const {
+        return mp_path->isSeq(m_index+off);
+    }
+    Bool isGap(int off=0) const {
+        return mp_path->isGap(m_index+off);
+    }
+    // If you're in sequence, use these:
+    kmer_id_t Start(int off=0) const {
+        return mp_path->Start(m_index+off);
+    }
+    kmer_id_t Stop(int off=0) const {
+        return mp_path->Stop(m_index+off);
+    }
+    longlong Length(int off=0) const {
+        return mp_path->Length(m_index+off);
+    }
+    kmer_id_t GetKmer() const {
+        return(mp_path->Start(m_index)+m_loc);
+    }
+    // If you're in a gap, use these:
+    kmer_id_t Minimum(int off=0) const {
+        return mp_path->Minimum(m_index+off);
+    }
+    kmer_id_t Maximum(int off=0) const {
+        return mp_path->Maximum(m_index+off);
+    }
+    // Use these in either situation:
+    longlong MinLength(int off=0) const {
+        return mp_path->MinLength(m_index+off);
+    }
+    longlong MaxLength(int off=0) const {
+        return mp_path->MaxLength(m_index+off);
+    }
 
-  // NOTE: GetMinLoc() could return -1 if you're at m_loc=-4 of a gap(3,5), eg.
-  int GetMinLoc() const
-    { return ((m_loc >= 0) ? m_loc : Minimum() + m_loc); }
-  int GetMaxLoc() const
-    { return ((m_loc >= 0) ? m_loc : Maximum() + m_loc); }
+    // NOTE: GetMinLoc() could return -1 if you're at m_loc=-4 of a gap(3,5), eg.
+    int GetMinLoc() const {
+        return ((m_loc >= 0) ? m_loc : Minimum() + m_loc);
+    }
+    int GetMaxLoc() const {
+        return ((m_loc >= 0) ? m_loc : Maximum() + m_loc);
+    }
 
-  // No error checking done on these values.  For example, SetKmer
-  // will happily set m_loc to a range outside what m_index allows.
-  void SetPath(const KmerPath& path) { mp_path = &path; }
-  void SetIndex(int index) { m_index=index; }
-  void SetLoc(int loc) {m_loc = loc; }
-  void SetKmer(kmer_id_t k) { m_loc = k-Start(); }
-
-
-  // These return the # of kmers skipped, or garbage for a gap.
-  // (There could be Min and Max versions of them; implement if needed.)
-  int IncrementInterval( ) {
-    if( atLast() ) return 0;
-    int d = mp_path->Length(m_index) - m_loc + 1;
-    m_index++;
-    m_loc=0;
-    return d;
-  }
-  int DecrementInterval( ) {
-    if( atFirst() ) return 0;
-    int d = m_loc + 1;
-    m_index--;
-    if( isSeq() )
-      m_loc = mp_path->Length(m_index)-1;
-    else
-      m_loc = -1; // the right end of a gap
-    return d;
-  }
-
-  Bool IncrementHaltAtGap( int i );  // returns False if it hits a gap or end
-  Bool IncrementMinGap( int i );     // returns False if it falls off the end
-  Bool IncrementMaxGap( int i );     // returns False if it falls off the end
-
-  friend inline KmerPathLoc operator+( const KmerPathLoc& loc, int i )
-  {    KmerPathLoc answer = loc;
-       ForceAssert( answer.IncrementHaltAtGap(i) );
-       return answer;    }
-
-  KmerPathLoc& operator+=( nkmers_t i )
-  {
-    IncrementHaltAtGap( i );
-    return *this;
-  }
-
-  KmerPathLoc& operator-=( nkmers_t i )
-  {
-    IncrementHaltAtGap( -i );
-    return *this;
-  }
-
-  friend inline KmerPathLoc operator-( const KmerPathLoc& loc, int i )
-  {    KmerPathLoc answer = loc;
-       ForceAssert( answer.IncrementHaltAtGap(-i) );
-       return answer;    }
-
-  // Step one to the left/right.
-  // Unlike the above, these will step into a gap(0,0), not over it
-  bool Decrement()
-  { return ((isGap() || atIntervalLeft())
-	    ? DecrementInterval()
-	    : IncrementHaltAtGap(-1)); }
-  bool Increment()
-  { return ((isGap() || atIntervalRight())
-	    ? IncrementInterval()
-	    : IncrementHaltAtGap(+1)); }
-
-
-
-  Bool FindKmerBeforeGap( kmer_id_t gapmin, kmer_id_t gapmax,
-			  kmer_id_t kmer, vec<KmerPathLoc>& ans );
-  Bool FindKmerAfterGap( kmer_id_t gapmin, kmer_id_t gapmax,
-			 kmer_id_t kmer, vec<KmerPathLoc>& ans );
-
-  friend std::ostream& operator<<(std::ostream& out, KmerPathLoc loc) {
-    if( loc.isSeq() )
-      out << "kmer " << loc.GetKmer();
-    else
-      out << "m_loc " << loc.GetLoc();
-    out << " in seg " << loc.GetIndex()	<< " of " << loc.GetPath();
-    return out;
-  }
+    // No error checking done on these values.  For example, SetKmer
+    // will happily set m_loc to a range outside what m_index allows.
+    void SetPath(const KmerPath& path) {
+        mp_path = &path;
+    }
+    void SetIndex(int index) {
+        m_index=index;
+    }
+    void SetLoc(int loc) {
+        m_loc = loc;
+    }
+    void SetKmer(kmer_id_t k) {
+        m_loc = k-Start();
+    }
 
 
-  friend bool operator== ( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
-    return( loc1.mp_path == loc2.mp_path
-	    && loc1.m_index == loc2.m_index
-	    && loc1.m_loc == loc2.m_loc );
-  }
+    // These return the # of kmers skipped, or garbage for a gap.
+    // (There could be Min and Max versions of them; implement if needed.)
+    int IncrementInterval( ) {
+        if( atLast() ) return 0;
+        int d = mp_path->Length(m_index) - m_loc + 1;
+        m_index++;
+        m_loc=0;
+        return d;
+    }
+    int DecrementInterval( ) {
+        if( atFirst() ) return 0;
+        int d = m_loc + 1;
+        m_index--;
+        if( isSeq() )
+            m_loc = mp_path->Length(m_index)-1;
+        else
+            m_loc = -1; // the right end of a gap
+        return d;
+    }
 
-  friend bool operator!= ( const KmerPathLoc& loc1, const KmerPathLoc& loc2 )
-  { return( !(loc1 == loc2) ); }
+    Bool IncrementHaltAtGap( int i );  // returns False if it hits a gap or end
+    Bool IncrementMinGap( int i );     // returns False if it falls off the end
+    Bool IncrementMaxGap( int i );     // returns False if it falls off the end
 
-  friend bool operator<( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
-    return( loc1.mp_path < loc2.mp_path ||
-	    ( loc1.mp_path == loc2.mp_path &&
-	      ( loc1.m_index < loc2.m_index ||
-		( loc1.m_index == loc2.m_index &&
-		  ( loc1.m_loc < loc2.m_loc ) ) ) ) );
-  }
+    friend inline KmerPathLoc operator+( const KmerPathLoc& loc, int i ) {
+        KmerPathLoc answer = loc;
+        ForceAssert( answer.IncrementHaltAtGap(i) );
+        return answer;
+    }
 
-  friend bool operator<=( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
-    return loc1 < loc2  ||  loc1 == loc2;
-  }
+    KmerPathLoc& operator+=( nkmers_t i ) {
+        IncrementHaltAtGap( i );
+        return *this;
+    }
 
-  friend bool operator>( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
-    return ! ( loc1 <= loc2 );
-  }
+    KmerPathLoc& operator-=( nkmers_t i ) {
+        IncrementHaltAtGap( -i );
+        return *this;
+    }
 
-  friend bool operator>=( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
-    return ! ( loc1 < loc2 );
-  }
+    friend inline KmerPathLoc operator-( const KmerPathLoc& loc, int i ) {
+        KmerPathLoc answer = loc;
+        ForceAssert( answer.IncrementHaltAtGap(-i) );
+        return answer;
+    }
 
- private:
-  // points at RPI mp_path[m_index], k-mer number m_loc
-  const KmerPath* mp_path;
-  int m_index;
-  int m_loc;
+    // Step one to the left/right.
+    // Unlike the above, these will step into a gap(0,0), not over it
+    bool Decrement() {
+        return ((isGap() || atIntervalLeft())
+                ? DecrementInterval()
+                : IncrementHaltAtGap(-1));
+    }
+    bool Increment() {
+        return ((isGap() || atIntervalRight())
+                ? IncrementInterval()
+                : IncrementHaltAtGap(+1));
+    }
+
+
+
+    Bool FindKmerBeforeGap( kmer_id_t gapmin, kmer_id_t gapmax,
+                            kmer_id_t kmer, vec<KmerPathLoc>& ans );
+    Bool FindKmerAfterGap( kmer_id_t gapmin, kmer_id_t gapmax,
+                           kmer_id_t kmer, vec<KmerPathLoc>& ans );
+
+    friend std::ostream& operator<<(std::ostream& out, KmerPathLoc loc) {
+        if( loc.isSeq() )
+            out << "kmer " << loc.GetKmer();
+        else
+            out << "m_loc " << loc.GetLoc();
+        out << " in seg " << loc.GetIndex()	<< " of " << loc.GetPath();
+        return out;
+    }
+
+
+    friend bool operator== ( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
+        return( loc1.mp_path == loc2.mp_path
+                && loc1.m_index == loc2.m_index
+                && loc1.m_loc == loc2.m_loc );
+    }
+
+    friend bool operator!= ( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
+        return( !(loc1 == loc2) );
+    }
+
+    friend bool operator<( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
+        return( loc1.mp_path < loc2.mp_path ||
+                ( loc1.mp_path == loc2.mp_path &&
+                  ( loc1.m_index < loc2.m_index ||
+                    ( loc1.m_index == loc2.m_index &&
+                      ( loc1.m_loc < loc2.m_loc ) ) ) ) );
+    }
+
+    friend bool operator<=( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
+        return loc1 < loc2  ||  loc1 == loc2;
+    }
+
+    friend bool operator>( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
+        return ! ( loc1 <= loc2 );
+    }
+
+    friend bool operator>=( const KmerPathLoc& loc1, const KmerPathLoc& loc2 ) {
+        return ! ( loc1 < loc2 );
+    }
+
+  private:
+    // points at RPI mp_path[m_index], k-mer number m_loc
+    const KmerPath* mp_path;
+    int m_index;
+    int m_loc;
 
 };  // class KmerPathLoc
 
@@ -574,7 +697,7 @@ class KmerPathLoc {
 // Global functions relating to KmerPathLoc:
 std::pair<KmerPathLoc,KmerPathLoc>
 CreateAlignedLocs( const KmerPath& p1, const KmerPath& p2,
-		   int ind1, int ind2 );
+                   int ind1, int ind2 );
 // Number of kmers apart; returns 0 if loc1/2 not in the same gap-free path seg
 int operator-(KmerPathLoc loc1, KmerPathLoc loc2);
 // Distance, crossing gaps using min or max length.
@@ -622,20 +745,26 @@ bool HavePerfectMatch( const KmerPath& path1, const KmerPath& path2 );
 
 // These methods of KmerPath can't appear until after the full
 // definition of KmerPathLoc, so here they are:
-inline KmerPathLoc KmerPath::Begin() const
-  { return KmerPathLoc(*this,0,0); }
-inline KmerPathLoc KmerPath::End() const
-  { return KmerPathLoc(*this, size()-1, back().Length()-1 ); }
-inline void KmerPath::CopyHead( const KmerPathLoc& loc, KmerPath& ans ) const
-  { CopySubpath( Begin(), loc, ans ); }
-inline void KmerPath::CopyTail( const KmerPathLoc& loc, KmerPath& ans ) const
-  { CopySubpath( loc, End(), ans ); }
+inline KmerPathLoc KmerPath::Begin() const {
+    return KmerPathLoc(*this,0,0);
+}
+inline KmerPathLoc KmerPath::End() const {
+    return KmerPathLoc(*this, size()-1, back().Length()-1 );
+}
+inline void KmerPath::CopyHead( const KmerPathLoc& loc, KmerPath& ans ) const {
+    CopySubpath( Begin(), loc, ans );
+}
+inline void KmerPath::CopyTail( const KmerPathLoc& loc, KmerPath& ans ) const {
+    CopySubpath( loc, End(), ans );
+}
 inline void KmerPath::CopyHeadNoLastKmer(
-     const KmerPathLoc& loc, KmerPath& ans ) const
-  { CopySubpathNoLastKmer( Begin(), loc, ans ); }
+    const KmerPathLoc& loc, KmerPath& ans ) const {
+    CopySubpathNoLastKmer( Begin(), loc, ans );
+}
 inline void KmerPath::CopyTailNoFirstKmer(
-     const KmerPathLoc& loc, KmerPath& ans ) const
-  { CopySubpathNoFirstKmer( loc, End(), ans ); }
+    const KmerPathLoc& loc, KmerPath& ans ) const {
+    CopySubpathNoFirstKmer( loc, End(), ans );
+}
 
 
 // FuncDecl: ProperOverlapExt
@@ -654,9 +783,9 @@ Bool ProperOverlapExt( const KmerPath& p1, const KmerPath& p2, int ind1, int ind
 // tagged with the interval's original location in the paths.  This pathsdb can
 // then be used for quick lookups of a kmer_id via Contains(...).
 template<class TAG> void CreateDatabase(
-     const vecKmerPath& paths, vec<TAG>& pathsdb );
+    const vecKmerPath& paths, vec<TAG>& pathsdb );
 template<class TAG> void CreateDatabase(
-     const vecKmerPath& paths, const vecKmerPath& paths_rc, vec<TAG>& pathsdb );
+    const vecKmerPath& paths, const vecKmerPath& paths_rc, vec<TAG>& pathsdb );
 
 // Find which reads contain kmers NOT in the reference read path database.
 // WARNING: Make surethe reads and the reference database use the same kmer
@@ -665,13 +794,13 @@ template<class TAG> void CreateDatabase(
 template <class TAG>
 void
 MarkReadsWithNovelKmers( const vecKmerPath & reads, const vec<TAG>& reference,
-			 vec<Bool>& answer );
+                         vec<Bool>& answer );
 
 // As above, but uses adjacency graph for more stringent testing
 template <class TAG>
 void
 MarkReadsWithNovelKmers2( const vecKmerPath & reads, const vec<TAG>& reference,
-			  const digraph& adj_graph, vec<Bool>& answer );
+                          const digraph& adj_graph, vec<Bool>& answer );
 
 
 // FuncDecl: SubContig
@@ -695,26 +824,26 @@ Bool SubContig( const KmerPath& p, const vecKmerPath& paths,
    go from genome part id and position within that part to the kmer.
 */
 class vecKmerPathIndex {
- public:
+  public:
 
-  vecKmerPathIndex( const vecKmerPath& _gpaths, const vecKmerPath& _gpaths_rc );
+    vecKmerPathIndex( const vecKmerPath& _gpaths, const vecKmerPath& _gpaths_rc );
 
 
-  // Method: FindLoc
-  //
-  // Given a position in the path, find the segment and the location within the segment
-  // for the kmer starting at that position.
-  KmerPathLoc FindLoc( longlong pathId, int posInPath, Bool orient ) const;
+    // Method: FindLoc
+    //
+    // Given a position in the path, find the segment and the location within the segment
+    // for the kmer starting at that position.
+    KmerPathLoc FindLoc( longlong pathId, int posInPath, Bool orient ) const;
 
- private:
-  const vecKmerPath& gpaths, gpaths_rc;
+  private:
+    const vecKmerPath& gpaths, gpaths_rc;
 
-  // Field: segmentStarts
-  // For each path, for each segment, the position (base number in the path) at which
-  // that segment's first kmer starts.
-  // For genome path of id i, segmentStarts[i] is an array whose j'th element gives the
-  // starting position (in bases) of the j'th segment of the path.
-  vec< vec< genome_part_pos_t > > segmentStarts, segmentStarts_rc;
+    // Field: segmentStarts
+    // For each path, for each segment, the position (base number in the path) at which
+    // that segment's first kmer starts.
+    // For genome path of id i, segmentStarts[i] is an array whose j'th element gives the
+    // starting position (in bases) of the j'th segment of the path.
+    vec< vec< genome_part_pos_t > > segmentStarts, segmentStarts_rc;
 
 };  // class KmerPathIndex
 

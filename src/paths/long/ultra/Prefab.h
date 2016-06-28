@@ -17,16 +17,16 @@
 // Select a set of reads for initial processing.  Currently this returns all
 // reads.
 
-// SelectInitialReads.  Select a set of reads that should provide 'adequate' 
+// SelectInitialReads.  Select a set of reads that should provide 'adequate'
 // coverage of the genome, for initial processing.
-// 
+//
 // input:  rid = totality of reads to be processed
 // output: rid1 = subset of rid1, to be processed initially
 //
 // Initial implementation: returns a random 20% subset of the reads.
 
 void SelectInitialReads( const vec<int>& rid, const IAndOsVec& F, vec<int>& rid1,
-     const long_heuristics& heur, const long_logging_control& log_control );
+                         const long_heuristics& heur, const long_logging_control& log_control );
 
 // CorrectSomeMoreReads.  After initial reads have been processed, correct some
 // more of them by somehow using the results of the initial processing.
@@ -38,12 +38,12 @@ void SelectInitialReads( const vec<int>& rid, const IAndOsVec& F, vec<int>& rid1
 //
 // Initial implementation: does nothing!!
 
-void CorrectSomeMoreReads( 
-     const vecbasevector& reads,            // reads
-     const vec<int>& rid, const vec<int>& rid1, const vec< vec<int> >& friend_ids1,
-     const IAndOsVec& F, const VecEFasta& corrected, const vec<int>& cid,
-     VecEFasta& corrected2, vec<int>& cid2, const long_heuristics& heur,
-     const long_logging_control& log_control, const long_logging& logc,
-     const ref_data& ref );
+void CorrectSomeMoreReads(
+    const vecbasevector& reads,            // reads
+    const vec<int>& rid, const vec<int>& rid1, const vec< vec<int> >& friend_ids1,
+    const IAndOsVec& F, const VecEFasta& corrected, const vec<int>& cid,
+    VecEFasta& corrected2, vec<int>& cid2, const long_heuristics& heur,
+    const long_logging_control& log_control, const long_logging& logc,
+    const ref_data& ref );
 
 #endif

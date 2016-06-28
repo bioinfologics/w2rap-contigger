@@ -19,10 +19,9 @@
 #include <ostream>
 #include <vector>
 
-struct RefLocus
-{
+struct RefLocus {
     RefLocus( size_t refID, unsigned offset, unsigned length, bool rc = false)
-    : mRefID(refID), mOffset(offset), mLength(length), mRC(rc) {}
+        : mRefID(refID), mOffset(offset), mLength(length), mRC(rc) {}
     RefLocus() : mRefID(0), mOffset(0U), mLength(0U) {};
 
     size_t mRefID;
@@ -30,16 +29,18 @@ struct RefLocus
     unsigned mLength;
     bool mRC;
 
-    friend bool operator< ( const RefLocus& l, const RefLocus& r )
-    { if ( l.mRefID != r.mRefID ) return l.mRefID < r.mRefID;
-      if ( l.mOffset != r.mOffset ) return l.mOffset < r.mOffset;
-      return false; }
+    friend bool operator< ( const RefLocus& l, const RefLocus& r ) {
+        if ( l.mRefID != r.mRefID ) return l.mRefID < r.mRefID;
+        if ( l.mOffset != r.mOffset ) return l.mOffset < r.mOffset;
+        return false;
+    }
 
-    friend std::ostream& operator<<( std::ostream& os, RefLocus const& loc )
-    { os << "RefLocus( mRefID=" << loc.mRefID << ", mOffset=" << loc.mOffset
-         << ", mLength=" << loc.mLength << ", mRC=" << ( loc.mRC?"rc":"fw" )
-         << " )";
-      return os; }
+    friend std::ostream& operator<<( std::ostream& os, RefLocus const& loc ) {
+        os << "RefLocus( mRefID=" << loc.mRefID << ", mOffset=" << loc.mOffset
+           << ", mLength=" << loc.mLength << ", mRC=" << ( loc.mRC?"rc":"fw" )
+           << " )";
+        return os;
+    }
 };
 TRIVIALLY_SERIALIZABLE(RefLocus);
 typedef std::vector<RefLocus> RefLocusVec;

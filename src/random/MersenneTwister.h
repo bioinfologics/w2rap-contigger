@@ -1,10 +1,10 @@
-/* Below is a slightly modified version of the code by 
-   Nishimura and Mastumoto that now compiles cleanly under g++ and 
-   also works as a library [main commented out]. 
-   
+/* Below is a slightly modified version of the code by
+   Nishimura and Mastumoto that now compiles cleanly under g++ and
+   also works as a library [main commented out].
+
    The body is in MersenneTwister.cc.  This just contains the headers.
    Please see the *.cc file for all the comments.
-   
+
    */
 
 // Import longlong typedef.

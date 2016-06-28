@@ -13,9 +13,8 @@
 #include "Qualvector.h"
 #include "PairsManager.h"
 
-ReadOriginTracker::ReadOriginTracker(const RefTraceControl& refc) 
-    : ref_control_(refc) 
-{
+ReadOriginTracker::ReadOriginTracker(const RefTraceControl& refc)
+    : ref_control_(refc) {
     const PairsManager& pm = refc.GetPM();
     ForceAssertEq((size_t)pm.nReads(), refc.Reads().size());
     read_dirs_.assign(pm.nReads(), UNKNOWN);
@@ -25,27 +24,22 @@ ReadOriginTracker::ReadOriginTracker(const RefTraceControl& refc)
     }
 }
 
-vec<String> ReadOriginTracker::getSampleList() const 
-{
+vec<String> ReadOriginTracker::getSampleList() const {
     return ref_control_.getSampleList();
 }
 
-int ReadOriginTracker::getSampleID(size_t read_ID) const
-{
+int ReadOriginTracker::getSampleID(size_t read_ID) const {
     return ref_control_.getSampleID(read_ID);
 }
 
-String ReadOriginTracker::getSampleName(size_t read_ID) const
-{
+String ReadOriginTracker::getSampleName(size_t read_ID) const {
     return ref_control_.getSampleName(read_ID);
 }
-       
-const vecbasevector& ReadOriginTracker::Reads() const
-{
+
+const vecbasevector& ReadOriginTracker::Reads() const {
     return ref_control_.Reads();
 }
 
-const vecqualvector& ReadOriginTracker::Quals() const
-{
+const vecqualvector& ReadOriginTracker::Quals() const {
     return ref_control_.Quals();
 }

@@ -20,8 +20,7 @@
 #ifndef SYSTEM_EXIT_H_
 #define SYSTEM_EXIT_H_
 
-namespace CRD
-{
+namespace CRD {
 
 void exit( int ) __attribute__((__noreturn__));
 
@@ -30,6 +29,8 @@ HOOKFUNC installExitHook( HOOKFUNC fHook );
 
 } // end namespace CRD
 
-inline void TracebackThisProcess() { CRD::exit(1); }
+inline void TracebackThisProcess() {
+    CRD::exit(1);
+}
 
 #endif /* SYSTEM_EXIT_H_ */

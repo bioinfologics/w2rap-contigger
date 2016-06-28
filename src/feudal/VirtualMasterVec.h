@@ -33,41 +33,66 @@
 #include <cstddef>
 
 template<class T>
-class VirtualMasterVec
-{
-public:
+class VirtualMasterVec {
+  public:
     typedef T const value_type;
     typedef unsigned long size_type;
 
     class Itr
-    : public std::iterator<std::input_iterator_tag,T,std::ptrdiff_t>
-    {
-    public:
+        : public std::iterator<std::input_iterator_tag,T,std::ptrdiff_t> {
+      public:
         Itr( VirtualMasterVec<T>& vec, size_type idx )
-        : mVec(vec), mIdx(idx), mLoadedIdx(~0ul) {}
+            : mVec(vec), mIdx(idx), mLoadedIdx(~0ul) {}
 
         Itr( Itr const& that )
-        : mVec(that.mVec), mIdx(that.mIdx), mLoadedIdx(~0UL) {}
+            : mVec(that.mVec), mIdx(that.mIdx), mLoadedIdx(~0UL) {}
 
-        Itr& operator=( Itr const& that ) { mIdx = that.mIdx; return *this; }
+        Itr& operator=( Itr const& that ) {
+            mIdx = that.mIdx;
+            return *this;
+        }
 
         // compiler-supplied destructor is OK
 
-        T const& operator*()
-        { if ( mLoadedIdx != mIdx ) { mVec.load(mIdx,&mRef); mLoadedIdx = mIdx; }
-          return mRef; }
-        T const* operator->() { return &operator*(); }
-        bool operator==( Itr const& that ) const { return mIdx == that.mIdx; }
-        bool operator!=( Itr const& that ) const { return mIdx != that.mIdx; }
-        Itr& operator++() { mIdx += 1; return *this; }
-        Itr operator++(int) { Itr tmp(*this); mIdx += 1; return tmp; }
+        T const& operator*() {
+            if ( mLoadedIdx != mIdx ) {
+                mVec.load(mIdx,&mRef);
+                mLoadedIdx = mIdx;
+            }
+            return mRef;
+        }
+        T const* operator->() {
+            return &operator*();
+        }
+        bool operator==( Itr const& that ) const {
+            return mIdx == that.mIdx;
+        }
+        bool operator!=( Itr const& that ) const {
+            return mIdx != that.mIdx;
+        }
+        Itr& operator++() {
+            mIdx += 1;
+            return *this;
+        }
+        Itr operator++(int) {
+            Itr tmp(*this);
+            mIdx += 1;
+            return tmp;
+        }
 
-        bool operator<( Itr const& itr ) { return mIdx < itr.mIdx; }
-        std::ptrdiff_t operator-( Itr const& itr ) { return mIdx - itr.mIdx; }
-        Itr operator+( std::ptrdiff_t inc )
-        { Itr tmp(*this); tmp.mIdx += inc; return tmp; }
+        bool operator<( Itr const& itr ) {
+            return mIdx < itr.mIdx;
+        }
+        std::ptrdiff_t operator-( Itr const& itr ) {
+            return mIdx - itr.mIdx;
+        }
+        Itr operator+( std::ptrdiff_t inc ) {
+            Itr tmp(*this);
+            tmp.mIdx += inc;
+            return tmp;
+        }
 
-    private:
+      private:
         VirtualMasterVec& mVec;
         size_type mIdx;
         T mRef;
@@ -81,62 +106,96 @@ public:
     /// Construct from something with a c_str() member (like string or String)
     template <class C>
     explicit VirtualMasterVec( C const& path,
-                                    char const*(C::*)() const=&C::c_str )
-    : mFFR(path.c_str()) {}
+                               char const*(C::*)() const=&C::c_str )
+        : mFFR(path.c_str()) {}
 
     VirtualMasterVec( VirtualMasterVec<T> const& that ) : mFFR(that.mFFR) {}
     // compiler-supplied destructor is OK
-    VirtualMasterVec& operator=( VirtualMasterVec<T> const& that )
-    { if ( this != &that ) { mFFR = that.mFFR; } return *this; }
+    VirtualMasterVec& operator=( VirtualMasterVec<T> const& that ) {
+        if ( this != &that ) {
+            mFFR = that.mFFR;
+        }
+        return *this;
+    }
 
-    Itr begin() { return Itr(*this,0); }
-    Itr begin( size_type idx ) { return Itr(*this,idx); }
-    Itr end() { return Itr(*this,mFFR.getNElements()); }
+    Itr begin() {
+        return Itr(*this,0);
+    }
+    Itr begin( size_type idx ) {
+        return Itr(*this,idx);
+    }
+    Itr end() {
+        return Itr(*this,mFFR.getNElements());
+    }
 
-    T const front() { return obj(0); }
-    T const back() { return obj(size()-1); }
-    T const operator[]( size_type idx ) { return obj(idx); }
-    T const at( size_type idx )
-    { if ( idx >= size() )
-      { OutOfBoundsReporter::oob("VirtualMasterVec",idx,size()); }
-      return obj(idx); }
+    T const front() {
+        return obj(0);
+    }
+    T const back() {
+        return obj(size()-1);
+    }
+    T const operator[]( size_type idx ) {
+        return obj(idx);
+    }
+    T const at( size_type idx ) {
+        if ( idx >= size() ) {
+            OutOfBoundsReporter::oob("VirtualMasterVec",idx,size());
+        }
+        return obj(idx);
+    }
 
-    void load( size_type idx, T* pT )
-    { AssertLt(idx,size());
-      pT->readFeudal(mFFR.getData(idx),mFFR.getDataLen(idx),
-                      mFFR.getFixedData(idx,T::fixedDataLen())); }
+    void load( size_type idx, T* pT ) {
+        AssertLt(idx,size());
+        pT->readFeudal(mFFR.getData(idx),mFFR.getDataLen(idx),
+                       mFFR.getFixedData(idx,T::fixedDataLen()));
+    }
 
-    size_type size() const { return mFFR.getNElements(); }
-    typename T::size_type eleSize( size_type idx ) const
-    { return T::interpretSize(mFFR.getFixedData(idx,T::fixedDataLen()),
-                                mFFR.getDataLen(idx)); }
+    size_type size() const {
+        return mFFR.getNElements();
+    }
+    typename T::size_type eleSize( size_type idx ) const {
+        return T::interpretSize(mFFR.getFixedData(idx,T::fixedDataLen()),
+                                mFFR.getDataLen(idx));
+    }
 
     /// total number of T::value_type's across all elements.
     /// this will blow up if T::value_type doesn't have a fixed external size
-    size_t sizeSum() const
-    { size_t eleSiz = valSizeof();
-      AssertNe(eleSiz,0u); return mFFR.getDataLenTotal()/eleSiz; }
+    size_t sizeSum() const {
+        size_t eleSiz = valSizeof();
+        AssertNe(eleSiz,0u);
+        return mFFR.getDataLenTotal()/eleSiz;
+    }
 
     /// sums element.size()-K+1 for each element where element.size() >= K
-    size_t getKmerCount( unsigned K ) const
-    { size_t result = 0;
-      size_t idx = size();
-      while ( idx-- )
-      { size_t eleSz = eleSize(idx);
-        if ( eleSz >= K ) result += eleSz-K+1; }
-      return result; }
+    size_t getKmerCount( unsigned K ) const {
+        size_t result = 0;
+        size_t idx = size();
+        while ( idx-- ) {
+            size_t eleSz = eleSize(idx);
+            if ( eleSz >= K ) result += eleSz-K+1;
+        }
+        return result;
+    }
 
-    bool empty() const { return size() == 0; }
+    bool empty() const {
+        return size() == 0;
+    }
 
-    size_t getMappedLen() const { return mFFR.getMappedLen(); }
+    size_t getMappedLen() const {
+        return mFFR.getMappedLen();
+    }
 
-private:
-    static size_t valSizeof()
-    { return BinaryReader::externalSizeof(
-                              static_cast<typename T::value_type*>(nullptr)); }
+  private:
+    static size_t valSizeof() {
+        return BinaryReader::externalSizeof(
+                   static_cast<typename T::value_type*>(nullptr));
+    }
 
-    T const obj( size_type idx )
-    { T result; load(idx,&result); return result; }
+    T const obj( size_type idx ) {
+        T result;
+        load(idx,&result);
+        return result;
+    }
 
     FeudalFileReader mFFR;
 };

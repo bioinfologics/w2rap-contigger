@@ -21,12 +21,12 @@ typedef BaseVecVec vecbasevector;
 typedef BaseVecVec vecbvec;
 
 typedef OuterVec< OuterVec<bvec,MempoolAllocator<unsigned char> >,
-                  MempoolOwner<unsigned char> > bvec3;
+        MempoolOwner<unsigned char> > bvec3;
 #include "feudal/OuterVecDefs.h"
 extern template class OuterVec<BaseVec>;
 extern template class OuterVec<BaseVec,BaseVec::allocator_type>;
 extern template class OuterVec< OuterVec<BaseVec,BaseVec::allocator_type>,
-                                                MempoolOwner<unsigned char> >;
+                                MempoolOwner<unsigned char> >;
 
 
 typedef bvec kmer_t;
@@ -40,36 +40,49 @@ void ReverseComplement( vecbvec& s );
 /// A class that iterates through a vecbvec as if it were concatenated into
 /// a single bvec.
 class FlatIterator
-: public std::iterator<std::input_iterator_tag,unsigned char,
-                       std::ptrdiff_t, void, unsigned char>
-{
-public:
+    : public std::iterator<std::input_iterator_tag,unsigned char,
+      std::ptrdiff_t, void, unsigned char> {
+  public:
     FlatIterator( vecbvec& vbv, unsigned long posn = 0 )
-    : mVBV(vbv), mOuterPosn(posn), mInnerPosn(INIT_IPOSN)
-    { advance(); }
+        : mVBV(vbv), mOuterPosn(posn), mInnerPosn(INIT_IPOSN) {
+        advance();
+    }
 
     // compiler-supplied copying and destructor are OK
 
-    FlatIterator& operator++() { advance(); return *this; }
+    FlatIterator& operator++() {
+        advance();
+        return *this;
+    }
 
-    FlatIterator operator++( int )
-    { FlatIterator tmp(*this); advance(); return tmp; }
+    FlatIterator operator++( int ) {
+        FlatIterator tmp(*this);
+        advance();
+        return tmp;
+    }
 
-    unsigned char operator*() const { return mVBV[mOuterPosn][mInnerPosn]; }
+    unsigned char operator*() const {
+        return mVBV[mOuterPosn][mInnerPosn];
+    }
 
-    friend bool operator==( FlatIterator const& fi1, FlatIterator const& fi2 )
-    { return &fi1.mVBV == &fi2.mVBV &&
-             fi1.mOuterPosn == fi2.mOuterPosn &&
-             fi1.mInnerPosn == fi2.mInnerPosn; }
+    friend bool operator==( FlatIterator const& fi1, FlatIterator const& fi2 ) {
+        return &fi1.mVBV == &fi2.mVBV &&
+               fi1.mOuterPosn == fi2.mOuterPosn &&
+               fi1.mInnerPosn == fi2.mInnerPosn;
+    }
 
-    friend bool operator!=( FlatIterator const& fi1, FlatIterator const& fi2 )
-    { return !(fi1==fi2); }
+    friend bool operator!=( FlatIterator const& fi1, FlatIterator const& fi2 ) {
+        return !(fi1==fi2);
+    }
 
-private:
-    void advance()
-    { while ( mOuterPosn < mVBV.size() &&
-              ++mInnerPosn >= mVBV[mOuterPosn].size() )
-      { ++mOuterPosn; mInnerPosn = INIT_IPOSN; } }
+  private:
+    void advance() {
+        while ( mOuterPosn < mVBV.size() &&
+                ++mInnerPosn >= mVBV[mOuterPosn].size() ) {
+            ++mOuterPosn;
+            mInnerPosn = INIT_IPOSN;
+        }
+    }
 
     vecbvec& mVBV;
     vecbvec::size_type mOuterPosn;

@@ -13,39 +13,39 @@
 #include "dvString.h"
 
 class FastaNameParser {
- public:
-  virtual ~FastaNameParser() {}
-  virtual void extractNameFromBuffer( char* buffer, String& name ) const = 0;
+  public:
+    virtual ~FastaNameParser() {}
+    virtual void extractNameFromBuffer( char* buffer, String& name ) const = 0;
 };
 
 class FullNameParser : public FastaNameParser {
- public:
-  virtual ~FullNameParser() {}
-  virtual void extractNameFromBuffer( char* buffer, String& name ) const;
+  public:
+    virtual ~FullNameParser() {}
+    virtual void extractNameFromBuffer( char* buffer, String& name ) const;
 };
 
 class FirstWordParser : public FastaNameParser {
- public:
-  virtual ~FirstWordParser() {}
-  virtual void extractNameFromBuffer( char* buffer, String& name ) const;
+  public:
+    virtual ~FirstWordParser() {}
+    virtual void extractNameFromBuffer( char* buffer, String& name ) const;
 };
 
 class LastWordParser : public FastaNameParser {
- public:
-  virtual ~LastWordParser() {}
-  virtual void extractNameFromBuffer( char* buffer, String& name ) const;
+  public:
+    virtual ~LastWordParser() {}
+    virtual void extractNameFromBuffer( char* buffer, String& name ) const;
 };
 
 class Riken_cDNA_Parser : public FastaNameParser {
- public:
-  virtual ~Riken_cDNA_Parser() {}
-  void extractNameFromBuffer( char* buffer, String& name ) const;
+  public:
+    virtual ~Riken_cDNA_Parser() {}
+    void extractNameFromBuffer( char* buffer, String& name ) const;
 };
 
 class TruncatedLastWordParser : public LastWordParser {
- public:
-  virtual ~TruncatedLastWordParser() {}
-  void extractNameFromBuffer( char* buffer, String& name ) const;
+  public:
+    virtual ~TruncatedLastWordParser() {}
+    void extractNameFromBuffer( char* buffer, String& name ) const;
 };
 
 

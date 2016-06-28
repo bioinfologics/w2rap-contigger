@@ -19,8 +19,8 @@
 // basic arithmetic type definitions (and a routine to check them)
 //
 // Presumably on most machines, a "char" is one byte, a "short" is two bytes, and
-// and "int" is four bytes.  However, the eight byte arithmetic type might 
-// conceivably be called "long" or "long long" or both or neither, depending on the 
+// and "int" is four bytes.  However, the eight byte arithmetic type might
+// conceivably be called "long" or "long long" or both or neither, depending on the
 // architecture.
 //
 // ==========================================================================
@@ -29,10 +29,10 @@
 
 #ifdef __solaris
 inline bool MIN(int x, int y) {
-  if (x < y)
-    return x;
-  else
-    return y;
+    if (x < y)
+        return x;
+    else
+        return y;
 }
 /*inline bool MIN(double x, double y) {
   if (x < y)
@@ -41,10 +41,10 @@ inline bool MIN(int x, int y) {
     return y;
     }*/
 inline bool MAX(int x, int y) {
-  if (x > y)
-    return x;
-  else
-    return y;
+    if (x > y)
+        return x;
+    else
+        return y;
 }
 /*
 inline bool MAX(double x, double y) {
@@ -56,9 +56,9 @@ inline bool MAX(double x, double y) {
 */
 
 
-#endif 
+#endif
 
-// Typedefs required for Mac OS X, and other systems that don't 
+// Typedefs required for Mac OS X, and other systems that don't
 // define a ulong
 #ifndef C_ULONG_DEFINED
 typedef unsigned long ulong;
@@ -99,18 +99,18 @@ typedef unsigned long ulonglong;
 
 // ===========================================================================
 //
-// The type "bool" is poorly implemented in g++.  Static initialization 
-// doesn't seem to work right.  Also I accidentally discovered that on an alpha 
-// 21264, sizeof(bool) = 8!  So perhaps it would be better to eliminate the use of 
+// The type "bool" is poorly implemented in g++.  Static initialization
+// doesn't seem to work right.  Also I accidentally discovered that on an alpha
+// 21264, sizeof(bool) = 8!  So perhaps it would be better to eliminate the use of
 // bools.
 //
 // ===========================================================================
 
 #ifndef MYBOOL
 #define MYBOOL
-     typedef unsigned char Bool;
-     const Bool True = 1;
-     const Bool False = 0;
+typedef unsigned char Bool;
+const Bool True = 1;
+const Bool False = 0;
 #endif
 
 typedef size_t size_type;
@@ -127,7 +127,7 @@ const unsigned int infinitely_many = 1000000000;
 
 // ============================================================================
 //
-// Define exactly one of {Little_Endian, Big_Endian}.  There seems to be a 
+// Define exactly one of {Little_Endian, Big_Endian}.  There seems to be a
 // different way to do this on each machine.
 //
 // ===========================================================================
@@ -135,38 +135,38 @@ const unsigned int infinitely_many = 1000000000;
 #include <sys/types.h>
 #include <sys/param.h>
 #ifdef _BIG_ENDIAN
-     #define Big_Endian
+#define Big_Endian
 #endif
 #ifdef _LITTLE_ENDIAN
-     #define Little_Endian
+#define Little_Endian
 #endif
 #ifdef __BYTE_ORDER
-     #if __BYTE_ORDER == __BIG_ENDIAN
-          #define Big_Endian
-     #endif
-     #if __BYTE_ORDER == __LITTLE_ENDIAN
-          #define Little_Endian
-     #endif
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define Big_Endian
+#endif
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define Little_Endian
+#endif
 #endif
 #ifdef BYTE_ORDER
-     #if BYTE_ORDER == BIG_ENDIAN
-          #define Big_Endian
-     #endif
-     #if BYTE_ORDER == LITTLE_ENDIAN
-          #define Little_Endian
-     #endif
+#if BYTE_ORDER == BIG_ENDIAN
+#define Big_Endian
+#endif
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define Little_Endian
+#endif
 #endif
 #ifndef NDEBUG
-     #ifndef Little_Endian
-          #ifndef Big_Endian
-               #error Endianness of architecture unknown.  See Types.h.
-          #endif
-     #endif
-     #ifdef Little_Endian
-          #ifdef Big_Endian
-               #error Endianness of architecture undetermined.  See Types.h.
-          #endif
-     #endif
+#ifndef Little_Endian
+#ifndef Big_Endian
+#error Endianness of architecture unknown.  See Types.h.
+#endif
+#endif
+#ifdef Little_Endian
+#ifdef Big_Endian
+#error Endianness of architecture undetermined.  See Types.h.
+#endif
+#endif
 #endif
 
 
@@ -174,14 +174,14 @@ const unsigned int infinitely_many = 1000000000;
 ///Transform from bigendian if needed, noop #ifdef Big_Endian
 inline short int FromBigEndian(short int s) {
 #ifdef Little_Endian
-  return ntohs(s);
+    return ntohs(s);
 #else
-  return s;
+    return s;
 #endif
 }
 
 inline unsigned short int FromBigEndian(unsigned short int s) {
-  return FromBigEndian(short(s));
+    return FromBigEndian(short(s));
 }
 
 
@@ -189,14 +189,14 @@ inline unsigned short int FromBigEndian(unsigned short int s) {
 ///Transform from bigendian if needed, noop #ifdef Big_Endian
 inline int FromBigEndian( int i) {
 #ifdef Little_Endian
-  return ntohl(i);
+    return ntohl(i);
 #else
-  return i;
+    return i;
 #endif
 }
 
 inline unsigned int FromBigEndian(unsigned int i) {
-  return FromBigEndian(int(i));
+    return FromBigEndian(int(i));
 }
 
 
@@ -205,20 +205,20 @@ inline unsigned int FromBigEndian(unsigned int i) {
 // This is because ntohs is a macro that has another macro in it, __bswap16.
 // bswap16 has a bitwise & operator whose result g++ casts as an int.  So,
 // there is an implicit type casting from int to unsigned short that occurs
-// therein.  
+// therein.
 ///Transform from bigendian if needed, noop #ifdef Big_Endian
 inline longlong FromBigEndian( longlong ll) {
 #ifdef Little_Endian
-  longlong ret = ntohl(ll & 0xFFFFFFFF);
-  ret |= ntohl(ll >> 32 & 0xFFFFFFFF);
-  return ret;
+    longlong ret = ntohl(ll & 0xFFFFFFFF);
+    ret |= ntohl(ll >> 32 & 0xFFFFFFFF);
+    return ret;
 #else
-  return ll;
+    return ll;
 #endif
 }
 
 inline uint64_t  FromBigEndian(uint64_t ll) {
-  return FromBigEndian(longlong(ll));
+    return FromBigEndian(longlong(ll));
 }
 
 typedef unsigned char unsigned_char_t;

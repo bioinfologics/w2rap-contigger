@@ -23,20 +23,17 @@
 template <class T, class A>
 void SmallVec<T,A>::readFeudal( BinaryReader& reader,
                                 unsigned long dataLen,
-                                void* fixed )
-{
+                                void* fixed ) {
     size_type size;
     // if the type T has a fixed external, binary-file size, then we can infer
     // our size from the dataLen arg.
     unsigned long elementSize = BinaryReader::externalSizeof(static_cast<T*>(0));
-    if ( elementSize )
-    {
+    if ( elementSize ) {
         AssertEq( dataLen % elementSize, 0u );
         size = dataLen / elementSize;
     }
     // otherwise we'll have written our size into the fixed-data side stream
-    else
-    {
+    else {
         Assert(fixed != 0);
         memcpy(&size,fixed,sizeof(size));
     }
@@ -45,8 +42,7 @@ void SmallVec<T,A>::readFeudal( BinaryReader& reader,
 }
 
 template <class T, class A>
-void SmallVec<T,A>::init( T* last )
-{
+void SmallVec<T,A>::init( T* last ) {
     T* first = dataEnd();
     mSize += last-first;
     while ( first != last )
@@ -54,8 +50,7 @@ void SmallVec<T,A>::init( T* last )
 }
 
 template <class T, class A>
-void SmallVec<T,A>::init( T* last, T const& exemplar )
-{
+void SmallVec<T,A>::init( T* last, T const& exemplar ) {
     T* first = dataEnd();
     mSize += last-first;
     A& alloc = allocator();
@@ -64,8 +59,7 @@ void SmallVec<T,A>::init( T* last, T const& exemplar )
 }
 
 template <class T, class A>
-void SmallVec<T,A>::destroy( T* first )
-{
+void SmallVec<T,A>::destroy( T* first ) {
     T* last = dataEnd();
     mSize -= last-first;
     A& alloc = allocator();
@@ -74,8 +68,7 @@ void SmallVec<T,A>::destroy( T* first )
 }
 
 template <class T, class A>
-T* SmallVec<T,A>::swap( T* first, T* dest )
-{
+T* SmallVec<T,A>::swap( T* first, T* dest ) {
     using std::swap;
     T* last = dataEnd();
     while ( first != last )
@@ -84,15 +77,13 @@ T* SmallVec<T,A>::swap( T* first, T* dest )
 }
 
 template <class T, class A>
-void SmallVec<T,A>::realloc( size_t nElements )
-{
+void SmallVec<T,A>::realloc( size_t nElements ) {
     ForceAssertLe(nElements,max_size());
     A& alloc = allocator();
     T* elements = nElements ? alloc.allocate(nElements,0) : 0;
     T* last = elements + size();
     T* src = dataEnd();
-    while ( last != elements )
-    {
+    while ( last != elements ) {
         alloc.construct(--last,*--src);
         alloc.destroy(src);
     }
@@ -103,8 +94,7 @@ void SmallVec<T,A>::realloc( size_t nElements )
 
 // called to accomplish a swap when allocators are unequal
 template <class T, class A>
-void SmallVec<T,A>::exchange( SmallVec& that )
-{
+void SmallVec<T,A>::exchange( SmallVec& that ) {
     using std::swap;
 
     // make sure there's adequate space in the shorter vector
@@ -122,16 +112,14 @@ void SmallVec<T,A>::exchange( SmallVec& that )
     A& alloc = allocator();
     // copy and destroy the elements in this not matched by an element in that
     end = dataEnd();
-    while ( src1 != end )
-    {
+    while ( src1 != end ) {
         alloc.construct(src2++,*src1);
         alloc.destroy(src1++);
     }
 
     // copy and destroy the elements in that not matched by an element in this
     end = that.dataEnd();
-    while ( src2 < end )
-    {
+    while ( src2 < end ) {
         alloc.construct(src1++,*src2);
         alloc.destroy(src2++);
     }

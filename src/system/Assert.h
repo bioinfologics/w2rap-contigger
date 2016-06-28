@@ -11,82 +11,101 @@
 
 #include <sstream>
 
-namespace Assert
-{
+namespace Assert {
 
 void reportVals( char const* loc, char const* func, char const* vals );
 void reportValsAndDie( char const* loc, char const* func, char const* vals )
-            __attribute__((__noreturn__));
+__attribute__((__noreturn__));
 
 template <class T, class U>
-void reportAndDie( T const& t, U const& u, char const* loc, char const* func )
-{ std::ostringstream oss; oss << "arg1 = " << t << " and arg2 = " << u;
-  reportValsAndDie(loc,func,oss.str().c_str()); }
+void reportAndDie( T const& t, U const& u, char const* loc, char const* func ) {
+    std::ostringstream oss;
+    oss << "arg1 = " << t << " and arg2 = " << u;
+    reportValsAndDie(loc,func,oss.str().c_str());
+}
 
 template <class T, class U>
-inline void eq( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t == u) ) reportAndDie(t,u,loc,func); }
+inline void eq( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t == u) ) reportAndDie(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void ne( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t != u) ) reportAndDie(t,u,loc,func); }
+inline void ne( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t != u) ) reportAndDie(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void gt( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t > u) ) reportAndDie(t,u,loc,func); }
+inline void gt( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t > u) ) reportAndDie(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void ge( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t >= u) ) reportAndDie(t,u,loc,func); }
+inline void ge( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t >= u) ) reportAndDie(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void lt( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t < u) ) reportAndDie(t,u,loc,func); }
+inline void lt( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t < u) ) reportAndDie(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void le( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t <= u) ) reportAndDie(t,u,loc,func); }
+inline void le( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t <= u) ) reportAndDie(t,u,loc,func);
+}
 
-inline void yes( bool t, char const* loc, char const* func )
-{ if ( !t ) reportValsAndDie(loc,func,0); }
+inline void yes( bool t, char const* loc, char const* func ) {
+    if ( !t ) reportValsAndDie(loc,func,0);
+}
 
-inline void no( bool t, char const* loc, char const* func )
-{ if ( t ) reportValsAndDie(loc,func,0); }
-
-template <class T, class U>
-void report( T const& t, U const& u, char const* loc, char const* func )
-{ std::ostringstream oss; oss << "arg1 = " << t << " and arg2 = " << u;
-  reportVals(loc,func,oss.str().c_str()); }
+inline void no( bool t, char const* loc, char const* func ) {
+    if ( t ) reportValsAndDie(loc,func,0);
+}
 
 template <class T, class U>
-inline void eqTest( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t == u) ) report(t,u,loc,func); }
+void report( T const& t, U const& u, char const* loc, char const* func ) {
+    std::ostringstream oss;
+    oss << "arg1 = " << t << " and arg2 = " << u;
+    reportVals(loc,func,oss.str().c_str());
+}
 
 template <class T, class U>
-inline void neTest( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t != u) ) report(t,u,loc,func); }
+inline void eqTest( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t == u) ) report(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void gtTest( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t > u) ) report(t,u,loc,func); }
+inline void neTest( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t != u) ) report(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void geTest( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t >= u) ) report(t,u,loc,func); }
+inline void gtTest( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t > u) ) report(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void ltTest( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t < u) ) report(t,u,loc,func); }
+inline void geTest( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t >= u) ) report(t,u,loc,func);
+}
 
 template <class T, class U>
-inline void leTest( T const& t, U const& u, char const* loc, char const* func )
-{ if ( !(t <= u) ) report(t,u,loc,func); }
+inline void ltTest( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t < u) ) report(t,u,loc,func);
+}
 
-inline void yesTest( bool t, char const* loc, char const* func )
-{ if ( !t ) reportVals(loc,func,0); }
+template <class T, class U>
+inline void leTest( T const& t, U const& u, char const* loc, char const* func ) {
+    if ( !(t <= u) ) report(t,u,loc,func);
+}
 
-inline void noTest( bool t, char const* loc, char const* func )
-{ if ( t ) reportVals(loc,func,0); }
+inline void yesTest( bool t, char const* loc, char const* func ) {
+    if ( !t ) reportVals(loc,func,0);
+}
+
+inline void noTest( bool t, char const* loc, char const* func ) {
+    if ( t ) reportVals(loc,func,0);
+}
 
 }
 

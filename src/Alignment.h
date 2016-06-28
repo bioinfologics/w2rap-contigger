@@ -58,177 +58,216 @@ const int BufSize = 1000000/sizeof(int), MaxRecordSize = 10000/sizeof(int);
 
 class alignment : public packalign {
 
-     public:
+  public:
 
-     alignment( ) : packalign( ) { }
+    alignment( ) : packalign( ) { }
 
-     alignment( int pos1, int pos2, int errors,
-          const avector<int>& gaps, const avector<int>& lengths )
-          : packalign( pos1, pos2, gaps, lengths ) { errors_ = errors; }
+    alignment( int pos1, int pos2, int errors,
+               const avector<int>& gaps, const avector<int>& lengths )
+        : packalign( pos1, pos2, gaps, lengths ) {
+        errors_ = errors;
+    }
 
-     alignment( const packalign& p, int errors )
-          : packalign(p), errors_(errors) { }
+    alignment( const packalign& p, int errors )
+        : packalign(p), errors_(errors) { }
 
-     void Set( int pos1, int pos2, int errors,
-          const avector<int>& gaps, const avector<int>& lengths )
-     {    packalign::Set( pos1, pos2, gaps, lengths );
-          errors_ = errors;    }
+    void Set( int pos1, int pos2, int errors,
+              const avector<int>& gaps, const avector<int>& lengths ) {
+        packalign::Set( pos1, pos2, gaps, lengths );
+        errors_ = errors;
+    }
 
-     void Set( int pos1, int pos2, int errors,
-          const avector<int>& gaps, const avector<int>& lengths, int nblocks )
-     {    packalign::Set( pos1, pos2, gaps, lengths, nblocks );
-          errors_ = errors;    }
+    void Set( int pos1, int pos2, int errors,
+              const avector<int>& gaps, const avector<int>& lengths, int nblocks ) {
+        packalign::Set( pos1, pos2, gaps, lengths, nblocks );
+        errors_ = errors;
+    }
 
-     void Set( const align& al )
-     {    packalign::Set( al.pos1( ), al.pos2( ), al.Gaps( ), al.Lengths( ),
-               al.Nblocks( ) );    }
+    void Set( const align& al ) {
+        packalign::Set( al.pos1( ), al.pos2( ), al.Gaps( ), al.Lengths( ),
+                        al.Nblocks( ) );
+    }
 
-     void Set( const align& al, int errors )
-     {    packalign::Set( al.pos1( ), al.pos2( ), al.Gaps( ), al.Lengths( ),
-               al.Nblocks( ) );
-          errors_ = errors;    }
+    void Set( const align& al, int errors ) {
+        packalign::Set( al.pos1( ), al.pos2( ), al.Gaps( ), al.Lengths( ),
+                        al.Nblocks( ) );
+        errors_ = errors;
+    }
 
-     void Unpack( int& pos1, int& pos2, int& errors,
-          avector<int>& gaps, avector<int>& lengths ) const
-     {    packalign::Unpack( pos1, pos2, gaps, lengths );
-          errors = errors_;    }
+    void Unpack( int& pos1, int& pos2, int& errors,
+                 avector<int>& gaps, avector<int>& lengths ) const {
+        packalign::Unpack( pos1, pos2, gaps, lengths );
+        errors = errors_;
+    }
 
-     void SetPosPosErrors( int pos1, int pos2, int errors )
-     {    avector<int> gaps, lengths;
-          int p1, p2;
-          int err;
-          Unpack( p1, p2, err, gaps, lengths );
-          packalign::Set( pos1, pos2, gaps, lengths );
-          errors_ = errors;    }
+    void SetPosPosErrors( int pos1, int pos2, int errors ) {
+        avector<int> gaps, lengths;
+        int p1, p2;
+        int err;
+        Unpack( p1, p2, err, gaps, lengths );
+        packalign::Set( pos1, pos2, gaps, lengths );
+        errors_ = errors;
+    }
 
-     int Errors( ) const { return errors_; }
+    int Errors( ) const {
+        return errors_;
+    }
 
-     void SetErrors( int e ) { errors_ = e; }
+    void SetErrors( int e ) {
+        errors_ = e;
+    }
 
-     // Return a vector with three entries: the number of mutation errors, the
-     // number of gaps on the first sequence, the number of gaps on the second
-     // sequence.
+    // Return a vector with three entries: the number of mutation errors, the
+    // number of gaps on the first sequence, the number of gaps on the second
+    // sequence.
 
-     std::vector<int> MutationsGap1Gap2( const basevector& rd1, const basevector& rd2 );
-     std::vector<int> MutationsGap1Gap2( const basevector& rd1,
-          int from1, int to1, const basevector& rd2, int from2, int to2 );
-     int Mutations( const basevector& rd1, const basevector& rd2,
-          const qualvector& q1, int min_score );
-     int Indels( const basevector& rd1, const basevector& rd2,
-          const qualvector& q1, int min_score );
+    std::vector<int> MutationsGap1Gap2( const basevector& rd1, const basevector& rd2 );
+    std::vector<int> MutationsGap1Gap2( const basevector& rd1,
+                                        int from1, int to1, const basevector& rd2, int from2, int to2 );
+    int Mutations( const basevector& rd1, const basevector& rd2,
+                   const qualvector& q1, int min_score );
+    int Indels( const basevector& rd1, const basevector& rd2,
+                const qualvector& q1, int min_score );
 
-     void Compactify( int len1, int len2 ); // Remove zero gaps and lengths.
+    void Compactify( int len1, int len2 ); // Remove zero gaps and lengths.
 
-     void Write( std::ostream& out, int id1, int id2, Bool rc );
-     void Read( std::istream& in, int& id1, int& id2, Bool& rc );
+    void Write( std::ostream& out, int id1, int id2, Bool rc );
+    void Read( std::istream& in, int& id1, int& id2, Bool& rc );
 
-     void Write( std::ostream& out ) const;
-     void Read( std::istream& in );
+    void Write( std::ostream& out ) const;
+    void Read( std::istream& in );
 
-     void Print( std::ostream& out ) const;
+    void Print( std::ostream& out ) const;
 
-     private:
+  private:
 
-     int errors_;
+    int errors_;
 
 };
 
-template<class BASEVEC> int ActualErrors(const BASEVEC& rd1, 
-     const BASEVEC& rd2, const alignment& a, int mismatch_penalty = 1, 
-     int gap_penalty = 2)
-{    return ActualErrors( rd1, rd2, align(packalign(a)), mismatch_penalty,
-          gap_penalty );    }
+template<class BASEVEC> int ActualErrors(const BASEVEC& rd1,
+        const BASEVEC& rd2, const alignment& a, int mismatch_penalty = 1,
+        int gap_penalty = 2) {
+    return ActualErrors( rd1, rd2, align(packalign(a)), mismatch_penalty,
+                         gap_penalty );
+}
 
 const int Uninitialized = 1111111111;
 
 class alignment_plus {
 
-     public:
+  public:
 
-     alignment_plus( int read_id1,
-		     int read_id2,
-		     int rd1length,
-		     int rd2length,
-		     Bool if_read2_is_rc,
-		     const alignment& a_arg,
-		     float score_arg );
+    alignment_plus( int read_id1,
+                    int read_id2,
+                    int rd1length,
+                    int rd2length,
+                    Bool if_read2_is_rc,
+                    const alignment& a_arg,
+                    float score_arg );
 
-     alignment_plus( ) { read_id2_ = Uninitialized; }
+    alignment_plus( ) {
+        read_id2_ = Uninitialized;
+    }
 
-     int Id1( ) const { return read_id1_; }
-     int Id2( ) const
-     {    if ( read_id2_ >= 0 ) return read_id2_;
-          else return -read_id2_ - 1;    }
-     void SetId1( int id1 ) { read_id1_ = id1; }
-     void SetId2( int id2 ) { read_id2_ = id2; }
-     Bool Rc2( ) const { return read_id2_ < 0; }
+    int Id1( ) const {
+        return read_id1_;
+    }
+    int Id2( ) const {
+        if ( read_id2_ >= 0 ) return read_id2_;
+        else return -read_id2_ - 1;
+    }
+    void SetId1( int id1 ) {
+        read_id1_ = id1;
+    }
+    void SetId2( int id2 ) {
+        read_id2_ = id2;
+    }
+    Bool Rc2( ) const {
+        return read_id2_ < 0;
+    }
 
-     int pos1( ) const { return a.pos1( ); }
-     int pos2( ) const { return a.pos2( ); }
-     int Pos1( ) const { return a.Pos1( ); }
-     int Pos2( ) const { return a.Pos2( ); }
-     int Extent1( ) const { return a.Pos1( ) - a.pos1( ); }
-     int Extent2( ) const { return a.Pos2( ) - a.pos2( ); }
+    int pos1( ) const {
+        return a.pos1( );
+    }
+    int pos2( ) const {
+        return a.pos2( );
+    }
+    int Pos1( ) const {
+        return a.Pos1( );
+    }
+    int Pos2( ) const {
+        return a.Pos2( );
+    }
+    int Extent1( ) const {
+        return a.Pos1( ) - a.pos1( );
+    }
+    int Extent2( ) const {
+        return a.Pos2( ) - a.pos2( );
+    }
 
-     // Note: SetRc2 must be called AFTER SetId2.
+    // Note: SetRc2 must be called AFTER SetId2.
 
-     void SetRc2( Bool rc )
-     {    Assert( read_id2_ != Uninitialized );
-          if (rc) read_id2_ = -read_id2_ - 1;    }
+    void SetRc2( Bool rc ) {
+        Assert( read_id2_ != Uninitialized );
+        if (rc) read_id2_ = -read_id2_ - 1;
+    }
 
-     // Use this method if you want to change Id2() without affecting Rc2().
-     void SafeSetId2( int id2 ) {
-       if ( read_id2_ < 0 )
-         read_id2_ = -id2 - 1;
-       else
-         read_id2_ = id2;
-     }
+    // Use this method if you want to change Id2() without affecting Rc2().
+    void SafeSetId2( int id2 ) {
+        if ( read_id2_ < 0 )
+            read_id2_ = -id2 - 1;
+        else
+            read_id2_ = id2;
+    }
 
-     float score;
-     alignment a;
+    float score;
+    alignment a;
 
-     // human-readable write, and a version which does not require rd2rc and
-     // q2rc to exist in advance:
+    // human-readable write, and a version which does not require rd2rc and
+    // q2rc to exist in advance:
 
-     void Print( Bool abbreviate, std::ostream& out, const basevector& rd1,
-          const basevector& rd2, const basevector& rd2rc,
-          const qualvector& q1, const qualvector& q2,
-          const qualvector& q2rc, int begin = 0, Bool one_frame = False,
-          Bool highlight_score = False );
+    void Print( Bool abbreviate, std::ostream& out, const basevector& rd1,
+                const basevector& rd2, const basevector& rd2rc,
+                const qualvector& q1, const qualvector& q2,
+                const qualvector& q2rc, int begin = 0, Bool one_frame = False,
+                Bool highlight_score = False );
 
-     void Print( Bool abbreviate, std::ostream& out, const basevector& rd1,
-          const basevector& rd2, const qualvector& q1,
-          const qualvector& q2, int begin = 0, Bool one_frame = False,
-          Bool highlight_score = False );
+    void Print( Bool abbreviate, std::ostream& out, const basevector& rd1,
+                const basevector& rd2, const qualvector& q1,
+                const qualvector& q2, int begin = 0, Bool one_frame = False,
+                Bool highlight_score = False );
 
-     // Swap converts a given alignment_plus between id1 and id2 into the
-     // corresponding alignment_plus between id2 and id1.
+    // Swap converts a given alignment_plus between id1 and id2 into the
+    // corresponding alignment_plus between id2 and id1.
 
-     void Swap( int rd1length, int rd2length );
+    void Swap( int rd1length, int rd2length );
 
-     void SetToSwapOf( const alignment_plus& x, int rd1length, int rd2length );
+    void SetToSwapOf( const alignment_plus& x, int rd1length, int rd2length );
 
-     void SetToSwapOf( const align& x, int id1, int id2, Bool rc2,
-          float s, int rd1length, int rd2length );
+    void SetToSwapOf( const align& x, int id1, int id2, Bool rc2,
+                      float s, int rd1length, int rd2length );
 
-     friend Bool operator<( const alignment_plus& p1, const alignment_plus& p2 )
-     {    return p1.read_id1_ < p2.read_id1_ ||
-          ( p1.read_id1_ == p2.read_id1_ && p1.a.pos1( ) < p2.a.pos1( ) );    }
+    friend Bool operator<( const alignment_plus& p1, const alignment_plus& p2 ) {
+        return p1.read_id1_ < p2.read_id1_ ||
+               ( p1.read_id1_ == p2.read_id1_ && p1.a.pos1( ) < p2.a.pos1( ) );
+    }
 
-     friend Bool operator==( const alignment_plus& p1, const alignment_plus& p2 )
-     {    return ( p1.read_id1_ == p2.read_id1_ &&
-                   p1.read_id2_ == p2.read_id2_ &&
-                   p1.score == p2.score &&
-                   p1.a == p2.a );    }
+    friend Bool operator==( const alignment_plus& p1, const alignment_plus& p2 ) {
+        return ( p1.read_id1_ == p2.read_id1_ &&
+                 p1.read_id2_ == p2.read_id2_ &&
+                 p1.score == p2.score &&
+                 p1.a == p2.a );
+    }
 
-     void Write( std::ostream& out ) const;
-     void Read( std::istream& in );
+    void Write( std::ostream& out ) const;
+    void Read( std::istream& in );
 
-     private:
+  private:
 
-     // Note that read_id2_ contains both the second read id and the rc bit.
+    // Note that read_id2_ contains both the second read id and the rc bit.
 
-     int read_id1_, read_id2_;
+    int read_id1_, read_id2_;
 
 };
 
@@ -257,40 +296,40 @@ void WriteAppendWithIndex( const String& filename, const vec<alignment_plus>& v 
 // TODO: Potentially dangerous truncation of IDs
 class augmented_alignment {
 
-     public:
+  public:
 
-     alignment a;
-     int RC;
-     int length1, length2;
-     int id1, id2;
-     int pos1, pos2;
-     float score;
-     int Pos1, Pos2;
+    alignment a;
+    int RC;
+    int length1, length2;
+    int id1, id2;
+    int pos1, pos2;
+    float score;
+    int Pos1, Pos2;
 
-     augmented_alignment( ) { }
-     augmented_alignment( const alignment& a_arg,
-			  int RC_arg,
-			  int length1_arg,
-			  int length2_arg,
-			  int id1_arg,
-			  int id2_arg,
-			  int pos1_arg,
-			  int pos2_arg,
-			  float score_arg,
-			  int Pos1_arg,
-			  int Pos2_arg )
-       : a(a_arg),
-	 RC(RC_arg),
-	 length1(length1_arg),
-	 length2(length2_arg),
-	 id1(id1_arg),
-	 id2(id2_arg),
-	 pos1(pos1_arg),
-	 pos2(pos2_arg),
-	 score(score_arg),
-	 Pos1(Pos1_arg),
-	 Pos2(Pos2_arg)
-      { }
+    augmented_alignment( ) { }
+    augmented_alignment( const alignment& a_arg,
+                         int RC_arg,
+                         int length1_arg,
+                         int length2_arg,
+                         int id1_arg,
+                         int id2_arg,
+                         int pos1_arg,
+                         int pos2_arg,
+                         float score_arg,
+                         int Pos1_arg,
+                         int Pos2_arg )
+        : a(a_arg),
+          RC(RC_arg),
+          length1(length1_arg),
+          length2(length2_arg),
+          id1(id1_arg),
+          id2(id2_arg),
+          pos1(pos1_arg),
+          pos2(pos2_arg),
+          score(score_arg),
+          Pos1(Pos1_arg),
+          Pos2(Pos2_arg) {
+    }
 };
 
 const int OffTheEnd = -1;
@@ -302,17 +341,17 @@ const int AtGap = -2;
 int CorrelatePositions( const alignment& a, int x1 );
 
 int ErrorsAt( const alignment& a, int x1, const basevector& rd1,
-     const basevector& rd2 );
+              const basevector& rd2 );
 
 Float DepthOfCoverage( const vec<int>& reads, int contig_length,
-     const vec<int>& read_lengths, const vec<alignment_plus>& all_aligns,
-     const vec<int>& all_aligns_index );
+                       const vec<int>& read_lengths, const vec<alignment_plus>& all_aligns,
+                       const vec<int>& all_aligns_index );
 
 Bool RequireProper( const alignment_plus& ap, const vecbasevector& EE,
-     int test_no, Bool fatal = True );
+                    int test_no, Bool fatal = True );
 
 Bool RequireProper( const alignment_plus& ap, const vec<int>& EE_length,
-     int test_no, Bool fatal );
+                    int test_no, Bool fatal );
 
 // Let ap1 be an alignment between reads id1 and id2.  Let ap2 be an alignment
 // between reads id2 and id3.  Return the offset for an alignment between id1 and
@@ -320,7 +359,7 @@ Bool RequireProper( const alignment_plus& ap, const vec<int>& EE_length,
 // meaningful unless the implicit overlap between id1 and id3 is positive.
 
 int TransitiveOffset( const alignment_plus& ap1, const alignment_plus& ap2,
-     int rd1length, int rd2length, int rd3length );
+                      int rd1length, int rd2length, int rd3length );
 
 // Return an appropriate value for bandwidth, assuming that you have an alignment
 // between two reads, but want to align them again using a banded Smith-Waterman.
@@ -340,6 +379,6 @@ void TrimAlignmentFront( align& a, int n );
 void TrimAlignmentBack( align& a, int n );
 
 int MaxPerfectMatch( Bool rd1_is_rc, const align& a, const basevector& rd1,
-     const basevector& rd2 );
+                     const basevector& rd2 );
 
 #endif

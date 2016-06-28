@@ -16,13 +16,11 @@
 #include "system/Exit.h"
 #include <stdlib.h>
 
-namespace CRD
-{
+namespace CRD {
 
 HOOKFUNC gExitHook;
 
-void exit( int status )
-{
+void exit( int status ) {
     if ( gExitHook ) (*gExitHook)(status);
 
     if ( !status )
@@ -30,8 +28,7 @@ void exit( int status )
     abort();
 }
 
-HOOKFUNC installExitHook( HOOKFUNC fHook )
-{
+HOOKFUNC installExitHook( HOOKFUNC fHook ) {
     HOOKFUNC oldHook = gExitHook;
     gExitHook = fHook;
     return oldHook;

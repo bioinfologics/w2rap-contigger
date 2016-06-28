@@ -24,8 +24,7 @@ using std::endl;
 
 // Cap: in a given basevector, replace any sequence of N > n identical
 // bases by n of the same base.
-void BaseVec::Cap( unsigned nnn )
-{
+void BaseVec::Cap( unsigned nnn ) {
     if ( nnn > size() )
         return;
 
@@ -34,16 +33,13 @@ void BaseVec::Cap( unsigned nnn )
     iterator stop(end());
     value_type lastBase = 0;
     unsigned count = 0;
-    while ( src != stop )
-    {
+    while ( src != stop ) {
         value_type base = *src;
-        if ( base != lastBase )
-        {
+        if ( base != lastBase ) {
             count = 0;
             lastBase = base;
         }
-        if ( ++count <= nnn )
-        {
+        if ( ++count <= nnn ) {
             if ( src != dest )
                 dest.set( base );
             ++dest;
@@ -57,19 +53,19 @@ void BaseVec::Cap( unsigned nnn )
 // not found.  Start looking at start, and stop looking when we reach
 // the minimum of end or size().
 BaseVec::size_type BaseVec::Find(const BaseVec& other,
-                                    size_type start,
-                                    size_type end) const
-{
+                                 size_type start,
+                                 size_type end) const {
     AssertLe(end,size());
     AssertLe(start,end);
 
-    if (other.size() > end-start) { return size(); }
+    if (other.size() > end-start) {
+        return size();
+    }
 
     const_iterator my_end(begin(end-other.size()+1));
     const_iterator my_iter = begin(start);
     const_iterator other_end(other.end());
-    for ( ; my_iter != my_end; ++my_iter )
-    {
+    for ( ; my_iter != my_end; ++my_iter ) {
         bool found = true;
         const_iterator other_iter(other.begin());
         const_iterator my_iter2(my_iter);
@@ -84,13 +80,11 @@ BaseVec::size_type BaseVec::Find(const BaseVec& other,
 }
 
 // FindAll: Find all start positions of "other" inside "this".
-vec<BaseVec::size_type> BaseVec::FindAll(const BaseVec& other) const
-{
+vec<BaseVec::size_type> BaseVec::FindAll(const BaseVec& other) const {
     vec<size_type> places;
     size_type nnn = size();
     size_type idx = 0;
-    while ( (idx = Find(other,idx,nnn)) != nnn )
-    {
+    while ( (idx = Find(other,idx,nnn)) != nnn ) {
         places.push_back(idx++);
     }
     return places;
@@ -98,14 +92,15 @@ vec<BaseVec::size_type> BaseVec::FindAll(const BaseVec& other) const
 
 // Return true if two basevectors overlap exactly by r bases.
 // i.e., the last r bases of this are equal to the first r bases of that.
-bool BaseVec::Overlap(const BaseVec& that, size_type r) const
-{
-    if ((that.size() < r) || (size() < r)) { return false; }
+bool BaseVec::Overlap(const BaseVec& that, size_type r) const {
+    if ((that.size() < r) || (size() < r)) {
+        return false;
+    }
     const_iterator stop(end());
     const_iterator itr(begin(size()-r));
     const_iterator itr2(that.begin());
     bool result = true;
-    for ( ;result && itr != stop; ++itr, ++itr2 )
+    for ( ; result && itr != stop; ++itr, ++itr2 )
         result = (*itr == *itr2);
     return result;
 }
@@ -115,8 +110,7 @@ bool BaseVec::Overlap(const BaseVec& that, size_type r) const
 // case where this == &orig_bv is allowed.  If len is -1, it's
 // adjusted to mean "the end" of the bvec being copied.
 BaseVec& BaseVec::SetToSubOf(const BaseVec& source, size_type start,
-                                size_type len, size_type extra)
-{
+                             size_type len, size_type extra) {
     AssertLe( start, source.size() );
     if ( len == ~0U )
         len = source.size() - start;
@@ -125,26 +119,22 @@ BaseVec& BaseVec::SetToSubOf(const BaseVec& source, size_type start,
     reserve(len+extra);
     setSize(len);
 
-    if ( len )
-    {
+    if ( len ) {
         value_type const* src = source.data() + start/4;
         value_type* dst = data();
         size_type extra = len & 3;
-        switch ( start & 3 )
-        {
+        switch ( start & 3 ) {
         case 0:
             if ( dst != src )
-                if( this == &source && dst+(len+3)/4 > src){
+                if( this == &source && dst+(len+3)/4 > src) {
                     memmove(dst,src,(len+3)/4);
-                }
-                else{
+                } else {
                     memcpy(dst,src,(len+3)/4);
                 }
             break;
         case 1:
             len = len/4;
-            while ( len-- )
-            {
+            while ( len-- ) {
                 *dst++ = (src[0] >> 2) | (src[1] << 6);
                 src += 1;
             }
@@ -153,8 +143,7 @@ BaseVec& BaseVec::SetToSubOf(const BaseVec& source, size_type start,
             break;
         case 2:
             len = (len+1)/4;
-            while ( len-- )
-            {
+            while ( len-- ) {
                 *dst++ = (src[0] >> 4) | (src[1] << 4);
                 src += 1;
             }
@@ -163,8 +152,7 @@ BaseVec& BaseVec::SetToSubOf(const BaseVec& source, size_type start,
             break;
         case 3:
             len = (len+2)/4;
-            while ( len-- )
-            {
+            while ( len-- ) {
                 *dst++ = (src[0] >> 6) | (src[1] << 2);
                 src += 1;
             }
@@ -182,11 +170,9 @@ BaseVec& BaseVec::SetToSubOf(const BaseVec& source, size_type start,
 //
 
 // Return true if all bases are equal or if empty.
-bool BaseVec::IsHomopolymer() const
-{
+bool BaseVec::IsHomopolymer() const {
     bool result = true;
-    if ( !empty() )
-    {
+    if ( !empty() ) {
         const_iterator stop(end());
         const_iterator itr(begin());
         value_type firstBase = *itr;
@@ -197,11 +183,9 @@ bool BaseVec::IsHomopolymer() const
 }
 
 // Return the % of highest base and which base it is.
-std::pair<float, unsigned char> BaseVec::HomopolPercent() const
-{
+std::pair<float, unsigned char> BaseVec::HomopolPercent() const {
     std::pair<float, unsigned char> result(-1, 255);
-    if ( !empty() )
-    {
+    if ( !empty() ) {
         unsigned int count[4] = {0,0,0,0};
         const_iterator stop(end());
         for ( const_iterator itr(begin()); itr != stop; ++itr )
@@ -216,8 +200,7 @@ std::pair<float, unsigned char> BaseVec::HomopolPercent() const
 
 // Return homopolymer count at this base (extends and counts both
 // left and right from the specified base).
-int BaseVec::Homopol(size_type idx) const
-{
+int BaseVec::Homopol(size_type idx) const {
     AssertLe(idx,size());
     const_iterator pos(begin(idx));
     const value_type firstBase = *pos;
@@ -236,35 +219,27 @@ int BaseVec::Homopol(size_type idx) const
 }
 
 // Replace *this by its reverse complement.
-BaseVec& BaseVec::ReverseComplement()
-{
-    if ( !(size() & 3) ) // if size is evenly divisible by 4
-    {
+BaseVec& BaseVec::ReverseComplement() {
+    if ( !(size() & 3) ) { // if size is evenly divisible by 4
         // run algorithm byte-wise
         value_type* head = data();
         value_type* tail = dataEnd();
-        while ( head != tail )
-        {
+        while ( head != tail ) {
             value_type tmp = Base::rcByte(*--tail);
-            if ( head == tail )
-            {
+            if ( head == tail ) {
                 *head = tmp;
                 break;
             }
             *tail = Base::rcByte(*head);
             *head++ = tmp;
         }
-    }
-    else
-    {
+    } else {
         // run algorithm base-wise
         iterator head = begin();
         iterator tail = end();
-        while (head != tail)
-        {
+        while (head != tail) {
             value_type tmp = Complement(*--tail);
-            if (head == tail)
-            {
+            if (head == tail) {
                 head.set(tmp);
                 break;
             }
@@ -277,8 +252,7 @@ BaseVec& BaseVec::ReverseComplement()
 }
 
 BaseVec::size_type BaseVec::GcBases( size_type start,
-            size_type end ) const
-{
+                                     size_type end ) const {
     AssertLe(start,size());
     AssertLe(end,size());
 
@@ -291,28 +265,23 @@ BaseVec::size_type BaseVec::GcBases( size_type start,
 }
 
 unsigned int BaseVec::extractKmer( unsigned int offset,
-                                            unsigned int k ) const
-{
+                                   unsigned int k ) const {
     AssertLe(k,16u);
     AssertLe(k,size());
     AssertLe(offset,size()-k);
 
     unsigned int result = 0;
     offset += k; // point to the end
-    while ( k && (offset&3) ) // while we're not on a byte boundary
-    {
+    while ( k && (offset&3) ) { // while we're not on a byte boundary
         result = (result << 2) | (*this)[--offset];
         k -= 1;
     }
-    if ( k >= 4 ) // if there's a whole byte to be gotten, load bytes
-    {
+    if ( k >= 4 ) { // if there's a whole byte to be gotten, load bytes
         unsigned char const* pData = data() + offset/4;
         offset -= 4 * (k/4);
-        do
-        {
+        do {
             result = (result << 8) | *--pData;
-        }
-        while ( (k-= 4) >= 4 );
+        } while ( (k-= 4) >= 4 );
     }
     while ( k-- )
         result = (result << 2) | (*this)[--offset];
@@ -321,8 +290,7 @@ unsigned int BaseVec::extractKmer( unsigned int offset,
 }
 
 unsigned int BaseVec::hash( unsigned int byteOffset,
-                                    unsigned int nBytes ) const
-{
+                            unsigned int nBytes ) const {
     AssertLe(nBytes,physicalSize(size()));
     AssertLe(byteOffset,physicalSize(size())-nBytes);
 
@@ -332,10 +300,9 @@ unsigned int BaseVec::hash( unsigned int byteOffset,
 
     unsigned char const* itr = data() + byteOffset;
     unsigned char const* end = itr + nBytes;
-    while ( itr != end )
-    {
-      hash ^= *itr++;
-      hash *= prime;
+    while ( itr != end ) {
+        hash ^= *itr++;
+        hash *= prime;
     }
     return hash;
 }
@@ -345,11 +312,11 @@ unsigned int BaseVec::hash( unsigned int byteOffset,
 //
 
 // Translate basevector to String of base letters (ACGT)
-String BaseVec::ToString() const
-{
-    String s; s.reserve(size());
+String BaseVec::ToString() const {
+    String s;
+    s.reserve(size());
     std::transform(begin(),end(),std::back_inserter(s),BaseToCharMapper());
-   return s;
+    return s;
 }
 
 //
@@ -362,8 +329,7 @@ String BaseVec::ToString() const
 // it must be the largest overlap (because we've been searching from the
 // beginning of s.)
 unsigned int LargestOverlap(const BaseVec& s, const BaseVec& t,
-                            unsigned int r_max, unsigned int r_min)
-{
+                            unsigned int r_max, unsigned int r_min) {
     AssertLe(r_max,s.size());
     AssertLe(r_min,r_max);
 
@@ -378,8 +344,7 @@ unsigned int LargestOverlap(const BaseVec& s, const BaseVec& t,
 // if rc_from is true, the src will be RC'd before it is copied.
 void CopyBases(const BaseVec& src, BaseVec::size_type src_start,
                BaseVec& target, BaseVec::size_type target_start,
-               BaseVec::size_type count, Bool rc_from)
-{
+               BaseVec::size_type count, Bool rc_from) {
     AssertLe( src_start, src.size( ) );
     AssertLe( count, src.size()-src_start );
     AssertLe( target_start, target.size() );
@@ -387,15 +352,12 @@ void CopyBases(const BaseVec& src, BaseVec::size_type src_start,
 
     // TODO: Byte level optimization
     BaseVec::iterator dst(target.begin(target_start));
-    if ( rc_from )
-    {
+    if ( rc_from ) {
         BaseVec::const_rc_iterator end(src.rcbegin(src_start+count));
         BaseVec::const_rc_iterator itr(src.rcbegin(src_start));
         for ( ; itr != end; ++itr, ++dst )
             dst.set(*itr);
-    }
-    else
-    {
+    } else {
         BaseVec::const_iterator end(src.begin(src_start+count));
         BaseVec::const_iterator itr(src.begin(src_start));
         for ( ; itr != end; ++itr, ++dst )
@@ -410,47 +372,40 @@ bool BaseVec::IsGoodFeudalFile(const String& filename, bool verbose) {
     if ( !fcb.isValid(filename.c_str(),fileSize,verbose) )
         result = false;
     else if ( fcb.getSizeofFixed() &&
-              fcb.getSizeofFixed() != BaseVec::fixedDataLen() )
-    {
+              fcb.getSizeofFixed() != BaseVec::fixedDataLen() ) {
         result = false;
         if ( verbose )
             cout << "Feudal file for basevector has a fixed-data length of " <<
-                    fcb.getSizeofFixed() << " but we expect " <<
-                    BaseVec::fixedDataLen() << "." << std::endl;
-    }
-    else if ( fcb.getSizeofX() &&
-              fcb.getSizeofX()!=12 &&
-              fcb.getSizeofX()!=sizeof(BaseVec) )
-    {
+                 fcb.getSizeofFixed() << " but we expect " <<
+                 BaseVec::fixedDataLen() << "." << std::endl;
+    } else if ( fcb.getSizeofX() &&
+                fcb.getSizeofX()!=12 &&
+                fcb.getSizeofX()!=sizeof(BaseVec) ) {
         result = false;
         if ( verbose )
             cout << "Feudal file for basevector has a vector size of " <<
-                    fcb.getSizeofX() << " but we expect 24." << std::endl;
-    }
-    else if ( fcb.getSizeofA() &&
-              fcb.getSizeofA()!=4 &&
-              fcb.getSizeofA()!=sizeof(value_type) )
-    {
+                 fcb.getSizeofX() << " but we expect 24." << std::endl;
+    } else if ( fcb.getSizeofA() &&
+                fcb.getSizeofA()!=4 &&
+                fcb.getSizeofA()!=sizeof(value_type) ) {
         result = false;
         if ( verbose )
             cout << "Feudal file for basevector has a value size of " <<
-                    fcb.getSizeofA() << " but we expect " <<
-                    sizeof(value_type) << "." << std::endl;
+                 fcb.getSizeofA() << " but we expect " <<
+                 sizeof(value_type) << "." << std::endl;
     }
     return result;
 }
 
 std::vector<BaseVec::size_type> BaseVec::getSizes(
-                                                  String const& fastbFilename )
-{
+    String const& fastbFilename ) {
     if ( !IsGoodFeudalFile(fastbFilename,true) )
         FatalErr("Feudal file " << fastbFilename << " looks fishy.");
 
     std::vector<size_type> results;
     FeudalFileReader ffr(fastbFilename.c_str());
     size_t nnn = ffr.getNElements();
-    if ( nnn )
-    {
+    if ( nnn ) {
         results.resize(nnn);
         void* fixedTable = ffr.getFixedData(0,sizeof(size_type));
         memcpy(&results.front(),fixedTable,nnn*sizeof(size_type));

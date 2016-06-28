@@ -16,99 +16,121 @@
 // ================================================================================
 
 void MaxMutmerFromMer( int& pos1, int& pos2, int& len, int& errors,
-     const basevector& rd1, const basevector& rd2, Bool strict )
-{    register unsigned int xpos1 = pos1, xpos2 = pos2, xlen = len, xerrors = 0;
+                       const basevector& rd1, const basevector& rd2, Bool strict ) {
+    register unsigned int xpos1 = pos1, xpos2 = pos2, xlen = len, xerrors = 0;
 
-     // Extend on left side.
+    // Extend on left side.
 
-     int goodlength = xlen; // Any big number.
-     while(1)
-     {    if ( xpos1 == 0 || xpos2 == 0 ) break;
-          if( rd1[xpos1-1] == rd2[xpos2-1] )
-          {    --xpos1; --xpos2;
-               ++xlen;    
-               ++goodlength;    }
-          else if (strict) break;
-          else if ( goodlength <= 1 ) break;
-          else
-          {    --xpos1; --xpos2;
-               ++xlen;
-               ++xerrors;
-               goodlength = 0;    }    }
-      if ( goodlength <= 1 ) // Back up.
-      {    xpos1 += goodlength + 1; xpos2 += goodlength + 1;
-           xlen -= goodlength + 1;    
-           --xerrors;    }
+    int goodlength = xlen; // Any big number.
+    while(1) {
+        if ( xpos1 == 0 || xpos2 == 0 ) break;
+        if( rd1[xpos1-1] == rd2[xpos2-1] ) {
+            --xpos1;
+            --xpos2;
+            ++xlen;
+            ++goodlength;
+        } else if (strict) break;
+        else if ( goodlength <= 1 ) break;
+        else {
+            --xpos1;
+            --xpos2;
+            ++xlen;
+            ++xerrors;
+            goodlength = 0;
+        }
+    }
+    if ( goodlength <= 1 ) { // Back up.
+        xpos1 += goodlength + 1;
+        xpos2 += goodlength + 1;
+        xlen -= goodlength + 1;
+        --xerrors;
+    }
 
-     // Extend on right side.
+    // Extend on right side.
 
-     goodlength = xlen;
-     while(1)
-     {    if ( xpos1+xlen >= rd1.size( ) || xpos2+xlen >= rd2.size( ) ) break;
-          if ( rd1[xpos1+xlen] == rd2[xpos2+xlen] )
-          {    ++xlen;
-               ++goodlength;    }
-          else if (strict) break;
-          else if ( goodlength <= 1 ) break;
-          else
-          {    ++xlen;
-               ++xerrors;
-               goodlength = 0;    }    }
-     if ( goodlength <= 1 )
-     {    xlen -= goodlength + 1;
-          --xerrors;    }
+    goodlength = xlen;
+    while(1) {
+        if ( xpos1+xlen >= rd1.size( ) || xpos2+xlen >= rd2.size( ) ) break;
+        if ( rd1[xpos1+xlen] == rd2[xpos2+xlen] ) {
+            ++xlen;
+            ++goodlength;
+        } else if (strict) break;
+        else if ( goodlength <= 1 ) break;
+        else {
+            ++xlen;
+            ++xerrors;
+            goodlength = 0;
+        }
+    }
+    if ( goodlength <= 1 ) {
+        xlen -= goodlength + 1;
+        --xerrors;
+    }
 
-     if ( xerrors > 31 ) xerrors = 31;
+    if ( xerrors > 31 ) xerrors = 31;
 
-     pos1 = xpos1; pos2 = xpos2;
-     len = xlen;
-     errors = xerrors;    }
+    pos1 = xpos1;
+    pos2 = xpos2;
+    len = xlen;
+    errors = xerrors;
+}
 
 void MaxMutmerFromMerRev( int& pos1, int& pos2, int& len, int& errors,
-     const basevector& rd1, const basevector& rd2, Bool strict )
-{    register unsigned int xpos1 = pos1, xpos2 = pos2, xlen = len, xerrors = 0;
+                          const basevector& rd1, const basevector& rd2, Bool strict ) {
+    register unsigned int xpos1 = pos1, xpos2 = pos2, xlen = len, xerrors = 0;
 
-     // Extend on left side.
+    // Extend on left side.
 
-     int goodlength = xlen; // Any big number.
-     while(1)
-     {    if ( xpos1 == 0 || xpos2 == 0 ) break;
-          if( rd1[xpos1-1] == 3 - rd2[rd2.size( ) - xpos2] )
-          {    --xpos1; --xpos2;
-               ++xlen;    
-               ++goodlength;    }
-          else if (strict) break;
-          else if ( goodlength <= 1 ) break;
-          else
-          {    --xpos1; --xpos2;
-               ++xlen;
-               ++xerrors;
-               goodlength = 0;    }    }
-      if ( goodlength <= 1 ) // Back up.
-      {    xpos1 += goodlength + 1; xpos2 += goodlength + 1;
-           xlen -= goodlength + 1;    
-           --xerrors;    }
+    int goodlength = xlen; // Any big number.
+    while(1) {
+        if ( xpos1 == 0 || xpos2 == 0 ) break;
+        if( rd1[xpos1-1] == 3 - rd2[rd2.size( ) - xpos2] ) {
+            --xpos1;
+            --xpos2;
+            ++xlen;
+            ++goodlength;
+        } else if (strict) break;
+        else if ( goodlength <= 1 ) break;
+        else {
+            --xpos1;
+            --xpos2;
+            ++xlen;
+            ++xerrors;
+            goodlength = 0;
+        }
+    }
+    if ( goodlength <= 1 ) { // Back up.
+        xpos1 += goodlength + 1;
+        xpos2 += goodlength + 1;
+        xlen -= goodlength + 1;
+        --xerrors;
+    }
 
-     // Extend on right side.
+    // Extend on right side.
 
-     goodlength = xlen;
-     while(1)
-     {    if ( xpos1+xlen >= rd1.size( ) || xpos2+xlen >= rd2.size( ) ) break;
-          if ( rd1[xpos1+xlen] == 3 - rd2[rd2.size( ) - 1 - (xpos2+xlen) ] )
-          {    ++xlen;
-               ++goodlength;    }
-          else if (strict) break;
-          else if ( goodlength <= 1 ) break;
-          else
-          {    ++xlen;
-               ++xerrors;
-               goodlength = 0;    }    }
-     if ( goodlength <= 1 )
-     {    xlen -= goodlength + 1;
-          --xerrors;    }
+    goodlength = xlen;
+    while(1) {
+        if ( xpos1+xlen >= rd1.size( ) || xpos2+xlen >= rd2.size( ) ) break;
+        if ( rd1[xpos1+xlen] == 3 - rd2[rd2.size( ) - 1 - (xpos2+xlen) ] ) {
+            ++xlen;
+            ++goodlength;
+        } else if (strict) break;
+        else if ( goodlength <= 1 ) break;
+        else {
+            ++xlen;
+            ++xerrors;
+            goodlength = 0;
+        }
+    }
+    if ( goodlength <= 1 ) {
+        xlen -= goodlength + 1;
+        --xerrors;
+    }
 
-     if ( xerrors > 31 ) xerrors = 31;
+    if ( xerrors > 31 ) xerrors = 31;
 
-     pos1 = xpos1; pos2 = xpos2;
-     len = xlen;
-     errors = xerrors;    }
+    pos1 = xpos1;
+    pos2 = xpos2;
+    len = xlen;
+    errors = xerrors;
+}

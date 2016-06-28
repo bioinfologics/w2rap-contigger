@@ -25,24 +25,24 @@
 typedef vec<align> VecAlign;
 
 void AlignFriendsToFounder(
-        // the reads
-        vecbvec const& friends,
+    // the reads
+    vecbvec const& friends,
 
-        // index of founder read against which alignments were made
-        size_t founderIdx,
+    // index of founder read against which alignments were made
+    size_t founderIdx,
 
-        // alignments of founder to read for all reads except founderIdx
-        VecAlign const& alignments,
+    // alignments of founder to read for all reads except founderIdx
+    VecAlign const& alignments,
 
-        // error model for alignment
-        Scorer const& scorer,
+    // error model for alignment
+    Scorer const& scorer,
 
-        // Multiple alignment is output as a rectangular matrix of small
-        // integers.  There are six codes.  The first four are for A=0, C=1,
-        // G=2, and T=3.  There is also a code for a pad (=4) marking a
-        // deletion, and one (=5) for an initial or final space where the friend
-        // doesn't overlap the founder.
-        VecUCharVec* pMultipleAlignment
+    // Multiple alignment is output as a rectangular matrix of small
+    // integers.  There are six codes.  The first four are for A=0, C=1,
+    // G=2, and T=3.  There is also a code for a pad (=4) marking a
+    // deletion, and one (=5) for an initial or final space where the friend
+    // doesn't overlap the founder.
+    VecUCharVec* pMultipleAlignment
 );
 
 #endif /* PATHS_LONG_FOUNDERALIGNMENT_H_ */

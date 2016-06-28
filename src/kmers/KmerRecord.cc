@@ -13,16 +13,17 @@
 
 int const kmer_with_count_base::max_count;
 
-template<int K> void kmer<K>::SetToSubOf( const basevector& source, 
-     const size_type start )
-{   size_t len = K;
+template<int K> void kmer<K>::SetToSubOf( const basevector& source,
+        const size_type start ) {
+    size_t len = K;
     AssertLe( start, source.size() );
     AssertLe( len, source.size()-start );
     size_t end = len & ~15;
     int32_t* dst = (int32_t*) &data_;
     for ( size_t idx = 0; idx < end; idx += 16)
-         *dst++ = source.extractKmer(start+idx, 16);
-    if ( end < len ) *dst = source.extractKmer(start+end, len-end);   }
+        *dst++ = source.extractKmer(start+idx, 16);
+    if ( end < len ) *dst = source.extractKmer(start+end, len-end);
+}
 
 template void kmer<4>::SetToSubOf( const basevector&, const size_type );
 template void kmer<6>::SetToSubOf( const basevector&, const size_type );

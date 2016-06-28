@@ -14,8 +14,8 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
 
-void Improve60( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths, 
-     const vecbasevector& bases, const VecPQVec& qualsp, 
-     const Bool verbose = False );
+void Improve60( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
+                const vecbasevector& bases, const VecPQVec& qualsp,
+                const Bool verbose = False );
 
 #endif

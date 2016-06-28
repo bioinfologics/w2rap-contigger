@@ -1,5 +1,5 @@
 // Copyright (c) 2000-2003 Whitehead Institute for Biomedical Research
-// 
+//
 
 
 #ifndef SORT_KMERS_H
@@ -22,14 +22,14 @@
 
 /**
    Class: dummy
-   
+
    Used to select the right version of <SortKmers()>: 1-pass, 10-pass or 100-pass.
  */
 template<int Passes> class dummy { };
 
 /**
    Macro: SortKmersNumPasses
-   
+
    A slightly better name for the class (<dummy>) used to statically
    select the version of <SortKmers()> that is called.
  */
@@ -52,15 +52,15 @@ template<int Passes> class dummy { };
    Constant: BASES_SIZE
 
    The size of the kmer stored in this record.
-   
+
    >static const int BASES_SIZE;
-   
+
    Method: Set
 
    Records the occurrence of a kmer in a read.
 
    >  void Set( const kmer_t& b, int read_id, int read_pos );
-   
+
    Parameters:
 
       b - the kmer (its sequence)
@@ -85,9 +85,9 @@ template<int Passes> class dummy { };
    Method: GetBasevector
 
    Sets a <basevector> to the content of this kmer.
-   
+
    > void GetBasevector( basevector& kmer ) const;
-   
+
 */
 
 // End: Section
@@ -151,7 +151,7 @@ const Bool PALIND_FW_ONLY = False;
 
 /**
    Macro for simplifying explicit template instantiation of SortKmers().
-   See also: FOR_ALL_K(), FOR_ALL_GAPS(), FOR_ALL_K_GAP(), 
+   See also: FOR_ALL_K(), FOR_ALL_GAPS(), FOR_ALL_K_GAP(),
 */
 #define INSTANTIATE_SORTKMERS(_KSHAPE, RECORD, _passes) \
   template void SortKmers<_KSHAPE,RECORD> ( \
@@ -178,7 +178,7 @@ const Bool PALIND_FW_ONLY = False;
 
    *NOTE*: before invoking this macro in your .cc file, make sure to include the following
    header files:
-   
+
   >#include "SortKmersImpl.h"
 */
 #define INSTANTIATE_SORTKMERS_FOR_I_K(I, K, prefix)                            \
@@ -203,20 +203,20 @@ extern void (*SORT_KMERS_END_PASS)( int pass );
     Synopsis:
 
     (begin example)
-    
+
     typedef kmer_record< K, 2 > mykrec_t;
 
     FOR_KMER_OCCS_BEG( KSHAPE, mykrec_t, reads, false, from, to ) {
-    
+
        // here, from and to are of type vec< mykrec_t >::const_iterator.
        // the range [from, to) specifies the range of kmer records,
        // of type mykrec_t, that give the occurrences of one kmer in the reads.
 
        // Standard C++ looping constructs (break and continue) may be used.
-       
+
     }  // FOR_KMER_OCCS_BEG()
     FOR_KMER_OCCS_END( );
-    
+
     (end example)
 
     For an example of use see MarkTrustedA1.cc .

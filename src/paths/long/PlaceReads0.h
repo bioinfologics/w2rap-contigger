@@ -15,10 +15,10 @@
 #include "paths/long/EvalByReads.h"
 
 void PlaceReads0( const HyperBasevector& hb, const vecbasevector& bases,
-		  const vecqualvector& quals, vec< vec<read_place> >& PLACES, bool log = false );
+                  const vecqualvector& quals, vec< vec<read_place> >& PLACES, bool log = false );
 
 void PlaceSingleRead0( const HyperBasevector& hb, const basevector& bases_single,
-		       const qualvector& quals_single, vec<read_place>& PLACES_SINGLE, bool log = false );
+                       const qualvector& quals_single, vec<read_place>& PLACES_SINGLE, bool log = false );
 
 
 #endif

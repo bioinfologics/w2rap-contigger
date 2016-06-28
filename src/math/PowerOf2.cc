@@ -14,8 +14,7 @@
  */
 #include "math/PowerOf2.h"
 
-unsigned long PowerOf2::getNearbyPrime( unsigned powerOf2 )
-{
+unsigned long PowerOf2::getNearbyPrime( unsigned powerOf2 ) {
     // table is from http://primes.utm.edu/lists/2small/
     static size_t gTab[] = { 1, 2, 3, 7, 13, 31, 61, 127, 251,
                              (1ul<<9)-3ul, (1ul<<10)-3ul, (1ul<<11)-9ul,
@@ -36,7 +35,8 @@ unsigned long PowerOf2::getNearbyPrime( unsigned powerOf2 )
                              (1ul<<54)-33ul, (1ul<<55)-55ul, (1ul<<56)-5ul,
                              (1ul<<57)-13ul, (1ul<<58)-27ul, (1ul<<59)-55ul,
                              (1ul<<60)-93ul, (1ul<<61)-1ul, (1ul<<62)-57ul,
-                             (1ul<<63)-25ul, 0ul-59ul };
-  AssertLe(powerOf2,64u);
-  return gTab[powerOf2];
+                             (1ul<<63)-25ul, 0ul-59ul
+                           };
+    AssertLe(powerOf2,64u);
+    return gTab[powerOf2];
 }

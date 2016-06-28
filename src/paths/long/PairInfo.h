@@ -14,40 +14,55 @@
 
 class pair_point {
 
-     public:
+  public:
 
-     pair_point( ) { }
-     pair_point( const int trim, const fix64_6& weight, const int lib )
-          : trim_(trim), weight_(weight), lib_(lib) { }
+    pair_point( ) { }
+    pair_point( const int trim, const fix64_6& weight, const int lib )
+        : trim_(trim), weight_(weight), lib_(lib) { }
 
-     int Trim( ) const { return trim_; }
-     int& TrimMutable( ) { return trim_; }
-     const fix64_6& Weight( ) const { return weight_; }
-     fix64_6& WeightMutable( ) { return weight_; }
-     int Lib( ) const { return lib_; }
-     int& LibMutable( ) { return lib_; }
+    int Trim( ) const {
+        return trim_;
+    }
+    int& TrimMutable( ) {
+        return trim_;
+    }
+    const fix64_6& Weight( ) const {
+        return weight_;
+    }
+    fix64_6& WeightMutable( ) {
+        return weight_;
+    }
+    int Lib( ) const {
+        return lib_;
+    }
+    int& LibMutable( ) {
+        return lib_;
+    }
 
-     friend Bool operator<( const pair_point& p1, const pair_point& p2 )
-     {    if ( p1.trim_ < p2.trim_ ) return True;
-          if ( p1.trim_ > p2.trim_ ) return False;
-          if ( p1.weight_ < p2.weight_ ) return True;
-          if ( p1.weight_ > p2.weight_ ) return False;
-          return p1.lib_ < p2.lib_;    }
+    friend Bool operator<( const pair_point& p1, const pair_point& p2 ) {
+        if ( p1.trim_ < p2.trim_ ) return True;
+        if ( p1.trim_ > p2.trim_ ) return False;
+        if ( p1.weight_ < p2.weight_ ) return True;
+        if ( p1.weight_ > p2.weight_ ) return False;
+        return p1.lib_ < p2.lib_;
+    }
 
-     friend Bool operator==( const pair_point& p1, const pair_point& p2 )
-     {    return p1.trim_ == p2.trim_ && p1.weight_ == p2.weight_
-               && p1.lib_ == p2.lib_;    }
+    friend Bool operator==( const pair_point& p1, const pair_point& p2 ) {
+        return p1.trim_ == p2.trim_ && p1.weight_ == p2.weight_
+               && p1.lib_ == p2.lib_;
+    }
 
-     private:
+  private:
 
-     int trim_;
-     fix64_6 weight_;
-     int lib_;
+    int trim_;
+    fix64_6 weight_;
+    int lib_;
 
 };
 
-template <> struct Serializability<pair_point> 
-{ typedef TriviallySerializable type; };
+template <> struct Serializability<pair_point> {
+    typedef TriviallySerializable type;
+};
 
 // A pairing_info is intended to represent information associated to a single
 // read.  It is intended to evolve.  The current version consists of:
@@ -57,59 +72,72 @@ template <> struct Serializability<pair_point>
 
 class pairing_info {
 
-     public:
+  public:
 
-     pairing_info( ) { }
-     pairing_info( const int status, const int partner, const int lib_id )
-          : status_(status), partner_(partner), lib_id_(lib_id) { }
-     
-     int Status( ) const { return status_; }
-     int Partner( ) const { return partner_; }
-     Bool Paired( ) const { return status_ >= 0; }
-     int LibId( ) const { return lib_id_; }
+    pairing_info( ) { }
+    pairing_info( const int status, const int partner, const int lib_id )
+        : status_(status), partner_(partner), lib_id_(lib_id) { }
 
-     private:
+    int Status( ) const {
+        return status_;
+    }
+    int Partner( ) const {
+        return partner_;
+    }
+    Bool Paired( ) const {
+        return status_ >= 0;
+    }
+    int LibId( ) const {
+        return lib_id_;
+    }
 
-     int status_;
-     int partner_;
-     int lib_id_;
+  private:
+
+    int status_;
+    int partner_;
+    int lib_id_;
 
 };
 
 // A gap_info is intended to represent information about the gap defined by
-// a 'bundle' of paired reads.  This is intended to evolve.  It could be 
+// a 'bundle' of paired reads.  This is intended to evolve.  It could be
 // anything between the simplest mean +/- dev description, and a full list of
 // constituent measurements, including library references.
 
 class gap_info {
 
-     public:
+  public:
 
-     gap_info( ) { }
+    gap_info( ) { }
 
-     gap_info( const double mean, const double dev ) : mean_(mean), dev_(dev) { }
+    gap_info( const double mean, const double dev ) : mean_(mean), dev_(dev) { }
 
-     gap_info( const gap_info& gap1, const gap_info& gap2 )
-     {    double g1 = gap1.Mean( ), g2 = gap2.Dev( );
-          double d1 = gap1.Dev( ), d2 = gap2.Dev( );
-          double w1 = 1.0/(d1*d1), w2 = 1.0/(d2*d2);
-          double g = ( w1*g1 + w2*g2 ) / (w1+w2);
-          double d = 1.0 / sqrt( w1+w2 );
-          mean_ = g;
-          dev_ = d;    }
+    gap_info( const gap_info& gap1, const gap_info& gap2 ) {
+        double g1 = gap1.Mean( ), g2 = gap2.Dev( );
+        double d1 = gap1.Dev( ), d2 = gap2.Dev( );
+        double w1 = 1.0/(d1*d1), w2 = 1.0/(d2*d2);
+        double g = ( w1*g1 + w2*g2 ) / (w1+w2);
+        double d = 1.0 / sqrt( w1+w2 );
+        mean_ = g;
+        dev_ = d;
+    }
 
-     double Mean( ) const
-     {    return mean_;    }
-     double Dev( ) const
-     {    return dev_;    }
+    double Mean( ) const {
+        return mean_;
+    }
+    double Dev( ) const {
+        return dev_;
+    }
 
-     private:
+  private:
 
-     double mean_;
-     double dev_;
+    double mean_;
+    double dev_;
 
 };
 
-template <> struct Serializability<gap_info> { typedef TriviallySerializable type; };
+template <> struct Serializability<gap_info> {
+    typedef TriviallySerializable type;
+};
 
 #endif

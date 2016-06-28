@@ -24,31 +24,62 @@
 typedef FeudalString<char> String;
 
 // ToString type conversion suite
-inline String ToString(int x)
-{ char cstr[12]; sprintf(cstr, "%d", x); return String(cstr); }
-inline String ToString(unsigned int x)
-{ char cstr[12]; sprintf(cstr, "%u", x); return String(cstr); }
-inline String ToString(long x)
-{ char cstr[21]; sprintf(cstr, "%ld", x); return String(cstr); }
-inline String ToString(unsigned long x)
-{ char cstr[21]; sprintf(cstr, "%lu", x); return String(cstr); }
-inline String ToString(float x, int precision)
-{ std::ostringstream oss; oss.setf(std::ios::fixed);
-  oss << std::setprecision(precision) << x; return oss.str(); }
-inline String ToString(double x, int precision, bool bScientific=false)
-{ std::ostringstream oss; oss.setf(std::ios::fixed);
-  if(bScientific) oss << std::scientific;
-  oss << std::setprecision(precision) << x; return oss.str(); }
-inline String ToString(char const* cstr) { return cstr; }
-inline String ToString(const String& s) { return s; }
-inline String ToString(const std::string& s) { return s.c_str(); }
+inline String ToString(int x) {
+    char cstr[12];
+    sprintf(cstr, "%d", x);
+    return String(cstr);
+}
+inline String ToString(unsigned int x) {
+    char cstr[12];
+    sprintf(cstr, "%u", x);
+    return String(cstr);
+}
+inline String ToString(long x) {
+    char cstr[21];
+    sprintf(cstr, "%ld", x);
+    return String(cstr);
+}
+inline String ToString(unsigned long x) {
+    char cstr[21];
+    sprintf(cstr, "%lu", x);
+    return String(cstr);
+}
+inline String ToString(float x, int precision) {
+    std::ostringstream oss;
+    oss.setf(std::ios::fixed);
+    oss << std::setprecision(precision) << x;
+    return oss.str();
+}
+inline String ToString(double x, int precision, bool bScientific=false) {
+    std::ostringstream oss;
+    oss.setf(std::ios::fixed);
+    if(bScientific) oss << std::scientific;
+    oss << std::setprecision(precision) << x;
+    return oss.str();
+}
+inline String ToString(char const* cstr) {
+    return cstr;
+}
+inline String ToString(const String& s) {
+    return s;
+}
+inline String ToString(const std::string& s) {
+    return s.c_str();
+}
 template <class T>
-inline String ToString(const T& sumthin)
-{ std::ostringstream oss; oss << sumthin; return oss.str(); }
+inline String ToString(const T& sumthin) {
+    std::ostringstream oss;
+    oss << sumthin;
+    return oss.str();
+}
 
 // ToStringBool
-inline String ToStringBool(bool value) { return (value ? "True" : "False"); }
-inline String ToString(bool value) { return ToStringBool(value); }
+inline String ToStringBool(bool value) {
+    return (value ? "True" : "False");
+}
+inline String ToString(bool value) {
+    return ToStringBool(value);
+}
 
 // Format a possibly large integer for human consumption by putting it in terms
 // of thousands, millions, or billions, with appropriate suffix.
@@ -100,67 +131,89 @@ unsigned int UnBaseAlpha(const String& s);
 String BaseAlNum(unsigned int n);
 
 // Evaluate a mathematical expression
-inline String Evaluate(const String& expr, const bool /* verbose */ = 0)
-{ return ToString(evaluate(expr.c_str())); }
+inline String Evaluate(const String& expr, const bool /* verbose */ = 0) {
+    return ToString(evaluate(expr.c_str()));
+}
 
-inline String operator+ (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() + rhs; }
-inline String operator+ (const String& lhs, const std::string& rhs)
-{ return lhs + rhs.c_str(); }
+inline String operator+ (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() + rhs;
+}
+inline String operator+ (const String& lhs, const std::string& rhs) {
+    return lhs + rhs.c_str();
+}
 
-inline bool operator== (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() == rhs; }
-inline bool operator== (const String& lhs, const std::string& rhs)
-{ return lhs == rhs.c_str(); }
+inline bool operator== (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() == rhs;
+}
+inline bool operator== (const String& lhs, const std::string& rhs) {
+    return lhs == rhs.c_str();
+}
 
-inline bool operator!= (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() != rhs; }
-inline bool operator!= (const String& lhs, const std::string& rhs)
-{ return lhs != rhs.c_str(); }
+inline bool operator!= (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() != rhs;
+}
+inline bool operator!= (const String& lhs, const std::string& rhs) {
+    return lhs != rhs.c_str();
+}
 
-inline bool operator> (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() > rhs; }
-inline bool operator> (const String& lhs, const std::string& rhs)
-{ return lhs > rhs.c_str(); }
+inline bool operator> (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() > rhs;
+}
+inline bool operator> (const String& lhs, const std::string& rhs) {
+    return lhs > rhs.c_str();
+}
 
-inline bool operator>= (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() >= rhs; }
-inline bool operator>= (const String& lhs, const std::string& rhs)
-{ return lhs >= rhs.c_str(); }
+inline bool operator>= (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() >= rhs;
+}
+inline bool operator>= (const String& lhs, const std::string& rhs) {
+    return lhs >= rhs.c_str();
+}
 
-inline bool operator< (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() < rhs; }
-inline bool operator< (const String& lhs, const std::string& rhs)
-{ return lhs < rhs.c_str(); }
+inline bool operator< (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() < rhs;
+}
+inline bool operator< (const String& lhs, const std::string& rhs) {
+    return lhs < rhs.c_str();
+}
 
-inline bool operator<= (const std::string& lhs, const String& rhs)
-{ return lhs.c_str() <= rhs; }
-inline bool operator<= (const String& lhs, const std::string& rhs)
-{ return lhs <= rhs.c_str(); }
+inline bool operator<= (const std::string& lhs, const String& rhs) {
+    return lhs.c_str() <= rhs;
+}
+inline bool operator<= (const String& lhs, const std::string& rhs) {
+    return lhs <= rhs.c_str();
+}
 
 std::istream& operator>> (std::istream& in, String& s);
-inline std::ostream& operator<< (std::ostream& out, const String& s)
-{ return out << s.c_str(); }
+inline std::ostream& operator<< (std::ostream& out, const String& s) {
+    return out << s.c_str();
+}
 
 /// stream operators
 
 /// similar to getline for std::string, but treats '\r' '\n' and "\r\n" as
 /// delimiters
-inline std::istream& getline(std::istream& in, String& s)
-{ String tmp;
-  char c;
-  // TODO: like the previous implementation, this is flawed in that it leaves
-  // the istream in a failed state when returning a final line that lacks a
-  // delimiter.
-  while ( in.get(c) )
-  { if ( c == '\r' && in.peek() == '\n' ) in.get(c);
-    if ( c == '\n' || c == '\r' ) break;
-    tmp.push_back(c); }
-  s = tmp;
-  return in; }
+inline std::istream& getline(std::istream& in, String& s) {
+    String tmp;
+    char c;
+    // TODO: like the previous implementation, this is flawed in that it leaves
+    // the istream in a failed state when returning a final line that lacks a
+    // delimiter.
+    while ( in.get(c) ) {
+        if ( c == '\r' && in.peek() == '\n' ) in.get(c);
+        if ( c == '\n' || c == '\r' ) break;
+        tmp.push_back(c);
+    }
+    s = tmp;
+    return in;
+}
 
 /// return a string filled by reading to the end of a stream
-inline String Slurp(std::istream& is)
-{ String tmp; char c; while (is.get(c)) tmp.push_back(c); return tmp; }
+inline String Slurp(std::istream& is) {
+    String tmp;
+    char c;
+    while (is.get(c)) tmp.push_back(c);
+    return tmp;
+}
 
 #endif // __CHARSTRING_H__
