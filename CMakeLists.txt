@@ -2,25 +2,33 @@ cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -lz -DNDEBUG")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG")
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 
-if (DEFINED MALLOC_LIBRARY)
+set(MALLOC_LIBRARY "" CACHE PATH "Malloc library path")
+
+if (MALLOC_LIBRARY)
     ## MALLOC_LIBRARY, path to libtbbmalloc.so
     get_filename_component(LIBSO_PATH ${MALLOC_LIBRARY} DIRECTORY)
     get_filename_component(LIBSO_NAME ${MALLOC_LIBRARY} NAME)
-
     ## Link directories
     link_directories(${LIBSO_PATH})
 endif()
 
-if (DEFINED ZLIB_PATH)
-  include_directories("${ZLIB_PATH}/include")
-  link_directories("${ZLIB_PATH}/lib")
+#if (DEFINED ZLIB_PATH)
+#  include_directories("${ZLIB_PATH}/include")
+#  link_directories("${ZLIB_PATH}/lib")
+#else()
+#    set(ZLIB_PATH "/usr/lib" CACHE FILEPATH "ZLIB Library path")
+#endif()
+
+find_package(ZLIB REQUIRED)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
 endif()
 
 ## Include directories
@@ -166,7 +174,6 @@ add_library(base2_libs OBJECT
         src/fastg/FastgGraph.cc
         src/graphics/BasicGraphics.cc
         src/kmers/kmer_parcels/KmerParcelsBuilder.cc
-        src/kmers/MakeLookup.cc
         src/math/IntDistribution.cc
         src/pairwise_aligners/MaxMutmerFromMer.cc
         src/pairwise_aligners/SmithWatAffine.cc
@@ -203,15 +210,13 @@ add_library(base2_libs OBJECT
         src/paths/long/large/CN1PeakFinder.cc
         src/paths/long/large/GapToyTools.cc
         src/paths/long/large/GapToyTools3.cc
-        src/paths/long/large/GapToyTools4.cc
-        src/paths/long/large/GapToyTools5.cc
         src/paths/long/large/Lines.cc
         src/paths/long/large/LocalLayout.cc
         src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
         src/util/TextTable.cc)
 
-add_library(specific_01 OBJECT
+SET(SOURCE_FILES_UNIPATH_01 src/modules/unipaths_01.cc
         src/AnnotatedContig.cc
         src/Misc.cc
         src/bam/ReadBAM.cc
@@ -222,10 +227,10 @@ add_library(specific_01 OBJECT
         src/paths/long/ShortKmerReadPather.cc
         src/paths/long/large/ExtractReads.cc
         src/paths/long/large/ReadNameLookup.cc
+        src/paths/long/large/Samples.cc
         src/system/Crash.cc)
 
-
-add_library(specific_02 OBJECT
+SET(SOURCE_FILES_QGRAPH_02 src/modules/qgraph_02.cc
         src/AnnotatedContig.cc
         src/BasevectorTools.cc
         src/CompressedSequence.cc
@@ -243,106 +248,83 @@ add_library(specific_02 OBJECT
         src/system/Crash.cc
         src/util/PeakFinder.h)
 
-add_library(specific_03 OBJECT
+SET(SOURCE_FILES_CLEAN_03 src/modules/clean_03.cc
         src/CompressedSequence.cc
         src/FastaConverter.cc
+        src/FastaFilestream.cc
         src/FastaFilestream.cc
         src/FastaFilestreamPreview.cc
         src/FastaVerifier.cc
         src/pairwise_aligners/SmithWatBanded.cc
         src/paths/long/large/Clean200.cc)
 
-add_library(specific_04 OBJECT
+SET(SOURCE_FILES_PATCHING_04 src/modules/patching_04.cc
+        src/kmers/MakeLookup.cc
         src/paths/long/large/AssembleGaps.cc
         src/paths/long/large/GapToyTools2.cc
+        src/paths/long/large/GapToyTools4.cc
+        src/paths/long/large/GapToyTools5.cc
         src/paths/long/large/Unsat.cc)
 
-add_library(specific_05 OBJECT
+SET(SOURCE_FILES_SIMPLIFY_05 src/modules/simplify_05.cc
+        src/kmers/MakeLookup.cc
         src/paths/long/DisplayTools.cc
         src/paths/long/large/GapToyTools2.cc
+        src/paths/long/large/GapToyTools4.cc
+        src/paths/long/large/GapToyTools5.cc
         src/paths/long/large/ImprovePath.cc
         src/paths/long/large/Simplify.cc
         src/paths/long/large/tools/NhoodInfoCore.cc
         src/paths/long/large/tools/NhoodInfoState.cc
         src/paths/long/large/tools/NhoodInfoStuff.cc)
 
-add_library(specific_06 OBJECT
+SET(SOURCE_FILES_SCAFFOLDING_06 src/modules/scaffolding_06.cc
+        src/kmers/MakeLookup.cc
         src/paths/long/DisplayTools.cc
         src/paths/long/large/FinalFiles.cc
-        src/paths/long/large/MakeGaps.cc)
-
-add_library(specific_w2rap-contigger OBJECT
-        src/AnnotatedContig.cc
-        src/BasevectorTools.cc
-        src/CompressedSequence.cc
-        src/FastaConverter.cc
-        src/FastaFileset.cc
-        src/FastaFilestream.cc
-        src/FastaFilestreamPreview.cc
-        src/FastaNameParser.cc
-        src/FastaVerifier.cc
-        src/Misc.cc
-        src/bam/ReadBAM.cc
-        src/pairwise_aligners/SmithWatBanded.cc
-        src/paths/MuxGraph.cc
-        src/paths/OffsetTracker.cc
-        src/paths/long/large/AssembleGaps.cc
-        src/paths/long/large/GapToyTools2.cc
-        src/paths/long/large/Unsat.cc
-        src/paths/long/BuildReadQGraph.cc
-        src/paths/long/ExtendReadPath.cc
-        src/paths/long/KmerAlign.h
-        src/paths/long/ShortKmerReadPather.cc
-        src/paths/long/large/Clean200.cc
-        src/paths/long/large/ExtractReads.cc
-        src/paths/long/large/ReadNameLookup.cc
-        src/paths/long/large/Repath.cc
-        src/system/Crash.cc
-        src/util/PeakFinder.h
-        src/paths/long/DisplayTools.cc
-        src/paths/long/large/FinalFiles.cc
+        src/paths/long/large/GapToyTools4.cc
+        src/paths/long/large/GapToyTools5.cc
         src/paths/long/large/MakeGaps.cc
-        src/paths/long/large/Simplify.cc
-        src/paths/long/large/ImprovePath.cc
-        src/paths/long/large/tools/NhoodInfoCore.cc
-        src/paths/long/large/tools/NhoodInfoState.cc
-        src/paths/long/large/tools/NhoodInfoStuff.cc)
-
+        src/paths/long/large/Samples.cc)
 
 ## add executables and respective sources
-add_executable(01_unipaths src/modules/unipaths_01.cc $<TARGET_OBJECTS:specific_01> $<TARGET_OBJECTS:base_libs>)
-add_executable(02_qgraph src/modules/qgraph_02.cc $<TARGET_OBJECTS:specific_02> $<TARGET_OBJECTS:base_libs>
+add_executable(01_unipaths ${SOURCE_FILES_UNIPATH_01} $<TARGET_OBJECTS:base_libs>)
+add_executable(02_qgraph ${SOURCE_FILES_QGRAPH_02} $<TARGET_OBJECTS:base_libs>
 $<TARGET_OBJECTS:base2_libs>)
-add_executable(03_clean src/modules/clean_03.cc $<TARGET_OBJECTS:specific_03> $<TARGET_OBJECTS:base_libs>
+add_executable(03_clean ${SOURCE_FILES_CLEAN_03} $<TARGET_OBJECTS:base_libs>
 $<TARGET_OBJECTS:base2_libs>)
-add_executable(04_patching src/modules/patching_04.cc $<TARGET_OBJECTS:specific_04> $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
-add_executable(05_simplify src/modules/simplify_05.cc $<TARGET_OBJECTS:specific_05> $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
-add_executable(06_scaffolding src/modules/scaffolding_06.cc $<TARGET_OBJECTS:specific_06> $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
-add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
-        $<TARGET_OBJECTS:specific_w2rap-contigger>
-        $<TARGET_OBJECTS:base_libs>
-        $<TARGET_OBJECTS:base2_libs>
-        )
-
-if (DEFINED MALLOC_LIBRARY)
-    ## Link libraries
-    target_link_libraries(01_unipaths ${LIBSO_NAME})
-    target_link_libraries(02_qgraph ${LIBSO_NAME})
-    target_link_libraries(03_clean ${LIBSO_NAME})
-    target_link_libraries(04_patching ${LIBSO_NAME})
-    target_link_libraries(05_simplify ${LIBSO_NAME})
-    target_link_libraries(06_scaffolding ${LIBSO_NAME})
-    target_link_libraries(w2rap-contigger ${LIBSO_NAME})
-endif()
+add_executable(04_patching ${SOURCE_FILES_PATCHING_04} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
+add_executable(05_simplify ${SOURCE_FILES_SIMPLIFY_05} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
+add_executable(06_scaffolding ${SOURCE_FILES_SCAFFOLDING_06} $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
 
 ##Zlib link
-if (DEFINED ZLIB_PATH)
+if (ZLIB_FOUND)
   set(ZLIB libz.so)
-  target_link_libraries(01_unipaths ${ZLIB})
-  target_link_libraries(02_qgraph ${ZLIB})
-  target_link_libraries(03_clean ${ZLIB})
-  target_link_libraries(04_patching ${ZLIB})
-  target_link_libraries(05_simplify ${ZLIB})
-  target_link_libraries(06_scaffolding ${ZLIB})
-  target_link_libraries(w2rap-contigger ${ZLIB})
+  target_link_libraries(01_unipaths ${ZLIB_LIBRARIES})
+  target_link_libraries(02_qgraph ${ZLIB_LIBRARIES})
+  target_link_libraries(03_clean ${ZLIB_LIBRARIES})
+  target_link_libraries(04_patching ${ZLIB_LIBRARIES})
+  target_link_libraries(05_simplify ${ZLIB_LIBRARIES})
+  target_link_libraries(06_scaffolding ${ZLIB_LIBRARIES})
 endif()
+
+#Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc
+if (DEFINED MALLOC_LIBRARY)
+    ## Link libraries
+    if (LIBSO_NAME MATCHES ".*tcmalloc*")
+        target_link_libraries(01_unipaths ${LIBSO_NAME} profiler)
+        target_link_libraries(02_qgraph ${LIBSO_NAME} profiler)
+        target_link_libraries(03_clean ${LIBSO_NAME} profiler)
+        target_link_libraries(04_patching ${LIBSO_NAME} profiler)
+        target_link_libraries(05_simplify ${LIBSO_NAME} profiler)
+        target_link_libraries(06_scaffolding ${LIBSO_NAME} profiler)
+    else ()
+        target_link_libraries(01_unipaths ${LIBSO_NAME})
+        target_link_libraries(02_qgraph ${LIBSO_NAME})
+        target_link_libraries(03_clean ${LIBSO_NAME})
+        target_link_libraries(04_patching ${LIBSO_NAME})
+        target_link_libraries(05_simplify ${LIBSO_NAME})
+        target_link_libraries(06_scaffolding ${LIBSO_NAME})
+    endif()
+endif()
+
