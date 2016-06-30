@@ -37,7 +37,7 @@ void PQVecEncoder::init( qvec const& qv )
         auto iCost = mCosts.end();
         unsigned minVal = std::min(63u,unsigned(*itr));
         unsigned maxVal = *itr;
-        unsigned bits = PowerOf2::ceilLg2(maxVal+1u-minVal);
+        unsigned bits = PowerOf2::ceilLg2lkp(maxVal+1u-minVal);
         unsigned prevCost = *--iCost;
         unsigned nQs = 1;
         unsigned bestCost = prevCost + Block::blockSize(nQs,bits);
@@ -51,7 +51,7 @@ void PQVecEncoder::init( qvec const& qv )
                 maxVal = val;
             if ( val < minVal )
                 minVal = val;
-            bits = PowerOf2::ceilLg2(maxVal+1u-minVal);
+            bits = PowerOf2::ceilLg2lkp(maxVal+1u-minVal);
             prevCost = *--iCost;
             unsigned curCost = prevCost + Block::blockSize(++nQs,bits);
             if ( curCost < bestCost )

@@ -30,8 +30,19 @@ public:
     { return 63-nlz(val); }
 
     /// return ceil(log2(val)). ceilLg2(0) is -1.
+    static int ceilLg2lkp( unsigned long val )
+    {
+        static const int lookup[65] = {
+            -1, 0, 63, 62, 62, 61, 61, 61, 61, 60, 60, 60, 60, 60, 60, 60,
+                60, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59,
+                59, 59, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58,
+                58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58,
+                58, 58, 58, 58
+        };
+        return lookup[val];
+    }
     static int ceilLg2( unsigned long val )
-    { return val ? 64-nlz(val-1) : -1; }
+    { return val ? 64-nlz(val-1) : -1; } 
 
     /// return greatest power of 2 <= val.  floor2(0) is 0.
     static unsigned long floor2( unsigned long val )
