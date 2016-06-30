@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
 int main(const int argc, const char * argv[]) {
 
     std::string out_prefix;
@@ -57,8 +58,8 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValuesConstraint<unsigned int> largeKconst(allowed_k);
         TCLAP::ValueArg<unsigned int> large_KArg("K", "large_k",
              "Large k (default: 200)", false, 200, &largeKconst, cmd);
-        TCLAP::ValueArg<unsigned int> small_KArg("k", "small_k",
-                                                 "Small k (default: 60)", false, 60, &largeKconst, cmd);
+        //TCLAP::ValueArg<unsigned int> small_KArg("k", "small_k",
+        //                                         "Small k (default: 60)", false, 60, &largeKconst, cmd);
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
@@ -74,7 +75,7 @@ int main(const int argc, const char * argv[]) {
         threads = threadsArg.getValue();
         max_mem = max_memArg.getValue();
         large_K = large_KArg.getValue();
-        small_K = small_KArg.getValue();
+        small_K = 60;//small_KArg.getValue();
         min_size = minSizeArg.getValue();
         extend_paths=pathExtensionArg.getValue();
         dump_all=dumpAllArg.getValue();

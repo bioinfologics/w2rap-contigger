@@ -1306,43 +1306,53 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       HyperBasevector* pHBV, ReadPathVec* pPaths, int _K,
                       bool const VERBOSE )
 {
-    //std::cout << Date() << ": loading reads." << std::endl;
+    std::cout << Date() << ": loading reads." << std::endl;
     Dict* pDict = createDict(reads,quals,minQual,minFreq);
 
-
+    std::cout << Date() << ": finding edge sequences." << std::endl;
     // figure out the complete base sequence of each edge
-    //std::cout << Date() << ": finding edge sequences." << std::endl;
     vecbvec edges;
     edges.reserve(pDict->size()/100);
     buildEdges(*pDict,&edges);
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
 
-    if ( doFillGaps )
-        fillGaps(reads,maxGapSize,minFreq2,&edges,pDict);
+    if ( doFillGaps ) {
+        std::cout << Date() << ": filling gaps." << std::endl;
+        fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
+    }
 
-    if ( doJoinOverlaps )
-        joinOverlaps(reads,_K/2,minFreq2,&edges,pDict);
+    if ( doJoinOverlaps ) {
+        std::cout << Date() << ": joining Overlaps." << std::endl;
+        joinOverlaps(reads, _K / 2, minFreq2, &edges, pDict);
+    }
 
-    if ( !refFasta.empty() )
-        pathRef(refFasta,*pDict,edges);
-
+    if ( !refFasta.empty() ) {
+        std::cout << Date() << ": aligning to reference." << std::endl;
+        pathRef(refFasta, *pDict, edges);
+    }
     vec<int> fwdEdgeXlat;
     vec<int> revEdgeXlat;
     if ( !pPaths )
     {
         delete pDict;
+        std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
     }
     else
     {
+        std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
+        std::cout << Date() << ": creating Read Paths." << std::endl;
         pathReads(reads,quals,*pDict,edges,*pHBV,
                   fwdEdgeXlat,revEdgeXlat,pPaths,useNewAligner,VERBOSE);
         delete pDict;
-        if (repathUnpathed)
-            repathUnpathedReads(reads,quals,*pHBV, *pPaths);
+        if (repathUnpathed) {
+            std::cout << Date() << ": repathing unpathed reads." << std::endl;
+            repathUnpathedReads(reads, quals, *pHBV, *pPaths);
+        }
     }
+    std::cout << Date() << ": graph created." << std::endl;
 }
 
 void rePath( HyperBasevector const& hbv,

@@ -344,7 +344,7 @@ void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      //     std::cout << Date( ) << ": computing right extensions" << std::endl;
      const int min_ext = 200;
      vec<Bool> right_ext( kmers.size( ), False );
-     #pragma omp parallel for
+     //#pragma omp parallel for
      for ( size_t id = 0; id < corrected.size( ); id++ )           // calculating right_ext[i] for kmers[i]
      {    vec<basevector> v;
           corrected[id].ExpandTo(v);
@@ -371,7 +371,7 @@ void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      vec< kmer<M> > fails;
      for ( int64_t i = 0; i < kmers.jsize( ); i++ )
           if ( !right_ext[i] ) fails.push_back( kmers[i] );           // fails is list of kmers for which !right_ext[]
-     #pragma omp parallel for
+     //#pragma omp parallel for
      for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
      {    const int64_t idp = pairs.getPartnerID(id);
           kmer<M> x;
@@ -637,7 +637,7 @@ void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& he
                // changes from LongHyper.cc.  Should be completely rewritten.
 
                //if (logc.STATUS_LOGGING)
-                    std::cout << Date( ) << ": initially closing pairs" << std::endl;
+               //     std::cout << Date( ) << ": initially closing pairs" << std::endl;
                #pragma omp parallel for
                for ( int64_t id1 = 0; id1 < (int64_t) creads.size( ); id1++ )
                {    if ( done[id1] ) continue;

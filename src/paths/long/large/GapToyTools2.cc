@@ -549,7 +549,7 @@ void ExtraPaths( const HyperBasevector& hb, const vecbasevector& bases,
 
 void LayoutReads( const HyperBasevector& hb, const vec<int>& inv,
      const vecbasevector& bases, const ReadPathVec& paths,
-     vec<vec<int>>& layout_pos, vec<vec<int64_t>>& layout_id, 
+     vec<vec<int>>& layout_pos, vec<vec<int64_t>>& layout_id,
      vec<vec<Bool>>& layout_or )
 {
      int nedges = hb.EdgeObjectCount( );
@@ -624,25 +624,20 @@ void SortBlobs( const HyperBasevector& hb,
 
 void RemoveHangs( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths, 
      const int max_del )
-{    double clock1 = WallClockTime( );
+{
      const double junk_ratio = 10.0;
      vec<kmer_count> kc( hb.EdgeObjectCount( ) );
      for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
           kc[e].n = hb.EdgeObject(e).isize( ) - hb.K( ) + 1;
      digraphE<kmer_count> shb_kc( hb, kc );
-     LogTime( clock1, "removing hanging ends 1" );
-     double clock2 = WallClockTime( );
-     std::cout<<"Going into RemoveHangingEnds3"<<std::endl;
      RemoveHangingEnds3( shb_kc, &kmer_count::N, max_del, junk_ratio, 100 );//XXX: 100 is an arbitrary parameter.
-     LogTime( clock2, "removing hanging ends 2" );
-     double clock3 = WallClockTime( );
      vec<int> e_to_delete;
      vec<Bool> used;
      shb_kc.Used(used);
      for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
           if ( !used[e] ) e_to_delete.push_back(e);    
      hb.DeleteEdges(e_to_delete);
-     LogTime( clock3, "removing hanging ends 3" );    }
+     }
 
 void Insert( VecULongVec& paths2_index, const int e, const int64_t id )
 {    if ( !BinMember( paths2_index[e], id ) )
