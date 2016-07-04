@@ -35,12 +35,6 @@ void SelectInitialReads( const vec<int>& rid, const IAndOsVec& F, vec<int>& rid1
      for ( int i = 0; i < rid.isize( ); i++ )
           if ( randomx( ) % 5 == 0 ) rid1.push_back( rid[i] );    }
 
-void CorrectSomeMoreReads0( const vec<int>& rid, const vec<int>& rid1,
-     const IAndOsVec& F, const VecEFasta& corrected, const vec<int>& cid,
-     VecEFasta& corrected2, vec<int>& cid2, const long_heuristics& heur,
-     const long_logging_control& log_control )
-{    return;    }
-
 
 namespace {  // anonymous namespace for local functions
 
@@ -57,12 +51,6 @@ namespace {  // anonymous namespace for local functions
         return out << "[" << r.pos1 << ", " << r.Pos1 << ") to [" << r.pos2 << ", " << r.Pos2 << ") n_error= " 
                    << r.n_errors << "(" << r.error_rate << ")";   }
 
-    // Compare only the second element of two pairs
-    struct CompSecond {
-        bool operator() ( const std::pair<int,int>& l, const std::pair<int,int>& r ) {
-            return l.second < r.second;
-        }
-    };
 
     // Select the seemingly best assembly based on the alignment results
     // ,which is the first qualifying assembly it finds after sort all 
@@ -130,18 +118,6 @@ namespace {  // anonymous namespace for local functions
                 return 0;
         return 1;
     }
-    // Free Smith-Waterman alignment -- to be discarded
-    // There is an undesirable behavior that force the ends of the query sequence
-    // to be included in the alignment.
-    AlignRange SWFAlign( const basevector& s, const basevector& t) 
-    {
-        align a;
-        SmithWatFreeSym( s, t, a, false, false, 1, 1, 0 );
-        int error = a.Errors( s, t );
-        float error_rate = error * 1.0 / ( a.Pos1() - a.pos1() );
-        AlignRange result = { a, a.pos1(), a.Pos1(), a.pos2(), a.Pos2(), error, error_rate };
-        return result;
-    }
 
     // Banded Smith-Waterman alignment 
     AlignRange SWAlign( const basevector& s, const basevector& t) 
@@ -200,72 +176,6 @@ namespace {  // anonymous namespace for local functions
             AlignRange result = { a, a.pos1(), a.Pos1(), a.pos2(), a.Pos2(), error, error_rate };
             return result;
         }
-    }
-
-    template<int K> 
-    void MakeKmerLookup0Single( const vecbasevector& unibases, vec< triple<kmer<K>,int,int> >& kmers_plus, 
-         const long_logging_control& log_control, const long_logging& logc, std::ostream& out )
-    {    vec<int64_t> starts;
-         starts.reserve( unibases.size() + 1 );
-         starts.push_back(0);
-         for ( size_t i = 0; i < unibases.size( ); i++ )
-         {    const basevector& u = unibases[i];
-              starts.push_back( starts.back( ) + Max( 0, u.isize( ) - K + 1 ) );    }
-         kmers_plus.resize( starts.back( ) );
-         for ( size_t i = 0; i < unibases.size( ); i++ )
-         {    const basevector& u = unibases[i];
-              for ( int j = 0; j <= u.isize( ) - K; j++ )
-              {    int64_t r = starts[i] + j;
-                   kmers_plus[r].first.SetToSubOf( u, j );
-                   kmers_plus[r].second = i; 
-                   kmers_plus[r].third = j;    }    }
-         Sort(kmers_plus);
-    }
-
-    // Mark those friend reads that have at least half of kmer match of the most matching one.
-    void FilterFriends( const vec< vec< std::pair<int,int> > >& offsets, vec<Bool>& accepted ) {
-        vec<int> pos1_count( accepted.size() );
-        for ( size_t id = 1; id < accepted.size(); id++ ) {    
-            vec<int> pos1;
-            for ( int j = 0; j < offsets[id].isize( ); j++ )
-                pos1.push_back( offsets[id][j].second );
-            UniqueSort(pos1);
-            pos1_count[id] = pos1.size( );    
-        }
-        int max_pos1_count = 0;
-        for ( size_t id = 0; id < accepted.size(); id++ ) {
-            if ( id != 0 ) max_pos1_count = Max( max_pos1_count, pos1_count[id] );    
-            if ( pos1_count[id] < max_pos1_count/2 ) continue;
-            if ( offsets[id].empty( ) ) continue; 
-            accepted[id] = True;
-        }
-    }
-
-    // Create the list of kmer offsets between reads
-    template<int K>
-    void CreateOffsets( const vec< triple<kmer<K>,int,int> >& kmers_plus,  
-            vec< vec< std::pair<int,int> > >& offsets ) 
-    {
-        for ( int64_t i = 0; i < (int64_t) kmers_plus.size( ); i++ ) {    
-            int64_t j, z1, z2;
-            for ( j = i + 1; j < (int64_t) kmers_plus.size( ); j++ )
-                if ( kmers_plus[j].first != kmers_plus[i].first ) break;
-            for ( z1 = i; z1 < j; z1++ )
-                if ( kmers_plus[z1].second == 0 ) break;
-            for ( z2 = z1; z2 < j; z2++ )
-                if ( kmers_plus[z2].second != 0 ) break;
-            for ( int64_t z = z1; z < z2; z++ ) {    
-                int pos1 = kmers_plus[z].third;
-                for ( int64_t k = i; k < j; k++ ) {    
-                    int id2 = kmers_plus[k].second; 
-                    if ( id2 == 0 ) continue;
-                    int pos2 = kmers_plus[k].third; // position on read id2
-                    offsets[id2].push( pos1-pos2, pos1 );    
-                }    
-            }
-            i = j - 1;    
-        }
-        for ( size_t id = 1; id < offsets.size(); id++ ) Sort( offsets[id] );
     }
 
     // If we have several candidate corrected reads, which one is supported more by all
@@ -337,7 +247,7 @@ namespace {  // anonymous namespace for local functions
     
     // Given all the edits generated by FindEdits, identify signals suggesting
     // errors in the founder reads, and make the correction.
-    int  MakeEdits( const vec<basevector>& threads, basevector& t, 
+    int  PFMakeEdits( const vec<basevector>& threads, basevector& t, 
          const vec< vec<edit0> >& edits )
     {    const int Threshold_Vote = threads.isize( ) * 0.5;
          vec< std::pair<int,edit0> > keepers;
@@ -367,62 +277,7 @@ namespace {  // anonymous namespace for local functions
          return nedits;
     }
 
-    // Find the relative offset and uncertainty(bandwidth) between two reads given the kmer offset lists.
-    void OffsetAndBandwidth( const vec< std::pair<int,int> >& offsets, int& offset, int& bandwidth ) {
-        // Form offsets into groups, breaking whenever there is a
-        // > max_sep = 20 separation in offsets.
-        vec<int> ostarts;
-        ostarts.push_back(0);
-        const int max_sep = 20;
-        for ( int j = 0; j < offsets.isize( ) - 1; j++ ) 
-            if ( offsets[j+1].first > offsets[j].first + 20 )
-                ostarts.push_back(j+1);
-        ostarts.push_back( offsets.size( ) );
-        // Compute the size of each group, as measured by its number
-        // of distinct rpos2 values.  Find the largest group.
-        int gp_max = 0, gp_best = -1;
-        for ( int j = 0; j < ostarts.isize( ) - 1; j++ ) {    
-            vec<int> rpos2;
-            for ( int l = ostarts[j]; l < ostarts[j+1]; l++ )
-                rpos2.push_back( offsets[l].second );
-            UniqueSort(rpos2);
-            if ( rpos2.isize( ) > gp_max )
-            {   gp_max = rpos2.size( );
-                gp_best = j;    }    
-        }
-        // Set offset to the median within the winning group, and
-        // set bandwidth to span the group, but no more than 
-        // max_bandwidth = 200;
-        int start = ostarts[gp_best], stop = ostarts[gp_best+1];
-        int mid = start + (stop-start)/2;
-        offset = offsets[mid].first;
-        const int bw_add = 12;
-        bandwidth = Max( offset - offsets[start].first,
-                offsets[stop-1].first - offset ) + bw_add;
-        const int max_bandwidth = 200;
-        //bandwidth = Min( bandwidth, max_bandwidth );
-        bandwidth += abs(offset) * 1.1;  // extra bandwidth
-    }
 
-    // Find the relative offset and uncertainty(bandwidth) between two reads given the kmer offset lists.
-    // Faster (less accurate) method
-    void OffsetAndBandwidth2( const vec< std::pair<int,int> >& offsets, int& offset, int& bandwidth ) {
-        const int Extra_Bandwidth = 50;
-        vec< std::pair<int,int> > offsets_filtered;
-        GroupAndSelect( offsets, offsets_filtered, 200, 0.2, 0 );
-        if ( offsets_filtered.empty() ) {
-            offset = 0;
-            bandwidth = -1;
-            return;
-        }
-        vec<int> all( offsets_filtered.size() );
-        for ( size_t i = 0; i < all.size(); ++i ) 
-            all[i] = offsets_filtered[i].first;
-        Sort(all);
-        offset = Median(all);
-        bandwidth = all.back() - all.front();
-        bandwidth += Extra_Bandwidth;
-    }
 
     // Sometimes efasta contains {,}, creating redundant edges when expanding. 
     // We want to remove those empty brackets.
@@ -825,7 +680,7 @@ std::pair<efasta,CSMR_MESSAGE> CorrectOneReadFast( int ec, const vecbasevector& 
                 if (  edits[p].size() >=1 )
                     out << "site " << p << " has " << edits[p].size() << std::endl;
         }
-        int nedits = MakeEdits( other_reads, to_correct, edits );
+        int nedits = PFMakeEdits( other_reads, to_correct, edits );
         if ( nedits == 0 ) 
             return std::make_pair( provisional_efasta, CSMR_OK );
         if ( VERBOSITY >= 1 && nedits >0 ) {

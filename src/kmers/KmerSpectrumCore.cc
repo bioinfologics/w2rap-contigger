@@ -15,7 +15,7 @@
 
 
 static inline 
-String Tag(String S = "KSC") { return Date() + " (" + S + "): "; } 
+String KSCTag(String S = "KSC") { return Date() + " (" + S + "): "; } 
 
 
 
@@ -57,7 +57,7 @@ void kmer_spectrum_compute(const BaseVecVec & bvv,
     naif_kmerize(&spectralizer, NUM_THREADS, VERBOSITY, mem_mean_ceil);
   }
   else {
-    cout << Tag() << "K= " << K << " not implemented." << std::endl;
+    cout << KSCTag() << "K= " << K << " not implemented." << std::endl;
     exit(1);
   }
    
@@ -102,7 +102,7 @@ void kmer_spectra_by_affixes_compute(const BaseVecVec   & bvv,
     naif_kmerize(&spectralizer, NUM_THREADS, VERBOSITY, mem_mean_ceil);
   }
   else {
-    cout << Tag() << "K= " << K << " not implemented." << std::endl;
+    cout << KSCTag() << "K= " << K << " not implemented." << std::endl;
     exit(1);
   }
 }
@@ -141,7 +141,7 @@ void kmer_bi_spectrum_compute(const BaseVecVec   & bvv,
     naif_kmerize(&spectralizer, NUM_THREADS, VERBOSITY, mem_mean_ceil);
   }
   else {
-    cout << Tag() << "K= " << K << " not implemented." << std::endl;
+    cout << KSCTag() << "K= " << K << " not implemented." << std::endl;
     exit(1);
   }
         
@@ -182,7 +182,7 @@ void kmer_spectra_by_quals_compute(const BaseVecVec   & bvv,
     naif_kmerize(&spectralizer, NUM_THREADS, VERBOSITY, mem_mean_ceil);
   }
   else {
-    cout << Tag() << "K= " << K << " not implemented." << std::endl;
+    cout << KSCTag() << "K= " << K << " not implemented." << std::endl;
     exit(1);
   }
 }
@@ -200,7 +200,7 @@ void genome_analysis_report(const KmerSpectrum & kspec,
                             const unsigned       KF_LOW,
                             const unsigned       VERBOSITY)
 {
-  cout << Tag() << "Estimating genome size." << std::endl;
+  cout << KSCTag() << "Estimating genome size." << std::endl;
   kspec.analyze(PLOIDY, read_len, KF_LOW, VERBOSITY);
 
   const size_t G = kspec.genome_size();
@@ -210,28 +210,28 @@ void genome_analysis_report(const KmerSpectrum & kspec,
   const size_t GR      = (failed) ? 0 : kspec.genome_size_repetitive();
   const float coverage = (failed) ? 0 : kspec.coverage();
 
-  cout << Tag() << "------------------- Kmer Spectrum Analysis -------------------" << std::endl;
-  cout << Tag() << "Genome size estimate        = " 
+  cout << KSCTag() << "------------------- Kmer Spectrum Analysis -------------------" << std::endl;
+  cout << KSCTag() << "Genome size estimate        = " 
        << setw(14) << ToStringAddCommas(G) << " bases" << std::endl;
-  cout << Tag() << "Genome size estimate CN = 1 = " 
+  cout << KSCTag() << "Genome size estimate CN = 1 = " 
        << setw(14) << ToStringAddCommas(G1) << " bases ( " 
        << fixed << setw(5) << setprecision(1) 
        << (failed ? 0 : 100 * float(G1)/float(G)) << " % )" << std::endl;
-  cout << Tag() << "Genome size estimate CN > 1 = " 
+  cout << KSCTag() << "Genome size estimate CN > 1 = " 
        << setw(14) << ToStringAddCommas(GR) << " bases ( "
        << fixed << setw(5) << setprecision(1) 
        << (failed ? 0 : 100 * float(GR)/float(G)) << " % )" << std::endl;
         
   // ---- computing coverage
         
-  cout << Tag() << "Coverage estimate           = " 
+  cout << KSCTag() << "Coverage estimate           = " 
        << setw(14) << setprecision(0) << coverage << " x" << std::endl;
 
 
   // ---- bias standard deviation (coverage independent)
 
   const float sd_bias = failed ? 0 : kspec.bias_stddev();
-  cout << Tag() << "Bias stddev at scale > K    = " 
+  cout << KSCTag() << "Bias stddev at scale > K    = " 
        << setw(14) << setprecision(2) << sd_bias << std::endl;
 
 
@@ -241,7 +241,7 @@ void genome_analysis_report(const KmerSpectrum & kspec,
   const float pe = 1.0 - pow(1.0 - f, 1.0 / kspec.K());
   const float Q = -10.0 * log(pe) / log(10);
 
-  cout << Tag() << "Base error rate estimate    = " 
+  cout << KSCTag() << "Base error rate estimate    = " 
        << setw(14) << setprecision(4) << pe 
        << " (Q = " << setprecision(1) << Q << ")" << std::endl;
     
@@ -250,22 +250,22 @@ void genome_analysis_report(const KmerSpectrum & kspec,
   // ---- ploidy report
 
   if (PLOIDY == 2) {
-    cout << Tag() << "SNP rate: always verify with kmer spectrum plot." << std::endl;
+    cout << KSCTag() << "SNP rate: always verify with kmer spectrum plot." << std::endl;
 
-    cout << Tag() << "Ploidy                      = " << setw(14) << PLOIDY << std::endl;
+    cout << KSCTag() << "Ploidy                      = " << setw(14) << PLOIDY << std::endl;
     const size_t d_SNPs = failed ? 0 : kspec.d_SNP();
-    cout << Tag() << "SNP rate                   ~= " 
+    cout << KSCTag() << "SNP rate                   ~= " 
 	 << setw(14) << ("1/" + ToString(d_SNPs)) << std::endl;
 
     const float p = failed ? 0.0 : 1.0 / d_SNPs;
     const float p_close = 1.0 - pow(1.0 - p, static_cast<int>(kspec.K()));
-    cout << Tag() << "SNPs closer than K         ~= " 
+    cout << KSCTag() << "SNPs closer than K         ~= " 
          << setw(14) << setprecision(0) << 100 * p_close * (2 - p_close) << " %" << std::endl;
   }
   else {
-    cout << Tag() << "SNP rate not computed (PLOIDY = " << PLOIDY << ")." << std::endl;
+    cout << KSCTag() << "SNP rate not computed (PLOIDY = " << PLOIDY << ")." << std::endl;
   } 
-  cout << Tag() << "--------------------------------------------------------------" << std::endl;
+  cout << KSCTag() << "--------------------------------------------------------------" << std::endl;
 
 }
 

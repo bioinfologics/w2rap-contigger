@@ -24,7 +24,6 @@
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
 #include "paths/long/large/ReadNameLookup.h"
-#include "random/Shuffle.h"
 
 class rs_meta { // read set meta info
      public:

@@ -33,7 +33,6 @@
 #include "paths/long/ultra/MakeBlocks.h"
 #include "paths/long/ultra/Prefab.h"
 #include "paths/long/ultra/ThreadedBlocks.h"
-#include "random/Shuffle.h"
 #include "reporting/PerfStat.h"
 #include "system/ParsedArgs.h"
 

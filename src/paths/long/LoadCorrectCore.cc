@@ -35,7 +35,6 @@
 #include "paths/long/PreCorrectAlt1.h"
 #include "paths/long/PreCorrectOldNew.h"
 #include "paths/long/DiscovarTools.h"
-#include "random/Shuffle.h"
 #include <numeric>
 #include <type_traits>
 
@@ -174,135 +173,7 @@ void MergeReadSets( const vec<String>& heads, const String& TMP,
                MergeQltout( head_out, headsp, sizes );
       }  }
 
-void SelectRandom( const String& TMP, const double SELECT_FRAC,
-     const long_logging& logc, const long_data_spec& spec )
-{
-     String READS_IN = TMP + "/frag_reads_orig";
-     String READS_OUT = TMP + "/frag_reads_orig";
-     double FRAC = SELECT_FRAC;
-     unsigned int SEED = spec.SELECT_SEED;
-     Bool USE_LOCS = logc.KEEP_LOCS;
-     Bool SHUFFLE = spec.SHUFFLE_INPUT;
-     String in_bases_file = READS_IN + ".fastb";
-     String in_quals_file = READS_IN + ".qualb";
-     String in_names_file = READS_IN + ".names";
-     String in_pairs_file = READS_IN + ".pairs";
-     String in_qlt_file   = READS_IN + ".qltout";
-     String out_bases_file  = READS_OUT + ".fastb";
-     String out_quals_file  = READS_OUT + ".qualb";
-     String out_names_file  = READS_OUT + ".names";
-     String out_select_file = READS_OUT + ".select";
-     String out_pairs_file  = READS_OUT + ".pairs";
-     String out_qlt_file    = READS_OUT + ".qltout";
-     Ofstream( log, TMP + "/SelectRandomPairs.log" );
-     ForceAssertGt( FRAC, 0 );
-     size_t n_reads = MastervecFileObjectCount( in_bases_file );
-     vec<size_t> select;
-     vec<longlong> maps_to( n_reads, -1 );
-     {    log << Date( ) << ": loading pairing info" << std::endl;
-          PairsManager pairs( in_pairs_file );
-          size_t n_pairs = pairs.nPairs();
-          log << Date( ) << ": loading bases" << std::endl;
-          vecbvec bases( in_bases_file );
-          log << Date( ) << ": shuffling pairs ids" << std::endl;
-          vec<uint64_t> shuffled;
-          if (SHUFFLE)
-          {    if ( n_pairs > 0 )
-                    Shuffle64( (uint64_t)n_pairs, shuffled, (uint64_t)SEED );    }
-          else shuffled = vec<uint64_t>( n_pairs, vec<uint64_t>::IDENTITY );
 
-          size_t n_keepers = 0;
-          if (FRAC == 1.0)
-          {    n_keepers = (n_pairs);
-               size_t tot_length = 0;
-               for (size_t ii = 0; ii < n_keepers; ii++)
-               {    tot_length += (bases[pairs.ID1(shuffled[ii])].size() +
-                         bases[pairs.ID2(shuffled[ii])].size());    }
-               log << std::endl
-                    << "total length of selected reads: " << tot_length << std::endl
-                    << "pairs in input:                 " << n_pairs << std::endl
-                    << "pairs selected:                 " << n_keepers << std::endl
-                    << std::endl;    }
-          else
-          {    size_t required_length = 0;
-               if (FRAC > 0)
-               {    required_length
-                         = uint64_t(round(double(bases.sumSizes()) * FRAC));    }
-               size_t tot_length = 0;
-               for (size_t ii=0; ii<n_pairs; ii++)
-               {    if ( tot_length >= required_length ) break;
-                    tot_length += bases[ pairs.ID1( shuffled[ii] ) ].size( );
-                    tot_length += bases[ pairs.ID2( shuffled[ii] ) ].size( );
-                    n_keepers = ii+1;    }
-               log << std::endl
-                    << "total length of selected reads: " << tot_length << std::endl
-                    << "required total length:          " << required_length << std::endl
-                    << "pairs in input:                 " << n_pairs << std::endl
-                    << "pairs selected:                 " << n_keepers << std::endl
-                    << std::endl;    }
-
-          log << Date( ) << ": saving pairs" << std::endl;
-          PairsManager sel_pairs( n_keepers * 2 );
-          for( size_t lib_idx=0;lib_idx<pairs.nLibraries();++lib_idx){
-              sel_pairs.addLibrary( pairs.getLibrarySep(lib_idx)
-                                  , pairs.getLibrarySD(lib_idx)
-                                  , pairs.getLibraryName(lib_idx));
-          }
-          for (size_t ii=0; ii<n_keepers; ii++)
-          {    size_t id1 = select.isize();
-               select.push_back( pairs.ID1( shuffled[ii] ) );
-               maps_to[ pairs.ID1( shuffled[ii] ) ] = id1;
-               size_t id2 = select.isize( );
-               select.push_back( pairs.ID2( shuffled[ii] ) );
-               maps_to[ pairs.ID2( shuffled[ii] ) ] = id2;
-               sel_pairs.addPair( id1, id2, pairs.sep( shuffled[ii] ),
-                    pairs.sd( shuffled[ii] ),
-                    pairs.libraryName( shuffled[ii] ) );    }
-          sel_pairs.Write( out_pairs_file );
-          log << Date( ) << ": saving correspondence map (select)" << std::endl;
-          BinaryWriter::writeFile( out_select_file.c_str(), select );
-          log << Date( ) << ": saving bases" << std::endl;
-          {    IncrementalWriter<bvec> sel_bases(out_bases_file.c_str());
-               for (size_t ii=0; ii < select.size(); ii++)
-                     sel_bases.add( bases[select[ii]] );    }    }
-
-     if (IsRegularFile(in_quals_file))
-     {    log << Date( ) << ": loading quals" << std::endl;
-          vecqvec quals(in_quals_file);
-          log << Date( ) << ": saving quals" << std::endl;
-          IncrementalWriter<qvec> sel_quals(out_quals_file.c_str());
-          for (size_t ii=0; ii < select.size(); ii++)
-            sel_quals.add( quals[select[ii]] );
-          sel_quals.close();    }
-
-     if (IsRegularFile(in_names_file))
-     {    log << Date( ) << ": loading names" << std::endl;
-          vecString names(in_names_file);
-          log << Date( ) << ": saving names" << std::endl;
-          IncrementalWriter<String> sel_names(out_names_file.c_str());
-          for (size_t ii=0; ii < select.size(); ii++)
-            sel_names.add( names[select[ii]] );
-          sel_names.close();    }
-
-     // Select aligns (this could be improved: no need to load all aligns).
-     if ( USE_LOCS && IsRegularFile(in_qlt_file) )
-     {    log << Date() << ": loading alignments" << std::endl;
-          vec<look_align> aligns_in;
-          LoadLookAligns( in_qlt_file, aligns_in );
-          log << Date( ) << ": selecting and saving alignments" << std::endl;
-          vec<look_align> aligns_out;
-          aligns_out.reserve( aligns_in.size( ) );
-          for( size_t ii=0; ii<aligns_in.size( ); ii++)
-          {    if ( maps_to[ aligns_in[ii].query_id ] < 0 ) continue;
-               look_align al = aligns_in[ii];
-               al.query_id = maps_to[ aligns_in[ii].query_id ];
-               aligns_out.push_back( al );    }
-          sort( aligns_out.begin( ), aligns_out.end( ) );
-          WriteLookAligns( out_qlt_file, aligns_out );     }
-     log << Date( ) << ": done selecting random pairs" << std::endl;
-
-     int64_t n = MastervecFileObjectCount( TMP + "/frag_reads_orig.fastb" );
-     if ( n == 0 ) DiscovarTools::ExitNoReads( );    }
 
 void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      const vecbasevector& creads_done, const vec<Bool>& done,

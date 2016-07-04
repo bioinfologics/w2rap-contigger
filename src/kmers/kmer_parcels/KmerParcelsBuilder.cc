@@ -11,7 +11,7 @@
 #include "system/WorklistN.h"
 
 
-inline String Tag(String S = "KPs") { return Date() + " (" + S + "): "; } 
+inline String KPBTag(String S = "KPs") { return Date() + " (" + S + "): "; } 
 
 
 
@@ -198,7 +198,7 @@ void KmerParcel<K>::WriteSortedKmerParcel(const size_t thread_ID,
 
   double t_all = t_sort + t_write;
   
-  parcels_store.Log(Tag(tag) + 
+  parcels_store.Log(KPBTag(tag) + 
 		    "n_batches= "  + ToString(n_batches)  + 
 		    " timers(sec): " + 
 		    "sort= "  + ToString(t_sort, 1)  + 
@@ -400,13 +400,13 @@ bool KmerParcelVec<K>::RunNextTask(const size_t thread_ID,
 
 
   if (run_block) {
-    //std::cout << Tag("RunNextTask") 
+    //std::cout << KPBTag("RunNextTask") 
     //     << "running block " << block_ID << " "
     //     << "parcel01_IDs = " << _parcel0_ID << " " << _parcel1_ID << " "
     //     << std::endl;
     // parse a block of reads for kmers 
     ParseReadKmersForParcelIDs(bases, read1_IDs, block_ID);
-    //std::cout << Tag("RunNextTask") 
+    //std::cout << KPBTag("RunNextTask") 
     //     << "done with block " << block_ID << " "
     //     << "parcel01_IDs = " << _parcel0_ID << " " << _parcel1_ID << " "
     //     << std::endl;
@@ -421,7 +421,7 @@ bool KmerParcelVec<K>::RunNextTask(const size_t thread_ID,
 
 
   if (run_parcel) {
-    //std::cout << Tag("RunNextTask") 
+    //std::cout << KPBTag("RunNextTask") 
     //     << "sorting parcel " << parcel_ID << " "
     //     << "parcel01_IDs = " << _parcel0_ID << " " << _parcel1_ID << " " 
     //     << std::endl;
@@ -430,7 +430,7 @@ bool KmerParcelVec<K>::RunNextTask(const size_t thread_ID,
                                                  parcel_ID, 
                                                  parcels_store,
                                                  stats);
-    //std::cout << Tag("RunNextTask") 
+    //std::cout << KPBTag("RunNextTask") 
     //     << "done with parcel " << parcel_ID << " "
     //     << "parcel01_IDs = " << _parcel0_ID << " " << _parcel1_ID << " " 
     //    << std::endl;
@@ -518,7 +518,7 @@ void KmerParcelVecVec<K>::RunTasks(const size_t thread_ID,
                             read1_IDs,
                             parcels_store,
                             stats);
-      //std::cout << Tag("RunTasks")
+      //std::cout << KPBTag("RunTasks")
       //     << "thread_ID = " << thread_ID << " "
       //     << "set_ID = " << set_ID << " "
       //     << "ran = " << ran << std::endl;
@@ -603,9 +603,9 @@ size_t KmerParcelsBuilder::EstimateTotalMemory()
 
   size_t n_bytes = _n_kmers_total * n_bytes_kmer_record; 
   if (_verbose) {
-    std::cout << Tag("EKPMB") << "n_reads = " << _bases.size() << std::endl;
-    std::cout << Tag("EKPMB") << "n_kmers = " << _n_kmers_total << std::endl;
-    std::cout << Tag("EKPMB") << "total memory = " 
+    std::cout << KPBTag("EKPMB") << "n_reads = " << _bases.size() << std::endl;
+    std::cout << KPBTag("EKPMB") << "n_kmers = " << _n_kmers_total << std::endl;
+    std::cout << KPBTag("EKPMB") << "total memory = " 
          << static_cast<float>(n_bytes) / 1.0e9 << " GB" << std::endl;
   }
   return n_bytes;
@@ -629,13 +629,13 @@ void KmerParcelsBuilder::ComputeNumParcels()
   
 
   if (_verbose) {
-    std::cout << Tag("KPB:CNKP") << "ComputeNumKmerParcels()" << std::endl;
-    std::cout << Tag("KPB:CNKP") << "n_reads = " << _bases.size() << std::endl;
-    std::cout << Tag("KPB:CNKP") << "K = " << _K << std::endl;
-    std::cout << Tag("KPB:CNKP") << "n_GB_max = " << static_cast<double>(_n_bytes_max) / (1 << 30) << std::endl;
-    std::cout << Tag("KPB:CNKP") << "n_GB_kmer_parcels = " << static_cast<double>(n_bytes) / (1 << 30) << std::endl;
-    std::cout << Tag("KPB:CNKP") << "n_parcels = " << _n_parcels << std::endl;
-    std::cout << Tag("KPB:CNKP") << "n_passes = " << n_passes << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "ComputeNumKmerParcels()" << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "n_reads = " << _bases.size() << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "K = " << _K << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "n_GB_max = " << static_cast<double>(_n_bytes_max) / (1 << 30) << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "n_GB_kmer_parcels = " << static_cast<double>(n_bytes) / (1 << 30) << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "n_parcels = " << _n_parcels << std::endl;
+    std::cout << KPBTag("KPB:CNKP") << "n_passes = " << n_passes << std::endl;
   }
 
   if (_K < 16) {
@@ -699,7 +699,7 @@ void KmerParcelsBuilder::Build(const size_t n_parcels)
 {
   const size_t n_reads = _bases.size();
   if (n_reads == 0) {
-    std::cout << Tag("KPB:B") << "NOTHING TO DO: n_reads = 0." << std::endl;
+    std::cout << KPBTag("KPB:B") << "NOTHING TO DO: n_reads = 0." << std::endl;
     ForceAssertGt(n_reads, 0u);
   }
 
@@ -709,22 +709,22 @@ void KmerParcelsBuilder::Build(const size_t n_parcels)
     ComputeNumParcels();
 
   if (_verbose) {
-    std::cout << Tag("KPB:B") << "start" << std::endl;
-    std::cout << Tag("KPB:B") << "GREPABLE: K = " << _K << std::endl;
-    std::cout << Tag("KPB:B") << "GREPABLE: num_reads = " << n_reads << std::endl;
-    std::cout << Tag("KPB:B") << "GREPABLE: num_kmers = " << _n_kmers_total << std::endl;
-    std::cout << Tag("KPB:B") << "GREPABLE: num_parcels = " << _n_parcels << std::endl;
-    std::cout << Tag("KPB:B") << "n_threads = " << _n_threads << std::endl;
+    std::cout << KPBTag("KPB:B") << "start" << std::endl;
+    std::cout << KPBTag("KPB:B") << "GREPABLE: K = " << _K << std::endl;
+    std::cout << KPBTag("KPB:B") << "GREPABLE: num_reads = " << n_reads << std::endl;
+    std::cout << KPBTag("KPB:B") << "GREPABLE: num_kmers = " << _n_kmers_total << std::endl;
+    std::cout << KPBTag("KPB:B") << "GREPABLE: num_parcels = " << _n_parcels << std::endl;
+    std::cout << KPBTag("KPB:B") << "n_threads = " << _n_threads << std::endl;
   }
   
   if (_n_parcels == 0) {
     if (_verbose)
-      std::cout << Tag("KPB:B") << "n_parcels = 0, nothing to do." << std::endl;
+      std::cout << KPBTag("KPB:B") << "n_parcels = 0, nothing to do." << std::endl;
   }
   else {
   
     if (_parcels_store.GetNumParcels() != 0) 
-      std::cout << Tag("KPB:B") << "WARNING: parcels already exist! We are about to remake them!!!" << std::endl;
+      std::cout << KPBTag("KPB:B") << "WARNING: parcels already exist! We are about to remake them!!!" << std::endl;
     
     
     ComputeRead1IDs();
@@ -754,7 +754,7 @@ void KmerParcelsBuilder::Build(const size_t n_parcels)
     String dir_name = _parcels_store.GetDirectoryName();
   
     if (_verbose)
-      std::cout << Tag("KPB:B") << "collecting reads min and max kmer frequency data" << std::endl;
+      std::cout << KPBTag("KPB:B") << "collecting reads min and max kmer frequency data" << std::endl;
   
     if (_verbose || dir_name != "") {
       MapOfCounters reads_min_kmer_freq_count(_stats.reads_min_kmer_freq);
@@ -768,26 +768,26 @@ void KmerParcelsBuilder::Build(const size_t n_parcels)
       */
     
       if (_verbose) {
-        PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_reads_min_kmer_freq_1 = ",
+        PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_reads_min_kmer_freq_1 = ",
                                 reads_min_kmer_freq_count[1], n_reads);
-        PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_reads_min_kmer_freq_2 = ",
+        PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_reads_min_kmer_freq_2 = ",
                                 reads_min_kmer_freq_count[2], n_reads);
-        PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_reads_max_kmer_freq_1 = ",
+        PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_reads_max_kmer_freq_1 = ",
                                 reads_max_kmer_freq_count[1], n_reads);
-        PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_reads_max_kmer_freq_2 = ",
+        PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_reads_max_kmer_freq_2 = ",
                                 reads_max_kmer_freq_count[2], n_reads);
       }
     }
   
   
     if (_verbose) {
-      std::cout << Tag("KPB:B") << "collecting kmer frequency data" << std::endl;
+      std::cout << KPBTag("KPB:B") << "collecting kmer frequency data" << std::endl;
       size_t n_distinct_kmers = _stats.AllKmerFrequencyCounters().Total();
-      PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_distinct_kmers        = ",
+      PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_distinct_kmers        = ",
                               n_distinct_kmers, n_distinct_kmers);
-      PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_distinct_kmers_freq_1 = ",
+      PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_distinct_kmers_freq_1 = ",
                               _stats.AllKmerFrequencyCounters()[1], n_distinct_kmers);
-      PrintValueAndPercentage(std::cout, Tag("KPB:B") + "GREPABLE: num_distinct_kmers_freq_2 = ",
+      PrintValueAndPercentage(std::cout, KPBTag("KPB:B") + "GREPABLE: num_distinct_kmers_freq_2 = ",
                               _stats.AllKmerFrequencyCounters()[2], n_distinct_kmers);
     }
   
@@ -806,7 +806,7 @@ void KmerParcelsBuilder::Build(const size_t n_parcels)
     */
   
     if (_verbose)
-      std::cout << Tag("KPB:B") << "end" << std::endl;
+      std::cout << KPBTag("KPB:B") << "end" << std::endl;
 
   }
 }

@@ -139,9 +139,7 @@ add_library(base_libs OBJECT
         src/paths/long/ultra/Prefab.cc
         src/paths/long/ultra/ThreadedBlocks.cc
         src/random/Bernoulli.cc
-        src/random/MersenneTwister.cc
         src/random/RNGen.cc
-        src/random/Shuffle.cc
         src/reporting/PerfStat.cc
         src/system/Assert.cc
         src/system/ErrNo.cc

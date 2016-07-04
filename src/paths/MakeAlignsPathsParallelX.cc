@@ -21,7 +21,7 @@
 #include "paths/MakeAlignsPathsParallelX.h"
 
 static inline 
-String Tag(String S = "MAPPX") { return Date() + " (" + S + "): "; } 
+String MAPPXTag(String S = "MAPPX") { return Date() + " (" + S + "): "; } 
 
 
 class VecBitVecLocked : private LockedData
@@ -49,11 +49,11 @@ public:
 
 
 
-// PathingProcessor class.
+// ParallelPathingProcessor class.
 // This class is designed for use with the Worklist parallelization paradigm,
 // in the MakeAlignsPathsParallelX function.
 template<int I>
-class PathingProcessor
+class ParallelPathingProcessor
 {
 private:
 
@@ -70,7 +70,7 @@ private:
   
 public:
   
-  PathingProcessor(const BaseVecVec       & bases, 
+  ParallelPathingProcessor(const BaseVecVec       & bases, 
                    const KmerParcelsStore & parcels,
                    VecBitVecLocked        * kmer_chosen,
                    BMG<I>                 * bmg)
@@ -86,7 +86,7 @@ public:
   // kmer_chosen_ and bmg_.  Modifications are regulated via LOCK_.
   void operator() (const size_t parcel_ID) 
   {
-    const String tag = "MAPPX_P[" + ToString(parcel_ID) + "]";
+    const String MAPPXTag = "MAPPX_P[" + ToString(parcel_ID) + "]";
 
     // Create the KmerParcelReader with this parcel_ID.
     KmerParcelReader parcel_reader(_parcels, parcel_ID);
@@ -134,7 +134,7 @@ public:
       }
     }
 
-    //std::cout << Tag(tag) << "end... sizeof(bmg) = " + ToString((*_bmg).SizeOf()/1024) + " KB" << std::endl;
+    //std::cout << MAPPXTag(MAPPXTag) << "end... sizeof(bmg) = " + ToString((*_bmg).SizeOf()/1024) + " KB" << std::endl;
   }
 };
 
@@ -165,13 +165,13 @@ void MakeAlignsPathsParallelX(const size_t       K,
       IsRegularFile(bmg_fn) &&
       IsRegularFile(kmer_chosen_fn)) {
 
-    std::cout << Tag() << "CHECKPOINT: retrieving Balanced Mutmer Graph 'bmg'." << std::endl;
+    std::cout << MAPPXTag() << "CHECKPOINT: retrieving Balanced Mutmer Graph 'bmg'." << std::endl;
     bmg->FromFile(bmg_fn);
-    std::cout << Tag() << "CHECKPOINT: retrieved " << bmg->size() << " BMG nodes." << std::endl;
+    std::cout << MAPPXTag() << "CHECKPOINT: retrieved " << bmg->size() << " BMG nodes." << std::endl;
 
-    std::cout << Tag() << "CHECKPOINT: retrieving 'kmer_chosen'." << std::endl;
+    std::cout << MAPPXTag() << "CHECKPOINT: retrieving 'kmer_chosen'." << std::endl;
     kmer_chosen->ReadAll(kmer_chosen_fn);
-    std::cout << Tag() << "CHECKPOINT: retrieved " << kmer_chosen->size() << " kmer_chosen entries." << std::endl;
+    std::cout << MAPPXTag() << "CHECKPOINT: retrieved " << kmer_chosen->size() << " kmer_chosen entries." << std::endl;
 
   }
   else {
@@ -193,7 +193,7 @@ void MakeAlignsPathsParallelX(const size_t       K,
       if (CHECKPOINT_HEAD != "" && 
 	  ( ( KmerParcelsDiskStore * ) parcels )->ExistOnDisk() ) {
 	// Reuse KmerParcels from disk.
-	std::cout << Tag() << "CHECKPOINT: Reusing previously computed kmer parcels." << std::endl;
+	std::cout << MAPPXTag() << "CHECKPOINT: Reusing previously computed kmer parcels." << std::endl;
       }
       else {
 	// Create KmerParcels on disk.
@@ -220,24 +220,24 @@ void MakeAlignsPathsParallelX(const size_t       K,
     // PARALLEL PROCESSING
     // Place each pass into the worklist.
     // As soon as it gets the first item, the worklist will immediately begin
-    // processing the function PathingProcessor::operator( ), which processes
+    // processing the function ParallelPathingProcessor::operator( ), which processes
     // each KmerParcel and the ensuing work.  The worklist
     // runs its functions in multi-threaded parallel.
     // Each parallelized pass affects the variables kmer_chosen and bmg (through
-    // their pointers in the PathingProcessor classes.
+    // their pointers in the ParallelPathingProcessor classes.
     
-    //std::cout << Tag() << "begin " << n_parcels << " parcels ("
+    //std::cout << MAPPXTag() << "begin " << n_parcels << " parcels ("
     //     << NUM_THREADS << "-way parallelized)" << std::endl;
     
     //std::cout << Date() << ": MemUsage before parallel runs: " << MemUsage( )/1000.0 << "Mb" << std::endl;
     {
       VecBitVecLocked kmer_chosen_locked(*kmer_chosen);
       
-      PathingProcessor<I> processor(bases, *parcels, &kmer_chosen_locked, bmg);
+      ParallelPathingProcessor<I> processor(bases, *parcels, &kmer_chosen_locked, bmg);
       parallelFor(0ul,n_parcels,processor,NUM_THREADS);
     } 
     
-    //std::cout << Tag() << "end " << n_parcels << " parcels ("
+    //std::cout << MAPPXTag() << "end " << n_parcels << " parcels ("
     //     << NUM_THREADS << "-way parallelized)" << std::endl;
     
 
@@ -253,14 +253,14 @@ void MakeAlignsPathsParallelX(const size_t       K,
 
   
     if (CHECKPOINT_HEAD != "") {
-      std::cout << Tag() << "CHECKPOINT: keeping kmer parcels." << std::endl;
-      std::cout << Tag() << "CHECKPOINT: saving Balanced Mutmer Graph 'bmg'."<< std::endl;
+      std::cout << MAPPXTag() << "CHECKPOINT: keeping kmer parcels." << std::endl;
+      std::cout << MAPPXTag() << "CHECKPOINT: saving Balanced Mutmer Graph 'bmg'."<< std::endl;
       bmg->ToFile(bmg_fn);
-      std::cout << Tag() << "CHECKPOINT: saved " << bmg->size() << " BMG nodes." << std::endl;
+      std::cout << MAPPXTag() << "CHECKPOINT: saved " << bmg->size() << " BMG nodes." << std::endl;
 
-      std::cout << Tag() << "CHECKPOINT: saving 'kmer_chosen'." << std::endl;
+      std::cout << MAPPXTag() << "CHECKPOINT: saving 'kmer_chosen'." << std::endl;
       kmer_chosen->WriteAll(kmer_chosen_fn);
-      std::cout << Tag() << "CHECKPOINT: saved " << kmer_chosen->size() << " kmer_chosen entries." << std::endl;
+      std::cout << MAPPXTag() << "CHECKPOINT: saved " << kmer_chosen->size() << " kmer_chosen entries." << std::endl;
     }
     
     //std::cout << Date( ) << ": MemUsage after parallel runs: " << MemUsage( )/1000.0 << "Mb" << std::endl;

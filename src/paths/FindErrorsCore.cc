@@ -21,7 +21,7 @@
 #include "system/WorklistN.h"
 
 static inline 
-String Tag(String S = "FEC") { return Date() + " (" + S + "): "; } 
+String FECTag(String S = "FEC") { return Date() + " (" + S + "): "; } 
 
 
 
@@ -66,11 +66,11 @@ void pre_correct_parallel(const PC_Params  & pcp,
   typedef typename QVV_t::value_type QV_t;
 
   if ( VERBOSITY >= 0 )
-       std::cout << Tag() << "Duplicating 'bases' into 'bases_new'." << std::endl;
+       std::cout << FECTag() << "Duplicating 'bases' into 'bases_new'." << std::endl;
   
   BaseVecVec bases_new = *bases_p;
 
-  if ( VERBOSITY >= 0 ) std::cout << Tag() << "Finding recommendations." << std::endl;
+  if ( VERBOSITY >= 0 ) std::cout << FECTag() << "Finding recommendations." << std::endl;
 
   ForceAssertLe(K, 29u);
   if (K <= 29) {
@@ -81,7 +81,7 @@ void pre_correct_parallel(const PC_Params  & pcp,
 
   // ---- Make corrections (unless they are too close to each other)
    
-  if ( VERBOSITY >= 0 ) std::cout << Tag() << "Making corrections." << std::endl;
+  if ( VERBOSITY >= 0 ) std::cout << FECTag() << "Making corrections." << std::endl;
 
   const size_t n_reads = bases_p->size();
   size_t n_bases = 0;
@@ -149,14 +149,14 @@ void pre_correct_parallel(const PC_Params  & pcp,
 
   if ( VERBOSITY >= 0 )
   {
-  std::cout << Tag() << std::setw(12) << n_reads << " reads." << std::endl; 
-  std::cout << Tag() << std::setw(12) << n_reads_corr << " reads corrected (" 
+  std::cout << FECTag() << std::setw(12) << n_reads << " reads." << std::endl; 
+  std::cout << FECTag() << std::setw(12) << n_reads_corr << " reads corrected (" 
        << std::fixed << std::setprecision(1) << 100.0 * n_reads_corr / n_reads << " %)." << std::endl;
 
-  std::cout << Tag() << std::setw(12) << n_corr_total << " total corrections." << std::endl;
-  std::cout << Tag() << std::setw(12) << std::fixed << std::setprecision(1) << double(n_corr_total) / double(n_reads_corr) 
+  std::cout << FECTag() << std::setw(12) << n_corr_total << " total corrections." << std::endl;
+  std::cout << FECTag() << std::setw(12) << std::fixed << std::setprecision(1) << double(n_corr_total) / double(n_reads_corr) 
        << " corrections per corrected read." << std::endl;
-  std::cout << Tag() << std::setw(12) << n_corr_skipped << " corrections skipped." << std::endl;
+  std::cout << FECTag() << std::setw(12) << n_corr_skipped << " corrections skipped." << std::endl;
   }
 
 
@@ -412,12 +412,12 @@ void find_errors_parallel(const EF_Params  & efp,
 {
 
   for (size_t i_cycle = 0; i_cycle != NUM_CYCLES; i_cycle++) {
-    if (VERBOSITY > 0) std::cout << Tag() << "cycle = " << i_cycle << "/" << NUM_CYCLES << std::endl;
+    if (VERBOSITY > 0) std::cout << FECTag() << "cycle = " << i_cycle << "/" << NUM_CYCLES << std::endl;
     
 
     // ---- cap quality scores
     if (efp.qual_ceil_radius > 0 && (i_cycle == 0 || efp.qcr_always)) {
-      if (VERBOSITY > 0) std::cout << Tag() << "Renormalizing quality scores." << std::endl;
+      if (VERBOSITY > 0) std::cout << FECTag() << "Renormalizing quality scores." << std::endl;
       cap_quality_scores(quals_p, efp.qual_ceil_radius, NUM_THREADS);
     }
 
@@ -425,10 +425,10 @@ void find_errors_parallel(const EF_Params  & efp,
 
     // ---- Keep track of which bases have been recommended for corrections,
     //      and which bases have been base_locked.
-    if (VERBOSITY > 0) std::cout << Tag() << "Duplicating 'bases' into 'bases_new'." << std::endl;
+    if (VERBOSITY > 0) std::cout << FECTag() << "Duplicating 'bases' into 'bases_new'." << std::endl;
     BaseVecVec bases_new = *bases_p;
       
-    if (VERBOSITY > 0) std::cout << Tag() << "Mimicking 'bases' into 'base_locked'." << std::endl;
+    if (VERBOSITY > 0) std::cout << FECTag() << "Mimicking 'bases' into 'base_locked'." << std::endl;
     VecBitVec base_locked;
     Mimic(*bases_p, base_locked);
 
@@ -436,7 +436,7 @@ void find_errors_parallel(const EF_Params  & efp,
     //      Each parcel is processed at a time and the correction recommendations 
     //      are stored in 'bases_new' and 'base_locked'.
       
-    if (VERBOSITY > 0) std::cout << Tag() << "Gathering list of base-locations to correct." << std::endl;
+    if (VERBOSITY > 0) std::cout << FECTag() << "Gathering list of base-locations to correct." << std::endl;
       
     ForceAssertLe(K, 124u);
     if (K <= 29) {
@@ -457,7 +457,7 @@ void find_errors_parallel(const EF_Params  & efp,
 
       
     // ---- Apply corrections
-    if (VERBOSITY > 0) std::cout << Tag() << "Applying the recommended corrections." << std::endl;
+    if (VERBOSITY > 0) std::cout << FECTag() << "Applying the recommended corrections." << std::endl;
 
     EF_Stats ef_stats;
     apply_corrections(bases_new, base_locked, bases_p, quals_p, &ef_stats);
@@ -465,10 +465,10 @@ void find_errors_parallel(const EF_Params  & efp,
 
     // ---- Report results 
     if (VERBOSITY > 0) {
-      std::cout << Tag() << "n_bases       = " << std::setw(12) << ef_stats.n_bases << std::endl;
-      std::cout << Tag() << "n_confirmed   = " << std::setw(12) << ef_stats.n_confirmed << std::endl;
-      std::cout << Tag() << "n_corrections = " << std::setw(12) << ef_stats.n_corrections << std::endl;
-      std::cout << Tag() << "n_conflicts   = " << std::setw(12) << ef_stats.n_conflicts << std::endl;
+      std::cout << FECTag() << "n_bases       = " << std::setw(12) << ef_stats.n_bases << std::endl;
+      std::cout << FECTag() << "n_confirmed   = " << std::setw(12) << ef_stats.n_confirmed << std::endl;
+      std::cout << FECTag() << "n_corrections = " << std::setw(12) << ef_stats.n_corrections << std::endl;
+      std::cout << FECTag() << "n_conflicts   = " << std::setw(12) << ef_stats.n_conflicts << std::endl;
       
       PerfStat::log() << std::fixed << std::setprecision(1)
                       << PerfStat("frac_bases_confirmed_" + ToString(i_cycle), 

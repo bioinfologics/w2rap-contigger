@@ -29,10 +29,10 @@
 // L1 = length of left contig
 // L2 = length of right contig
 
-vec<long double> GapComp( const vec<int> D, const vec<int>& a, const vec<int>& b, 
+vec<long double> GapComp( const vec<int> D, const vec<int>& a, const vec<int>& b,
      const vec<int>& x, const vec<double>& X, const vec< std::pair<int,int> >& p,
      const int L1, const int L2, const int VERBOSITY )
-{    
+{
      // Heuristics.
 
      const double xfloor = 0.0001;
@@ -115,12 +115,12 @@ template<int K> void MakeKmerLookup( const vecbasevector& tigs,
           {    kmer<K> x, xrc;
                for ( int j = jz; j <= Min( u.isize( ) - K, jz + 1000 ); j++ )
                {    int64_t r = starts[i] + j;
-                    x.SetToSubOf( u, j ); 
+                    x.SetToSubOf( u, j );
                     xrc = x;
                     xrc.ReverseComplement( );
                     Bool fw = ( x < xrc );
                     kmers_plus[r].first = ( fw ? x : xrc );
-                    kmers_plus[r].second = i; 
+                    kmers_plus[r].second = i;
                     kmers_plus[r].third = ( fw ? j : -j-1 );    }    }    }
      ParallelSort(kmers_plus);    }
 
@@ -138,9 +138,9 @@ template<int K> void MakeKmerLookup0( const vecbasevector& unibases,
           kmer<K> x;
           for ( int j = 0; j <= u.isize( ) - K; j++ )
           {    int64_t r = starts[i] + j;
-               x.SetToSubOf( u, j ); 
+               x.SetToSubOf( u, j );
                kmers_plus[r].first = x;
-               kmers_plus[r].second = i; 
+               kmers_plus[r].second = i;
                kmers_plus[r].third = j;    }    }
      ParallelSort(kmers_plus);    }
 
@@ -231,7 +231,7 @@ template void MakeKmerLookup0( const vecbasevector& tigs,
 template void MakeKmerLookup0( const vecbasevector& tigs,
      vec< triple< kmer<400>,int,int> >& kmers_plus );
 
-void FindTrueGaps( 
+void FindTrueGaps(
      // inputs:
      const vecbasevector& genome, const vecbasevector& tigs,
      const vec<superb>& scaffolds,
@@ -284,7 +284,7 @@ void FindTrueGaps(
                     if ( M1.isize( ) < L2 || M2.isize( ) < L2 ) continue;
                     vec<int64_t> hits1, hits2;
                     for ( int64_t l = low1; l < high1; l++ )
-                    {    int pos1 = gkmers_plus[l].third; 
+                    {    int pos1 = gkmers_plus[l].third;
                          Bool xfw1 = ( pos1 >= 0 );
                          if ( !xfw1 ) pos1 = -pos1-1;
                          int g1 = gkmers_plus[l].second;
@@ -300,7 +300,7 @@ void FindTrueGaps(
                          else
                          {    for ( int p = 0; p < L2 - L1; p++ )
                               {    int gpos1 = pos1 + L2 - 1 - p;
-                                   if ( gpos1 >= G1.isize( ) 
+                                   if ( gpos1 >= G1.isize( )
                                         || M1[ M1.isize( ) - L2 + p ]
                                         != 3 - G1[gpos1] )
                                    {    mismatch = True;
@@ -308,7 +308,7 @@ void FindTrueGaps(
                          if ( !mismatch ) hits1.push_back(l);    }
                     if ( !hits1.solo( ) ) continue;
                     for ( int64_t l = low2; l < high2; l++ )
-                    {    int pos2 = gkmers_plus[l].third; 
+                    {    int pos2 = gkmers_plus[l].third;
                          Bool xfw2 = ( pos2 >= 0 );
                          if ( !xfw2 ) pos2 = -pos2-1;
                          int g2 = gkmers_plus[l].second;
@@ -317,7 +317,7 @@ void FindTrueGaps(
                          if ( fw2 == xfw2 )
                          {    for ( int p = L1; p < L2; p++ )
                               {    int gpos2 = pos2 + p;
-                                   if ( gpos2 >= G2.isize( ) 
+                                   if ( gpos2 >= G2.isize( )
                                         || M2[p] != G2[ gpos2] )
                                    {    mismatch = True;
                                         break;    }    }    }
@@ -328,10 +328,10 @@ void FindTrueGaps(
                                    {    mismatch = True;
                                         break;    }    }    }
                          if ( !mismatch ) hits2.push_back(l);    }
-                    if ( !hits2.solo( ) || gkmers_plus[ hits1[0] ].second 
+                    if ( !hits2.solo( ) || gkmers_plus[ hits1[0] ].second
                          != gkmers_plus[ hits2[0] ].second )
                     {    continue;    }
-                    int pos1 = gkmers_plus[ hits1[0] ].third; 
+                    int pos1 = gkmers_plus[ hits1[0] ].third;
                     int pos2 = gkmers_plus[ hits2[0] ].third;
                     Bool xfw1 = ( pos1 >= 0 ), xfw2 = ( pos2 >= 0 );
                     if ( !xfw1 ) pos1 = -pos1-1;
@@ -340,7 +340,7 @@ void FindTrueGaps(
                     int g = ( fw1 == xfw1 ? pos2 - (pos1+L1) : pos1 - (pos2+L1) );
                     if ( ( int(fw1) + int(fw2) + int(xfw1) + int(xfw2) ) % 2 != 0
                          || Abs(g) > true_gap_upper_bound )
-                    {    // PRINT8( m1, m2, int(fw1), int(fw2), 
+                    {    // PRINT8( m1, m2, int(fw1), int(fw2),
                          // int(xfw1), int(xfw2), pos1, pos2 );
                          continue;    }
                     // std::cout << "gap from " << m1 << " to "
@@ -369,7 +369,7 @@ void PrintSideBySide( const String& z1, const String& z2, const int N )
           else break;    }    }
 
 template<int K> void AlignReads( const Bool use_tail, const vecbasevector& tigs,
-     const vecbasevector& bases, vec<Bool>& tried, vec<Bool>& placed_fw, 
+     const vecbasevector& bases, vec<Bool>& tried, vec<Bool>& placed_fw,
      vec<Bool>& placed_rc, vec< std::pair<int,int> >& placement, const Bool TIME_STAMPS )
 {
      if (TIME_STAMPS) std::cout << Date( ) << ": making kmer table" << std::endl;
@@ -405,9 +405,9 @@ template<int K> void AlignReads( const Bool use_tail, const vecbasevector& tigs,
           {    if ( fw != fw_tig ) pos -= ( read_length - K );    }
           placement[id].first = tig, placement[id].second = pos;    }    }
 
-void AlignReads( const int K1, const int K2, const Bool use_tail, 
-     const vecbasevector& tigs, const vecbasevector& bases, 
-     const PairsManager& pairs, vec<Bool>& placed_fw, vec<Bool>& placed_rc, 
+void AlignReads( const int K1, const int K2, const Bool use_tail,
+     const vecbasevector& tigs, const vecbasevector& bases,
+     const PairsManager& pairs, vec<Bool>& placed_fw, vec<Bool>& placed_rc,
      vec< std::pair<int,int> >& placement, vec< vec<longlong> >& aligns_index,
      const Bool TIME_STAMPS )
 {
@@ -416,20 +416,20 @@ void AlignReads( const int K1, const int K2, const Bool use_tail,
      placed_rc.resize( bases.size( ), False );
      placement.resize( bases.size( ) );
      if ( K1 == 40 )
-     {    AlignReads<40>( use_tail, tigs, bases, tried, placed_fw, placed_rc, 
+     {    AlignReads<40>( use_tail, tigs, bases, tried, placed_fw, placed_rc,
                placement, TIME_STAMPS );    }
      else if ( K1 == 80 )
-     {    AlignReads<80>( use_tail, tigs, bases, tried, placed_fw, placed_rc, 
+     {    AlignReads<80>( use_tail, tigs, bases, tried, placed_fw, placed_rc,
                placement, TIME_STAMPS );    }
-     else 
+     else
      {    std::cout << "AlignReads not implemented for K1 = " << K1 << std::endl;
           exit(1);    }
      Bool need2 = False;
      for ( size_t id = 0; id < bases.size( ); id++ )
           if ( bases[id].isize( ) >= K2 && bases[id].isize( ) < K1 ) need2 = True;
-     if (need2) 
+     if (need2)
      {    if ( K2 == 20 )
-          {    AlignReads<20>( use_tail, tigs, bases, tried, placed_fw, 
+          {    AlignReads<20>( use_tail, tigs, bases, tried, placed_fw,
                     placed_rc, placement, TIME_STAMPS );    }
           else
           {    std::cout << "AlignReads not implemented for K2 = " << K2 << std::endl;
@@ -444,18 +444,18 @@ void AlignReads( const int K1, const int K2, const Bool use_tail,
           if ( placed_fw[id2] || placed_rc[id2] )
                aligns_index[ placement[id2].first ].push_back(pid);    }    }
 
-template<int K> void PredictGap( 
+template<int K> void PredictGap(
      // inputs:
      const String& libtype,
      const vec< triple<kmer<K>,int,int> >& kmers_plus, const vec< kmer<K> >& kmers,
      const int max_overlap, const int nlibs, const int lib_offset,
      const vec<int>& libs_to_use, const vec<Bool>& lfail, const vecbasevector& tigs,
-     const vec< vec<int> >& DISTS, const vec< vec<double> >& X, 
-     const vecbasevector& bases, const PairsManager& pairs, 
-     const vec<unsigned short>& read_lengths, 
-     const vec< vec<longlong> >& aligns_index, const vec<Bool>& placed_fw, 
+     const vec< vec<int> >& DISTS, const vec< vec<double> >& X,
+     const vecbasevector& bases, const PairsManager& pairs,
+     const vec<unsigned short>& read_lengths,
+     const vec< vec<longlong> >& aligns_index, const vec<Bool>& placed_fw,
      const vec<Bool>& placed_rc, const vec< std::pair<int,int> >& placement,
-     const gap_id& gx, const int VERBOSITY, 
+     const gap_id& gx, const int VERBOSITY,
      // outputs:
      Bool& gap_predicted, int& gap, double& dev )
 {
@@ -465,7 +465,7 @@ template<int K> void PredictGap(
      int step = 5;
      int mlow = -(max_overlap+step)/step * step;
      int top = 0;
-     for ( int l = 0; l < nlibs; l++ ) 
+     for ( int l = 0; l < nlibs; l++ )
           if (DISTS[l].size() > 0)
                top = Max( top, DISTS[l].back( ) );
      top = (top+step-1)/step * step;
@@ -513,7 +513,7 @@ template<int K> void PredictGap(
                     use2 = ( id2 >=0 && placed_rc[id2] && placement[id2].first == gx.M2( )
                          && d2 <= x.back( ) );    }
                else
-               {    use1 = ( id1 >=0 && placed_fw[id1] && placement[id1].first == gx.M( ) 
+               {    use1 = ( id1 >=0 && placed_fw[id1] && placement[id1].first == gx.M( )
                          && d1 <= x.back( ) ) && d1 >= read_lengths[id1];
                     use2 = ( id2 >=0 && placed_rc[id2] && placement[id2].first == gx.M( )
                          && d2 <= x.back( ) ) && d2 >= read_lengths[id2];    }
@@ -524,13 +524,13 @@ template<int K> void PredictGap(
                else
                {    const int max_errs = 5;
                     const int min_overlap = 40;
-                    if (use1) 
+                    if (use1)
                     {    a.push_back(d1);
                          if ( gx.Type( ) == gap_id::BETWEEN && libtype == "frag" )
                          {
                          if ( read_lengths[id2] >= K )
-                         {    if ( !placed_rc[id2] 
-                                   || placement[id2].first != gx.M1( ) ) 
+                         {    if ( !placed_rc[id2]
+                                   || placement[id2].first != gx.M1( ) )
                               {    kmer<K> x, xrc;
                                    x.SetToSubOf( bases[id2], 0 );
                                    xrc = x;
@@ -546,12 +546,12 @@ template<int K> void PredictGap(
                                         Bool fw2_tig = ( pos2 >= 0 );
                                         if ( fw2 == fw2_tig ) continue;
                                         if ( !fw2_tig ) pos2 = -pos2 - 1 + K;
-                                        if ( kmers_plus[j].second == gx.M1( ) ) 
+                                        if ( kmers_plus[j].second == gx.M1( ) )
                                         {    int d = pos2 - pos1;
                                              if ( d >= 0 && d <= DISTS[l].back( ) )
                                              {    found = True;
                                                   break;    }    }
-                                        if ( kmers_plus[j].second == gx.M2( ) ) 
+                                        if ( kmers_plus[j].second == gx.M2( ) )
                                         {    int d = L1 - pos1 + pos2;
                                              // std::cout << "a: ";
                                              // PRINT5( id1, id2, pos1, pos2, d );
@@ -560,7 +560,7 @@ template<int K> void PredictGap(
                                                   break;    }    }    }
                                    if ( !found )
                                    {    const basevector& T1 = tigs[ gx.M1( ) ];
-                                        for ( int stop1 = min_overlap; 
+                                        for ( int stop1 = min_overlap;
                                              stop1 < bases[id2].isize( ); stop1++ )
                                         {    int b2 = bases[id2].size( );
                                              int d = T1.isize( ) - pos1
@@ -589,12 +589,12 @@ template<int K> void PredictGap(
                                         if ( !found )
                                         {    // PRINT2( id1, id2 );
                                              unpairs++;    }    }    }    }    }    }
-                    if (use2) 
-                    {    b.push_back(d2);    
+                    if (use2)
+                    {    b.push_back(d2);
                          if ( gx.Type( ) == gap_id::BETWEEN && libtype == "frag" )
                          {
                          if ( read_lengths[id1] >= K )
-                         {    if ( !placed_fw[id1] 
+                         {    if ( !placed_fw[id1]
                                    || placement[id1].first != gx.M2( ) )
                               {    kmer<K> x, xrc;
                                    x.SetToSubOf( bases[id1], 0 );
@@ -611,12 +611,12 @@ template<int K> void PredictGap(
                                         Bool fw1_tig = ( pos1 >= 0 );
                                         if ( fw1 != fw1_tig ) continue;
                                         if ( !fw1_tig ) pos1 = -pos1 - 1 + K;
-                                        if ( kmers_plus[j].second == gx.M2( ) ) 
+                                        if ( kmers_plus[j].second == gx.M2( ) )
                                         {    int d = pos2 - pos1;
                                              if ( d >= 0 && d <= DISTS[l].back( ) )
                                              {    found = True;
                                                   break;    }    }
-                                        if ( kmers_plus[j].second == gx.M1( ) ) 
+                                        if ( kmers_plus[j].second == gx.M1( ) )
                                         {    int d = L1 - pos1 + pos2;
                                              // std::cout << "b: ";
                                              // PRINT5( id1, id2, pos1, pos2, d );
@@ -625,14 +625,14 @@ template<int K> void PredictGap(
                                                   break;    }    }    }
                                    if ( !found )
                                    {    const basevector& T2 = tigs[ gx.M2( ) ];
-                                        for ( int start1 = 1; start1 < 
+                                        for ( int start1 = 1; start1 <
                                              bases[id1].isize( ) - min_overlap;
                                              start1++ )
                                         {    int d = pos2 + start1;
                                              if ( d < 0 || d > DISTS[l].back( ) )
                                                   continue;
                                              int errs = 0;
-                                             for ( int u = start1; 
+                                             for ( int u = start1;
                                                   u < bases[id1].isize( ); u++ )
                                              {    if ( u-start1 >= T2.isize( ) )
                                                        break;
@@ -646,7 +646,7 @@ template<int K> void PredictGap(
                                                   break;    }    }
                                         if ( !found )
                                         {    // PRINT2( id1, id2 );
-                                             unpairs++;    
+                                             unpairs++;
                                              }    }    }    }    }    }    }    }
           if ( VERBOSITY >= 2 ) PRINT4( a.size( ), b.size( ), p.size( ), unpairs );
           const int min_links = 1;
