@@ -19,23 +19,23 @@
 
 typedef SerfVec<int> IntVec;
 typedef MasterVec<IntVec> VecIntVec;
-extern template class OuterVec<IntVec>;
+//extern template class OuterVec<IntVec>;
 
 typedef SerfVec<unsigned int> UIntVec;
 typedef MasterVec<UIntVec> VecUIntVec;
-extern template class OuterVec<UIntVec>;
+//extern template class OuterVec<UIntVec>;
 
 typedef SerfVec<unsigned short> UShortVec;
 typedef MasterVec<UShortVec> VecUShortVec;
-extern template class OuterVec<UShortVec>;
+//extern template class OuterVec<UShortVec>;
 
 typedef SerfVec<long> LongVec;
 typedef MasterVec<LongVec> VecLongVec;
-extern template class OuterVec<LongVec>;
+//extern template class OuterVec<LongVec>;
 
 typedef SerfVec<unsigned long> ULongVec;
 typedef MasterVec<ULongVec> VecULongVec;
-extern template class OuterVec<ULongVec>;
+//extern template class OuterVec<ULongVec>;
 
 
 typedef SerfVec<uint64_t> UInt64Vec;

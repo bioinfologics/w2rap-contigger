@@ -11,4 +11,4 @@
 
 #include "paths/long/ReadPath.h"
 #include "feudal/OuterVecDefs.h"
-template class OuterVec<ReadPath>;
+//template class OuterVec<ReadPath>;

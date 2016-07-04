@@ -21,10 +21,10 @@
 
 typedef SerfVec<float> FloatVec;
 typedef MasterVec< FloatVec > VecFloatVec;
-extern template class OuterVec<FloatVec>;
+//extern template class OuterVec<FloatVec>;
 
 typedef SerfVec<double> DoubleVec;
 typedef MasterVec< FloatVec > VecDoubleVec;
-extern template class OuterVec<DoubleVec>;
+//extern template class OuterVec<DoubleVec>;
 
 #endif /* FLOATVECTOR_H_ */

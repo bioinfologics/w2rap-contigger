@@ -67,7 +67,7 @@ class ulink {
      int Var( ) const { return dev*dev; }
 
 };
-extern template class digraphE<ulink>;
+//extern template class digraphE<ulink>;
 
 inline ulink CombineUlinks( const ulink& x, const ulink& y )
 {    ulink z;

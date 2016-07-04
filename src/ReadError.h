@@ -80,7 +80,7 @@ TRIVIALLY_SERIALIZABLE(ReadError);
 
 typedef SerfVec<ReadError> ReadErrorVec;
 typedef MasterVec<ReadErrorVec> ReadErrorVecVec;
-extern template class SmallVec<ReadError,MempoolAllocator<ReadError> >;
-extern template class OuterVec<ReadErrorVec>;
+//extern template class SmallVec<ReadError,MempoolAllocator<ReadError> >;
+//extern template class OuterVec<ReadErrorVec>;
 
 #endif /* READERROR_H_ */

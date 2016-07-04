@@ -796,9 +796,9 @@ private:
 template <int N, class A>
 struct Serializability<FieldVec<N,A> >
 { typedef SelfSerializable type; };
-extern template class FieldVec< 1, MempoolAllocator<unsigned char> >;
-extern template class FieldVec< 2, MempoolAllocator<unsigned char> >;
-extern template class FieldVec< 4, MempoolAllocator<unsigned char> >;
+//extern template class FieldVec< 1, MempoolAllocator<unsigned char> >;
+//extern template class FieldVec< 2, MempoolAllocator<unsigned char> >;
+//extern template class FieldVec< 4, MempoolAllocator<unsigned char> >;
 
 template <int N, class A>
 bool operator==( FieldVec<N,A> const& v1, FieldVec<N,A> const& v2 )

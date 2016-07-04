@@ -273,6 +273,6 @@ String ReplaceByLengths( const efasta& e );
 
 void GetShares( const vec<basevector>& patches, int& left_share, int& right_share );
 
-extern template class OuterVec<efasta>;
+//extern template class OuterVec<efasta>;
 
 #endif

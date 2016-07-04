@@ -23,15 +23,14 @@
 #include "system/System.h"
 #include <map>
 
-int const PairsBuilder::DFLT_SEP;
-int const PairsBuilder::DFLT_SD;
+//int const PairsBuilder::DFLT_SEP;
+//int const PairsBuilder::DFLT_SD;
 
 using std::istream;
 using std::pair;
 using std::string;
 using std::cerr;
 using std::map;
-using namespace SAM;
 
 namespace
 {
@@ -42,7 +41,7 @@ std::string NM_TAG("NM:i");
 
 enum RecType { UNPAIRED, PAIRED, END1, END2 };
 
-RecType getRecType( Record rec )
+RecType getRecType( SAM::Record rec )
 {
     RecType result = UNPAIRED;
     if ( rec.isPaired() )
@@ -75,7 +74,7 @@ typedef map<IdMapKey,IdMapVal,IdMapKeyComp,IdMapAllocator> IdMap;
 
 }
 
-bool validateReferenceDictionary( SAMFile& sf, vec<String> const& names,
+bool validateReferenceDictionary( SAM::SAMFile& sf, vec<String> const& names,
                                     vecbvec const& refSeqs )
 {
     bool result = true;
@@ -114,7 +113,7 @@ bool validateReferenceDictionary( SAMFile& sf, vec<String> const& names,
     return result;
 }
 
-void SAM2CRD( SAMFile& sf,
+void SAM2CRD( SAM::SAMFile& sf,
               vecbasevector& seqs, vecqualvector& quals,
               vec<look_align_x>& alns, vec<pairinfo>& readPairs,
               vecString& readnames, vec<Bool>& first_in_pair, vecString& libNames,
@@ -137,7 +136,7 @@ void SAM2CRD( SAMFile& sf,
     map<string,uint> libNameToLibId;
 
     IdMap::const_iterator pos;
-    Record rec;
+    SAM::Record rec;
     if ( !sf.nextRecord(rec) )
     {
         sf.getLogger().log("No sam records.");
@@ -189,7 +188,7 @@ void SAM2CRD( SAMFile& sf,
             if ( key.second != PAIRED )
             {
                 key.first = readnames.back().c_str();
-                ReadGroup const* pRG = rec.getReadGroup();
+                SAM::ReadGroup const* pRG = rec.getReadGroup();
                 string libName = pRG ? pRG->getLibrary() : "unknown";
                 map<string,uint>::iterator itr = libNameToLibId.find(libName);
                 uint libId;
@@ -223,7 +222,7 @@ void SAM2CRD( SAMFile& sf,
         if ( !rec.isMapped() )
             continue; // NON-STRUCTURED CODE!
 
-        Alignment aln(rec,sf.getLogger());
+        SAM::Alignment aln(rec,sf.getLogger());
         if ( !aln.size() )
         {
             sf.getLogger().log("Alignment for query %s has no blocks.  Skipping alignment.",rec.getQueryName().c_str());
@@ -303,25 +302,25 @@ void SAM2CRD( SAMFile& sf,
     idMap.clear();
 }
 
-void Convert_Alignment_to_align( const Alignment& aln, align& a )
+void Convert_Alignment_to_align( const SAM::Alignment& aln, align& a )
 {    avector<int> gaps, lengths;
      bool expectPairwise = false;
-     Block const* end = aln.end();
-     for ( Block const* pBlock = aln.begin(); pBlock != end; ++pBlock )
+     SAM::Block const* end = aln.end();
+     for ( SAM::Block const* pBlock = aln.begin(); pBlock != end; ++pBlock )
      {    switch ( pBlock->getType() )
-          {    case Block::PADDING:
+          {    case SAM::Block::PADDING:
                     break;
-               case Block::READGAP:
+               case SAM::Block::READGAP:
                     if ( expectPairwise ) lengths.Append(0);
                     expectPairwise = true;
                     gaps.Append(pBlock->getLength());
                     break;
-               case Block::REFGAP:
+               case SAM::Block::REFGAP:
                     if ( expectPairwise ) lengths.Append(0);
                     expectPairwise = true;
                     gaps.Append(-static_cast<int>(pBlock->getLength()));
                     break;
-               case Block::PAIRWISE:
+               case SAM::Block::PAIRWISE:
                     if ( !expectPairwise ) gaps.Append(0);
                     lengths.Append(pBlock->getLength());
                     expectPairwise = false;

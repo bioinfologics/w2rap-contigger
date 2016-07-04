@@ -20,17 +20,17 @@
 
 namespace
 {
-    unsigned const K = 31;
+    unsigned const PC_K = 31;
 
     class ReadFixer
     {
     public:
-        ReadFixer( vecbvec* pReads, KmerDict<K> const& dict, int verbosity )
+        ReadFixer( vecbvec* pReads, KmerDict<PC_K> const& dict, int verbosity )
         : mpReads(pReads), mDict(dict),
           mDotter((pReads->size()+BATCH_SIZE-1)/BATCH_SIZE),
           mVerbosity(verbosity)
         { mCertified.resize(mpReads->size(),true);
-          Spectrum<K> spectrum(dict);
+          Spectrum<PC_K> spectrum(dict);
           if ( mVerbosity >= 3 )
               std::cout << spectrum << std::endl;
           mCertThreshold = spectrum.getFirstTroughIndex();
@@ -74,7 +74,7 @@ namespace
         ReadFixer& operator=( ReadFixer const& ); // unimplemented -- no copying
 
         void fixRead( bvec& read, size_t readId )
-        { if ( read.size() < K ) return;
+        { if ( read.size() < PC_K ) return;
           if ( mVerbosity >= 2 ) dumpMultiplicities(read,readId);
           if ( fixRead(read.begin(),read.end(),readId) )
               fixRead(read.rcbegin(),read.rcend(),readId); }
@@ -85,12 +85,12 @@ namespace
             typedef bvec::const_iterator Itr;
             Itr beg(read.begin());
             Itr end(read.end());
-            KMer<K> kkk(beg);
+            KMer<PC_K> kkk(beg);
             KDef const* pDef = mDict.lookup(kkk);
             size_t count = pDef ? pDef->getCount() : 0;
             std::cout << count;
             size_t col = 1;
-            for ( Itr itr(beg+K); itr != end; ++itr )
+            for ( Itr itr(beg+PC_K); itr != end; ++itr )
             {
                 kkk.toSuccessor(*itr);
                 pDef = mDict.lookup(kkk);
@@ -109,7 +109,7 @@ namespace
 
         vecbvec* mpReads;
         vec<bool> mCertified;
-        KmerDict<K> const& mDict;
+        KmerDict<PC_K> const& mDict;
         Dotter mDotter;
         unsigned mCertThreshold;
         int mVerbosity;
@@ -122,12 +122,12 @@ namespace
         unsigned const GOOD_FACTOR = 2;
 
         bool result = false;
-        KMer<K> kkk(beg);
+        KMer<PC_K> kkk(beg);
         KDef const* pDef = mDict.lookup(kkk);
         size_t count = pDef ? pDef->getCount() : 0;
         if ( count < mCertThreshold )
             mCertified[readId] = false;
-        for ( Itr itr(beg+K); itr != end; ++itr )
+        for ( Itr itr(beg+PC_K); itr != end; ++itr )
         {
             kkk.toSuccessor(*itr);
             pDef = mDict.lookup(kkk);
@@ -199,7 +199,7 @@ void precorrectAlt1( vecbvec* pReads, unsigned COVERAGE,
     NUM_THREADS = boundNumThreads(NUM_THREADS);
 
     size_t estDictSize = 10*pReads->SizeSum()/COVERAGE;
-    KmerDict<K> dict(estDictSize);
+    KmerDict<PC_K> dict(estDictSize);
     if ( VERBOSITY )
         std::cout << "Creating dictionary." << std::endl;
     dict.process(*pReads,VERBOSITY,false,NUM_THREADS,10000);

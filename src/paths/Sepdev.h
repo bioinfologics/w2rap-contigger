@@ -47,12 +47,12 @@ struct Serializability<Tsepdev<T> >
 { typedef TriviallySerializable type; };
 
 typedef Tsepdev<int> sepdev;
-extern template class digraphE<sepdev>;
+//extern template class digraphE<sepdev>;
 
 typedef Tsepdev<double> fsepdev;
-extern template class digraphE<fsepdev>;
+//extern template class digraphE<fsepdev>;
 
-extern template class digraphE< Tsepdev<double> >;
+//extern template class digraphE< Tsepdev<double> >;
 
 // Templatized constructor helpers to convert to int intelligently.
 template<> template<> 
@@ -62,7 +62,7 @@ template<> template<>
 inline Tsepdev<int>::Tsepdev( double sep, double dev )
   : sep_(int(round(sep))), dev_(int(ceil(dev))) { }
 
-extern template class digraphE< Tsepdev<int> >;
+//extern template class digraphE< Tsepdev<int> >;
 
 #endif
 

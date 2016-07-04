@@ -90,8 +90,8 @@ class ho_interval {
 TRIVIALLY_SERIALIZABLE(ho_interval);
 typedef SerfVec<ho_interval> HOIntervalVec;
 typedef MasterVec<HOIntervalVec> VecHOIntervalVec;
-extern template class SmallVec< ho_interval, MempoolAllocator<ho_interval> >;
-extern template class OuterVec<HOIntervalVec>;
+//extern template class SmallVec< ho_interval, MempoolAllocator<ho_interval> >;
+//extern template class OuterVec<HOIntervalVec>;
 
 ///Compare two ho_intervals by length.
 struct SmallerLength: public std::binary_function <ho_interval, ho_interval, bool> {

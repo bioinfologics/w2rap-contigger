@@ -62,8 +62,8 @@ private:
     bool mRC;
 };
 typedef SerfVec<Friend> Friends;
-extern template class SmallVec<Friend,MempoolAllocator<Friend> >;
-extern template class OuterVec<Friends>;
+//extern template class SmallVec<Friend,MempoolAllocator<Friend> >;
+//extern template class OuterVec<Friends>;
 
 class FriendAlignerImpl
 {

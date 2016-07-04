@@ -262,7 +262,7 @@ public:
 };
 
 SELF_SERIALIZABLE(QualNibbleVec);
-extern template class OuterVec<QualNibbleVec>;
+//extern template class OuterVec<QualNibbleVec>;
 
 typedef MasterVec<QualNibbleVec> VecQualNibbleVec;
 typedef VecQualNibbleVec QualNibbleVecVec;

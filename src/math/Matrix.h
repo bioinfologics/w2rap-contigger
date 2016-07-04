@@ -90,10 +90,10 @@ template<class T> class matrix {
 };
 
 template<> void matrix<char>::Print( std::ostream& out ) const;
-extern template class matrix<float>;
-extern template class matrix<double>;
-extern template class matrix<Bool>;
-extern template class matrix<char>;
+//extern template class matrix<float>;
+//extern template class matrix<double>;
+//extern template class matrix<Bool>;
+//extern template class matrix<char>;
 
 // mul( A, x, Ax ): set the last argument to the product of the first two arguments.
 

@@ -49,8 +49,8 @@ struct Query {
 TRIVIALLY_SERIALIZABLE(Query);
 typedef SerfVec<Query> QueryVec;
 typedef MasterVec<QueryVec> VecQueryVec;
-extern template class SmallVec< Query, MempoolAllocator<Query> >;
-extern template class OuterVec<QueryVec>;
+//extern template class SmallVec< Query, MempoolAllocator<Query> >;
+//extern template class OuterVec<QueryVec>;
 
 inline ostream & operator<<(ostream &out, const Query &h)
 {
@@ -251,8 +251,8 @@ struct ProcessedHit : public RawHit {
 TRIVIALLY_SERIALIZABLE(ProcessedHit);
 typedef SerfVec<ProcessedHit> ProcessedHitVec;
 typedef MasterVec<ProcessedHitVec> VecProcessedHitVec;
-extern template class SmallVec< ProcessedHit, MempoolAllocator<ProcessedHit> >;
-extern template class OuterVec<ProcessedHitVec>;
+//extern template class SmallVec< ProcessedHit, MempoolAllocator<ProcessedHit> >;
+//extern template class OuterVec<ProcessedHitVec>;
 
 inline ostream & operator<<(ostream &out, const ProcessedHit &h)
 {

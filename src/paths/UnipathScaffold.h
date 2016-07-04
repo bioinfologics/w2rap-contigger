@@ -38,7 +38,7 @@ class linklet {
           return l1.dev < l2.dev;    }
 
 };
-extern template class digraphE<linklet>;
+//extern template class digraphE<linklet>;
 
 void UnipathScaffold(
 

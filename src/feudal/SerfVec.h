@@ -115,15 +115,15 @@ public:
       return result; }
 };
 
-extern template class SmallVec< char, MempoolAllocator<char> >;
-extern template class SmallVec< unsigned char, MempoolAllocator<unsigned char> >;
-extern template class SmallVec< float, MempoolAllocator<float> >;
-extern template class SmallVec< double, MempoolAllocator<double> >;
-extern template class SmallVec< int, MempoolAllocator<int> >;
-extern template class SmallVec< unsigned int, MempoolAllocator<unsigned int> >;
-extern template class SmallVec< unsigned short, MempoolAllocator<unsigned short> >;
-extern template class SmallVec< long, MempoolAllocator<long> >;
-extern template class SmallVec< unsigned long, MempoolAllocator<unsigned long> >;
+//extern template class SmallVec< char, MempoolAllocator<char> >;
+//extern template class SmallVec< unsigned char, MempoolAllocator<unsigned char> >;
+//extern template class SmallVec< float, MempoolAllocator<float> >;
+//extern template class SmallVec< double, MempoolAllocator<double> >;
+//extern template class SmallVec< int, MempoolAllocator<int> >;
+//extern template class SmallVec< unsigned int, MempoolAllocator<unsigned int> >;
+//extern template class SmallVec< unsigned short, MempoolAllocator<unsigned short> >;
+//extern template class SmallVec< long, MempoolAllocator<long> >;
+//extern template class SmallVec< unsigned long, MempoolAllocator<unsigned long> >;
 
 template <class T>
 struct Serializability< SerfVec<T> >

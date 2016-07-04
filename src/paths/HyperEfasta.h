@@ -18,7 +18,7 @@
 #include "graph/Digraph.h"
 #include "paths/HyperBasevector.h"
 
-extern template class digraphE<efasta>;
+//extern template class digraphE<efasta>;
 
 class HyperEfasta : public digraphE<efasta> {
 

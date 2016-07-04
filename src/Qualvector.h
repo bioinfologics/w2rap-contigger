@@ -41,10 +41,10 @@ typedef QualVecVec vecqvec;
 
 typedef OuterVec< OuterVec<qvec,MempoolAllocator<qual_t> >,
                   MempoolOwner<qual_t> > qvec3;
-extern template class OuterVec<qvec>;
-extern template class OuterVec<qvec,qvec::alloc_type>;
-extern template class OuterVec< OuterVec<qvec,qvec::alloc_type>,
-                                                    MempoolOwner<qual_t> >;
+//extern template class OuterVec<qvec>;
+//extern template class OuterVec<qvec,qvec::alloc_type>;
+//extern template class OuterVec< OuterVec<qvec,qvec::alloc_type>,
+//                                                    MempoolOwner<qual_t> >;
 
 ///Produces fasta format quals, mirrors basevector::Print()
 void Print( std::ostream &out, const qualvector &q, const String &name,

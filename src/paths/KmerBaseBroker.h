@@ -274,7 +274,7 @@ private:
 
 typedef KmerBaseBrokerTemplate<tagged_rpint> KmerBaseBroker;
 typedef KmerBaseBrokerTemplate<big_tagged_rpint> KmerBaseBrokerBig;
-extern template class KmerBaseBrokerTemplate<tagged_rpint>;
-extern template class KmerBaseBrokerTemplate<big_tagged_rpint>;
+//extern template class KmerBaseBrokerTemplate<tagged_rpint>;
+//extern template class KmerBaseBrokerTemplate<big_tagged_rpint>;
 
 #endif

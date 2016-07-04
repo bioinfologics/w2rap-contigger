@@ -82,6 +82,6 @@ public:
 
 SELF_SERIALIZABLE(CompressedSequence);
 typedef MasterVec<CompressedSequence> veccompseq;
-extern template class OuterVec<CompressedSequence>;
+//extern template class OuterVec<CompressedSequence>;
 
 #endif

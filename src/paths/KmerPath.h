@@ -303,9 +303,9 @@ public:
 };
 
 SELF_SERIALIZABLE(KmerPath);
-extern template class SmallVec< KmerPathInterval, MempoolAllocator<KmerPathInterval> >;
-extern template class OuterVec<KmerPath>;
-extern template class digraphE<KmerPath>;
+//extern template class SmallVec< KmerPathInterval, MempoolAllocator<KmerPathInterval> >;
+//extern template class OuterVec<KmerPath>;
+//extern template class digraphE<KmerPath>;
 
 inline nbases_t Kmers2Bases( nkmers_t nkmers, nbases_t K ) {
   return nkmers + K - 1;

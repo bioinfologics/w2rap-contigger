@@ -89,6 +89,6 @@ private:
 SELF_SERIALIZABLE(ReadPath);
 
 typedef MasterVec<ReadPath> ReadPathVec;
-extern template class OuterVec<ReadPath>;
+//extern template class OuterVec<ReadPath>;
 
 #endif /* READPATH_H_ */

@@ -59,8 +59,8 @@ TRIVIALLY_SERIALIZABLE(IdAndOrientation);
 
 typedef SerfVec<IdAndOrientation> IAndOs; // friendly readIds & orientations
 typedef MasterVec<IAndOs> IAndOsVec; // indexed by readId
-extern template class SmallVec<IdAndOrientation,MempoolAllocator<IdAndOrientation> >;
-extern template class OuterVec<IAndOs>;
+//extern template class SmallVec<IdAndOrientation,MempoolAllocator<IdAndOrientation> >;
+//extern template class OuterVec<IAndOs>;
 
 /// Write a feudal file of all the friends of the given reads.
 /// Friends share a perfect 25-mer.

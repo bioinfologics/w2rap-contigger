@@ -76,7 +76,7 @@ class KmerPathDatabaseTemplate
 
 typedef KmerPathDatabaseTemplate<tagged_rpint> KmerPathDatabase;
 typedef KmerPathDatabaseTemplate<big_tagged_rpint> KmerPathDatabaseBig;
-extern template class KmerPathDatabaseTemplate<tagged_rpint>;
-extern template class KmerPathDatabaseTemplate<big_tagged_rpint>;
+//extern template class KmerPathDatabaseTemplate<tagged_rpint>;
+//extern template class KmerPathDatabaseTemplate<big_tagged_rpint>;
 
 #endif

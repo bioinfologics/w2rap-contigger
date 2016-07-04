@@ -129,7 +129,7 @@ inline void swap( BitVec& bv1, BitVec& bv2 )
 }
 
 typedef MasterVec<BitVec> vecbitvector;
-extern template class OuterVec<BitVec>;
+//extern template class OuterVec<BitVec>;
 
 float Coverage(const vecbitvector& v);
 

@@ -30,8 +30,8 @@
 namespace
 {
 
-unsigned const K = 60;
-typedef KMer<K> Kmer;
+unsigned const FP_K = 60;
+typedef KMer<FP_K> Kmer;
 typedef HashSet<Kmer,Kmer::Hasher> Dict;
 
 class KHash
@@ -58,7 +58,7 @@ typedef MapReduceEngine<KHash,Kmer,Kmer::Hasher> MRE;
 void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
 {
     unsigned const COVERAGE = 50;
-    size_t nKmers = reads.getKmerCount(K);
+    size_t nKmers = reads.getKmerCount(FP_K);
 
     // build a dictionary of the good kmers
     Dict dict(nKmers/COVERAGE);
@@ -73,26 +73,26 @@ void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
         [&dict]( vecbvec::iterator readsItr )
         {
             bvec& bv = *readsItr;
-            if ( bv.size() < K )
+            if ( bv.size() < FP_K )
                 return;
             bvec::const_iterator beg(bv.cbegin());
             Kmer kkk(beg);
             Kmer krc(kkk); krc.rc();
             Kmer const* pEntry;
-            if ( K&1 ) pEntry = dict.lookup(kkk.isRev() ? krc : kkk);
+            if ( FP_K&1 ) pEntry = dict.lookup(kkk.isRev() ? krc : kkk);
             else pEntry = dict.lookup(krc < kkk ? krc : kkk);
             if ( !pEntry )
             {
                 bv.clear(); // kill the entire read if 1st kmer is bad
                 return;
             }
-            bvec::const_iterator itr(beg+K);
+            bvec::const_iterator itr(beg+FP_K);
             bvec::const_iterator end(bv.cend());
             while ( itr != end )
             {
                 kkk.toSuccessor(*itr);
                 krc.toPredecessor(*itr ^ 3);
-                if ( K&1 ) pEntry = dict.lookup(kkk.isRev() ? krc : kkk);
+                if ( FP_K&1 ) pEntry = dict.lookup(kkk.isRev() ? krc : kkk);
                 else pEntry = dict.lookup(krc < kkk ? krc : kkk);
                 if ( !pEntry )
                 {
@@ -104,33 +104,33 @@ void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
         });
 }
 
-template<int K> void TrimReadsOld( const vecbasevector& bases,
+template<int FP_K> void TrimReadsOld( const vecbasevector& bases,
                                     const int min_freq,
                                     const int NUM_THREADS,
                                     vecbasevector& basesx )
 {
-     ForceAssertLe(K, 60);      // only implmemented for K<=60 right now; need a wider Kmer below for higher K.
+     ForceAssertLe(FP_K, 60);      // only implmemented for FP_K<=60 right now; need a wider Kmer below for higher FP_K.
 
      typedef Kmer60 Kmer_t;
      typedef KmerKmerFreq<Kmer_t> KmerRec_t;            // Kmer frequency db
      vec<KmerRec_t> kmer_vec;
 
-     // check that there are reads of longer than K bases
+     // check that there are reads of longer than FP_K bases
      size_t longs = 0, shorts = 0;
      for ( auto iter = bases.begin(); iter != bases.end(); ++iter ) {
-         if ( iter->size() >= K ) longs++;
+         if ( iter->size() >= FP_K ) longs++;
          else shorts++;
      }
      if ( longs == 0 ) {
          std::ostringstream err;
-         err <<  "we found that all " << shorts << " reads were shorter than K=" << K;
+         err <<  "we found that all " << shorts << " reads were shorter than FP_K=" << FP_K;
          err << " and we therefore cannot continue.";
          DiscovarTools::ExitShortReads(err.str());
      }
 
      // calculate the kmer frequency db, thresholding at min_freq
      Validator valid( min_freq, 0 );
-     KernelKmerStorer<KmerRec_t> storer( bases, K, &kmer_vec, &valid );
+     KernelKmerStorer<KmerRec_t> storer( bases, FP_K, &kmer_vec, &valid );
      naif_kmerize( &storer, NUM_THREADS, false );
 
      // populate the output before trimming
@@ -147,7 +147,7 @@ template<int K> void TrimReadsOld( const vecbasevector& bases,
          for ( size_t j = 0; j < bases.size(); j++ ) {      // for each read
              const basevector& b = bases[j];
 
-             SubKmers<basevector, Kmer_t> subs( K, b );    // kmerize read b
+             SubKmers<basevector, Kmer_t> subs( FP_K, b );    // kmerize read b
              trim_to[j] = b.size();                        // default trim is full-sized
              bool first = true;
              for ( ; subs.not_done(); subs.next() ) {                   // for each kmer
@@ -190,7 +190,7 @@ void FillPairs( const vecbasevector& bases, const PairsManager& pairs,
      HyperKmerPath h;
      vecKmerPath paths, paths_rc;
      HyperBasevector hb;
-     LongReadsToPaths( basesx, K, COVERAGE, &hb, &h, &paths, &paths_rc );
+     LongReadsToPaths( basesx, FP_K, COVERAGE, &hb, &h, &paths, &paths_rc );
      vecKmerPath hpaths;
      vec<tagged_rpint> hpathsdb;
      for ( int e = 0; e < h.EdgeObjectCount( ); e++ )

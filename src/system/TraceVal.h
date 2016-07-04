@@ -153,7 +153,7 @@ inline std::istream& operator>> ( std::istream& in, TraceVal<T>& tv ) {
 }
 
 typedef TraceVal<int> TraceInt;
-extern template class TraceVal<int>;
+//extern template class TraceVal<int>;
 
 #endif
 // #ifndef __INCLUDE_TraceVal_h

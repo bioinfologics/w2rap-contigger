@@ -44,8 +44,8 @@ class BriefSubsumptionRecord
 TRIVIALLY_SERIALIZABLE(BriefSubsumptionRecord);
 typedef SerfVec<BriefSubsumptionRecord> BriefSubsumptionRecordVec;
 typedef MasterVec<BriefSubsumptionRecordVec> VecBriefSubsumptionRecordVec;
-extern template class SmallVec< BriefSubsumptionRecord, MempoolAllocator<BriefSubsumptionRecord> >;
-extern template class OuterVec<BriefSubsumptionRecordVec>;
+//extern template class SmallVec< BriefSubsumptionRecord, MempoolAllocator<BriefSubsumptionRecord> >;
+//extern template class OuterVec<BriefSubsumptionRecordVec>;
 
 class SubsumptionRecord
 {

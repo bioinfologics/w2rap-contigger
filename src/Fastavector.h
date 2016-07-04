@@ -333,11 +333,11 @@ public:
 
 
 SELF_SERIALIZABLE(fastavector);
-extern template class digraphE<fastavector>;
+//extern template class digraphE<fastavector>;
 
 typedef MasterVec<fastavector> vecfastavector;
 typedef vecfastavector vecfvec;
-extern template class OuterVec<fastavector>;
+//extern template class OuterVec<fastavector>;
 
 typedef fastavector fvec;
 typedef fastavector FastaVec;

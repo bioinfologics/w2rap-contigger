@@ -22,6 +22,6 @@
 typedef std::pair<int,int> IntPair;
 typedef SerfVec<IntPair> IntPairVec;
 typedef MasterVec<IntPairVec> VecIntPairVec;
-extern template class OuterVec<IntPairVec>;
+//extern template class OuterVec<IntPairVec>;
 
 #endif /* INTPAIRVEC_H_ */

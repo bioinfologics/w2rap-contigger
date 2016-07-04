@@ -25,8 +25,8 @@
 
 // Note: There are two versions.  The second accepts an additional argument N0.
 
-extern vec<longlong> kmer_multiplicity;
-extern vec<unsigned short> high_mult_kmers;
+//extern vec<longlong> kmer_multiplicity;
+//extern vec<unsigned short> high_mult_kmers;
 
 inline vec<longlong>* KmerMultiplicities( ) { return &kmer_multiplicity; }
 

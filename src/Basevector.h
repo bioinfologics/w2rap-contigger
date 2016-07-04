@@ -23,10 +23,10 @@ typedef BaseVecVec vecbvec;
 typedef OuterVec< OuterVec<bvec,MempoolAllocator<unsigned char> >,
                   MempoolOwner<unsigned char> > bvec3;
 #include "feudal/OuterVecDefs.h"
-extern template class OuterVec<BaseVec>;
-extern template class OuterVec<BaseVec,BaseVec::allocator_type>;
-extern template class OuterVec< OuterVec<BaseVec,BaseVec::allocator_type>,
-                                                MempoolOwner<unsigned char> >;
+//extern template class OuterVec<BaseVec>;
+//extern template class OuterVec<BaseVec,BaseVec::allocator_type>;
+//extern template class OuterVec< OuterVec<BaseVec,BaseVec::allocator_type>,
+//                                                MempoolOwner<unsigned char> >;
 
 
 typedef bvec kmer_t;
