@@ -85,7 +85,7 @@ int main(const int argc, const char * argv[]) {
                                                  "Start on step (default: 1)", false, 1, &steps, cmd);
 
         TCLAP::ValueArg<unsigned int> toStep_Arg("", "to_step",
-                                                   "Stop after step (default: 6)", false, 6, &steps, cmd);
+                                                   "Stop after step (default: 7)", false, 7, &steps, cmd);
 
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
@@ -155,7 +155,7 @@ int main(const int argc, const char * argv[]) {
         std::cout << "Reading input files DONE!" << std::endl << std::endl << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("ExtractReads") << std::endl;
         //TODO: add an option to dump the reads
-        if (dump_all || to_step==1) {
+        if (dump_all || to_step<6) {
             std::cout << "Dumping reads in fastb/qualp format..." << std::endl;
             bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
             quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
