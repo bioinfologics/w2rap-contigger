@@ -1213,14 +1213,14 @@ private:
     int mOffset;
 };
 
-typedef KMer<KLEN> Kmer;
-class KmerLoc : public Kmer
+typedef KMer<KLEN> GT_Kmer;
+class KmerLoc : public GT_Kmer
 {
 public:
     KmerLoc()=default;
     template <class Itr>
     KmerLoc( Itr itr, unsigned readId )
-    : Kmer(itr), mLoc(readId,0u) {}
+    : GT_Kmer(itr), mLoc(readId,0u) {}
 
     void nextLoc( unsigned char nextBase )
     { toSuccessor(nextBase); mLoc.nextOffset(); }
@@ -1231,20 +1231,20 @@ private:
     Loc mLoc;
 };
 
-class KmerLocs : public Kmer
+class KmerLocs : public GT_Kmer
 {
 public:
     KmerLocs()=default;
 
-    KmerLocs( Kmer const& kmer, Loc* pLocs, Loc* pEnd )
-    : Kmer(kmer), mpLocs(pLocs), mNLocs(pEnd-pLocs), mELocs(0)
+    KmerLocs( GT_Kmer const& kmer, Loc* pLocs, Loc* pEnd )
+    : GT_Kmer(kmer), mpLocs(pLocs), mNLocs(pEnd-pLocs), mELocs(0)
     { if ( mNLocs != 1 ) std::sort(pLocs,pEnd);
       else
       { ForceAssertGe(sizeof(Loc*),sizeof(Loc));
         *reinterpret_cast<Loc*>(&mpLocs) = *pLocs; } }
 
     KmerLocs( KmerLoc const& kloc )
-    : Kmer(kloc), mNLocs(1u), mELocs(0)
+    : GT_Kmer(kloc), mNLocs(1u), mELocs(0)
     { ForceAssertGe(sizeof(Loc*),sizeof(Loc));
       *reinterpret_cast<Loc*>(&mpLocs) = kloc.getLoc(); }
 
@@ -1267,13 +1267,13 @@ private:
     unsigned mELocs;
 };
 
-typedef HashSet<KmerLocs,Kmer::Hasher,std::equal_to<Kmer>> Dict;
+typedef HashSet<KmerLocs,GT_Kmer::Hasher,std::equal_to<GT_Kmer>> GT_Dict;
 
 class MREReadProc
 {
 public:
     MREReadProc( vec<size_t> const& ids, vecbvec const& reads, Mempool& alloc,
-                    size_t maxMultiplicity, Dict* pDict )
+                    size_t maxMultiplicity, GT_Dict* pDict )
     : mIds(ids), mReads(reads), mAlloc(alloc),
       mMaxMultiplicity(maxMultiplicity), mDict(*pDict),
       mpNext(nullptr), mpEnd(nullptr)
@@ -1316,17 +1316,17 @@ private:
     vecbvec const& mReads;
     Mempool& mAlloc;
     size_t mMaxMultiplicity;
-    Dict& mDict;
+    GT_Dict& mDict;
     Loc* mpNext;
     Loc* mpEnd;
 };
 
-typedef MapReduceEngine<MREReadProc,KmerLoc,Kmer::Hasher,std::less<Kmer>> RMRE;
+typedef MapReduceEngine<MREReadProc,KmerLoc,GT_Kmer::Hasher,std::less<GT_Kmer>> RMRE;
 
 class MREEdgeProc
 {
 public:
-    MREEdgeProc( HyperBasevector const& hbv, Dict* pDict )
+    MREEdgeProc( HyperBasevector const& hbv, GT_Dict* pDict )
     : mHBV(hbv), mDict(*pDict)
     {}
 
@@ -1334,28 +1334,28 @@ public:
     void map( size_t edgeId, OItr oItr )
     { bvec const& edge = mHBV.EdgeObject(edgeId);
       if ( edge.size() < KLEN ) return;
-      Kmer kmer(edge.begin());
+      GT_Kmer kmer(edge.begin());
       *oItr = kmer; ++oItr;
       for ( auto itr=edge.begin(KLEN),end=edge.end(); itr != end; ++itr )
       { kmer.toSuccessor(*itr); *oItr = kmer; ++oItr; } }
 
-    void reduce( Kmer const* beg, Kmer const* end )
+    void reduce( GT_Kmer const* beg, GT_Kmer const* end )
     { bumpCount(*beg,end-beg); }
 
-    Kmer* overflow( Kmer* beg, Kmer* end )
+    GT_Kmer* overflow( GT_Kmer* beg, GT_Kmer* end )
     { bumpCount(*beg,end-beg); return beg; }
 
 private:
-    void bumpCount( Kmer const& kmer, size_t count )
+    void bumpCount( GT_Kmer const& kmer, size_t count )
     { KmerLocs const* pLocs = mDict.lookup(kmer);
       if ( pLocs )
           const_cast<KmerLocs*>(pLocs)->setELocs(pLocs->getELocs()+count); }
 
     HyperBasevector const& mHBV;
-    Dict& mDict;
+    GT_Dict& mDict;
 };
 
-typedef MapReduceEngine<MREEdgeProc,Kmer,Kmer::Hasher> EMRE;
+typedef MapReduceEngine<MREEdgeProc,GT_Kmer,GT_Kmer::Hasher> EMRE;
 
 class EdgeProc
 {
@@ -1365,7 +1365,7 @@ class EdgeProc
 public:
     static int const NOT_AN_EDGE = -1;
 
-    EdgeProc( HyperBasevector const& hbv, Dict const& dict,
+    EdgeProc( HyperBasevector const& hbv, GT_Dict const& dict,
                 vecbvec const& reads, VecPQVec const& quals,
                 ReadPathVec& paths )
     : mHBV(hbv), mDict(dict), mReads(reads), mQuals(quals), mPaths(paths) {}
@@ -1373,7 +1373,7 @@ public:
     void operator()( size_t edgeId )
     { bvec const& edge = mHBV.EdgeObject(edgeId);
       if ( edge.size() < KLEN ) return;
-      Kmer kmer(edge.begin());
+      GT_Kmer kmer(edge.begin());
       int eOffset = 0;
       mLocs.clear();
       KmerLocs const* pLocs;
@@ -1444,7 +1444,7 @@ private:
       return good; }
 
     HyperBasevector const& mHBV;
-    Dict const& mDict;
+    GT_Dict const& mDict;
     vecbvec const& mReads;
     VecPQVec const& mQuals;
     ReadPathVec& mPaths;
@@ -1480,7 +1480,7 @@ void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
           << ", peak = " << PeakMemUsageGBString( )
 #endif
           << std::endl;
-    Dict* pDict = new Dict(nKmers);
+    GT_Dict* pDict = new GT_Dict(nKmers);
     Mempool locsAlloc;
     size_t const MAX_MULTIPLICITY = 80;
     std::cout << Date( ) << ": reducing" << std::endl;

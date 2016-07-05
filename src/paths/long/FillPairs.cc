@@ -31,29 +31,29 @@ namespace
 {
 
 unsigned const FP_K = 60;
-typedef KMer<FP_K> Kmer;
-typedef HashSet<Kmer,Kmer::Hasher> Dict;
+typedef KMer<FP_K> FP_Kmer;
+typedef HashSet<FP_Kmer,FP_Kmer::Hasher> FP_Dict;
 
 class KHash
 {
 public:
-  KHash( Dict* pDict, unsigned minFreq ) : mpDict(pDict), mMinFreq(minFreq) {}
+  KHash( FP_Dict* pDict, unsigned minFreq ) : mpDict(pDict), mMinFreq(minFreq) {}
 
   template <class OItr>
   void map( vecbvec::const_iterator itr, OItr oItr )
-  { Kmer::kmerize(itr->begin(),itr->end(),oItr); }
+  { FP_Kmer::kmerize(itr->begin(),itr->end(),oItr); }
 
-  void reduce( Kmer const* beg, Kmer const* end )
+  void reduce( FP_Kmer const* beg, FP_Kmer const* end )
   { if ( end-beg >= mMinFreq ) mpDict->add(*beg); }
 
-  Kmer* overflow( Kmer* beg, Kmer* end )
+  FP_Kmer* overflow( FP_Kmer* beg, FP_Kmer* end )
   { return beg+std::min(unsigned(end-beg),mMinFreq); }
 
 private:
-  Dict* mpDict;
+  FP_Dict* mpDict;
   unsigned mMinFreq;
 };
-typedef MapReduceEngine<KHash,Kmer,Kmer::Hasher> MRE;
+typedef MapReduceEngine<KHash,FP_Kmer,FP_Kmer::Hasher> MRE;
 
 void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
 {
@@ -61,7 +61,7 @@ void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
     size_t nKmers = reads.getKmerCount(FP_K);
 
     // build a dictionary of the good kmers
-    Dict dict(nKmers/COVERAGE);
+    FP_Dict dict(nKmers/COVERAGE);
     KHash impl(&dict,minFreq);
     MRE mre(impl);
     if ( !mre.run(nKmers,reads.begin(),reads.end()) )
@@ -76,9 +76,9 @@ void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
             if ( bv.size() < FP_K )
                 return;
             bvec::const_iterator beg(bv.cbegin());
-            Kmer kkk(beg);
-            Kmer krc(kkk); krc.rc();
-            Kmer const* pEntry;
+            FP_Kmer kkk(beg);
+            FP_Kmer krc(kkk); krc.rc();
+            FP_Kmer const* pEntry;
             if ( FP_K&1 ) pEntry = dict.lookup(kkk.isRev() ? krc : kkk);
             else pEntry = dict.lookup(krc < kkk ? krc : kkk);
             if ( !pEntry )
@@ -109,10 +109,10 @@ template<int FP_K> void TrimReadsOld( const vecbasevector& bases,
                                     const int NUM_THREADS,
                                     vecbasevector& basesx )
 {
-     ForceAssertLe(FP_K, 60);      // only implmemented for FP_K<=60 right now; need a wider Kmer below for higher FP_K.
+     ForceAssertLe(FP_K, 60);      // only implmemented for FP_K<=60 right now; need a wider FP_Kmer below for higher FP_K.
 
      typedef Kmer60 Kmer_t;
-     typedef KmerKmerFreq<Kmer_t> KmerRec_t;            // Kmer frequency db
+     typedef KmerKmerFreq<Kmer_t> KmerRec_t;            // FP_Kmer frequency db
      vec<KmerRec_t> kmer_vec;
 
      // check that there are reads of longer than FP_K bases

@@ -430,7 +430,7 @@ struct ReadSegment
 };
 
 // an operation we think is a valid simplification of the graph
-typedef triple<EdgeCollection,EdgeCollection,EdgeCollection> Join;
+typedef triple<EdgeCollection,EdgeCollection,EdgeCollection> SHBV_Join;
 
 // instructions about what pull-aparts to do
 struct Recommendations : private SpinLockedData
@@ -439,7 +439,7 @@ struct Recommendations : private SpinLockedData
                             std::set<SHBVPath> const& bridges22,
                             EdgeCollection const& reach );
 
-    vec<Join> mJoins;
+    vec<SHBV_Join> mJoins;
     vec<vec<SHBVPath>> mPaths1, mPaths2;
 };
 
@@ -454,7 +454,7 @@ void Recommendations::addRecommendation( std::set<SHBVPath> const& bridges11,
     EdgeId f1 = bridges11.begin()->back(), f2 = bridges22.begin()->back();
     EdgeCollection eee{e1,e2};
     EdgeCollection fff{f1,f2};
-    Join join(eee,reach,fff);
+    SHBV_Join join(eee,reach,fff);
     SpinLocker lock(*this);
     mJoins.push_back(join);
     mPaths1.push(bridges11.begin(),bridges11.end());
@@ -901,7 +901,7 @@ void SupportedHyperBasevector::PullApart2( const double min_weight_split,
 
         Recommendations recs;
         findJoins(*this,to_left,to_right,verbosity,min_weight_split,&recs);
-        vec<Join>& joins = recs.mJoins;
+        vec<SHBV_Join>& joins = recs.mJoins;
         if ( joins.empty() )
             break;
 
