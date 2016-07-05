@@ -209,66 +209,6 @@ add_library(base2_libs OBJECT
         src/random/NormalDistribution.cc
         src/util/TextTable.cc)
 
-add_library(specific_01 OBJECT
-        src/AnnotatedContig.cc
-        src/Misc.cc
-        src/bam/ReadBAM.cc
-        src/paths/MuxGraph.cc
-        src/paths/OffsetTracker.cc
-        src/paths/long/ExtendReadPath.cc
-        src/paths/long/KmerAlign.h
-        src/paths/long/ShortKmerReadPather.cc
-        src/paths/long/large/ExtractReads.cc
-        src/paths/long/large/ReadNameLookup.cc
-        src/system/Crash.cc)
-
-
-add_library(specific_02 OBJECT
-        src/AnnotatedContig.cc
-        src/BasevectorTools.cc
-        src/CompressedSequence.cc
-        src/FastaConverter.cc
-        src/FastaFileset.cc
-        src/FastaFilestream.cc
-        src/FastaFilestreamPreview.cc
-        src/FastaNameParser.cc
-        src/FastaVerifier.cc
-        src/Misc.cc
-        src/paths/long/BuildReadQGraph.cc
-        src/paths/long/ExtendReadPath.cc
-        src/paths/long/ShortKmerReadPather.cc
-        src/paths/long/large/Repath.cc
-        src/system/Crash.cc
-        src/util/PeakFinder.h)
-
-add_library(specific_03 OBJECT
-        src/CompressedSequence.cc
-        src/FastaConverter.cc
-        src/FastaFilestream.cc
-        src/FastaFilestreamPreview.cc
-        src/FastaVerifier.cc
-        src/pairwise_aligners/SmithWatBanded.cc
-        src/paths/long/large/Clean200.cc)
-
-add_library(specific_04 OBJECT
-        src/paths/long/large/AssembleGaps.cc
-        src/paths/long/large/GapToyTools2.cc
-        src/paths/long/large/Unsat.cc)
-
-add_library(specific_05 OBJECT
-        src/paths/long/DisplayTools.cc
-        src/paths/long/large/GapToyTools2.cc
-        src/paths/long/large/ImprovePath.cc
-        src/paths/long/large/Simplify.cc
-        src/paths/long/large/tools/NhoodInfoCore.cc
-        src/paths/long/large/tools/NhoodInfoState.cc
-        src/paths/long/large/tools/NhoodInfoStuff.cc)
-
-add_library(specific_06 OBJECT
-        src/paths/long/DisplayTools.cc
-        src/paths/long/large/FinalFiles.cc
-        src/paths/long/large/MakeGaps.cc)
-
 add_library(specific_w2rap-contigger OBJECT
         src/AnnotatedContig.cc
         src/BasevectorTools.cc
@@ -308,14 +248,6 @@ add_library(specific_w2rap-contigger OBJECT
 
 
 ## add executables and respective sources
-add_executable(01_unipaths src/modules/unipaths_01.cc $<TARGET_OBJECTS:specific_01> $<TARGET_OBJECTS:base_libs>)
-add_executable(02_qgraph src/modules/qgraph_02.cc $<TARGET_OBJECTS:specific_02> $<TARGET_OBJECTS:base_libs>
-$<TARGET_OBJECTS:base2_libs>)
-add_executable(03_clean src/modules/clean_03.cc $<TARGET_OBJECTS:specific_03> $<TARGET_OBJECTS:base_libs>
-$<TARGET_OBJECTS:base2_libs>)
-add_executable(04_patching src/modules/patching_04.cc $<TARGET_OBJECTS:specific_04> $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
-add_executable(05_simplify src/modules/simplify_05.cc $<TARGET_OBJECTS:specific_05> $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
-add_executable(06_scaffolding src/modules/scaffolding_06.cc $<TARGET_OBJECTS:specific_06> $<TARGET_OBJECTS:base_libs> $<TARGET_OBJECTS:base2_libs>)
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
         $<TARGET_OBJECTS:specific_w2rap-contigger>
         $<TARGET_OBJECTS:base_libs>
@@ -324,23 +256,11 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
 
 if (DEFINED MALLOC_LIBRARY)
     ## Link libraries
-    target_link_libraries(01_unipaths ${LIBSO_NAME})
-    target_link_libraries(02_qgraph ${LIBSO_NAME})
-    target_link_libraries(03_clean ${LIBSO_NAME})
-    target_link_libraries(04_patching ${LIBSO_NAME})
-    target_link_libraries(05_simplify ${LIBSO_NAME})
-    target_link_libraries(06_scaffolding ${LIBSO_NAME})
     target_link_libraries(w2rap-contigger ${LIBSO_NAME})
 endif()
 
 ##Zlib link
 if (DEFINED ZLIB_PATH)
   set(ZLIB libz.so)
-  target_link_libraries(01_unipaths ${ZLIB})
-  target_link_libraries(02_qgraph ${ZLIB})
-  target_link_libraries(03_clean ${ZLIB})
-  target_link_libraries(04_patching ${ZLIB})
-  target_link_libraries(05_simplify ${ZLIB})
-  target_link_libraries(06_scaffolding ${ZLIB})
   target_link_libraries(w2rap-contigger ${ZLIB})
 endif()
