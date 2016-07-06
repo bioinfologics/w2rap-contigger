@@ -19,7 +19,7 @@
 #include "dvString.h"
 #include "paths/KmerPathInterval.h"
 #include "CommonSemanticTypes.h"
-#include "HashSimple.h"
+//#include "HashSimple.h"
 #include "graph/Digraph.h"
 
 class KmerPathLoc;  // forward declaration
@@ -674,17 +674,7 @@ MarkReadsWithNovelKmers2( const vecKmerPath & reads, const vec<TAG>& reference,
 			  const digraph& adj_graph, vec<Bool>& answer );
 
 
-// FuncDecl: SubContig
-//
-// Given a KmerPath p, test whether it's genomic as follows:
-// determine if it can be built up from a contig
-// consisting of paths (in paths, paths_rc) referenced by xpathsdb.  Note that
-// xpathsdb may have been built from only some of the KmerPaths in paths and
-// paths_rc.  Ignore any paths in xpathsdb with ReadId()s in pPathsToIgnore, which
-// should be sorted, and (if specified) the path with ReadId() equal to pathToIgnore.
-Bool SubContig( const KmerPath& p, const vecKmerPath& paths,
-                const vecKmerPath& paths_rc, const vec<tagged_rpint>& xpathsdb,
-                const HashSimple * pPathsToIgnore = 0, read_id_t pathToIgnore = NULL_READ_ID );
+
 
 /**
    Class: vecKmerPathIndex

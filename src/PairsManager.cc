@@ -617,23 +617,7 @@ bool PairsManager::isInterleaved( ) const
 }
 
   
-// Convert these pairs into a vec<read_pairing> for use in legacy code.
-vec<read_pairing> PairsManager::convert_to_read_pairings( ) const
-{
-  vec<read_pairing> pairings( _n_pairs );
-  
-  for ( int i = 0; i < _n_pairs; i++ ) {
-    pairings[i].id1 = _ID1[i];
-    pairings[i].id2 = _ID2[i];
-    pairings[i].sep = _libs[ _lib_IDs[i] ]._sep;
-    pairings[i].sd  = _libs[ _lib_IDs[i] ]._sd;
-    // Give the pairings generic values for t and weight.
-    pairings[i].t = other;
-    pairings[i].weight = 1;
-  }
-  
-  return pairings;
-}
+
 
 
 

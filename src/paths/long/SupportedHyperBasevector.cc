@@ -16,7 +16,7 @@
 #include "fastg/FastgGraph.h"
 #include "math/Functions.h"
 #include "paths/BigMapTools.h"
-#include "paths/PairedPair.h"
+//#include "paths/PairedPair.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/CleanEfasta.h"
 #include "paths/long/DigraphFromWords.h"

@@ -24,7 +24,6 @@
 #include <sys/stat.h>
 
 class Directory;
-class SymLink;
 
 /**
  * \class File
@@ -139,9 +138,6 @@ public:
 
     /// Is it a symbolic link?
     bool isLink() const { return type() == SYM_LINK; }
-
-    /// Get a symbolic link object with the same path.
-    SymLink asLink() const;
 
     /// Is it a regular file?
     bool isRegular() const { return resolvedType() == REGULAR; }

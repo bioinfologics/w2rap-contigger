@@ -10,17 +10,16 @@
 #ifndef KMERS__KMER_PARCELS__KMER_PARCELS_STATISTICS_H
 #define KMERS__KMER_PARCELS__KMER_PARCELS_STATISTICS_H
 
-#include "feudal/TrackingAllocator.h"
+//#include "feudal/TrackingAllocator.h"
 
 // --------------------------------------
 // MapOfCounters
 // --------------------------------------
 class MapOfCounters
- : public std::map<size_t,size_t,std::less<size_t>,
-               DefaultAllocator<std::pair<size_t const,size_t>>::type>
+ : public std::map<size_t,size_t,std::less<size_t>>
 {
 public:
-  typedef typename DefaultAllocator<std::pair<size_t const,size_t>>::type A;
+  typedef typename std::allocator<std::pair<size_t const,size_t>> A;
   typedef std::map<size_t,size_t,std::less<size_t>,A> BaseT;
 
   MapOfCounters()=default;

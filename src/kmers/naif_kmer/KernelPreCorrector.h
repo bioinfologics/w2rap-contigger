@@ -18,7 +18,7 @@
 
 #include "kmers/naif_kmer/LockedBlocks.h"
 
-#include "kmers/KmerSpectra.h"
+//#include "kmers/KmerSpectra.h"
 
 #include "kmers/naif_kmer/Kmers.h"
 

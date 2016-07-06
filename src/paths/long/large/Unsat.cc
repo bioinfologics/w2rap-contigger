@@ -13,7 +13,7 @@
 
 #include "CoreTools.h"
 #include "Equiv.h"
-#include "ParallelVecUtilities.h"
+//#include "ParallelVecUtilities.h"
 #include "ParseSet.h"
 #include "VecUtilities.h"
 #include "paths/HyperBasevector.h"

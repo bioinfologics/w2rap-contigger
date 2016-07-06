@@ -23,7 +23,7 @@
 #include "Vec.h"
 #include "feudal/BaseVec.h"
 #include "polymorphism/Edit.h"
-#include "feudal/TrackingAllocator.h"
+//#include "feudal/TrackingAllocator.h"
 
 class ConsensusScoreModel {
     double del_rate, ins_rate, sub_rate; // save the input rate

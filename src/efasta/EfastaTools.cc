@@ -11,7 +11,7 @@
 #include "CoreTools.h"
 #include "Fastavector.h"
 #include "FastIfstream.h"
-#include "Superb.h"
+//#include "Superb.h"
 #include "TokenizeString.h"
 #include "dna/Bases.h"
 #include "efasta/EfastaTools.h"

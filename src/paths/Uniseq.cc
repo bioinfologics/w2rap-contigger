@@ -12,7 +12,7 @@
 #include "graph/Digraph.h"
 #include "math/Functions.h"
 #include "paths/Uniseq.h"
-#include "paths/AssemblyCleanupTools.h"
+//#include "paths/AssemblyCleanupTools.h"
 
 int uniseq::Len( ) const
 {    Assert( unibases_ != 0 );

@@ -10,7 +10,7 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include "CoreTools.h"
-#include "ParallelVecUtilities.h"
+//#include "ParallelVecUtilities.h"
 #include "Qualvector.h"
 #include "graph/FindCells.h"
 #include "kmers/KmerRecord.h"

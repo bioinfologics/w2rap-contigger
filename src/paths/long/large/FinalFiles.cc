@@ -12,7 +12,7 @@
 #include "math/Functions.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
-#include "paths/long/large/DiscoStats.h"
+//#include "paths/long/large/DiscoStats.h"
 #include "paths/long/large/FinalFiles.h"
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Lines.h"
@@ -128,10 +128,6 @@ void FinalFiles( const HyperBasevector& hb, const vec<int>& inv, const
                     if ( e1 != inv[e2] ) chim++;    }    }
 
           int64_t nreads = paths.size( );
-
-          disco_stats stats;
-          if ( IsRegularFile( work_dir + "/disco_stats" ) )
-               BinaryReader::readFile( work_dir + "/disco_stats", &stats );
 
           Ofstream( sout, work_dir + "/stats" );
           {    sout << "# assembly statistics" << std::endl;

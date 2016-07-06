@@ -17,7 +17,7 @@
 #include "lookup/LookAlign.h"
 #include "paths/FindErrorsCore.h"
 #include "paths/HyperKmerPath.h"
-#include "kmers/KmerSpectrumCore.h"
+//#include "kmers/KmerSpectrumCore.h"
 #include "kmers/naif_kmer/KernelKmerStorer.h"
 #include "lookup/LibInfo.h"
 #include "lookup/SAM2CRD.h"

@@ -19,7 +19,7 @@
 
 #include "system/file/File.h"
 #include "system/file/Directory.h"
-#include "system/file/SymLink.h"
+//#include "system/file/SymLink.h"
 #include "system/ErrNo.h"
 #include "system/System.h"
 #include <unistd.h>
@@ -32,10 +32,6 @@ Directory File::asDir() const
     return Directory(mPath);
 }
 
-SymLink File::asLink() const
-{
-    return SymLink(mPath);
-}
 
 Directory File::directory() const
 {

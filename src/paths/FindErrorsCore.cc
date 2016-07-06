@@ -14,7 +14,7 @@
 #include "math/Functions.h"
 #include "reporting/PerfStat.h"
 #include "paths/FindErrorsCore.h"
-#include "kmers/KmerSpectra.h"
+//#include "kmers/KmerSpectra.h"
 #include "kmers/naif_kmer/NaifKmerizer.h"
 #include "kmers/naif_kmer/KernelErrorFinder.h"
 #include "kmers/naif_kmer/KernelPreCorrector.h"

@@ -14,7 +14,7 @@
 #include "CoreTools.h"
 #include "FeudalMimic.h"
 #include "kmers/KmerRecord.h"
-#include "kmers/SortKmers.h"
+//#include "kmers/SortKmers.h"
 #include "pairwise_aligners/BalancedMutmerGraph.h"
 #include "paths/KmerPath.h"
 #include "paths/MakeAlignsPathsParallelX.h"

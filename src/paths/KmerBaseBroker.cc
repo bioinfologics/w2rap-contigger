@@ -10,7 +10,7 @@
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "paths/KmerBaseBroker.h"
-#include "paths/PathEmbedding.h"
+//#include "paths/PathEmbedding.h"
 
 #include <set>
 

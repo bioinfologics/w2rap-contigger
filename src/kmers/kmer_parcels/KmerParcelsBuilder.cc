@@ -8,7 +8,9 @@
 
 
 #include "kmers/KmerParcels.h"
+#include <CoreTools.h>
 #include "system/WorklistN.h"
+#include "feudal/CharString.h"
 
 
 inline String KPBTag(String S = "KPs") { return Date() + " (" + S + "): "; } 
