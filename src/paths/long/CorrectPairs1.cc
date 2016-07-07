@@ -357,7 +357,7 @@ void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecba
                               stop = agree[i].Stop( );    }    }
                     if ( stop < con.isize( ) ) min_glue = 0;    }
                if ( minq >= minq_floor && min_glue >= min_glue_floor )
-               {    
+               {
                     closures.push_back(con), closuresq.push_back(conq);
                     closureso.push_back( offsets[oj] );
                     stacks.push_back(stack);    }

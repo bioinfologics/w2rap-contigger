@@ -409,6 +409,8 @@ int main(const int argc, const char * argv[]) {
             std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("ContigGraphDump") << std::endl;
         }
+        vecbasevector G;
+        FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
 
     }
     if (from_step==7){
@@ -437,7 +439,7 @@ int main(const int argc, const char * argv[]) {
         // Carry out final analyses and write final assembly files.
 
         vecbasevector G;
-        FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, MAX_CELL_PATHS, MAX_DEPTH, G);
+        FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
         if (dump_perf) perf_file << checkpoint_perf_time("FinalFiles") << std::endl;
 
 
