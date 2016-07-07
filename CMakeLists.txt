@@ -244,7 +244,8 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/ImprovePath.cc
         src/paths/long/large/tools/NhoodInfoCore.cc
         src/paths/long/large/tools/NhoodInfoState.cc
-        src/paths/long/large/tools/NhoodInfoStuff.cc)
+        src/paths/long/large/tools/NhoodInfoStuff.cc
+        src/GFADump.cc)
 
 
 ## add executables and respective sources
