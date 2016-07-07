@@ -701,72 +701,87 @@ void DumpLineFiles( const vec<vec<vec<vec<int>>>>& lines, const HyperBasevector&
           Bool circular2 = ( L.solo( ) 
                && to_left[ L[0][0][0] ] == to_right[ L[0][0][0] ] );
           String b1, b2;
-          for ( int64_t j = 0; j < L.isize( ); j++ )
-          {    if ( circular1 && j == L.isize( ) - 1 ) break;
-               const vec<vec<int>>& x = L[j];
-               if ( x.solo( ) && x[0].empty( ) ) 
-               {    b1 += String( gap, 'N' ), b2 += String( gap, 'N' );    }
-               else
-               {    
+          for (int64_t j = 0; j < L.isize(); j++) {
+               if (circular1 && j == L.isize() - 1) break;
+               const vec<vec<int>> &x = L[j];
+               if (x.solo() && x[0].empty()) { b1 += String(gap, 'N'), b2 += String(gap, 'N'); }
+               else {
                     // Find the "most likely" path.  Note that we only consider
                     // paths entering from the left.  This asymmetry doesn't make
                     // sense.  Should do both sides.
 
                     int best = 0;
-                    if ( j % 2 == 1 )
-                    {    vec<int> cov( x.size( ), 0 );
-                         int e = L[j-1][0][0];
-                         for ( int64_t l = 0; l < (int64_t) paths_index[e].size( ); l++ )
-                         {    const ReadPath& p = paths[ paths_index[e][l] ];
-                              for ( int m = 0; m < (int) p.size( ); m++ )
-                              {    if ( p[m] != e ) continue;
-                                   vec<Bool> match( x.size( ), True );
-                                   for ( int r = 0; r < x.isize( ); r++ )
-                                   {    for ( int s = 0; s < x[r].isize( ); s++ )
-                                        {    if ( m + 1 + s >= (int) p.size( ) )
+                    if (j % 2 == 1) {
+                         vec<int> cov(x.size(), 0);
+                         int e = L[j - 1][0][0];
+                         for (int64_t l = 0; l < (int64_t) paths_index[e].size(); l++) {
+                              const ReadPath &p = paths[paths_index[e][l]];
+                              for (int m = 0; m < (int) p.size(); m++) {
+                                   if (p[m] != e) continue;
+                                   vec<Bool> match(x.size(), True);
+                                   for (int r = 0; r < x.isize(); r++) {
+                                        for (int s = 0; s < x[r].isize(); s++) {
+                                             if (m + 1 + s >= (int) p.size())
                                                   break;
-                                             if ( p[m+1+s] != x[r][s] )
-                                             {    match[r] = False;
-                                                  break;    }    }    }
-                                   if ( Sum(match) == 1 )
-                                   {    for ( int r = 0; r < x.isize( ); r++ )
-                                             if ( match[r] ) cov[r]++;    }    }    }
+                                             if (p[m + 1 + s] != x[r][s]) {
+                                                  match[r] = False;
+                                                  break;
+                                             }
+                                        }
+                                   }
+                                   if (Sum(match) == 1) {
+                                        for (int r = 0; r < x.isize(); r++)
+                                             if (match[r]) cov[r]++;
+                                   }
+                              }
+                         }
                          int re = inv[e];
-                         for ( int64_t l = 0; l < (int64_t) paths_index[re].size( ); l++ )
-                         {    const ReadPath& q = paths[ paths_index[re][l] ];
+                         for (int64_t l = 0; l < (int64_t) paths_index[re].size(); l++) {
+                              const ReadPath &q = paths[paths_index[re][l]];
                               vec<int> p;
-                              for ( int m = q.size( ) - 1; m >= 0; m-- )
-                                   p.push_back( inv[ q[m] ] );
-                              for ( int m = 0; m < (int) p.size( ); m++ )
-                              {    if ( p[m] != e ) continue;
-                                   vec<Bool> match( x.size( ), True );
-                                   for ( int r = 0; r < x.isize( ); r++ )
-                                   {    for ( int s = 0; s < x[r].isize( ); s++ )
-                                        {    if ( m + 1 + s >= (int) p.size( ) )
+                              for (int m = q.size() - 1; m >= 0; m--)
+                                   p.push_back(inv[q[m]]);
+                              for (int m = 0; m < (int) p.size(); m++) {
+                                   if (p[m] != e) continue;
+                                   vec<Bool> match(x.size(), True);
+                                   for (int r = 0; r < x.isize(); r++) {
+                                        for (int s = 0; s < x[r].isize(); s++) {
+                                             if (m + 1 + s >= (int) p.size())
                                                   break;
-                                             if ( p[m+1+s] != x[r][s] )
-                                             {    match[r] = False;
-                                                  break;    }    }    }
-                                   if ( Sum(match) == 1 )
-                                   {    for ( int r = 0; r < x.isize( ); r++ )
-                                             if ( match[r] ) cov[r]++;    }    }    }
-                         vec<int> ids( x.size( ), vec<int>::IDENTITY );
-                         ReverseSortSync( cov, ids );
-                         best = ids[0];    }
+                                             if (p[m + 1 + s] != x[r][s]) {
+                                                  match[r] = False;
+                                                  break;
+                                             }
+                                        }
+                                   }
+                                   if (Sum(match) == 1) {
+                                        for (int r = 0; r < x.isize(); r++)
+                                             if (match[r]) cov[r]++;
+                                   }
+                              }
+                         }
+                         vec<int> ids(x.size(), vec<int>::IDENTITY);
+                         ReverseSortSync(cov, ids);
+                         best = ids[0];
+                    }
 
                     // Add to fasta/efasta.
 
                     vec<basevector> bs;
-                    for ( int m = 0; m < x.isize( ); m++ )
-                    {    bs.push_back( hb.Cat( x[m] ) );
-                         if ( j < L.isize( ) - 1 )
-                              bs.back( ).resize( bs.back( ).isize( ) - (K-1) );    }
+                    for (int m = 0; m < x.isize(); m++) {
+                         bs.push_back(hb.Cat(x[m]));
+                         if (j < L.isize() - 1)
+                              bs.back().resize(bs.back().isize() - (K - 1));
+                    }
                     b1 += efasta(bs);
-                    b2 += bs[best].ToString( );    }    }
+                    b2 += bs[best].ToString();
+               }
+          }
           String header = "line_" + ToString(i);
-          if ( circular1 || circular2 ) header += " circular";
-          efasta(b1).Print( out1, header );
-          efasta(b2).Print( out2, "flattened_" + header );    }
+          if (circular1 || circular2) header += " circular";
+          efasta(b1).Print(out1, header);
+          efasta(b2).Print(out2, "flattened_" + header);
+     }
 
      Ofstream( out3, dir + "/a.lines.src" );
      for ( int i = 0; i < lines.isize( ); i++ )
