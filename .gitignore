@@ -1,3 +1,10 @@
+CMakeFiles/*
+CMakeCache*
+Makefile
+.project
+.cproject
+cmake_install.cmake
+bin/*
 src/**/*.fastq
 src/**/*.fasta
 src/**/*.o
