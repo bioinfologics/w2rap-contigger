@@ -21,7 +21,6 @@
 #include "paths/long/large/GapToyTools3.h"
 #include "paths/long/large/GapToyTools4.h"
 #include "paths/long/large/GapToyTools5.h"
-#include "paths/long/large/GapToyTools6.h"
 #include "paths/long/large/Lines.h"
 #include "system/SpinLockedData.h"
 #include <memory>

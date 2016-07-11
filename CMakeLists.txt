@@ -128,8 +128,6 @@ add_library(base_libs OBJECT
         src/paths/long/PreCorrectOldNew.cc
         src/paths/long/ReadPathTools.cc
         src/paths/long/ReadStack.cc
-        src/paths/long/fosmid/Fosmids.cc
-        src/paths/long/large/GapToyTools6.cc
         src/paths/long/ultra/ConsensusScoreModel.cc
         src/paths/long/ultra/FounderAlignment.cc
         src/paths/long/ultra/GetFriendsAndAlignsInitial.cc
@@ -196,7 +194,6 @@ add_library(base2_libs OBJECT
         src/paths/long/VariantPostProcess.cc
         src/paths/long/VariantReadSupport.cc
         src/paths/long/Variants.cc
-        src/paths/long/fosmid/FosmidPool.cc
         src/paths/long/large/CN1PeakFinder.cc
         src/paths/long/large/GapToyTools.cc
         src/paths/long/large/GapToyTools3.cc
@@ -244,7 +241,7 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/tools/NhoodInfoCore.cc
         src/paths/long/large/tools/NhoodInfoState.cc
         src/paths/long/large/tools/NhoodInfoStuff.cc
-        src/GFADump.cc)
+        src/GFADump.cc src/paths/PathFinder.cc src/paths/PathFinder.h)
 
 
 ## add executables and respective sources

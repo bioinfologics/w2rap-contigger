@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <sys/time.h>
+#include <paths/PathFinder.h>
 #include "GFADump.h"
 
 
@@ -353,11 +354,13 @@ int main(const int argc, const char * argv[]) {
         bool IMPROVE_PATHS_LARGE = False;
         bool FINAL_TINY = True;
         bool UNWIND3 = True;
+        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
 
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  PLACE_PARTNERS, ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
                  IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3);
+        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse
         for (int i = 0; i < (int) pathsr.size(); i++) { //XXX TODO: change this int for uint 32
@@ -413,6 +416,7 @@ int main(const int argc, const char * argv[]) {
         //vecbasevector G;
         //FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
         GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
+        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
 
     }
     if (from_step==7){
@@ -436,6 +440,7 @@ int main(const int argc, const char * argv[]) {
         bool GAP_CLEANUP = True;
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);
+        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("MakeGaps") << std::endl;
         std::cout << "--== PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
         // Carry out final analyses and write final assembly files.
