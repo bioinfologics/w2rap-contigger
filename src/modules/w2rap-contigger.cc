@@ -438,9 +438,13 @@ int main(const int argc, const char * argv[]) {
 
         bool SCAFFOLD_VERBOSE = False;
         bool GAP_CLEANUP = True;
+
+        //GFADump(out_dir +"/"+ out_prefix + "_prePF", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
+        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
+        PathFinder(hbvr,inv,pathsr,paths_inv).untangle_single_choices();
+
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);
-        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("MakeGaps") << std::endl;
         std::cout << "--== PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
         // Carry out final analyses and write final assembly files.
