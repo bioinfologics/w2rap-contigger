@@ -432,29 +432,36 @@ void PathFinder::untangle_complex_in_out_choices() {
     init_prev_next_vectors();
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
         if (e < mInv[e] && mHBV.EdgeObject(e).size() < 1000) {
-            std::cout<<" Large frontiers for small edge "<<e<<" "<<path_str(get_all_long_frontiers(e))<<std::endl;
+            auto f=get_all_long_frontiers(e);
+            std::cout<<" Large frontiers for small edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
         }
     }
 }
-std::vector<uint64_t> PathFinder::get_all_long_frontiers(uint64_t e){
-    std::set<uint64_t> seen_edges, long_frontiers={e};
+std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e){
+
+    std::set<uint64_t> seen_edges, to_explore={e}, in_frontiers, out_frontiers;
 
     int horizon=10;
     while (horizon--){
-        for (auto f:long_frontiers){
-            if (mHBV.EdgeObject(f).size()<2000 ) {
-                if (!seen_edges.count(f)){
-                    for (auto p:prev_edges[f]) if (!seen_edges.count(p)) long_frontiers.insert(p);
-                    for (auto n:next_edges[f]) if (!seen_edges.count(n)) long_frontiers.insert(n);
+        for (auto x:to_explore){
+            if (!seen_edges.count(x)){
+                for (auto p:prev_edges[x]) {
+                    if (mHBV.EdgeObject(p).size() >= 2000 )  in_frontiers.insert(p);
+                    else if (!seen_edges.count(p)) to_explore.insert(p);
                 }
-                seen_edges.insert(f);
-                long_frontiers.erase(f);
+                for (auto n:next_edges[x]) {
+                    if (mHBV.EdgeObject(n).size() >= 2000) out_frontiers.insert(n);
+                    else if (!seen_edges.count(n)) to_explore.insert(n);
+                }
             }
+            seen_edges.insert(x);
+            to_explore.erase(x);
         }
     }
+    std::array<std::vector<uint64_t>,2> frontiers={std::vector<uint64_t>(in_frontiers.begin(),in_frontiers.end()),std::vector<uint64_t>(out_frontiers.begin(),out_frontiers.end())};
 
-    return std::vector<uint64_t> (long_frontiers.begin(),long_frontiers.end());
 
+    return frontiers;
 }
 
 uint64_t PathFinder::is_unrollable_loop(uint64_t loop_e, uint64_t min_size_sizes){
