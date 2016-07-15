@@ -30,11 +30,12 @@ public:
     std::vector<uint64_t> best_path_fw(uint64_t edge, int distance); //finds the best path forward for an edge
     std::array<uint64_t,3> transition_votes(uint64_t left_e,uint64_t right_e);
     std::array<uint64_t,3> path_votes(std::vector<uint64_t> path);
+    std::array<uint64_t,3> multi_path_votes(std::vector<std::vector<uint64_t>> path);
     bool path_absolute_best(std::vector<uint64_t> path); //checks a path and its reverse, checks alternatives, true if shold be replaced
     void untangle_path(std::vector<uint64_t> path);
     void untangle_single_choices();//untangles all single choices when support is uncontested
     void init_prev_next_vectors();
-    bool is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);
+    uint64_t is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);//returns size of the unrolled loop
     uint64_t paths_per_kbp(uint64_t e);
     std::string edge_pstr(uint64_t e);
 
