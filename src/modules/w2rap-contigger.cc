@@ -441,7 +441,8 @@ int main(const int argc, const char * argv[]) {
 
         //GFADump(out_dir +"/"+ out_prefix + "_prePF", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
-        PathFinder(hbvr,inv,pathsr,paths_inv).untangle_single_choices();
+        //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_single_choices();
+        PathFinder(hbvr,inv,pathsr,paths_inv).untangle_complex_in_out_choices();
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);
