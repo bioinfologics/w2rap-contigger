@@ -33,6 +33,7 @@ public:
     std::array<uint64_t,3> multi_path_votes(std::vector<std::vector<uint64_t>> path);
     bool path_absolute_best(std::vector<uint64_t> path); //checks a path and its reverse, checks alternatives, true if shold be replaced
     void untangle_path(std::vector<uint64_t> path);
+    void untangle_pins();
     void untangle_single_choices();//untangles all single choices when support is uncontested
     void untangle_complex_in_out_choices();
     void init_prev_next_vectors();

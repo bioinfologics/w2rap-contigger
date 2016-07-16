@@ -427,6 +427,26 @@ void PathFinder::untangle_complex_in_out_choices() {
     }
 }*/
 
+void PathFinder::untangle_pins() {
+
+    init_prev_next_vectors();
+    uint64_t pins=0;
+    for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
+        if (mToLeft[e]==mToLeft[mInv[e]] and next_edges[e].size()==1 ) {
+            std::cout<<" Edge "<<e<<" forms a pinhole!!!"<<std::endl;
+            if (next_edges[next_edges[e][0]].size()==2) {
+                std::vector<uint64_t> pfw = {mInv[next_edges[next_edges[e][0]][0]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][1]};
+                std::vector<uint64_t> pbw = {mInv[next_edges[next_edges[e][0]][1]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][0]};
+                auto vpfw=multi_path_votes({pfw});
+                auto vpbw=multi_path_votes({pbw});
+                std::cout<<"votes FW: "<<vpfw[0]<<":"<<vpfw[1]<<":"<<vpfw[2]<<"     BW: "<<vpbw[0]<<":"<<vpbw[1]<<":"<<vpbw[2]<<std::endl;
+            }
+            ++pins;
+        }
+    }
+    std::cout<<"Total number of pinholes: "<<pins;
+}
+
 void PathFinder::untangle_complex_in_out_choices() {
     //find a complex path
     init_prev_next_vectors();
@@ -434,9 +454,20 @@ void PathFinder::untangle_complex_in_out_choices() {
         if (e < mInv[e] && mHBV.EdgeObject(e).size() < 1000) {
             auto f=get_all_long_frontiers(e);
             std::cout<<" Large frontiers for small edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
+            if (f[0].size()>1 and f[1].size()>1){
+                for (auto in_e:f[0]) for (auto out_e:f[1]){
+                        auto shared_paths=0;
+                        for (auto inp:mEdgeToPathIds[in_e])
+                            for (auto outp:mEdgeToPathIds[out_e])
+                                if (inp==outp) shared_paths++;
+                        if (shared_paths) std::cout<<"  Shared paths "<<in_e<<" --> "<<out_e<<": "<<shared_paths<<std::endl;
+                    }
+
+            }
         }
     }
 }
+
 std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e){
 
     std::set<uint64_t> seen_edges, to_explore={e}, in_frontiers, out_frontiers;
@@ -455,6 +486,9 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
                 }
             }
             seen_edges.insert(x);
+            if (seen_edges.size()>50) {
+                return std::array<std::vector<uint64_t>,2>();
+            }
             to_explore.erase(x);
         }
     }
