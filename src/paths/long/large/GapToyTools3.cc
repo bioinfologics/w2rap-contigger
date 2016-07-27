@@ -1078,7 +1078,6 @@ void TestIndex( const HyperBasevector& hb,
 void TestInvolution( const HyperBasevector& hb, const vec<int>& inv )
 {
      time_t now = time(0);
-     std::cout << "[GapToyTools3.cc] Beginig test involution : " << ctime(&now) << std::endl;
      vec<int> to_left, to_right;
      vec<Bool> used;
      hb.ToLeft(to_left), hb.ToRight(to_right);

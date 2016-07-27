@@ -208,7 +208,7 @@ class gapster {
 };
 
 template<> struct Serializability<gapster> { typedef SelfSerializable type; }; 
-extern template class digraphE<gapster>;
+//extern template class digraphE<gapster>;
 
 class snark {
 

@@ -24,7 +24,7 @@
 #include "ShortVector.h"
 #include "STLExtensions.h"
 #include "lookup/LookAlign.h"
-#include "math/Arith.h"
+//#include "math/Arith.h"
 #include "math/Functions.h"
 #include "random/Random.h"
 #include "system/ParsedArgs.h"
@@ -405,7 +405,7 @@ void look_align::PrintNqs( std::ostream& out, const basevector& query,
       << "%\n";
 }
 
-Float look_align::QualScore( const basevector& query,
+float look_align::QualScore( const basevector& query,
                              const qualvector& query_qual, const basevector& target,
                              int start_on_target, const qualvector& qual_g ) const
 {
@@ -424,7 +424,7 @@ Float look_align::QualScore( const basevector& query,
     Query.ReverseComplement( );
     Query_qual.ReverseMe( );
   }
-  Float score = ScoreAlignment( al, Query, Query_qual, target, target_q );
+  float score = ScoreAlignment( al, Query, Query_qual, target, target_q );
   return score;
 }
 
@@ -436,7 +436,7 @@ void look_align::PrintQualScore( std::ostream& out, const basevector& query,
                                           start_on_target, qual_g ) << "\n";
 }
 
-Float look_align::RmrPercent( const basevector& query,
+float look_align::RmrPercent( const basevector& query,
                               const qualvector& query_qual, const basevector& target,
                               int start_on_target ) const
 {
@@ -465,14 +465,14 @@ Float look_align::RmrPercent( const basevector& query,
     }
     perf.push_back( run + 1 );
   }
-  return Float(100) / WeightedMean(perf);
+  return float(100) / WeightedMean(perf);
 }
 
-Float look_align::MMPercent( const basevector& query,
+float look_align::MMPercent( const basevector& query,
                              const qualvector& query_qual, const basevector& target,
                              int start_on_target ) const
 {
-  if ( query_length == 0 ) return Float(100);
+  if ( query_length == 0 ) return float(100);
   int p1 = a.pos1( ), p2 = a.pos2( );
   int matches = 0, mismatches = 0;
   for ( int j = 0; j < a.Nblocks( ); j++ ) {
@@ -491,7 +491,7 @@ Float look_align::MMPercent( const basevector& query,
       ++p1, ++p2;
     }
   }
-  return Float(100) * Float( Max( 0, matches - mismatches ) ) / Float(query_length);
+  return float(100) * float( Max( 0, matches - mismatches ) ) / float(query_length);
 }
 
 void look_align::PrintRmr( std::ostream& out, const basevector& query,
@@ -506,8 +506,8 @@ void look_align::PrintMM( std::ostream& out, const basevector& query,
                           const qualvector& query_qual, const basevector& target,
                           int start_on_target ) const
 {
-  Float mm = MMPercent( query, query_qual, target, start_on_target );
-  if ( mm == Float(100) ) out << "mm = 100%\n";
+  float mm = MMPercent( query, query_qual, target, start_on_target );
+  if ( mm == float(100) ) out << "mm = 100%\n";
   else out << "mm = " << std::setprecision(2) << mm << "%\n";
 }
 
@@ -541,7 +541,7 @@ void look_align::PrintRmrByBlock( std::ostream& out, const basevector& query,
     }
     perf.push_back( run + 1 );
     out << a.Lengths(j) << " bases, rmr = "
-        << std::setprecision(2) << Float(100) / WeightedMean(perf)
+        << std::setprecision(2) << float(100) / WeightedMean(perf)
         << "%\n";
   }
 }

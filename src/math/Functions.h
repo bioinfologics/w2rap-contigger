@@ -10,7 +10,8 @@
 #define FUNCTIONS
 
 #include "Vec.h"
-#include "math/Arith.h"
+//#include "math/Arith.h"
+#include "system/Types.h"
 #include <algorithm>
 #include <cmath>
 #include <numeric>
@@ -480,9 +481,9 @@ template <class T> inline T Mean(const T& t1,const T& t2, const T& t3)
 //
 // ===========================================================================
 template <class V>
-inline Float WeightedMean( V const& v )
-{    Float sum1 = 0, sum2 = 0;
-     for ( Float val : v )
+inline float WeightedMean( V const& v )
+{    float sum1 = 0, sum2 = 0;
+     for ( float val : v )
      {    sum1 += val;
           sum2 += val*val;    }
      ForceAssert( sum1 != 0 );

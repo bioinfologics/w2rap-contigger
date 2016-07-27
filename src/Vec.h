@@ -38,7 +38,6 @@
 #include <scoped_allocator>
 
 #include "dvString.h"
-#include "feudal/TrackingAllocator.h"
 #include "system/Assert.h"
 #include "system/StaticAssert.h"
 #include "STLExtensions.h"
@@ -55,10 +54,11 @@
 //  vec Class Declaration and Template Definitions
 //
 
-template <class T>
-using StdVec = std::vector<T,typename DefaultAllocator<T>::type>;
 
-template <class T, class A=typename DefaultAllocator<T>::type> class vec
+template <class T>
+using StdVec = std::vector<T>;
+
+template <class T, class A=typename std::allocator<T>> class vec
   : public std::vector<T,A>
 {
     typedef std::vector<T,A> BaseT;

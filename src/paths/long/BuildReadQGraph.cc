@@ -49,10 +49,10 @@
 namespace
 {
     const unsigned K = 60;
-    typedef KMer<K> Kmer;
-    typedef KMer<K-1> SubKmer;
-    typedef KmerDictEntry<K> Entry;
-    typedef KmerDict<K> Dict;
+    typedef KMer<K> BRQ_Kmer;
+    typedef KMer<K-1> BRQ_SubKmer;
+    typedef KmerDictEntry<K> BRQ_Entry;
+    typedef KmerDict<K> BRQ_Dict;
     //typedef UnipathGraph<K> Graph;
     //typedef std::vector<std::atomic_size_t> SpectrumBins;
 
@@ -82,7 +82,7 @@ namespace
         qvec mQV;
     };
 
-    inline void summarizeEntries( Entry* e1, Entry* e2 )
+    inline void summarizeEntries( BRQ_Entry* e1, BRQ_Entry* e2 )
     {
         KMerContext kc;
         size_t count = 0;
@@ -101,7 +101,7 @@ namespace
     {
     public:
         Kmerizer( vecbvec const& reads, std::vector<unsigned> const& goodLengths,
-                  unsigned minFreq, Dict* pDict, std::atomic_size_t* pTotKmers )
+                  unsigned minFreq, BRQ_Dict* pDict, std::atomic_size_t* pTotKmers )
                 : mReads(reads), mGoodLengths(goodLengths), mMinFreq(minFreq),
                   mpDict(pDict), mpTotKmers(pTotKmers), mNKmers(0)
         {}
@@ -114,38 +114,38 @@ namespace
         { unsigned len = mGoodLengths[readId];
             if ( len < K+1 ) return;
             auto beg = mReads[readId].begin(), itr=beg+K, last=beg+(len-1);
-            Kmer kkk(beg);
+            BRQ_Kmer kkk(beg);
             KMerContext kc = KMerContext::initialContext(*itr);
-            *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc);
+            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc);
             while ( itr != last )
             { unsigned char pred = kkk.front();
                 kkk.toSuccessor(*itr); ++itr;
                 kc = KMerContext(pred,*itr);
-                *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc); }
+                *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc); }
             kc = KMerContext::finalContext(kkk.front());
             kkk.toSuccessor(*last);
-            *oItr++ = kkk.isRev() ? Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc); }
+            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc); }
 
-        void reduce( Entry* e1, Entry* e2 )
+        void reduce( BRQ_Entry* e1, BRQ_Entry* e2 )
         { summarizeEntries(e1,e2);
             if ( e1->getKDef().getCount() >= mMinFreq )
             { ++mNKmers;
                 if ( mpDict ) mpDict->insertEntry(std::move(*e1)); } }
 
-        Entry* overflow( Entry* e1, Entry* e2 )
+        BRQ_Entry* overflow( BRQ_Entry* e1, BRQ_Entry* e2 )
         { if ( e2-e1 > 1 ) summarizeEntries(e1,e2); return e1+1; }
 
     private:
         vecbvec const& mReads;
         std::vector<unsigned> const& mGoodLengths;
         unsigned mMinFreq;
-        Dict* mpDict;
+        BRQ_Dict* mpDict;
         std::atomic_size_t* mpTotKmers;
         size_t mNKmers;
     };
-    typedef MapReduceEngine<Kmerizer,Entry,Kmer::Hasher> KMRE;
+    typedef MapReduceEngine<Kmerizer,BRQ_Entry,BRQ_Kmer::Hasher> KMRE;
 
-    Dict* createDict( vecbvec const& reads, VecPQVec const& quals,
+    BRQ_Dict* createDict( vecbvec const& reads, VecPQVec const& quals,
                       unsigned minQual, unsigned minFreq )
     {
         // figure out how much of the read to kmerize by examining quals
@@ -173,7 +173,7 @@ namespace
         }
 
         // kmerize reads into dictionary
-        Dict* pDict = new Dict(dictSize);
+        BRQ_Dict* pDict = new BRQ_Dict(dictSize);
         Kmerizer impl(reads,goodLens,minFreq,pDict,nullptr);
         KMRE mre(impl);
         if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
@@ -191,10 +191,10 @@ namespace
     class EdgeBuilder
     {
     public:
-        EdgeBuilder( Dict const& dict, vecbvec* pEdges )
+        EdgeBuilder( BRQ_Dict const& dict, vecbvec* pEdges )
                 : mDict(dict), mEdges(*pEdges) {}
 
-        void buildEdge( Entry const& entry )
+        void buildEdge( BRQ_Entry const& entry )
         { if ( isPalindrome(entry) )
                 make1KmerEdge(entry);
             else if ( upstreamExtensionPossible(entry) )
@@ -207,18 +207,18 @@ namespace
                 make1KmerEdge(entry); }
 
         // not thread-safe
-        void simpleCircle( Entry const& entry )
-        { Entry const* pFirstEntry = &entry;
+        void simpleCircle( BRQ_Entry const& entry )
+        { BRQ_Entry const* pFirstEntry = &entry;
             mEdgeSeq.assign(entry.begin(),entry.end());
             mEdgeEntries.push_back(pFirstEntry);
             KMerContext context = entry.getKDef().getContext();
-            Kmer kmer(entry);
+            BRQ_Kmer kmer(entry);
             while ( true )
             { ForceAssertEq(context.getPredecessorCount(),1u);
                 ForceAssertEq(context.getSuccessorCount(),1u);
                 unsigned char succCode = context.getSingleSuccessor();
                 kmer.toSuccessor(succCode);
-                Entry const* pEntry = lookup(kmer,&context);
+                BRQ_Entry const* pEntry = lookup(kmer,&context);
                 if ( pEntry == pFirstEntry )
                     break;
                 if ( !pEntry->getKDef().isNull() )
@@ -236,9 +236,9 @@ namespace
     private:
         void canonicalizeCircle()
         { auto itr = std::min_element(mEdgeEntries.begin(),mEdgeEntries.end(),
-                                      []( Kmer const* pEnt1, Kmer const* pEnt2 )
+                                      []( BRQ_Kmer const* pEnt1, BRQ_Kmer const* pEnt2 )
                                       { return *pEnt1 < *pEnt2; });
-            Kmer const& minKmer = **itr;
+            BRQ_Kmer const& minKmer = **itr;
             size_t idx = itr - mEdgeEntries.begin();
             if ( CF<K>::getForm(mEdgeSeq.begin(idx))==CanonicalForm::REV )
             { mEdgeSeq.ReverseComplement();
@@ -258,60 +258,60 @@ namespace
                       std::back_inserter(mEdgeEntries));
             mEdgeEntries.erase(mEdgeEntries.begin(),mEdgeEntries.begin()+idx); }
 
-        bool isPalindrome( Kmer const& kmer )
+        bool isPalindrome( BRQ_Kmer const& kmer )
         { if ( !(K&1) )
                 return kmer.isPalindrome();
-            SubKmer subKmer(kmer);
+            BRQ_SubKmer subKmer(kmer);
             if ( subKmer.isPalindrome() )
                 return true;
             subKmer.toSuccessor(kmer.back());
             return subKmer.isPalindrome(); }
 
-        bool upstreamExtensionPossible( Entry const& entry )
+        bool upstreamExtensionPossible( BRQ_Entry const& entry )
         { KMerContext context = entry.getKDef().getContext();
             if ( context.getPredecessorCount() != 1 )
                 return false;
-            Kmer pred(entry);
+            BRQ_Kmer pred(entry);
             pred.toPredecessor(context.getSinglePredecessor());
             if ( isPalindrome(pred) )
                 return false;
             lookup(pred,&context);
             return context.getSuccessorCount() == 1; }
 
-        bool downstreamExtensionPossible( Entry const& entry )
+        bool downstreamExtensionPossible( BRQ_Entry const& entry )
         { KMerContext context = entry.getKDef().getContext();
             if ( context.getSuccessorCount() != 1 )
                 return false;
-            Kmer succ(entry);
+            BRQ_Kmer succ(entry);
             succ.toSuccessor(context.getSingleSuccessor());
             if ( isPalindrome(succ) )
                 return false;
             lookup(succ,&context);
             return context.getPredecessorCount() == 1; }
 
-        void make1KmerEdge( Entry const& entry )
+        void make1KmerEdge( BRQ_Entry const& entry )
         { mEdgeSeq.assign(entry.begin(),entry.end());
             mEdgeEntries.push_back(&entry);
             addEdge(); }
 
-        void extendUpstream( Entry const& entry )
+        void extendUpstream( BRQ_Entry const& entry )
         { mEdgeSeq.assign(entry.rcbegin(),entry.rcend());
             mEdgeEntries.push_back(&entry);
-            extend(Kmer(entry).rc(),entry.getKDef().getContext().rc()); }
+            extend(BRQ_Kmer(entry).rc(),entry.getKDef().getContext().rc()); }
 
-        void extendDownstream( Entry const& entry )
+        void extendDownstream( BRQ_Entry const& entry )
         { mEdgeSeq.assign(entry.begin(),entry.end());
             mEdgeEntries.push_back(&entry);
             extend(entry,entry.getKDef().getContext()); }
 
-        void extend( Kmer const& kmer, KMerContext context )
-        { Kmer next(kmer);
+        void extend( BRQ_Kmer const& kmer, KMerContext context )
+        { BRQ_Kmer next(kmer);
             while ( context.getSuccessorCount() == 1 )
             { unsigned char succCode = context.getSingleSuccessor();
                 next.toSuccessor(succCode);
                 if ( isPalindrome(next) )
                     break;
-                Entry const* pEntry = lookup(next,&context);
+                BRQ_Entry const* pEntry = lookup(next,&context);
                 if ( context.getPredecessorCount() != 1 )
                     break;
                 mEdgeSeq.push_back(succCode);
@@ -325,10 +325,10 @@ namespace
                 case CanonicalForm::REV:
                     mEdgeSeq.clear(); mEdgeEntries.clear(); break; } }
 
-        Entry const* lookup( Kmer const& kmer, KMerContext* pContext )
-        { Entry const* result;
+        BRQ_Entry const* lookup( BRQ_Kmer const& kmer, KMerContext* pContext )
+        { BRQ_Entry const* result;
             if ( kmer.isRev() )
-            { result = mDict.findEntryCanonical(Kmer(kmer).rc());
+            { result = mDict.findEntryCanonical(BRQ_Kmer(kmer).rc());
                 ForceAssert(result);
                 *pContext = result->getKDef().getContext().rc(); }
             else
@@ -351,7 +351,7 @@ namespace
                 mEdges.push_back(mEdgeSeq); }
             unsigned offset = 0;
             bool err = false;
-            for ( Entry const* pEnt : mEdgeEntries )
+            for ( BRQ_Entry const* pEnt : mEdgeEntries )
             { KDef const& kDef = pEnt->getKDef();
                 if ( kDef.isNull() )
                 { Assert(std::equal(pEnt->begin(),pEnt->end(),mEdgeSeq.begin(offset)) ||
@@ -367,18 +367,18 @@ namespace
             mEdgeSeq.clear();
             mEdgeEntries.clear(); }
 
-        Dict const& mDict;
+        BRQ_Dict const& mDict;
         vecbvec& mEdges;
-        std::vector<Entry const*> mEdgeEntries;
+        std::vector<BRQ_Entry const*> mEdgeEntries;
         bvec mEdgeSeq;
     };
 
-    void buildEdges( Dict const& dict, vecbvec* pEdges )
+    void buildEdges( BRQ_Dict const& dict, vecbvec* pEdges )
     {
         EdgeBuilder eb(dict,pEdges);
         dict.parallelForEachHHS(
-                [eb]( Dict::Set::HHS const& hhs ) mutable
-                { for ( Entry const& entry : hhs )
+                [eb]( BRQ_Dict::Set::HHS const& hhs ) mutable
+                { for ( BRQ_Entry const& entry : hhs )
                     if ( entry.getKDef().isNull() )
                         eb.buildEdge(entry); });
 
@@ -553,10 +553,10 @@ namespace
         unsigned mEdgeLen;
     };
 
-    class Pather
+    class BRQ_Pather
     {
     public:
-        Pather( Dict const& dict, vecbvec const& edges )
+        BRQ_Pather( BRQ_Dict const& dict, vecbvec const& edges )
                 : mDict(dict), mEdges(edges) {}
 
         std::vector<PathPart> const& path( bvec const& read )
@@ -569,8 +569,8 @@ namespace
             auto itr = read.begin();
             auto end = read.end()-K+1;
             while ( itr != end )
-            { Kmer kmer(itr);
-                Entry const* pEnt = mDict.findEntry(kmer);
+            { BRQ_Kmer kmer(itr);
+                BRQ_Entry const* pEnt = mDict.findEntry(kmer);
                 if ( !pEnt )
                 {
                     unsigned gapLen = 1u;
@@ -614,8 +614,8 @@ namespace
             auto itr = read.begin();
             auto end = read.end() - K + 1;
             while (itr != end) {
-                Kmer kmer(itr);
-                Entry const* pEnt = mDict.findEntry(kmer);
+                BRQ_Kmer kmer(itr);
+                BRQ_Entry const* pEnt = mDict.findEntry(kmer);
                 if (!pEnt) {
                     unsigned gapLen = 1u;
                     auto itr2 = itr + K;
@@ -668,8 +668,8 @@ namespace
         { if ( pp1.getEdgeID() == pp2.getEdgeID() ) return true;
             bvec const& e1 = mEdges[pp1.getEdgeID().val()];
             bvec const& e2 = mEdges[pp2.getEdgeID().val()];
-            SubKmer k1 = pp1.isRC() ? SubKmer(e1.rcend()-K+1) : SubKmer(e1.end()-K+1);
-            SubKmer k2 = pp2.isRC() ? SubKmer(e2.rcend()-K+1) : SubKmer(e2.end()-K+1);
+            BRQ_SubKmer k1 = pp1.isRC() ? BRQ_SubKmer(e1.rcend()-K+1) : BRQ_SubKmer(e1.end()-K+1);
+            BRQ_SubKmer k2 = pp2.isRC() ? BRQ_SubKmer(e2.rcend()-K+1) : BRQ_SubKmer(e2.end()-K+1);
             return k1==k2; }
 
         std::vector<PathPart> const& path_more( bvec const& read, qvec const& qual,
@@ -688,8 +688,8 @@ namespace
 
             while ( itr != end ) {
                 int qSumRemain = 21;        // reset per edge
-                Kmer kmer(itr);
-                Entry const* pEnt = mDict.findEntry(kmer);
+                BRQ_Kmer kmer(itr);
+                BRQ_Entry const* pEnt = mDict.findEntry(kmer);
                 int gapLen = 0;
                 if ( !pEnt ) {
                     ++gapLen;
@@ -752,12 +752,12 @@ namespace
         }
 
 
-        friend std::ostream& operator<<( std::ostream& os, Pather const& pather )
+        friend std::ostream& operator<<( std::ostream& os, BRQ_Pather const& pather )
         { os << rangePrinter(pather.mPathParts.begin(),pather.mPathParts.end()," ");
             return os; }
 
     private:
-        Dict const& mDict;
+        BRQ_Dict const& mDict;
         vecbvec const& mEdges;
         std::vector<PathPart> mPathParts;
     };
@@ -766,7 +766,7 @@ namespace
     {
     public:
         GapFiller( vecbvec const& reads, vecbvec const& edges, unsigned maxGapSize,
-                   unsigned minFreq, Dict* pDict )
+                   unsigned minFreq, BRQ_Dict* pDict )
                 : mReads(reads), mDict(*pDict), mPather(*pDict,edges),
                   mMaxGapSize(maxGapSize), mMinFreq(minFreq) {}
 
@@ -789,46 +789,46 @@ namespace
                 // we have a gap of appropriate size, and it has new, interesting kmers
                 // that might change the graph structure
                 auto itr = rItr - 1;
-                Kmer kkk(itr); itr += K;
+                BRQ_Kmer kkk(itr); itr += K;
                 update(kkk,KMerContext::initialContext(*itr));
                 auto last = itr + pPart->getLength();
                 while ( itr != last )
                 { unsigned char predCode = kkk.front();
                     kkk.toSuccessor(*itr);
                     KMerContext kc(predCode,*++itr);
-                    *oItr++ = kkk.isRev()?Entry(Kmer(kkk).rc(),kc.rc()) : Entry(kkk,kc); }
+                    *oItr++ = kkk.isRev()?BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc); }
                 KMerContext kc = KMerContext::finalContext(kkk.front());
                 kkk.toSuccessor(*itr);
                 update(kkk,kc);
                 rItr += pPart->getLength(); } }
 
-        void reduce( Entry* e1, Entry* e2 )
+        void reduce( BRQ_Entry* e1, BRQ_Entry* e2 )
         { summarizeEntries(e1,e2);
             if ( e1->getKDef().getCount() >= mMinFreq )
             { mDict.insertEntry(std::move(*e1)); } }
 
-        Entry* overflow( Entry* e1, Entry* e2 )
+        BRQ_Entry* overflow( BRQ_Entry* e1, BRQ_Entry* e2 )
         { if ( e2-e1 > 1 ) summarizeEntries(e1,e2); return e1+1; }
 
     private:
-        void update( Kmer kmer, KMerContext kc )
+        void update( BRQ_Kmer kmer, KMerContext kc )
         { if ( kmer.isRev() ) { kmer.rc(); kc=kc.rc(); }
             mDict.applyCanonical(kmer,
-                                 [kc](Entry const& ent)
+                                 [kc](BRQ_Entry const& ent)
                                  { KDef& kd = const_cast<KDef&>(ent.getKDef());
                                      kd.setContext(kc|kd.getContext()); }); }
 
         static unsigned const MAX_JITTER = 1;
         vecbvec const& mReads;
-        Dict& mDict;
-        Pather mPather;
+        BRQ_Dict& mDict;
+        BRQ_Pather mPather;
         unsigned mMaxGapSize;
         unsigned mMinFreq;
     };
-    typedef MapReduceEngine<GapFiller,Entry,Kmer::Hasher> GFMRE;
+    typedef MapReduceEngine<GapFiller,BRQ_Entry,BRQ_Kmer::Hasher> GFMRE;
 
     void fillGaps( vecbvec const& reads, unsigned maxGapSize, unsigned minFreq,
-                   vecbvec* pEdges, Dict* pDict )
+                   vecbvec* pEdges, BRQ_Dict* pDict )
     {
         //std::cout << Date() << ": filling gaps." << std::endl;
         GapFiller gf(reads,*pEdges,maxGapSize,minFreq,pDict);
@@ -846,11 +846,11 @@ namespace
         buildEdges(*pDict,pEdges);
     }
 
-    void pathRef( String const& refFasta, Dict const& dict, vecbvec const& edges )
+    void pathRef( String const& refFasta, BRQ_Dict const& dict, vecbvec const& edges )
     {
         vecbvec ref;
         FastFetchReads(ref,nullptr,refFasta);
-        Pather pather(dict,edges);
+        BRQ_Pather pather(dict,edges);
         for ( bvec const& refTig : ref )
         {
             pather.path(refTig);
@@ -870,10 +870,10 @@ namespace
         }
     }
 
-    class Join
+    class BRQ_Join
     {
     public:
-        Join( EdgeLoc const& edgeLoc1, EdgeLoc const& edgeLoc2, unsigned overlap )
+        BRQ_Join( EdgeLoc const& edgeLoc1, EdgeLoc const& edgeLoc2, unsigned overlap )
                 : mEdgeLoc1(edgeLoc1), mEdgeLoc2(edgeLoc2), mOverlap(overlap)
         {}
 
@@ -885,16 +885,16 @@ namespace
         { return 47 * (47*mEdgeLoc1.hash()+mEdgeLoc2.hash()) + mOverlap; }
 
         struct Hasher
-        { size_t operator()( Join const& join ) { return join.hash(); } };
+        { size_t operator()( BRQ_Join const& join ) { return join.hash(); } };
 
-        friend bool operator<( Join const& join1, Join const& join2 )
+        friend bool operator<( BRQ_Join const& join1, BRQ_Join const& join2 )
         { if ( join1.mEdgeLoc1 < join2.mEdgeLoc1 ) return true;
             if ( join2.mEdgeLoc1 < join1.mEdgeLoc1 ) return false;
             if ( join1.mEdgeLoc2 < join2.mEdgeLoc2 ) return true;
             if ( join2.mEdgeLoc2 < join1.mEdgeLoc2 ) return false;
             return join1.mOverlap < join2.mOverlap; }
 
-        friend std::ostream& operator<<( std::ostream& os, Join const& join )
+        friend std::ostream& operator<<( std::ostream& os, BRQ_Join const& join )
         { return os << join.mEdgeLoc1 << "<-" << join.mOverlap << "->"
                  << join.mEdgeLoc2; }
 
@@ -904,10 +904,10 @@ namespace
         unsigned mOverlap;
     };
 
-    class Joiner
+    class BRQ_Joiner
     {
     public:
-        Joiner( vecbvec const& reads, vecbvec const& edges, Dict const& dict,
+        BRQ_Joiner( vecbvec const& reads, vecbvec const& edges, BRQ_Dict const& dict,
                 unsigned maxGapSize, unsigned minFreq,
                 vecbvec* pFakeReads )
                 : mReads(reads), mEdges(edges), mPather(dict,edges),
@@ -927,11 +927,11 @@ namespace
                     PathPart const& next = pPart[1];
                     unsigned overlap = K-pPart->getLength()-1;
                     if ( next.getEdgeID() < prev.getEdgeID() )
-                        *oItr++ = Join(next.rc().lastLoc(),prev.rc().firstLoc(),overlap);
+                        *oItr++ = BRQ_Join(next.rc().lastLoc(),prev.rc().firstLoc(),overlap);
                     else
-                        *oItr++ = Join(prev.lastLoc(),next.firstLoc(),overlap); } } }
+                        *oItr++ = BRQ_Join(prev.lastLoc(),next.firstLoc(),overlap); } } }
 
-        void reduce( Join* pJoin1, Join* pJoin2 )
+        void reduce( BRQ_Join* pJoin1, BRQ_Join* pJoin2 )
         { Assert(validOverlap(*pJoin1));
             if ( pJoin2-pJoin1 >= mMinFreq )
             { //std::cout << "Joining: " << *pJoin1 << std::endl;
@@ -940,11 +940,11 @@ namespace
                 append(pJoin1->getEdgeLoc2(),pJoin1->getOverlap(),&bv);
                 add(bv); } }
 
-        Join* overflow( Join* pJoin1, Join* pJoin2 )
+        BRQ_Join* overflow( BRQ_Join* pJoin1, BRQ_Join* pJoin2 )
         { return pJoin1+std::min(unsigned(pJoin2-pJoin1),mMinFreq); }
 
     private:
-        bool validOverlap( Join const& join )
+        bool validOverlap( BRQ_Join const& join )
         { EdgeLoc const& el1 = join.getEdgeLoc1();
             bvec const& bv1 = mEdges[el1.getEdgeID().val()];
             EdgeLoc const& el2 = join.getEdgeLoc2();
@@ -985,20 +985,20 @@ namespace
 
         vecbvec const& mReads;
         vecbvec const& mEdges;
-        Pather mPather;
+        BRQ_Pather mPather;
         unsigned mMaxGapSize;
         unsigned mMinFreq;
         vecbvec& mFakeReads;
     };
-    typedef MapReduceEngine<Joiner,Join,Join::Hasher> JMRE;
+    typedef MapReduceEngine<BRQ_Joiner,BRQ_Join,BRQ_Join::Hasher> JMRE;
 
     void joinOverlaps( vecbvec const& reads, unsigned maxGapSize, unsigned minFreq,
-                       vecbvec* pEdges, Dict* pDict )
+                       vecbvec* pEdges, BRQ_Dict* pDict )
     {
         //std::cout << Date() << ": joining overlaps." << std::endl;
         vecbvec fakeReads;
         fakeReads.reserve(pEdges->size()/10);
-        Joiner joiner(reads,*pEdges,*pDict,maxGapSize,minFreq,&fakeReads);
+        BRQ_Joiner joiner(reads,*pEdges,*pDict,maxGapSize,minFreq,&fakeReads);
         JMRE mre(joiner);
         if ( !mre.run(reads.size(),0ul,reads.size()) )
             FatalErr("Map/Reduce operation failed when joining overlaps.");
@@ -1023,7 +1023,7 @@ namespace
         typedef enum {ALGORITHM_ONE, ALGORITHM_TWO} Algorithm;
 
         HBVPather( vecbvec const& reads, VecPQVec const& quals,
-                   Dict const& dict, vecbvec const& edges,
+                   BRQ_Dict const& dict, vecbvec const& edges,
                    HyperBasevector const& hbv,
                    vec<int> const& fwdEdgeXlat, vec<int> const& revEdgeXlat,
                    Algorithm alg, ReadPathVec* pPaths, Bool const verbose = False )
@@ -1260,7 +1260,7 @@ namespace
         vec<int> mToLeft, mToRight;
         vec<int> const& mFwdEdgeXlat;
         vec<int> const& mRevEdgeXlat;
-        Pather mPather;
+        BRQ_Pather mPather;
         Algorithm mAlgorithm;
         ReadPathVec& mPaths;
         ReadPath mPath;
@@ -1270,7 +1270,7 @@ namespace
     };
 
     void pathReads( vecbvec const& reads, VecPQVec const& quals,
-                    Dict const& dict, vecbvec const& edges,
+                    BRQ_Dict const& dict, vecbvec const& edges,
                     HyperBasevector const& hbv,
                     vec<int> const& fwdEdgeXlat, vec<int> const& revEdgeXlat,
                     ReadPathVec* pPaths, Bool const NEW_ALIGNER = False,
@@ -1306,43 +1306,53 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       HyperBasevector* pHBV, ReadPathVec* pPaths, int _K,
                       bool const VERBOSE )
 {
-    //std::cout << Date() << ": loading reads." << std::endl;
-    Dict* pDict = createDict(reads,quals,minQual,minFreq);
+    std::cout << Date() << ": loading reads." << std::endl;
+    BRQ_Dict* pDict = createDict(reads,quals,minQual,minFreq);
 
-
+    std::cout << Date() << ": finding edge sequences." << std::endl;
     // figure out the complete base sequence of each edge
-    //std::cout << Date() << ": finding edge sequences." << std::endl;
     vecbvec edges;
     edges.reserve(pDict->size()/100);
     buildEdges(*pDict,&edges);
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
 
-    if ( doFillGaps )
-        fillGaps(reads,maxGapSize,minFreq2,&edges,pDict);
+    if ( doFillGaps ) {
+        std::cout << Date() << ": filling gaps." << std::endl;
+        fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
+    }
 
-    if ( doJoinOverlaps )
-        joinOverlaps(reads,_K/2,minFreq2,&edges,pDict);
+    if ( doJoinOverlaps ) {
+        std::cout << Date() << ": joining Overlaps." << std::endl;
+        joinOverlaps(reads, _K / 2, minFreq2, &edges, pDict);
+    }
 
-    if ( !refFasta.empty() )
-        pathRef(refFasta,*pDict,edges);
-
+    if ( !refFasta.empty() ) {
+        std::cout << Date() << ": aligning to reference." << std::endl;
+        pathRef(refFasta, *pDict, edges);
+    }
     vec<int> fwdEdgeXlat;
     vec<int> revEdgeXlat;
     if ( !pPaths )
     {
         delete pDict;
+        std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
     }
     else
     {
+        std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
+        std::cout << Date() << ": creating Read Paths." << std::endl;
         pathReads(reads,quals,*pDict,edges,*pHBV,
                   fwdEdgeXlat,revEdgeXlat,pPaths,useNewAligner,VERBOSE);
         delete pDict;
-        if (repathUnpathed)
-            repathUnpathedReads(reads,quals,*pHBV, *pPaths);
+        if (repathUnpathed) {
+            std::cout << Date() << ": repathing unpathed reads." << std::endl;
+            repathUnpathedReads(reads, quals, *pHBV, *pPaths);
+        }
     }
+    std::cout << Date() << ": graph created." << std::endl;
 }
 
 void rePath( HyperBasevector const& hbv,
@@ -1350,12 +1360,12 @@ void rePath( HyperBasevector const& hbv,
              bool useNewAligner, bool verbose,
              HyperBasevector* pNewHBV, ReadPathVec* pPaths )
 {
-    Dict dict(SizeSum(hbv.Edges())/2);
+    BRQ_Dict dict(SizeSum(hbv.Edges())/2);
     DictionaryKmerEater<K> eater(&dict);
     parallelFor(0,hbv.EdgeObjectCount(),
                 [&hbv,&eater]( size_t edgeId )
                 { bvec const& bv = hbv.EdgeObject(edgeId);
-                    Kmer::kmerizeIntoEater(bv.begin(),bv.end(),eater,edgeId); });
+                    BRQ_Kmer::kmerizeIntoEater(bv.begin(),bv.end(),eater,edgeId); });
 
     vecbvec edges;
     edges.reserve(hbv.EdgeObjectCount()/2);

@@ -25,7 +25,7 @@
 // L1 = length of left contig
 // L2 = length of right contig
 
-vec<long double> GapComp( const vec<int> D, const vec<int>& a, const vec<int>& b, 
+vec<long double> GapComp( const vec<int> D, const vec<int>& a, const vec<int>& b,
      const vec<int>& x, const vec<double>& X, const vec< std::pair<int,int> >& p, 
      const int L1, const int L2, const int VERBOSITY );
 

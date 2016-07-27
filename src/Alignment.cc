@@ -511,7 +511,7 @@ void WriteAppendWithIndex( const String &filename, const vec<alignment_plus> &ve
 // length, determine the depth of coverage of this stretch by all reads which match 
 // it well.
 
-Float DepthOfCoverage( const vec<int>& reads, int contig_length,
+float DepthOfCoverage( const vec<int>& reads, int contig_length,
      const vec<int>& read_lengths, const vec<alignment_plus>& all_aligns, 
      const vec<int>& all_aligns_index )
 {    
@@ -551,7 +551,7 @@ Float DepthOfCoverage( const vec<int>& reads, int contig_length,
                if ( pos1 == 0 && Pos1 == read_lengths[id] ) break;    }
           total_bases += Pos1 - pos1;    }
 
-     return Float(total_bases)/Float(contig_length);    }
+     return float(total_bases)/float(contig_length);    }
 
 int FindPos1( int p1, int p2, const avector<int>& gaps, const avector<int>& lengths )
 {    for ( unsigned int j = 0; j < gaps.length; j++ )

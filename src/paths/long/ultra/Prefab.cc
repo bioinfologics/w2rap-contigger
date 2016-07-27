@@ -18,7 +18,7 @@
 #include "pairwise_aligners/SmithWatBandedA.h"
 #include "pairwise_aligners/SmithWatFree.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/EvalCorrected.h"
+//#include "paths/long/EvalCorrected.h"
 #include "paths/long/Friends.h"
 #include "paths/long/KmerAlign.h"
 #include "paths/long/LongProtoTools.h"
@@ -34,12 +34,6 @@ void SelectInitialReads( const vec<int>& rid, const IAndOsVec& F, vec<int>& rid1
 {    srandomx(1234567);
      for ( int i = 0; i < rid.isize( ); i++ )
           if ( randomx( ) % 5 == 0 ) rid1.push_back( rid[i] );    }
-
-void CorrectSomeMoreReads0( const vec<int>& rid, const vec<int>& rid1,
-     const IAndOsVec& F, const VecEFasta& corrected, const vec<int>& cid,
-     VecEFasta& corrected2, vec<int>& cid2, const long_heuristics& heur,
-     const long_logging_control& log_control )
-{    return;    }
 
 
 namespace {  // anonymous namespace for local functions
@@ -57,12 +51,6 @@ namespace {  // anonymous namespace for local functions
         return out << "[" << r.pos1 << ", " << r.Pos1 << ") to [" << r.pos2 << ", " << r.Pos2 << ") n_error= " 
                    << r.n_errors << "(" << r.error_rate << ")";   }
 
-    // Compare only the second element of two pairs
-    struct CompSecond {
-        bool operator() ( const std::pair<int,int>& l, const std::pair<int,int>& r ) {
-            return l.second < r.second;
-        }
-    };
 
     // Select the seemingly best assembly based on the alignment results
     // ,which is the first qualifying assembly it finds after sort all 
@@ -130,18 +118,6 @@ namespace {  // anonymous namespace for local functions
                 return 0;
         return 1;
     }
-    // Free Smith-Waterman alignment -- to be discarded
-    // There is an undesirable behavior that force the ends of the query sequence
-    // to be included in the alignment.
-    AlignRange SWFAlign( const basevector& s, const basevector& t) 
-    {
-        align a;
-        SmithWatFreeSym( s, t, a, false, false, 1, 1, 0 );
-        int error = a.Errors( s, t );
-        float error_rate = error * 1.0 / ( a.Pos1() - a.pos1() );
-        AlignRange result = { a, a.pos1(), a.Pos1(), a.pos2(), a.Pos2(), error, error_rate };
-        return result;
-    }
 
     // Banded Smith-Waterman alignment 
     AlignRange SWAlign( const basevector& s, const basevector& t) 
@@ -200,72 +176,6 @@ namespace {  // anonymous namespace for local functions
             AlignRange result = { a, a.pos1(), a.Pos1(), a.pos2(), a.Pos2(), error, error_rate };
             return result;
         }
-    }
-
-    template<int K> 
-    void MakeKmerLookup0Single( const vecbasevector& unibases, vec< triple<kmer<K>,int,int> >& kmers_plus, 
-         const long_logging_control& log_control, const long_logging& logc, std::ostream& out )
-    {    vec<int64_t> starts;
-         starts.reserve( unibases.size() + 1 );
-         starts.push_back(0);
-         for ( size_t i = 0; i < unibases.size( ); i++ )
-         {    const basevector& u = unibases[i];
-              starts.push_back( starts.back( ) + Max( 0, u.isize( ) - K + 1 ) );    }
-         kmers_plus.resize( starts.back( ) );
-         for ( size_t i = 0; i < unibases.size( ); i++ )
-         {    const basevector& u = unibases[i];
-              for ( int j = 0; j <= u.isize( ) - K; j++ )
-              {    int64_t r = starts[i] + j;
-                   kmers_plus[r].first.SetToSubOf( u, j );
-                   kmers_plus[r].second = i; 
-                   kmers_plus[r].third = j;    }    }
-         Sort(kmers_plus);
-    }
-
-    // Mark those friend reads that have at least half of kmer match of the most matching one.
-    void FilterFriends( const vec< vec< std::pair<int,int> > >& offsets, vec<Bool>& accepted ) {
-        vec<int> pos1_count( accepted.size() );
-        for ( size_t id = 1; id < accepted.size(); id++ ) {    
-            vec<int> pos1;
-            for ( int j = 0; j < offsets[id].isize( ); j++ )
-                pos1.push_back( offsets[id][j].second );
-            UniqueSort(pos1);
-            pos1_count[id] = pos1.size( );    
-        }
-        int max_pos1_count = 0;
-        for ( size_t id = 0; id < accepted.size(); id++ ) {
-            if ( id != 0 ) max_pos1_count = Max( max_pos1_count, pos1_count[id] );    
-            if ( pos1_count[id] < max_pos1_count/2 ) continue;
-            if ( offsets[id].empty( ) ) continue; 
-            accepted[id] = True;
-        }
-    }
-
-    // Create the list of kmer offsets between reads
-    template<int K>
-    void CreateOffsets( const vec< triple<kmer<K>,int,int> >& kmers_plus,  
-            vec< vec< std::pair<int,int> > >& offsets ) 
-    {
-        for ( int64_t i = 0; i < (int64_t) kmers_plus.size( ); i++ ) {    
-            int64_t j, z1, z2;
-            for ( j = i + 1; j < (int64_t) kmers_plus.size( ); j++ )
-                if ( kmers_plus[j].first != kmers_plus[i].first ) break;
-            for ( z1 = i; z1 < j; z1++ )
-                if ( kmers_plus[z1].second == 0 ) break;
-            for ( z2 = z1; z2 < j; z2++ )
-                if ( kmers_plus[z2].second != 0 ) break;
-            for ( int64_t z = z1; z < z2; z++ ) {    
-                int pos1 = kmers_plus[z].third;
-                for ( int64_t k = i; k < j; k++ ) {    
-                    int id2 = kmers_plus[k].second; 
-                    if ( id2 == 0 ) continue;
-                    int pos2 = kmers_plus[k].third; // position on read id2
-                    offsets[id2].push( pos1-pos2, pos1 );    
-                }    
-            }
-            i = j - 1;    
-        }
-        for ( size_t id = 1; id < offsets.size(); id++ ) Sort( offsets[id] );
     }
 
     // If we have several candidate corrected reads, which one is supported more by all
@@ -337,7 +247,7 @@ namespace {  // anonymous namespace for local functions
     
     // Given all the edits generated by FindEdits, identify signals suggesting
     // errors in the founder reads, and make the correction.
-    int  MakeEdits( const vec<basevector>& threads, basevector& t, 
+    int  PFMakeEdits( const vec<basevector>& threads, basevector& t, 
          const vec< vec<edit0> >& edits )
     {    const int Threshold_Vote = threads.isize( ) * 0.5;
          vec< std::pair<int,edit0> > keepers;
@@ -367,62 +277,7 @@ namespace {  // anonymous namespace for local functions
          return nedits;
     }
 
-    // Find the relative offset and uncertainty(bandwidth) between two reads given the kmer offset lists.
-    void OffsetAndBandwidth( const vec< std::pair<int,int> >& offsets, int& offset, int& bandwidth ) {
-        // Form offsets into groups, breaking whenever there is a
-        // > max_sep = 20 separation in offsets.
-        vec<int> ostarts;
-        ostarts.push_back(0);
-        const int max_sep = 20;
-        for ( int j = 0; j < offsets.isize( ) - 1; j++ ) 
-            if ( offsets[j+1].first > offsets[j].first + 20 )
-                ostarts.push_back(j+1);
-        ostarts.push_back( offsets.size( ) );
-        // Compute the size of each group, as measured by its number
-        // of distinct rpos2 values.  Find the largest group.
-        int gp_max = 0, gp_best = -1;
-        for ( int j = 0; j < ostarts.isize( ) - 1; j++ ) {    
-            vec<int> rpos2;
-            for ( int l = ostarts[j]; l < ostarts[j+1]; l++ )
-                rpos2.push_back( offsets[l].second );
-            UniqueSort(rpos2);
-            if ( rpos2.isize( ) > gp_max )
-            {   gp_max = rpos2.size( );
-                gp_best = j;    }    
-        }
-        // Set offset to the median within the winning group, and
-        // set bandwidth to span the group, but no more than 
-        // max_bandwidth = 200;
-        int start = ostarts[gp_best], stop = ostarts[gp_best+1];
-        int mid = start + (stop-start)/2;
-        offset = offsets[mid].first;
-        const int bw_add = 12;
-        bandwidth = Max( offset - offsets[start].first,
-                offsets[stop-1].first - offset ) + bw_add;
-        const int max_bandwidth = 200;
-        //bandwidth = Min( bandwidth, max_bandwidth );
-        bandwidth += abs(offset) * 1.1;  // extra bandwidth
-    }
 
-    // Find the relative offset and uncertainty(bandwidth) between two reads given the kmer offset lists.
-    // Faster (less accurate) method
-    void OffsetAndBandwidth2( const vec< std::pair<int,int> >& offsets, int& offset, int& bandwidth ) {
-        const int Extra_Bandwidth = 50;
-        vec< std::pair<int,int> > offsets_filtered;
-        GroupAndSelect( offsets, offsets_filtered, 200, 0.2, 0 );
-        if ( offsets_filtered.empty() ) {
-            offset = 0;
-            bandwidth = -1;
-            return;
-        }
-        vec<int> all( offsets_filtered.size() );
-        for ( size_t i = 0; i < all.size(); ++i ) 
-            all[i] = offsets_filtered[i].first;
-        Sort(all);
-        offset = Median(all);
-        bandwidth = all.back() - all.front();
-        bandwidth += Extra_Bandwidth;
-    }
 
     // Sometimes efasta contains {,}, creating redundant edges when expanding. 
     // We want to remove those empty brackets.
@@ -825,7 +680,7 @@ std::pair<efasta,CSMR_MESSAGE> CorrectOneReadFast( int ec, const vecbasevector& 
                 if (  edits[p].size() >=1 )
                     out << "site " << p << " has " << edits[p].size() << std::endl;
         }
-        int nedits = MakeEdits( other_reads, to_correct, edits );
+        int nedits = PFMakeEdits( other_reads, to_correct, edits );
         if ( nedits == 0 ) 
             return std::make_pair( provisional_efasta, CSMR_OK );
         if ( VERBOSITY >= 1 && nedits >0 ) {
@@ -843,162 +698,3 @@ std::pair<efasta,CSMR_MESSAGE> CorrectOneReadFast( int ec, const vecbasevector& 
     return std::make_pair( provisional_efasta, CSMR_OK );
 }
 
-void CorrectSomeMoreReads( 
-     const vecbasevector& reads,            // reads
-     const vec<int>& rid, const vec<int>& rid1, const vec< vec<int> >& friend_ids1,
-     const IAndOsVec& F, const VecEFasta& corrected, const vec<int>& cid,
-     VecEFasta& corrected2, vec<int>& cid2, const long_heuristics& heur,
-     const long_logging_control& log_control, const long_logging& logc,
-     const ref_data& ref )
-{    
-#ifdef PREFAB_EXT_PARA
-    extern int Csmr_Rid;
-    extern int Csmr_Verb;
-    const int VERBOSITY = Csmr_Verb;
-#else
-    const int VERBOSITY = 0;
-    const int Csmr_Rid = -1;
-#endif
-    // parameters for EvalCorrected()
-    const int MIN_ERRS_TO_PRINT = -1;
-    if ( VERBOSITY >=1 ) {
-        std::cout << "Pre-corrected reads accuracy: " << std::endl;
-        EvalCorrected( corrected, cid, ref, log_control, logc );
-    }
-    // mark which reads are corrected, and mapping to the list
-    vec<bool> is_corrected( reads.size(), false );
-    vec<int> mapping( reads.size(), -1 );
-    for ( size_t i = 0; i < cid.size(); ++i ) {
-        is_corrected[ cid[i] ] = true;
-        mapping[ cid[i] ] = i;
-    }
-    // clean up some spurious {,} in input efasta
-    VecEFasta corrected_clean( corrected.size() );
-    for ( size_t i = 0; i < corrected.size(); ++i ) 
-        corrected_clean[i] = CleanEfasta( corrected[i] );
-    // find the direction of the friends
-    vec< vec<int> > friend_ids2( friend_ids1.size() ); // a copy of friend_ids1, will be sorted
-    for ( size_t i = 0; i < friend_ids1.size(); ++i ) {
-        int rid = rid1[i];
-        if ( ! is_corrected[rid] ) continue;
-        friend_ids2[i] = friend_ids1[i];
-        Sort( friend_ids2[i] );
-        vec<int> signed_friend_ids;  // read id with negative sign meaning aligned in rc direction
-        signed_friend_ids.reserve( friend_ids2[i].size() );
-        for ( size_t j = 0; j < F[rid].size(); ++j ) {
-            int fid = F[rid][j].getId();
-            bool rc = F[rid][j].isRC();
-            if ( BinMember( friend_ids2[i], fid ) ) 
-                signed_friend_ids.push_back( rc ? ~fid : fid );
-        }
-        swap( friend_ids2[i], signed_friend_ids );
-    }
-    // collect all the friending information
-    vec< vec<int> > known_friends_all( reads.size() );
-    for ( size_t i = 0; i < friend_ids2.size(); ++i ) {
-        int rid = rid1[i];
-        if ( ! is_corrected[rid] ) continue;
-        for ( size_t j = 0; j < friend_ids2[i].size(); ++j ) {
-            bool rc = ( friend_ids2[i][j] < 0 );
-            int fid = ( rc ? ~friend_ids2[i][j] : friend_ids2[i][j] );
-            known_friends_all[ fid  ].push_back( rc ? ~rid : rid );
-            //known_friends_all[ friend_ids2[i][j] ].push_back( rid );
-            // friends of friends
-            for ( size_t k = j+1; k < friend_ids2[i].size(); ++k ) {
-                bool rc2 = ( friend_ids2[i][k] < 0 );
-                int fid2 = ( rc2 ? ~friend_ids2[i][k] : friend_ids2[i][k] );
-                known_friends_all[ fid ].push_back( rc ^ rc2 ? ~fid2 : fid2 );
-                known_friends_all[ fid2 ].push_back( rc^rc2 ? ~fid : fid );
-                //known_friends_all[ friend_ids2[i][j] ].push_back( friend_ids2[i][k] );
-                //known_friends_all[ friend_ids2[i][k] ].push_back( friend_ids2[i][j] );
-            }
-        }
-    }
-    for ( size_t i = 0; i < known_friends_all.size(); ++i ) 
-        UniqueSort( known_friends_all[i] );
-    // dispatch the works
-    vec<int> todo_list;
-    todo_list.reserve( rid.size() );
-    for ( size_t ix = 0; ix < rid.size(); ++ix ) 
-        if ( ! is_corrected[ rid[ix] ] ) todo_list.push_back( rid[ix] );
-    if ( VERBOSITY >= 1 ) {
-        std::cout << "Number of reads to be corrected " << todo_list.size() << std::endl;
-    }
-    vec<String> outs( todo_list.size() );     // log output
-    int count = 0;
-    std::cout << Date() << ": Correcting " << todo_list.size() 
-                   << " reads assisted by " << corrected.size() 
-                   << " previously corrected reads." << std::endl;
-    int batch_size = Min( 500, Max( 1, todo_list.isize() / omp_get_max_threads() ) );
-    int n_no_cr_friends = 0, n_no_friends = 0, n_no_assembly = 0, 
-        n_many_assembly = 0, n_short_assembly = 0, n_other_failures = 0;
-    #pragma omp parallel for schedule( dynamic, batch_size )
-    for ( size_t ix = 0; ix < todo_list.size(); ++ix ) {
-        int ec = todo_list[ix];
-        if ( Csmr_Rid != -1 && ec != Csmr_Rid ) continue;
-        std::ostringstream out;
-        const vec<int>& known_friends =  known_friends_all[ec];
-        std::pair<efasta, CSMR_MESSAGE> result = CorrectOneReadFast( ec, reads, F, known_friends, 
-                corrected_clean, cid, is_corrected, mapping, heur, log_control, VERBOSITY, out );
-        //efasta result = CorrectOneRead( ec, reads, F, known_friends, corrected, cid, is_corrected, mapping,
-        //        heur, log_control, VERBOSITY, out );
-        #pragma omp critical
-        {   
-            if ( result.second == CSMR_OK ) {
-                corrected2.push_back( result.first );
-                cid2.push_back( ec );
-            } 
-            else if ( result.second == CSMR_NO_FRIENDS ) 
-                n_no_friends++;
-            else if ( result.second == CSMR_NO_CR_FRIENDS ) 
-                n_no_cr_friends++;
-            else if ( result.second == CSMR_NO_ASSEMBLY ) 
-                n_no_assembly++;
-            else if ( result.second == CSMR_MANY_ASSEMBLY ) 
-                n_many_assembly++;
-            else if ( result.second == CSMR_SHORT_ASSEMBLY )
-                n_short_assembly++;
-            else
-                n_other_failures++;
-            // progress dotting
-            int dots1 = (100*count)/ todo_list.size();
-            count++;
-            int dots2 = (100*count)/ todo_list.size();
-            if ( dots1 < dots2 ) {
-                for( int j = dots1; j < dots2; j++) {
-                    std::cout << ".";
-                    if ( (j+1) % 50 == 0 ) std::cout << "\n";
-                    else if ( (j+1) % 10 == 0 ) std::cout << " ";    
-                }
-                flush(std::cout);    
-            }
-        }  
-        outs[ix] = out.str();
-    }
-    // Make sure the output is sorted by the read id
-    // to prevent possible confusion of stochastic output results
-    SortSync( cid2, corrected2 );
-    if ( VERBOSITY >= 1 ) {
-        for ( size_t i = 0; i < outs.size(); ++i ) 
-            if ( ! outs[i].empty() )
-                std::cout << "================== " << i << " id= " << todo_list[i] << " =============== \n"
-                     << outs[i] << std::endl;
-    }
-    std::cout << Date() << ": Corrected " << cid2.size() << " reads." 
-        << "\n " << n_no_friends << " attempts failed : not enough friend reads"
-        << "\n " << n_no_cr_friends << " attempts failed : not enough corrected friend reads"
-        << "\n " << n_no_assembly << " attempts failed : no linear assembly was formed"
-        << "\n " << n_many_assembly << " attempts failed : too many linear assembles formed"
-        << "\n " << n_short_assembly << " attempts failed : poor read-to-assembly mapping" 
-        << "\n " << n_other_failures << " attempts failed : other reasons"
-        << std::endl;
-    if ( VERBOSITY >= 1 ) {
-        std::cout << "corrected reads accuracy: " << std::endl;
-        EvalCorrected( corrected2, cid2, ref, log_control, logc );
-    }
-    // What can be wrong with the initial correction?
-    // - Errors in previously correctly reads
-    // - Mis-assembly of the reads
-    // - Theses reads are not true friends of the uncorrected read
-    // - Misplacement of the uncorrected read to the assembly
-}

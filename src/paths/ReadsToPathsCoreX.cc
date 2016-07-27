@@ -14,14 +14,14 @@
 #include "CoreTools.h"
 #include "FeudalMimic.h"
 #include "kmers/KmerRecord.h"
-#include "kmers/SortKmers.h"
+//#include "kmers/SortKmers.h"
 #include "pairwise_aligners/BalancedMutmerGraph.h"
 #include "paths/KmerPath.h"
 #include "paths/MakeAlignsPathsParallelX.h"
 #include "paths/ReadsToPathsCoreX.h"
 
 static inline 
-String Tag(String S = "RTPCX") { return Date() + " (" + S + "): "; } 
+String RTPCXTag(String S = "RTPCX") { return Date() + " (" + S + "): "; } 
 
 // Returns true if the K-mer at BaseVec b, in the range [offset, offset+K),
 // is palindromic. 
@@ -176,10 +176,10 @@ void mutmer_graph_to_mutmer_hits(const BaseVecVec & sbvv,
   // please don't comment out these outputs. 
   // they help when things go wrong.
   if (VERBOSE) {
-    std::cout << Tag() << "(MG2MH): Start." << std::endl;
-    std::cout << Tag() << "(MG2MH): bvvs.size() = " << n_bvs << std::endl;
-    std::cout << Tag() << "(MG2MH): bmg.size() = " << bmg.size() << std::endl;
-    std::cout << Tag() << "(MG2MH): bmg.SizeOf() = " << bmg.SizeOf()/(1u<<20) << " MB" << std::endl;
+    std::cout << RTPCXTag() << "(MG2MH): Start." << std::endl;
+    std::cout << RTPCXTag() << "(MG2MH): bvvs.size() = " << n_bvs << std::endl;
+    std::cout << RTPCXTag() << "(MG2MH): bmg.size() = " << bmg.size() << std::endl;
+    std::cout << RTPCXTag() << "(MG2MH): bmg.SizeOf() = " << bmg.SizeOf()/(1u<<20) << " MB" << std::endl;
   }
 
   if (bmg.size() == 0) return;
@@ -190,8 +190,8 @@ void mutmer_graph_to_mutmer_hits(const BaseVecVec & sbvv,
     n_hits += bmg[id1].size();
 
   if (VERBOSE) {
-    std::cout << Tag() << "(MG2MH): n_hits = " << n_hits << std::endl;
-    std::cout << Tag() << "(MG2MH): allocating " << ((n_hits * sizeof(MutmerHit)) >> 20) << " MB to store MutmerHits." << std::endl;
+    std::cout << RTPCXTag() << "(MG2MH): n_hits = " << n_hits << std::endl;
+    std::cout << RTPCXTag() << "(MG2MH): allocating " << ((n_hits * sizeof(MutmerHit)) >> 20) << " MB to store MutmerHits." << std::endl;
   }
 
   mhits->resize(n_hits);
@@ -246,7 +246,7 @@ void mutmer_graph_to_mutmer_hits(const BaseVecVec & sbvv,
   // std::cout << "mt = " << mt << std::endl;
 
 
-  if (VERBOSE) std::cout << Tag() << "(MG2MH): Done." << std::endl;
+  if (VERBOSE) std::cout << RTPCXTag() << "(MG2MH): Done." << std::endl;
 
 }
 
@@ -384,13 +384,13 @@ void base_vec_vec_to_mutmer_hits(const size_t          K,
       CHECKPOINT_HEAD != "" && 
       mutmer_hits_on_file(CHECKPOINT_HEAD)) {
     
-    if (VERBOSE) std::cout << Tag("BVV2MH") << "CHECKPOINT: retrieving previously computed 'mhits'." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "CHECKPOINT: retrieving previously computed 'mhits'." << std::endl;
     mutmer_hits_from_file(*mhits, CHECKPOINT_HEAD);
-    if (VERBOSE) std::cout << Tag("BVV2MH") << "CHECKPOINT: retrieved " << mhits->size() << " mhits." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "CHECKPOINT: retrieved " << mhits->size() << " mhits." << std::endl;
     
   } 
   else {
-    if (VERBOSE) std::cout << Tag("BVV2MH") << "Computing 'mhits' and 'chosen'." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "Computing 'mhits' and 'chosen'." << std::endl;
     Mimic(sbvv, *chosen);
     
     
@@ -438,9 +438,9 @@ void base_vec_vec_to_mutmer_hits(const size_t          K,
     DISPATCH_ON_K(K, CASE);
     
     if (CHECKPOINT_HEAD != "") {
-      //if (VERBOSE) std::cout << Tag("BVV2MH") << "CHECKPOINT: saving 'mhits'." << std::endl;
+      //if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "CHECKPOINT: saving 'mhits'." << std::endl;
       //mutmer_hits_to_file(*mhits, CHECKPOINT_HEAD);
-      //if (VERBOSE) std::cout << Tag("BVV2MH") << "CHECKPOINT: saved " << mhits->size() << " mhits." << std::endl;
+      //if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "CHECKPOINT: saved " << mhits->size() << " mhits." << std::endl;
     }     
   }
   
@@ -459,7 +459,7 @@ void base_vec_vec_to_mutmer_hits(const size_t          K,
 
   if (must_sort) {
     if (VERBOSE)
-      std::cout << Tag("BVV2MH") << "Recover original read order" << std::endl;
+      std::cout << RTPCXTag("BVV2MH") << "Recover original read order" << std::endl;
 
     for (size_t ih = 0; ih < n_mhits; ih++) {
       (*mhits)[ih].set_id1(id_sid[(*mhits)[ih].get_id1()]);
@@ -491,7 +491,7 @@ void base_vec_vec_to_mutmer_hits(const size_t          K,
   // the bases of read #id1, starting at pos1, are equal to (or rc of)
   // the bases of read #id2, starting at pos2, for a length of len bases.
   // If these asserts fail, the bases are not actually equal.
-  if (VERBOSE) std::cout << Tag("BVV2MH") << "Validate mhits" << std::endl;
+  if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "Validate mhits" << std::endl;
   for (size_t ih = 0; ih != n_mhits; ih++)
     (*mhits)[ih].AssertValid(bvv);   
 
@@ -503,7 +503,7 @@ void base_vec_vec_to_mutmer_hits(const size_t          K,
 
   
   // Sort the mhits over 'id2', and then from larger to smaller 'len'
-  if (VERBOSE) std::cout << Tag("BVV2MH") << "Sort mhits" << std::endl;
+  if (VERBOSE) std::cout << RTPCXTag("BVV2MH") << "Sort mhits" << std::endl;
   Sort(*mhits);
   
 
@@ -528,7 +528,7 @@ void mutmer_hits_to_paths(const size_t           K,
                           // verbosity allow faster diagnostics.
                           const bool            VERBOSE = true)
 {
-  if (VERBOSE) std::cout << Tag("MH2P") << "Start." << std::endl;
+  if (VERBOSE) std::cout << RTPCXTag("MH2P") << "Start." << std::endl;
 
   const size_t n_bvs = bvv.size();
   const size_t n_mhits = mhits.size();
@@ -537,7 +537,7 @@ void mutmer_hits_to_paths(const size_t           K,
   // Find which canonical kmers (i.e., kmers marked as chosen) are
   // palindromic.
 
-  if (VERBOSE) std::cout << Tag("MH2P") << "Finding palindromes." << std::endl;
+  if (VERBOSE) std::cout << RTPCXTag("MH2P") << "Finding palindromes." << std::endl;
 
   VecBitVec chosen_palindrome;
   Mimic(bvv, chosen_palindrome);
@@ -553,7 +553,7 @@ void mutmer_hits_to_paths(const size_t           K,
 
 
   // Number positions on the reads.
-  if (VERBOSE) std::cout << Tag("MH2P") << "Finding starting kmer numbers for each read." << std::endl;
+  if (VERBOSE) std::cout << RTPCXTag("MH2P") << "Finding starting kmer numbers for each read." << std::endl;
   vec<size_t> knums0(n_bvs);
   {
     size_t knum = 0;
@@ -571,7 +571,7 @@ void mutmer_hits_to_paths(const size_t           K,
 
   // Build read paths for the reads themselves.
   if (VERBOSE)
-    std::cout << Tag("MH2P") << "Building read paths from mutmer hits." << std::endl;
+    std::cout << RTPCXTag("MH2P") << "Building read paths from mutmer hits." << std::endl;
   
   paths->reserve(n_bvs);
      
@@ -707,7 +707,7 @@ void mutmer_hits_to_paths(const size_t           K,
     ih0 = ih1;    
   }
   
-   if (VERBOSE) std::cout << Tag("MH2P") << "Done." << std::endl;
+   if (VERBOSE) std::cout << RTPCXTag("MH2P") << "Done." << std::endl;
     
 }
 
@@ -732,11 +732,11 @@ void ReadsToPathsCoreX(const size_t     K,
                        const bool       VERBOSE)
 {
   if (bvv.size() > 0) {
-    if (VERBOSE) std::cout << Tag("RTPCX") << "Start." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("RTPCX") << "Start." << std::endl;
     ForceAssertSupportedK(K);
     
  
-    if (VERBOSE) std::cout << Tag("RTPCX") << "Calling base_vec_vec_to_mutmer_hits()." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("RTPCX") << "Calling base_vec_vec_to_mutmer_hits()." << std::endl;
     vec<MutmerHit> mhits;
     VecBitVec chosen;
     base_vec_vec_to_mutmer_hits(K, bvv, & chosen, & mhits, 
@@ -745,12 +745,12 @@ void ReadsToPathsCoreX(const size_t     K,
     
     
     
-    if (VERBOSE) std::cout << Tag("RTPCX") << "Calling mutmer_hits_to_paths()." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("RTPCX") << "Calling mutmer_hits_to_paths()." << std::endl;
     mutmer_hits_to_paths(K, bvv, chosen, mhits, paths, VERBOSE);
     
 
 
-    if (VERBOSE) std::cout << Tag("RTPCX") << "Done." << std::endl;
+    if (VERBOSE) std::cout << RTPCXTag("RTPCX") << "Done." << std::endl;
   }
 }
 

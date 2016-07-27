@@ -18,14 +18,14 @@
 #include "paths/long/ExtendReadPath.h"
 #include "paths/long/ShortKmerReadPather.h"
 
-struct Alignment {
+struct SKRPAlignment {
     int score;
     size_t edge;
     int offset;
 
-    Alignment() : score(0), edge(0), offset(0) {};
+    SKRPAlignment() : score(0), edge(0), offset(0) {};
 
-    Alignment(int offset, size_t edge, int score) : score(score), edge(edge), offset(offset) {};
+    SKRPAlignment(int offset, size_t edge, int score) : score(score), edge(edge), offset(offset) {};
 };
 
 
@@ -146,7 +146,7 @@ void ShortKmerReadPather::FindPaths(const vecbasevector& bases,
 	size_t read_id = (have_ids ? ids[next_pos->first] : next_pos->first);
 	quals[read_id].unpack(&qv);
 	// Examine all kmer alignments for this read
-	vec<Alignment> aligns;
+	vec<SKRPAlignment> aligns;
      //	vec<int> edge_list, offset_list, score_list;
 	while (next_pos != read_end) {
 	
@@ -207,7 +207,7 @@ void ShortKmerReadPather::FindPaths(const vecbasevector& bases,
 
 	    int initial_offset = aligns.front().offset;
 	    vec<int> edge_list(aligns.size());
-	    std::transform(aligns.begin(), aligns.end(), edge_list.begin(), [] (Alignment i) {return i.edge;});
+	    std::transform(aligns.begin(), aligns.end(), edge_list.begin(), [] (SKRPAlignment i) {return i.edge;});
 		
 	    if (debug) std::cout << "Path=" << initial_offset << ":" << printSeq(edge_list) << std::endl;
 

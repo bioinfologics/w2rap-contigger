@@ -11,7 +11,7 @@
 
 #include "paths/long/FriendAligns.h"
 #include "paths/long/FriendAlignFinder.h"
-#include "paths/long/FriendAlignFinderQ.h"
+//#include "paths/long/FriendAlignFinderQ.h"
 #include "paths/long/FriendAlignFinderNaif.h"
 #include "paths/long/MakeAlignments.h"
 
@@ -63,15 +63,7 @@ FriendAligner::FriendAligner( vecbvec const& bases, vecqvec const& quals,
                                unsigned const min_qual, unsigned const coverage,
                                bool downSample, int verbosity )
 {
-    if ( MAKE_ALIGN_IMPL == 3 )
-    {
-        FriendAlignFinderQ::storeFriends( CShim<vecbvec>(&bases),
-                                          CShim<vecqvec>(&quals),
-                                          friendsCache, min_qual, coverage, K,
-                                          min_freq, max_freq, verbosity );
-        mpImpl = new FriendAlignFinderQ(friendsCache);
-    }
-    else if ( MAKE_ALIGN_IMPL == 2 )
+    if ( MAKE_ALIGN_IMPL == 2 )
     {
         if ( K <= 29 )
             mpImpl = new FriendAlignFinderNaif<Kmer29>(friendsCache,K,bases,max_freq);

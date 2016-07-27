@@ -9,7 +9,7 @@
 #ifndef LOOK_ALIGN_H
 #define LOOK_ALIGN_H
 
-#include "math/Arith.h"
+//#include "math/Arith.h"
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "Fastavector.h"
@@ -309,11 +309,11 @@ class look_align {
   ///Print a human-readable readable summary with ids instead of names.
   void PrintReadableBrief( std::ostream& out ) const;
 
-  Float RmrPercent( const basevector& query,
+  float RmrPercent( const basevector& query,
 		    const qualvector& query_qual, const basevector& target,
 		    int start_on_target ) const;
 
-  Float MMPercent( const basevector& query,
+  float MMPercent( const basevector& query,
 		   const qualvector& query_qual, const basevector& target,
 		   int start_on_target ) const;
 
@@ -344,7 +344,7 @@ class look_align {
 		 int start_on_target, const vec<String>& seq_names,
 		 const vec<String>& target_names ) const;
 
-  Float QualScore( const basevector& query,
+  float QualScore( const basevector& query,
 		   const qualvector& query_qual, const basevector& target,
 		   int start_on_target, const qualvector& qual_g ) const;
 

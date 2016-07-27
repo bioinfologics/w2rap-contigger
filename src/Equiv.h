@@ -124,8 +124,8 @@ private:
 // These go hand in hand with the template instantiations at the end of Equiv.cc
 typedef equiv_rel_template<int> equiv_rel;
 typedef equiv_rel_template<int64_t> equiv_rel_64;
-extern template class equiv_rel_template<int>;
-extern template class equiv_rel_template<int64_t>;
+//extern template class equiv_rel_template<int>;
+//extern template class equiv_rel_template<int64_t>;
 
 
 #endif

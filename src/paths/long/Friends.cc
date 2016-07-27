@@ -28,17 +28,18 @@
 namespace
 {
 
-unsigned const K = 25;
+
+unsigned const FR_K = 25;
 unsigned const MAX_KMER_FREQ = 100;
 
-class KmerFriends : public KMer<K>
+class KmerFriends : public KMer<FR_K>
 {
 public:
     KmerFriends( MempoolAllocator<IdAndOrientation> const& alloc )
     : mFriends(alloc) {}
 
-    KmerFriends& operator=( KMer<K> const& kmer )
-    { static_cast<KMer<K>&>(*this) = kmer; mFriends.clear(); return *this; }
+    KmerFriends& operator=( KMer<FR_K> const& kmer )
+    { static_cast<KMer<FR_K>&>(*this) = kmer; mFriends.clear(); return *this; }
 
     bool addFriend( unsigned readId, CanonicalForm form )
     { if ( mFriends.size() == MAX_KMER_FREQ )
@@ -85,7 +86,7 @@ class ReadGroupFriends
 {
 public:
     explicit ReadGroupFriends( size_t nnn )
-    : mHash(nnn,KMer<K>::Hasher(),std::equal_to<KMer<K>>(),
+    : mHash(nnn,KMer<FR_K>::Hasher(),std::equal_to<KMer<FR_K>>(),
                                             KmerFriends::Factory(mAlloc)) {}
 
     void processRange( vecbvec const& reads, size_t startId, size_t endId,
@@ -96,33 +97,33 @@ public:
       dumpFriends(startId,endId,writer); }
 
 private:
-    KmerFriends* lookup( KMer<K> const& kmer )
+    KmerFriends* lookup( KMer<FR_K> const& kmer )
     { KmerFriends const* pKF = mHash.lookup(kmer);
       return const_cast<KmerFriends*>(pKF); }
 
     void addRead( bvec const& read )
-    { if ( read.size() < K ) return;
-      unsigned nKmers = read.size()-K+1;
-      KMer<K> kmer(read.begin());
-      mHash.add(kmer.isRev()?KMer<K>(kmer).rc():kmer);
-      for ( auto itr = read.begin()+K, end = read.end(); itr != end; ++itr )
+    { if ( read.size() < FR_K ) return;
+      unsigned nKmers = read.size()-FR_K+1;
+      KMer<FR_K> kmer(read.begin());
+      mHash.add(kmer.isRev()?KMer<FR_K>(kmer).rc():kmer);
+      for ( auto itr = read.begin()+FR_K, end = read.end(); itr != end; ++itr )
       { kmer.toSuccessor(*itr);
-        mHash.add(kmer.isRev()?KMer<K>(kmer).rc():kmer); } }
+        mHash.add(kmer.isRev()?KMer<FR_K>(kmer).rc():kmer); } }
 
     void addFriends( vecbvec const& reads )
     { size_t nReads = reads.size();
       for ( size_t readId = 0; readId != nReads; ++readId )
       { bvec const& read = reads[readId];
-        if ( read.size() < K ) continue;
-        KMer<K> kmer(read.begin());
+        if ( read.size() < FR_K ) continue;
+        KMer<FR_K> kmer(read.begin());
         CanonicalForm form = kmer.getCanonicalForm();
         KmerFriends* pKF = lookup(form==CanonicalForm::REV ?
-                                    KMer<K>(kmer).rc() : kmer);
+                                    KMer<FR_K>(kmer).rc() : kmer);
         if ( pKF && !pKF->addFriend(readId,form) ) mHash.remove(*pKF);
-        for ( auto itr = read.begin()+K, end = read.end(); itr != end; ++itr )
+        for ( auto itr = read.begin()+FR_K, end = read.end(); itr != end; ++itr )
         { kmer.toSuccessor(*itr);
           form = kmer.getCanonicalForm();
-          pKF = lookup(form==CanonicalForm::REV ? KMer<K>(kmer).rc() : kmer);
+          pKF = lookup(form==CanonicalForm::REV ? KMer<FR_K>(kmer).rc() : kmer);
           if ( pKF && !pKF->addFriend(readId,form) ) mHash.remove(*pKF); } } }
 
     void dumpFriends( size_t startId, size_t endId,
@@ -176,7 +177,7 @@ private:
         friends.push_back(tmp); ++itr; } }
 
     MempoolOwner<IdAndOrientation> mAlloc;
-    HashSet<KmerFriends,KMer<K>::Hasher,std::equal_to<KMer<K>>,
+    HashSet<KmerFriends,KMer<FR_K>::Hasher,std::equal_to<KMer<FR_K>>,
 
     KmerFriends::Factory> mHash;
     static std::mutex gWriteLock;
@@ -224,19 +225,19 @@ private:
 class DictRemovalKmerEater
 {
 public:
-    DictRemovalKmerEater( KmerDict<K>* pDict ) : mpDict(pDict) {}
+    DictRemovalKmerEater( KmerDict<FR_K>* pDict ) : mpDict(pDict) {}
 
     // compiler-supplied copying and destructor are OK
 
-    void operator()( KMer<K> const& kmer, KMerContext, size_t, size_t )
+    void operator()( KMer<FR_K> const& kmer, KMerContext, size_t, size_t )
     { mpDict->remove(kmer); }
 
 private:
-    KmerDict<K>* mpDict;
+    KmerDict<FR_K>* mpDict;
 };
 
-size_t removeShortUnipaths( UnipathGraph<K> const& ug, size_t minLength,
-                                KmerDict<K>* pDict )
+size_t removeShortUnipaths( UnipathGraph<FR_K> const& ug, size_t minLength,
+                                KmerDict<FR_K>* pDict )
 {
     size_t badUnipathCount = 0;
     typedef HugeBVec::const_iterator BVItr;
@@ -249,7 +250,7 @@ size_t removeShortUnipaths( UnipathGraph<K> const& ug, size_t minLength,
         {
             badUnipathCount += 1;
             EdgeID unipathID(idx);
-            KMer<K>::kmerizeIntoEater(ug.getBases(unipathID),
+            KMer<FR_K>::kmerizeIntoEater(ug.getBases(unipathID),
                                 ug.getBasesEnd(unipathID),
                                 eater,0);
         }
@@ -259,12 +260,12 @@ size_t removeShortUnipaths( UnipathGraph<K> const& ug, size_t minLength,
 
 #if 0
 void assessDictionary( vecbvec const& genome, unsigned numThreads,
-                            KmerDict<K> const& dict )
+                            KmerDict<FR_K> const& dict )
 {
     std::cout << Date() << ": Checking good kmers against genome."
             << std::endl;
     size_t genomeDictSize = genome.SizeSum();
-    KmerDict<K> genomeDict( 5*genomeDictSize/4 );
+    KmerDict<FR_K> genomeDict( 5*genomeDictSize/4 );
     genomeDict.process(genome.begin(),genome.end(),numThreads,1);
     std::cout << Date( ) << ": there are " << genomeDict.size()
               << " genomic kmers (expected ~" << genomeDictSize << ")"
@@ -272,8 +273,8 @@ void assessDictionary( vecbvec const& genome, unsigned numThreads,
 
     size_t const GENOME_MAX_COUNT = 30;
     std::vector<size_t> kCounts(GENOME_MAX_COUNT+1);
-    typedef KmerDict<K>::OCItr OCItr;
-    typedef KmerDict<K>::ICItr ICItr;
+    typedef KmerDict<FR_K>::OCItr OCItr;
+    typedef KmerDict<FR_K>::ICItr ICItr;
     for ( OCItr oItr(dict.begin()),oEnd(dict.end()); oItr!=oEnd; ++oItr )
     {
         for ( ICItr itr(oItr->begin()), end(oItr->end()); itr!=end; ++itr )
@@ -305,19 +306,19 @@ void assessDictionary( vecbvec const& genome, unsigned numThreads,
 }
 #endif
 
-typedef std::vector<IdAndOrientation> ReadPath; //id is a unipathId
-typedef std::vector<ReadPath> ReadPathVec; //index is a readId
+typedef std::vector<IdAndOrientation> FR_ReadPath; //id is a unipathId
+typedef std::vector<FR_ReadPath> FR_ReadPathVec; //index is a readId
 
 class PathingKmerEater
 {
 public:
-    PathingKmerEater( KmerDict<K> const& dict, unsigned minCount )
+    PathingKmerEater( KmerDict<FR_K> const& dict, unsigned minCount )
     : mDict(dict), mMinCount(minCount), mCurCount(0) {}
 
     // compiler-supplied copying and destructor are OK
 
-    void operator()( KMer<K> const& kmer, KMerContext, size_t, size_t )
-    { KmerDict<K>::Entry const* pEntry = mDict.findEntry(kmer);
+    void operator()( KMer<FR_K> const& kmer, KMerContext, size_t, size_t )
+    { KmerDict<FR_K>::Entry const* pEntry = mDict.findEntry(kmer);
       if ( pEntry )
       { IdAndOrientation iAndO(pEntry->getKDef().getEdgeID().val(),kmer.isRev());
         if ( iAndO != mLastIAndO )
@@ -328,23 +329,23 @@ public:
         if ( ++mCurCount == mMinCount )
             mPath.push_back(iAndO); } }
 
-    ReadPath const& getPath() const { return mPath; }
+    FR_ReadPath const& getPath() const { return mPath; }
     void clear()
     { mPath.clear(); mCurCount = 0; mLastIAndO = IdAndOrientation(); }
 
 private:
-    KmerDict<K> const& mDict;
+    KmerDict<FR_K> const& mDict;
     unsigned mMinCount;
     unsigned mCurCount;
     IdAndOrientation mLastIAndO;
-    ReadPath mPath;
+    FR_ReadPath mPath;
 };
 
 class PathingProc
 {
 public:
-    PathingProc( vecbvec const& reads, KmerDict<K> const& dict,
-                unsigned minCount, Dotter& dotter, ReadPathVec* pPaths )
+    PathingProc( vecbvec const& reads, KmerDict<FR_K> const& dict,
+                unsigned minCount, Dotter& dotter, FR_ReadPathVec* pPaths )
     : mReads(reads), mDotter(dotter), mpPaths(pPaths), mEater(dict,minCount)
     { size_t nBatches = mDotter.getNBatches();
       mBatchSize = (mReads.size()+nBatches-1)/nBatches; }
@@ -356,7 +357,7 @@ public:
 private:
     vecbvec const& mReads;
     Dotter& mDotter;
-    ReadPathVec* mpPaths;
+    FR_ReadPathVec* mpPaths;
     PathingKmerEater mEater;
     size_t mBatchSize;
 };
@@ -369,7 +370,7 @@ void PathingProc::operator()( size_t batchNo )
     Itr end(mReads.begin(endId));
     for ( Itr itr(mReads.begin(readId)); itr != end; ++itr )
     {
-        KMer<K>::kmerizeIntoEater(itr->cbegin(),itr->cend(),mEater,readId);
+        KMer<FR_K>::kmerizeIntoEater(itr->cbegin(),itr->cend(),mEater,readId);
         (*mpPaths)[readId++] = mEater.getPath();
         mEater.clear();
     }
@@ -452,7 +453,7 @@ public:
       return result; }
 
 private:
-    void findUnipaths( vecbvec const& reads, KmerDict<K> const& dict,
+    void findUnipaths( vecbvec const& reads, KmerDict<FR_K> const& dict,
                             unsigned minKmersOnUnipath, unsigned nThreads,
                             const int verbosity )
     { std::cout << Date() << ": finding unipaths for each read" << std::endl;
@@ -472,8 +473,8 @@ private:
       mRCReads.resize(nUnipaths); reserve(mRCReads,2*coverage);
       size_t nReads = mPaths.size();
       for ( size_t readId = 0; readId != nReads; ++readId )
-      { ReadPath const& rp = mPaths[readId];
-        typedef ReadPath::const_iterator RPItr;
+      { FR_ReadPath const& rp = mPaths[readId];
+        typedef FR_ReadPath::const_iterator RPItr;
         size_t order = 0;
         for ( RPItr itr(rp.begin()), end(rp.end()); itr != end; ++itr )
         { ReadSetVec& rs = itr->isRC() ? mRCReads : mReads;
@@ -495,8 +496,8 @@ private:
           FriendsMap friendsMap;
           FriendsMap rcFriendsMap;
 
-          ReadPath const& path = mFP.mPaths[idx];
-          typedef ReadPath::const_iterator RPItr;
+          FR_ReadPath const& path = mFP.mPaths[idx];
+          typedef FR_ReadPath::const_iterator RPItr;
           for ( RPItr itr(path.begin()), end(path.end()); itr != end; ++itr )
           { ReadSet const* pF = &mFP.mReads[itr->getId()];
             ReadSet const* pR = &mFP.mRCReads[itr->getId()];
@@ -537,7 +538,7 @@ private:
       for ( RSItr itr(rsv.begin()), end(rsv.end()); itr != end; ++itr )
         itr->reserve(size); }
 
-    ReadPathVec mPaths;
+    FR_ReadPathVec mPaths;
     ReadSetVec mReads;
     ReadSetVec mRCReads;
     IAndOsVec& mFriendsVec;
@@ -558,7 +559,7 @@ FriendProc::FriendProc( IAndOsVec& friendsVec,
     size_t dictSize = allReadsLen/2;
     if ( verbosity >= 1 )
          std::cout << Date() << ": creating dictionary" << std::endl;
-    KmerDict<K> dict( 5*dictSize/4 );
+    KmerDict<FR_K> dict( 5*dictSize/4 );
     dict.process(reads,verbosity,false,nThreads,100);
     if ( verbosity >= 2 )
     {
@@ -569,7 +570,7 @@ FriendProc::FriendProc( IAndOsVec& friendsVec,
     if ( verbosity >= 1 )
          std::cout << Date() << ": building kmer spectrum" << std::endl;
     const int spec_cov_mult = 3;
-    Spectrum<K> spectrum(dict,spec_cov_mult*coverage);
+    Spectrum<FR_K> spectrum(dict,spec_cov_mult*coverage);
     if ( verbosity >= 3 )
     {
         std::cout << "Kmer spectrum:" << std::endl;
@@ -608,7 +609,7 @@ FriendProc::FriendProc( IAndOsVec& friendsVec,
     {   std::cout << Date() << ": discarding error kmers (less than " << peakIdx
                   << "x)" << std::endl;    }
     dictSize = spectrum.sum(peakIdx);
-    dict.clean(KmerDict<K>::BadKmerCountFunctor(peakIdx));
+    dict.clean(KmerDict<FR_K>::BadKmerCountFunctor(peakIdx));
     AssertEq(dictSize,dict.size());
     if ( verbosity >= 2 )
     {
@@ -616,7 +617,7 @@ FriendProc::FriendProc( IAndOsVec& friendsVec,
                     << std::endl;
     }
 
-    UnipathGraph<K> ug(dict, verbosity);
+    UnipathGraph<FR_K> ug(dict, verbosity);
 
     if ( verbosity >= 1 )
     {    std::cout << Date()
@@ -664,7 +665,7 @@ void FindFriends( vecbvec const& reads, String const& friendsFile,
     }
     size_t nReads = reads.size();
     IncrementalWriter<IAndOs> writer(friendsFile,nReads);
-    size_t nKmers = reads.getKmerCount(K);
+    size_t nKmers = reads.getKmerCount(FR_K);
     size_t needed = 1.5*nKmers*(sizeof(KmerFriends)+
                                 MAX_KMER_FREQ/2*sizeof(IdAndOrientation)) +
                 nReads*(sizeof(IAndOs)+MAX_KMER_FREQ*sizeof(IdAndOrientation));

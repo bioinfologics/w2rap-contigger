@@ -358,7 +358,7 @@ public:
   bool isInterleaved( ) const ;
 
   // Convert these pairs into a vec<read_pairing> for use in legacy code.
-  vec<read_pairing> convert_to_read_pairings( ) const;
+  //vec<read_pairing> convert_to_read_pairings( ) const;
   
   // Equality operator.  Requires ALL data to be the same.
   friend bool operator==( const PairsManager & pm1, const PairsManager& pm2 );

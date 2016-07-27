@@ -1025,12 +1025,12 @@ String Chr( const int g )
 
 void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
      const vec<vec<vec<vec<int>>>>& linesx, const vec<int>& npairsx,
-     const vec<vec<covcount>>& covs, vec< vec< std::pair<int,int> > > hits,
-     const String& final_dir, const String& work_dir)
+     const vec<vec<covcount>>& covs,
+     const String& out_dir, const String& out_prefix)
 {    double clock1 = WallClockTime( );
      vec<int> llensx;
      GetLineLengths( hbx, linesx, llensx );
-     Ofstream( out, final_dir + "/a.fasta" );
+     Ofstream( out, out_dir + "/" + out_prefix + ".fasta" );
      vec<int> to_left, to_right;
      hbx.ToLeft(to_left), hbx.ToRight(to_right);
      vec<String> head( hbx.E( ) );

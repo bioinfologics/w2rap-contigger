@@ -10,16 +10,16 @@
 #define SCOREALIGNMENTONE
 
 #include "Alignment.h"
-#include "math/Arith.h"
+//#include "math/Arith.h"
 #include "Basevector.h"
 #include "Qualvector.h"
 
-Float ScoreAlignment( const align& a, const basevector& rd1, 
+float ScoreAlignment( const align& a, const basevector& rd1, 
      const qualvector& scores1, const basevector& rd2, 
      const qualvector& scores2 = qualvector(0), int start1 = 0,
      int stop1 = -1, int start2 = 0, int stop2 = -1, Bool ignore_gaps = False );
 
-Float ScoreAlignment( Bool rd2_is_rc, const align& a, const basevector& rd1, 
+float ScoreAlignment( Bool rd2_is_rc, const align& a, const basevector& rd1, 
      const qualvector& scores1, const basevector& rd2, 
      const qualvector& scores2 = qualvector(0), int start1 = 0,
      int stop1 = -1, int start2 = 0, int stop2 = -1, Bool ignore_gaps = False );

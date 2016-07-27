@@ -21,11 +21,11 @@
 
 typedef SerfVec<char> CharVec;
 typedef MasterVec< CharVec > VecCharVec;
-extern template class OuterVec<CharVec>;
+//extern template class OuterVec<CharVec>;
 
 typedef SerfVec<unsigned char> UCharVec;
 typedef MasterVec< UCharVec > VecUCharVec;
-extern template class OuterVec<UCharVec>;
+//extern template class OuterVec<UCharVec>;
 
 typedef UCharVec Boolvector;
 typedef VecUCharVec vecBoolvector;

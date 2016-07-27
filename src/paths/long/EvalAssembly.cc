@@ -576,7 +576,7 @@ void AssemblyError::PrintSummary(std::ostream& out)
 }
 
 namespace{
-    void FixInversion( const HyperBasevector& hb, vec<int>& inv2 )
+    void EAFixInversion( const HyperBasevector& hb, vec<int>& inv2 )
     {    inv2.resize( hb.EdgeObjectCount( ), -1 );
          vec< triple<basevector,int,int> > uni2;
          vec<Bool> used;
@@ -1505,7 +1505,7 @@ AssemblyError EvalAssembly( const ref_data& ref, const HyperBasevector& hb,
         HyperBasevector hb_loc;
         UnrollAssemblyLoops(hb_loc,hb,new_to_old);
         vec<int> inv_loc;
-        FixInversion(hb_loc,inv_loc);
+        EAFixInversion(hb_loc,inv_loc);
         res = EvalAssemblyCore( ref, hb_loc, inv_loc, out, iSWAk, verbosity, pN50Calc );
 
         for(auto& entry: res){
@@ -1578,7 +1578,7 @@ AssemblyError EvalAssembly( const ref_data& ref, const HyperBasevector& hb,
         engine.getNewEdges(edges,break_tgt);
         HyperBasevector hb_loc(hb.K(),engine.getNewGraph(),edges);
         vec<int> inv_loc;
-        FixInversion(hb_loc,inv_loc);
+        EAFixInversion(hb_loc,inv_loc);
         if ( verbosity >= 1 ) out << Date() << ":calling core" << std::endl;
         res = EvalAssemblyCore( ref, hb_loc, inv_loc, out, iSWAk, verbosity, pN50Calc );
         if ( verbosity >= 1 ) out << Date() << ":done core" << std::endl;

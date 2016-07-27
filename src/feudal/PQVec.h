@@ -202,7 +202,7 @@ void swap( PQVecA<Alloc>& v1, PQVecA<Alloc>& v2 ) { v1.swap(v2); }
 
 using PQVec = PQVecA<>;
 using VecPQVec = MasterVec<PQVec>;
-extern template class OuterVec<PQVec>;
+//extern template class OuterVec<PQVec>;
 
 template <class Itr> // Itr is a random-access iterator over const qvec's
 void convertCopy( Itr beg, Itr end, VecPQVec::iterator oItr )

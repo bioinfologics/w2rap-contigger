@@ -14,7 +14,7 @@
 #include "pairwise_aligners/SmithWatFree.h"
 #include "paths/BigMapTools.h"
 #include "paths/LongReadTools.h"
-#include "paths/LongReadPatchOptimizer.h"
+//#include "paths/LongReadPatchOptimizer.h"
 #include "paths/long/ultra/ConsensusScoreModel.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/ultra/MultipleAligner.h"

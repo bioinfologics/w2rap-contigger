@@ -972,8 +972,8 @@ private:
 
 typedef SerfVec<UnipathEvidence> UnipathEvidenceVec;
 typedef MasterVec<UnipathEvidenceVec> VecUnipathEvidenceVec;
-extern template class SmallVec< UnipathEvidence, MempoolAllocator<UnipathEvidence> >;
-extern template class OuterVec<UnipathEvidenceVec>;
+//extern template class SmallVec< UnipathEvidence, MempoolAllocator<UnipathEvidence> >;
+//extern template class OuterVec<UnipathEvidenceVec>;
 
 TRIVIALLY_SERIALIZABLE(UnipathEvidence);
 

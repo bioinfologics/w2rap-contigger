@@ -684,7 +684,7 @@ private:
     // container
     container   mContainer;
 };
-extern template class FeudalString< char >;
+//extern template class FeudalString< char >;
 
 /*
  * Operators

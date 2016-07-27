@@ -23,7 +23,6 @@
 #include "kmers/KmerRecord.h"
 #include "paths/BigMapTools.h"
 #include "paths/HyperEfasta.h"
-#include "paths/long/CreateGenome.h"
 #include "paths/long/Friends.h"
 #include "paths/long/Heuristics.h"
 #include "paths/long/Logging.h"
@@ -32,6 +31,7 @@
 #include "paths/long/ultra/ConsensusScoreModel.h"
 #include "system/ParsedArgs.h"
 #include "system/System.h"
+#include "paths/long/CreateGenome.h"
 
 // MACROS.
 

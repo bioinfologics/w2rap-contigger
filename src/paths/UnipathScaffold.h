@@ -11,7 +11,7 @@
 
 #include "Basevector.h"
 #include "CoreTools.h"
-#include "Superb.h"
+//#include "Superb.h"
 #include "graph/Digraph.h"
 
 class linklet {
@@ -38,7 +38,7 @@ class linklet {
           return l1.dev < l2.dev;    }
 
 };
-extern template class digraphE<linklet>;
+//extern template class digraphE<linklet>;
 
 void UnipathScaffold(
 

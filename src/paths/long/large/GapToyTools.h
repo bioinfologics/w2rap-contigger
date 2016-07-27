@@ -21,7 +21,6 @@
 #include "paths/long/large/GapToyTools3.h"
 #include "paths/long/large/GapToyTools4.h"
 #include "paths/long/large/GapToyTools5.h"
-#include "paths/long/large/GapToyTools6.h"
 #include "paths/long/large/Lines.h"
 #include "system/SpinLockedData.h"
 #include <memory>
@@ -381,13 +380,14 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
 void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
      const vec<vec<vec<vec<int>>>>& linesx, const vec<int>& npairsx,
-     const vec<vec<covcount>>& covs, vec< vec< std::pair<int,int> > > hits, 
-     const String& final_dir, const String& work_dir );
+     const vec<vec<covcount>>& covs,
+     const String& out_dir, const String& out_prefix );
 
 String Chr( const int g );
 
 void PartnersToEnds( const HyperBasevector& hb, ReadPathVec& paths,
                         const vecbasevector& bases, const VecPQVec& quals );
+
 void PartnersToEndsOld( const HyperBasevector& hb, ReadPathVec& paths,
                         const vecbasevector& bases, const VecPQVec& quals );
 

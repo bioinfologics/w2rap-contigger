@@ -13,7 +13,7 @@
 
 #include "CoreTools.h"
 #include "Equiv.h"
-#include "ParallelVecUtilities.h"
+//#include "ParallelVecUtilities.h"
 #include "ParseSet.h"
 #include "VecUtilities.h"
 #include "paths/HyperBasevector.h"
@@ -265,7 +265,7 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
      {    vec< std::pair<int,int> > d = xs[i];
           if ( d.solo( ) && mult[ d[0] ] == 1 ) xdel[i] = True;    }
      EraseIf( xs, xdel );
-     PrintClusters( xs, mult, work_dir + "/clusters.txt.ini" );
+     //PrintClusters( xs, mult, work_dir + "/clusters.txt.ini" );
 
      // Look for cluster merges based on sequence overlaps.
 
@@ -378,5 +378,6 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
           
      // Print clusters.
 
-     BinaryWriter::writeFile( work_dir + "/clusters.bin", xs );
-     PrintClusters( xs, mult, work_dir + "/clusters.txt" );    }
+     //BinaryWriter::writeFile( work_dir + "/clusters.bin", xs );
+     //PrintClusters( xs, mult, work_dir + "/clusters.txt" );
+     }

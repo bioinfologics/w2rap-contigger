@@ -23,8 +23,6 @@
 #include "paths/LongReadTools.h"
 #include "paths/long/CreateGenome.h"
 #include "paths/long/LongProtoTools.h"
-#include "paths/long/fosmid/FosmidPool.h"
-#include "paths/long/fosmid/Fosmids.h"
 #include "random/Random.h"
 #include "system/Worklist.h"
 #include "paths/long/RefTrace.h"
@@ -125,6 +123,7 @@ Bool TestAmb( const String& region, const String& genome_head, const int id,
                return True;    }    }
      return False;    }
 
+/*
 // note that the SAMPLE="human" IN_GENOME="" path of
 // this function is duplicated and modded to
 // CreateGenome_Discovar, as a quick fix of memory/speed-related issue.
@@ -149,7 +148,7 @@ void CreateGenome( const String& IN_GENOME, const String& SAMPLE, const String& 
                     p.push_back( G[i] );
                const int K = 80; // no justification for this
                GH.push_back( HyperBasevector( K, p ) );    }
-          /* Note not setting GH. */
+          // Note not setting GH.
           if ( IN_GENOME.Contains( ".hbv", -1 ) ) 
           {    HyperBasevector hb;
                BinaryReader::readFile( IN_GENOME, &hb );
@@ -563,7 +562,7 @@ void CreateGenome_Discovar( ref_data& ref, const DiscovarTools::DiscovarRefTrace
                const int K = 100;
                GH[g] = HyperBasevector( K, x );    }    }    }
 
-
+*/
 namespace
 {
 

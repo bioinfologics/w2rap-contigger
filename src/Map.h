@@ -17,7 +17,7 @@ Tests for these methods are in testing/MapTest.cc. Please add appropriate
 tests if you add more methods.
 */
 
-#include "feudal/TrackingAllocator.h"
+//#include "feudal/TrackingAllocator.h"
 #include "Vec.h"
 #include <map>
 #include <unordered_map>
@@ -26,10 +26,10 @@ tests if you add more methods.
 
 
 template <class K, class V, class C=std::less<K>>
-using StdMap = std::map<K,V,C,typename DefaultAllocator<std::pair<K const,V>>::type>;
+using StdMap = std::map<K,V,C>;
 
 template <class K, class V, class H=std::hash<K>, class P=std::equal_to<K>>
-using StdUnorderedMap = std::unordered_map<K,V,H,P,typename DefaultAllocator<std::pair<K const,V>>::type>;
+using StdUnorderedMap = std::unordered_map<K,V,H,P>;
 
 ///Return true if k is a key in map m
 template<class Key, class Value, typename Cmp> 

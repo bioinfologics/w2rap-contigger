@@ -32,7 +32,7 @@
 // MakeDepend: cflags OMP_FLAGS
 
 namespace {
-const int Infinity = 100000000;
+const int SWA_Infinity = 100000000;
 
 // Unmatched ends in source read are not penalized
 // Unmatched ends in target read are optionally penalized
@@ -56,11 +56,11 @@ unsigned int SmithWatAffineBandedCore( const basevector& S, const basevector& T,
      for (int i = 0; i < N; i++)
           t(i) = T[i];
 
-     const int Infinity = 100000000;
-     int best_score = Infinity;
-     RecArray<unsigned int> score_x(n+1, N+1, Infinity);
-     RecArray<unsigned int> score_y(n+1, N+1, Infinity);
-     RecArray<unsigned int> score_z(n+1, N+1, Infinity);
+     const int SWA_Infinity = 100000000;
+     int best_score = SWA_Infinity;
+     RecArray<unsigned int> score_x(n+1, N+1, SWA_Infinity);
+     RecArray<unsigned int> score_y(n+1, N+1, SWA_Infinity);
+     RecArray<unsigned int> score_z(n+1, N+1, SWA_Infinity);
 
      RecArray<unsigned char> x_from(n+1, N+1, 's');
      RecArray<unsigned char> y_from(n+1, N+1, 's');
@@ -69,8 +69,8 @@ unsigned int SmithWatAffineBandedCore( const basevector& S, const basevector& T,
      // y and z are for the gap extending in target and source, respectively
      // x is for base substitution
      score_x[0][0] = 0;
-     score_y[0][0] = Infinity;
-     score_z[0][0] = Infinity;
+     score_y[0][0] = SWA_Infinity;
+     score_z[0][0] = SWA_Infinity;
      for (int i = 1; i <= n; i++ ) {
          if ( 0 < i - offset - bandwidth || 0  > i - offset + bandwidth)
              continue;
@@ -96,15 +96,15 @@ unsigned int SmithWatAffineBandedCore( const basevector& S, const basevector& T,
 	       unsigned int x_z = score_z[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
 	       unsigned int y_x = score_x[i][j-1] + (penalize_right_gap || i != n ? gap_open_penalty : 0);
 	       unsigned int y_y = score_y[i][j-1] + (penalize_right_gap || i != n ? gap_extend_penalty : 0);
-	       unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
+	       unsigned int y_z = SWA_Infinity; //score_z[i][j-1] + gap_open_penalty;
 	       unsigned int z_x = score_x[i-1][j] + (j != N ? gap_open_penalty : 0);
-	       unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
+	       unsigned int z_y = SWA_Infinity; //score_y[i-1][j] + gap_open_penalty;
 	       unsigned int z_z = score_z[i-1][j] + (j != N ? gap_extend_penalty: 0);
 
 	       score_x[i][j] = Min( Min( x_x, x_y ), x_z );
 	       score_y[i][j] = Min( Min( y_x, y_y ), y_z );
 	       score_z[i][j] = Min( Min( z_x, z_y ), z_z );
-               if ((int)score_x[i][j] > Infinity) score_x[i][j] = Infinity;
+               if ((int)score_x[i][j] > SWA_Infinity) score_x[i][j] = SWA_Infinity;
 
 	       if ( x_x <= x_y )
 	       {    if ( x_x <= x_z ) x_from[i][j] = 'x';
@@ -149,7 +149,7 @@ unsigned int SmithWatAffineBandedCore( const basevector& S, const basevector& T,
          }
      }
      }
-     if (best_score == Infinity) return best_score;
+     if (best_score == SWA_Infinity) return best_score;
 
      //std::cout << "ii= " << ii << std::endl;
      //std::cout << "jj= " << jj << std::endl;
@@ -250,8 +250,8 @@ unsigned int SmithWatAffineBandedCoreFast( const basevector& S, const basevector
      for (int i = 0; i < N; i++)
           t(i) = T[i];
 
-     int best_score = Infinity;
-     typedef BandedArray<unsigned int, Infinity> ScoringArrayT;
+     int best_score = SWA_Infinity;
+     typedef BandedArray<unsigned int, SWA_Infinity> ScoringArrayT;
      ScoringArrayT score_x(n+1, N+1, offset, bandwidth);
      ScoringArrayT score_y(n+1, N+1, offset, bandwidth);
      ScoringArrayT score_z(n+1, N+1, offset, bandwidth);
@@ -264,8 +264,8 @@ unsigned int SmithWatAffineBandedCoreFast( const basevector& S, const basevector
      // y and z are for the gap extending in target and source, respectively
      // x is for base substitution
      //score_x[0][0] = 0;
-     //score_y[0][0] = Infinity;
-     //score_z[0][0] = Infinity;
+     //score_y[0][0] = SWA_Infinity;
+     //score_z[0][0] = SWA_Infinity;
      // valid only if (j >= i - offset - bandwidth && j <= i - offset + bandwidth)
      if ( 0 >= 0 - offset - bandwidth && 0 <= 0 - offset + bandwidth)
          score_x.Mutable(0,0) = 0;
@@ -298,18 +298,18 @@ unsigned int SmithWatAffineBandedCoreFast( const basevector& S, const basevector
 	       unsigned int x_z = score_z[i-1][j-1] + mismatch_score;
 	       unsigned int y_x = score_x[i][j-1] + (penalize_right_gap || i != n ? gap_open_penalty : 0);
 	       unsigned int y_y = score_y[i][j-1] + (penalize_right_gap || i != n ? gap_extend_penalty : 0);
-	       unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
+	       unsigned int y_z = SWA_Infinity; //score_z[i][j-1] + gap_open_penalty;
 	       unsigned int z_x = score_x[i-1][j] + (j != N ? gap_open_penalty : 0);
-	       unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
+	       unsigned int z_y = SWA_Infinity; //score_y[i-1][j] + gap_open_penalty;
 	       unsigned int z_z = score_z[i-1][j] + (j != N ? gap_extend_penalty: 0);
 
 	       score_x.Mutable(i,j) = Min( Min( x_x, x_y ), x_z );
 	       score_y.Mutable(i,j) = Min( Min( y_x, y_y ), y_z );
 	       score_z.Mutable(i,j) = Min( Min( z_x, z_y ), z_z );
-               if ((int)score_x[i][j] > Infinity) {
+               if ((int)score_x[i][j] > SWA_Infinity) {
                    std::cout << "Renormalized at " << " i= " << i << " j= " << j
                       << " score_x[i][j]= " << score_x[i][j] << std::endl;
-                   score_x.Mutable(i,j) = Infinity;
+                   score_x.Mutable(i,j) = SWA_Infinity;
                }
 	       if ( x_x <= x_y )
 	       {    if ( x_x <= x_z ) x_from.Mutable(i,j) = 'x';
@@ -354,7 +354,7 @@ unsigned int SmithWatAffineBandedCoreFast( const basevector& S, const basevector
          }
      }
      }
-     if (best_score == Infinity) return best_score;
+     if (best_score == SWA_Infinity) return best_score;
 
      DirArrayT *from;
      if ( score_x[ii][jj] <= score_y[ii][jj] )
@@ -456,7 +456,7 @@ unsigned int SmithWatAffine( const basevector& S, const basevector& T,
      for ( unsigned int i = 0; i < N; i++ )
           t(i) = T[i];
 
-     int best_score = Infinity;
+     int best_score = SWA_Infinity;
      vec< vec<unsigned int> > score_x;
      vec< vec<unsigned int> > score_y;
      vec< vec<unsigned int> > score_z;
@@ -483,24 +483,24 @@ unsigned int SmithWatAffine( const basevector& S, const basevector& T,
      }
 
      score_x[0][0] = 0;
-     score_y[0][0] = Infinity;
-     score_z[0][0] = Infinity;
+     score_y[0][0] = SWA_Infinity;
+     score_z[0][0] = SWA_Infinity;
      x_from[0][0] = 's';
      y_from[0][0] = 's';
      z_from[0][0] = 's';
 
      for ( unsigned int i = 1; i <= n; i++ )
-     {    score_x[i][0] = Infinity;
-	  score_y[i][0] = Infinity;
+     {    score_x[i][0] = SWA_Infinity;
+	  score_y[i][0] = SWA_Infinity;
           score_z[i][0] = gap_open_penalty + gap_extend_penalty * i;
 	  x_from[i][0] = 's';
 	  y_from[i][0] = 's';
 	  z_from[i][0] = 's';   }
 
      for ( unsigned int j = 1; j <= N; j++)
-       {  score_x[0][j] = Infinity;
+       {  score_x[0][j] = SWA_Infinity;
           score_y[0][j] = (penalize_left_gap ? gap_open_penalty + gap_extend_penalty * j : 0);
-	  score_z[0][j] = Infinity;
+	  score_z[0][j] = SWA_Infinity;
 	  x_from[0][j] = 's';
 	  y_from[0][j] = 's';
 	  z_from[0][j] = 's';   }
@@ -512,9 +512,9 @@ unsigned int SmithWatAffine( const basevector& S, const basevector& T,
 	       unsigned int x_z = score_z[i-1][j-1] + mismatch_penalty * ( s(i-1) != t(j-1) );
 	       unsigned int y_x = score_x[i][j-1] + (i != n || penalize_right_gap ? gap_open_penalty : 0);
 	       unsigned int y_y = score_y[i][j-1] + (i != n || penalize_right_gap ? gap_extend_penalty : 0);
-	       unsigned int y_z = Infinity; //score_z[i][j-1] + gap_open_penalty;
+	       unsigned int y_z = SWA_Infinity; //score_z[i][j-1] + gap_open_penalty;
 	       unsigned int z_x = score_x[i-1][j] + gap_open_penalty;
-	       unsigned int z_y = Infinity; //score_y[i-1][j] + gap_open_penalty;
+	       unsigned int z_y = SWA_Infinity; //score_y[i-1][j] + gap_open_penalty;
 	       unsigned int z_z = score_z[i-1][j] + gap_extend_penalty;
 
 	       score_x[i][j] = Min( Min( x_x, x_y ), x_z );
@@ -664,8 +664,8 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
     for (unsigned int i = 0; i < N; i++)
         t(i) = T[i];
 
-    const int Infinity = 100000000;
-    int best_score = Infinity;
+    const int SWA_Infinity = 100000000;
+    int best_score = SWA_Infinity;
 
     RecArray<int> score_x( n+1, N+1 );
     RecArray<int> score_y( n+1, N+1 );
@@ -676,15 +676,15 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
     RecArray<unsigned char> z_from( n+1, N+1 );
 
     score_x[0][0] = 0;
-    score_y[0][0] = Infinity;
-    score_z[0][0] = Infinity;
+    score_y[0][0] = SWA_Infinity;
+    score_z[0][0] = SWA_Infinity;
     x_from[0][0] = 's';
     y_from[0][0] = 's';
     z_from[0][0] = 's';
 
     for (unsigned int i = 1; i <= n; i++) {
-        score_x[i][0] = Infinity;
-        score_y[i][0] = Infinity;
+        score_x[i][0] = SWA_Infinity;
+        score_y[i][0] = SWA_Infinity;
         score_z[i][0] = gap_open_penalty + gap_extend_penalty * i;
         x_from[i][0] = 's';
         y_from[i][0] = 's';
@@ -693,10 +693,10 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
 
     // Zero penalty for unmatched bases on left side of T
     for (unsigned int j = 1; j <= N; j++) {
-        score_x[0][j] = Infinity;
+        score_x[0][j] = SWA_Infinity;
         score_y[0][j] = (penalize_left_gap ? gap_open_penalty +
                 gap_extend_penalty * j :0);
-        score_z[0][j] = Infinity;
+        score_z[0][j] = SWA_Infinity;
         x_from[0][j] = 's';
         y_from[0][j] = 's';
         z_from[0][j] = 's';
@@ -756,9 +756,9 @@ unsigned int SmithWatAffineParallel(const basevector & S, const basevector & T,
             unsigned int y_y = score_y[i][j-1] +
                 (penalize_right_gap || i != (int)n ? gap_extend_penalty : 0);
 
-            unsigned int y_z = Infinity;        //score_z[i][j-1] + gap_open_penalty;
+            unsigned int y_z = SWA_Infinity;        //score_z[i][j-1] + gap_open_penalty;
             unsigned int z_x = score_x[i - 1][j] + gap_open_penalty;
-            unsigned int z_y = Infinity;        //score_y[i-1][j] + gap_open_penalty;
+            unsigned int z_y = SWA_Infinity;        //score_y[i-1][j] + gap_open_penalty;
             unsigned int z_z = score_z[i - 1][j] + gap_extend_penalty;
 
             score_x[i][j] = Min(Min(x_x, x_y), x_z);
@@ -956,7 +956,7 @@ unsigned int SmithWatAffineBanded( const basevector& S, const basevector& T,
     int t_stop = Min(T.isize(), S.isize() - offset + bandwidth);
     if (t_start >= t_stop) {
         a = alignment();
-        return Infinity;
+        return SWA_Infinity;
     }
     basevector T2(T, t_start, t_stop - t_start);
     // new offset = s_pos - (t_pos - t_start) = offset + t_start
@@ -967,7 +967,7 @@ unsigned int SmithWatAffineBanded( const basevector& S, const basevector& T,
     if ( a.pos1() < 0 || a.pos2() < 0 || a.Pos1() > (int)S.size()
             || a.Pos2() > (int)T.size() ) {
         a = align();
-        score = Infinity;
+        score = SWA_Infinity;
     }
     return score;
 }
@@ -1921,8 +1921,8 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
     for (unsigned int i = 0; i < N; i++)
         t(i) = T[i];
 
-    const int Infinity = 100000000;
-    int best_score = Infinity;
+    const int SWA_Infinity = 100000000;
+    int best_score = SWA_Infinity;
 /*
     RecArray<int> score_x( n+1, N+1 );
     RecArray<int> score_y( n+1, N+1 );
@@ -1940,15 +1940,15 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
     RecArray<elem_t> matrix(n+1,N+1);
 
     matrix[0][0].score[0] = 0;
-    matrix[0][0].score[1] = Infinity;
-    matrix[0][0].score[2] = Infinity;
+    matrix[0][0].score[1] = SWA_Infinity;
+    matrix[0][0].score[2] = SWA_Infinity;
     matrix[0][0].from[0] = 's';
     matrix[0][0].from[1] = 's';
     matrix[0][0].from[2] = 's';
 
     for (unsigned int i = 1; i <= n; i++) {
-        matrix[i][0].score[0] = Infinity;
-        matrix[i][0].score[1] = Infinity;
+        matrix[i][0].score[0] = SWA_Infinity;
+        matrix[i][0].score[1] = SWA_Infinity;
         matrix[i][0].score[2] = gap_open_penalty + gap_extend_penalty * i;
         matrix[i][0].from[0] = 's';
         matrix[i][0].from[1] = 's';
@@ -1957,10 +1957,10 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
 
     // Zero penalty for unmatched bases on left side of T
     for (unsigned int j = 1; j <= N; j++) {
-        matrix[0][j].score[0] = Infinity;
+        matrix[0][j].score[0] = SWA_Infinity;
         matrix[0][j].score[1] = (penalize_left_gap ? gap_open_penalty +
                 gap_extend_penalty * j :0);
-        matrix[0][j].score[2] = Infinity;
+        matrix[0][j].score[2] = SWA_Infinity;
         matrix[0][j].from[0] = 's';
         matrix[0][j].from[1] = 's';
         matrix[0][j].from[2] = 's';
@@ -2022,9 +2022,9 @@ unsigned int SmithWatAffineParallel2(const basevector & S, const basevector & T,
             unsigned int y_y = matrix[i][j-1].score[1] +
                 (penalize_right_gap || i != (int)n ? gap_extend_penalty : 0);
 
-            unsigned int y_z = Infinity;        //score_z[i][j-1] + gap_open_penalty;
+            unsigned int y_z = SWA_Infinity;        //score_z[i][j-1] + gap_open_penalty;
             unsigned int z_x = matrix[i - 1][j].score[0] + gap_open_penalty;
-            unsigned int z_y = Infinity;        //score_y[i-1][j] + gap_open_penalty;
+            unsigned int z_y = SWA_Infinity;        //score_y[i-1][j] + gap_open_penalty;
             unsigned int z_z = matrix[i - 1][j].score[2] + gap_extend_penalty;
 
             matrix[i][j].score[0] = Min(Min(x_x, x_y), x_z);

@@ -726,8 +726,8 @@ class placement_mark {
 TRIVIALLY_SERIALIZABLE(placement_mark);
 typedef SerfVec<placement_mark> PlacementMarkVec;
 typedef MasterVec<PlacementMarkVec> VecPlacementMarkVec;
-extern template class SmallVec< placement_mark, MempoolAllocator<placement_mark> >;
-extern template class OuterVec<PlacementMarkVec>;
+//extern template class SmallVec< placement_mark, MempoolAllocator<placement_mark> >;
+//extern template class OuterVec<PlacementMarkVec>;
 
 /**
    Type concept: BasicAlign

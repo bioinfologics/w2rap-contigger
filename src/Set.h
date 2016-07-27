@@ -17,10 +17,10 @@
 #include <set>
 
 template <class T, class C=std::less<T>>
-using StdSet = std::set<T,C,typename DefaultAllocator<T>::type>;
+using StdSet = std::set<T,C>;
 
 template <class T, class C=std::less<T>>
-using StdMultiset = std::multiset<T,C,typename DefaultAllocator<T>::type>;
+using StdMultiset = std::multiset<T,C>;
 
 template<class T,class C,class A> bool Member( std::set<T,C,A>& the_set, const T& value )
 {    return the_set.find(value) != the_set.end( );    }

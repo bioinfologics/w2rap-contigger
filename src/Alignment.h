@@ -33,8 +33,8 @@
 #include "PackAlign.h"
 #include "Qualvector.h"
 #include "ShortVector.h"
-#include "math/Arith.h"
-#include "pairwise_aligners/Mutmer.h"
+//#include "math/Arith.h"
+//#include "pairwise_aligners/Mutmer.h"
 
 
 // Sante --- Mon Oct 15 09:06:24 EDT 2001
@@ -304,7 +304,7 @@ int CorrelatePositions( const alignment& a, int x1 );
 int ErrorsAt( const alignment& a, int x1, const basevector& rd1,
      const basevector& rd2 );
 
-Float DepthOfCoverage( const vec<int>& reads, int contig_length,
+float DepthOfCoverage( const vec<int>& reads, int contig_length,
      const vec<int>& read_lengths, const vec<alignment_plus>& all_aligns,
      const vec<int>& all_aligns_index );
 

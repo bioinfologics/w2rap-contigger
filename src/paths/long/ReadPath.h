@@ -69,7 +69,9 @@ public:
     void readBinary( BinaryReader& reader )
     {  reader.read(&mOffset); reader.read(&mLastSkip);
       static_cast<IntVec*>(this)->readBinary(reader); }
-
+    bool same_read(ReadPath const& rp){
+        return (mOffset==rp.getOffset() and *this==rp);
+    }
     static size_t externalSizeof() { return 0ul; }
 
     friend std::ostream& operator<<( std::ostream& os, ReadPath const& rp )
@@ -89,6 +91,6 @@ private:
 SELF_SERIALIZABLE(ReadPath);
 
 typedef MasterVec<ReadPath> ReadPathVec;
-extern template class OuterVec<ReadPath>;
+//extern template class OuterVec<ReadPath>;
 
 #endif /* READPATH_H_ */

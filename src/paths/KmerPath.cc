@@ -10,7 +10,7 @@
 #include "graph/Digraph.h"
 #include "math/Functions.h"
 #include "paths/KmerPath.h"
-#include "system/MemTracker.h"
+//#include "system/MemTracker.h"
 #include <algorithm>
 
 // Build a KmerPath from the String of its <<.
@@ -1027,56 +1027,8 @@ MarkReadsWithNovelKmers2( const vecKmerPath & reads, const vec<TAG>& reference, 
   }
 }
 
-// Template instantiations.
-template void MarkReadsWithNovelKmers2( const vecKmerPath & reads, const vec<tagged_rpint>& segs, const digraph&, vec<Bool>& answer );
 
 
-Bool SubContig( const KmerPath& p, const vecKmerPath& paths, 
-     const vecKmerPath& paths_rc, const vec<tagged_rpint>& xpathsdb,
-     const HashSimple* pPathsToIgnore, read_id_t pathToIgnore )
-{    longlong seg = 0, pos_on_seg = 0, last_seg = p.NSegments( ) - 1;
-     Bool at_end = False;
-     while(1)
-     {    kmer_id_t x = p.Segment(seg).Start( ) + pos_on_seg;
-          vec<longlong> instances;
-	  Contains( xpathsdb, x, instances );
-	  instances.ReverseMe(); // this creates the effect of a KmerOccurrenceIterBwd
-          Bool succeed = False;
-	  for ( size_t i = 0; i < instances.size(); i++ ) {
-	       const tagged_rpint & t = xpathsdb[ instances[i] ];
-               longlong id2 = t.PathId( );
-               read_id_t readId2 = t.ReadId();
-               if ( pathToIgnore == readId2  ||
-		    pPathsToIgnore &&
-                    pPathsToIgnore->Has( readId2 ) )
-                 continue;
-
-               const KmerPath& q = ( id2 >= 0 ? paths[id2] : paths_rc[-id2-1] );
-               longlong qseg = t.PathPos( );
-               if ( !ProperOverlapExt( p, q, seg, qseg ) ) continue;
-               int extension = q.Segment(qseg).Stop( ) - x;
-               for ( int u = qseg + 1; u < q.NSegments( ); u++ )
-                    extension += q.Segment(u).Length( );
-               if ( extension > 0 ) succeed = True;
-               while( extension > 0 )
-               {    int last_pos = p.Segment(seg).Length( ) - 1;
-                    if ( pos_on_seg < last_pos )
-                    {    if ( last_pos - pos_on_seg <= extension )
-                         {    extension -= ( last_pos - pos_on_seg );
-                              pos_on_seg = last_pos;    }
-                         else
-                         {    pos_on_seg += extension;
-                              extension = 0;    }    }
-                    else
-                    {    if ( seg == last_seg ) 
-                         {    at_end = True;
-                              break;    }
-                         ++seg;
-                         pos_on_seg = 0;
-                         --extension;    }    }
-               if (succeed) break;    }
-          if ( !succeed || at_end ) break;    }
-     return at_end;    }
 
 longlong KmerPath::GetKmer( int n ) const
 {    int seg = 0;

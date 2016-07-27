@@ -458,7 +458,7 @@ template<class V> class digraphV : public digraph {
      vec<V> verts_;
 
 };
-extern template class digraphV< vec<int> >;
+//extern template class digraphV< vec<int> >;
 
 template <class V>
 struct Serializability< digraphV<V> >
@@ -1214,8 +1214,8 @@ template <> void digraphE<int>::DOT_vel( std::ostream& out,
 const vec<String> & vertex_labels );
 template <> void digraphE<int>::DOT0( std::ostream& out );
 template <> void digraphE<String>::DOT0( std::ostream& out );
-extern template class digraphE<int>;
-extern template class digraphE<VertexPair>;
+//extern template class digraphE<int>;
+//extern template class digraphE<VertexPair>;
 
 template <class F> struct Serializability< digraphE<F> >
 { typedef SelfSerializable type; };
@@ -1466,7 +1466,7 @@ template<class V, class E> class digraphVE : public digraphE<E> {
      vec<V> verts_;
 
 };
-extern template class digraphVE<int,int>;
+//extern template class digraphVE<int,int>;
 
 template <class V, class E> struct Serializability< digraphVE<V,E> >
 { typedef SelfSerializable type; };

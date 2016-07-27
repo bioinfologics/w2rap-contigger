@@ -11,7 +11,7 @@
 
 #include "Basevector.h"
 #include "CoreTools.h"
-#include "ParallelVecUtilities.h"
+//#include "ParallelVecUtilities.h"
 #include "Qualvector.h"
 #include "kmers/BigKPather.h"
 #include "paths/HyperBasevector.h"

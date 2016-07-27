@@ -171,7 +171,7 @@ void PrintKmerBaseVec(const BaseVec & bv, const QualNibbleVec & qv,
 // ---------------------------------------------
 // example:
 // {
-//   Validator min10(10);
+//   KPValidator min10(10);
 //   
 //   if (min10(x)) {  // same as if (x < 10)
 //     ...
@@ -181,7 +181,7 @@ void PrintKmerBaseVec(const BaseVec & bv, const QualNibbleVec & qv,
 // - useful as a parameter to a function
 // - expand upon need to include other criteria, e.g. max
 //
-class Validator
+class KPValidator
 {
 private:
   bool   _all;   // all are valid 
@@ -189,7 +189,7 @@ private:
   size_t _min;   // only values greater or equal than _min are valid
 
 public: 
-  Validator(const size_t & min = 0) 
+  KPValidator(const size_t & min = 0) 
     : _all(false), _none(false), _min(min)
   {}
 
@@ -241,7 +241,7 @@ class KmerParcelsStore
 {
 private:
   size_t    _K;
-  Validator _kmer_validator;
+  KPValidator _kmer_validator;
 
 
 public:
@@ -278,7 +278,7 @@ public:
   vec<size_t> GetParcelsIDsSizeSorted() const;
   size_t      GetTotalNumKmerBatches() const;
   
-  Validator & KmerValidator() { return _kmer_validator; }
+  KPValidator & KmerValidator() { return _kmer_validator; }
   bool KmerValidator(const size_t kf) { return _kmer_validator(kf); }
 
 };  // KmerParcels    Store

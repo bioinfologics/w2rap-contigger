@@ -95,8 +95,8 @@ class ImplicitOffset {
 TRIVIALLY_SERIALIZABLE(ImplicitOffset);
 typedef SerfVec<ImplicitOffset> ImplicitOffsetVec;
 typedef MasterVec<ImplicitOffsetVec> VecImplicitOffsetVec;
-extern template class SmallVec< ImplicitOffset, MempoolAllocator<ImplicitOffset> >;
-extern template class OuterVec<ImplicitOffsetVec>;
+//extern template class SmallVec< ImplicitOffset, MempoolAllocator<ImplicitOffset> >;
+//extern template class OuterVec<ImplicitOffsetVec>;
 
 class MutableOffsetTracker {
  public:

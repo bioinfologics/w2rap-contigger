@@ -30,7 +30,7 @@ class HyperBasevectorX;  // forward declaration
 
 class HyperBasevector;
 
-extern template class digraphE<basevector>;
+//extern template class digraphE<basevector>;
 class HyperBasevector : public digraphE<basevector> {
 
      public:

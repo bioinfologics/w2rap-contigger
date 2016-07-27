@@ -17,7 +17,7 @@
 #define __CHARSTRING_H__
 
 #include "feudal/FeudalString.h"
-#include "math/Calculator.h"
+//#include "math/Calculator.h"
 #include <iomanip> /* for setprecision */
 #include <sstream>
 
@@ -98,10 +98,6 @@ unsigned int UnBaseAlpha(const String& s);
 // BaseAlNum: similar, encodes using A,...,Z,0,...,9.
 
 String BaseAlNum(unsigned int n);
-
-// Evaluate a mathematical expression
-inline String Evaluate(const String& expr, const bool /* verbose */ = 0)
-{ return ToString(evaluate(expr.c_str())); }
 
 inline String operator+ (const std::string& lhs, const String& rhs)
 { return lhs.c_str() + rhs; }

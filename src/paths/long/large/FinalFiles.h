@@ -20,7 +20,7 @@
 void FinalFiles(
      const HyperBasevector& hb, const vec<int>& inv, const ReadPathVec& paths,
      const vec<String>& subsam_names, const vec<int64_t>& subsam_starts,
-     const String& work_dir,
+     const String& work_dir,  const String& prefix,
      const int MAX_CELL_PATHS, const int MAX_DEPTH,
      const vecbasevector& G);
 

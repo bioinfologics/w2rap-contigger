@@ -11,7 +11,7 @@
 #ifndef FASTAFILESET_H
 #define FASTAFILESET_H
 
-#include "system/MemTracker.h"
+//#include "system/MemTracker.h"
 #include "dvString.h"
 #include "Vec.h"
 #include "VecString.h"

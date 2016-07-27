@@ -14,6 +14,6 @@
 #include "feudal/MasterVec.h"
 
 typedef MasterVec<String> vecString;
-extern template class OuterVec<String>;
+//extern template class OuterVec<String>;
 
 #endif

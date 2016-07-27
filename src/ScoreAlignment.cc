@@ -9,7 +9,7 @@
 #include <math.h>
 
 #include "Alignment.h"
-#include "math/Arith.h"
+//#include "math/Arith.h"
 #include "Basevector.h"
 #include "math/Functions.h"
 #include "PrintAlignment.h"
@@ -43,12 +43,12 @@ struct rc_coord_xform
 
 // A score of 255 is considered perfect.
 
-Float Prob( unsigned char q )
+float Prob( unsigned char q )
 {    static Bool first_pass(True);
-     static Float prob[256];
+     static float prob[256];
      if (first_pass)
      {    for ( int i = 0; i < 256; i++ )
-               prob[i] = Pow( 10.0, Float(i) / Float(-10.0) );
+               prob[i] = pow( 10.0, float(i) / float(-10.0) );
           prob[255] = 0.0;
           first_pass = False;    }
      return prob[q];    }
@@ -61,7 +61,7 @@ Float Prob( unsigned char q )
 // probabilities.
 
 template< class rd2_transform >
-Float ScoreMatch( unsigned int p1, unsigned int p2,
+float ScoreMatch( unsigned int p1, unsigned int p2,
 		  const basevector& rd1, const qualvector& scores1, 
 		  const basevector& rd2, const qualvector& scores2,
 		  const rd2_transform& trans )
@@ -69,7 +69,7 @@ Float ScoreMatch( unsigned int p1, unsigned int p2,
   if ( rd1[p1] == trans.base(rd2,p2) ) 
     return 0;
 
-  Float pr1, pr2;
+  float pr1, pr2;
   pr1 = Prob(scores1[p1]);
   if ( p1 > 0 )
     pr1 = Max( pr1, Prob(scores1[p1-1]) );
@@ -82,7 +82,7 @@ Float ScoreMatch( unsigned int p1, unsigned int p2,
   if ( p2 < (scores2.size() - 1) )
     pr2 = Max( pr2, Prob(trans.qual(scores2,p2+1) ) );
   
-  return Float(1) / (pr1+pr2);    
+  return float(1) / (pr1+pr2);    
 }
 
 // A gap is scored as follows: First, the probabilities that the bases
@@ -108,7 +108,7 @@ Float ScoreMatch( unsigned int p1, unsigned int p2,
 // even though the first alignment could be considered better.
 
 template< class rd1_transform, class rd2_transform >
-Float ScoreGapOnFirstRead( int p1, int p2, int gap,
+float ScoreGapOnFirstRead( int p1, int p2, int gap,
 			   const basevector& rd1, const qualvector& scores1, 
 			   const basevector& rd2, const qualvector& scores2,
 			   const rd1_transform& rd1_trans, 
@@ -117,12 +117,12 @@ Float ScoreGapOnFirstRead( int p1, int p2, int gap,
   if ( gap == 0 ) 
     return 0;
   
-  Float pr1 = Prob( rd1_trans.qual( scores1, p1 ) );
+  float pr1 = Prob( rd1_trans.qual( scores1, p1 ) );
 
   if ( p1 > 0 )
     pr1 += Prob( rd1_trans.qual( scores1, p1-1 ) );
 
-  Float pr2 = 0;
+  float pr2 = 0;
 
   int gap_begin = Max( p2 - 1, 0 );
   int gap_end = Min( p2 + gap + 1, (int) rd2.size() );
@@ -136,16 +136,16 @@ Float ScoreGapOnFirstRead( int p1, int p2, int gap,
   // between two bases of actual quality 255, i.e. something
   // fantastically small.
 
-  Float sum = pr1+pr2;
+  float sum = pr1+pr2;
 
   if ( sum == 0.0 )
-      sum = Pow( 10.0, (255.0 + 255.0) / -10.0 );
+      sum = pow( 10.0, (255.0 + 255.0) / -10.0 );
 
-  return Float(2) * Float(gap) * Float(1) / ( sum );
+  return float(2) * float(gap) * float(1) / ( sum );
 }
 
 template< class rd1_transform, class rd2_transform >
-Float ScoreGapOnSecondRead( int p1, int p2, int gap,
+float ScoreGapOnSecondRead( int p1, int p2, int gap,
 			    const basevector& rd1, const qualvector& scores1, 
 			    const basevector& rd2, const qualvector& scores2,
 			    const rd1_transform& rd1_trans, 
@@ -162,7 +162,7 @@ Float ScoreGapOnSecondRead( int p1, int p2, int gap,
 // sequences or for the first sequence, score the alignment.
 
 template< class rd2_transform >
-Float ScoreAlignment( const align& a, 
+float ScoreAlignment( const align& a, 
 		      const basevector& rd1, const qualvector& scores1, 
 		      const basevector& rd2, const qualvector& scores2,
 		      const rd2_transform& trans, int start1, int stop1,
@@ -178,7 +178,7 @@ Float ScoreAlignment( const align& a,
      const avector<int>& lengths = a.Lengths( );
      int nblocks = a.Nblocks( );
 
-     Float score = 0; // bigger is worse
+     float score = 0; // bigger is worse
 
      int p1 = pos1, p2 = pos2, total_len = 0;
 
@@ -211,7 +211,7 @@ Float ScoreAlignment( const align& a,
 
           for ( int i = 0; i < lengths(j); i++ )
           {    if (p1+i >= start1 && p1+i < stop1 && p2+i >= start2 && p2+i < stop2)
-               {      Float match_score 
+               {      float match_score 
                          = ScoreMatch( p1+i, p2+i, rd1, scores1, rd2, scores2,
 				       trans );
                       score += match_score;    }    }
@@ -225,14 +225,14 @@ Float ScoreAlignment( const align& a,
      // reproducibility problems.  I'm not sure how many of the intermediate
      // steps are actually needed.
 
-     static Float a1, a1b, a2, answer;
-     a1 = Pow( Float(total_len) + Float(0.0000001), Float(1.5) );
-     a1b = Float(1) + score;
-     a2 = Float(1000) * a1b;
+     static float a1, a1b, a2, answer;
+     a1 = pow( float(total_len) + float(0.0000001), float(1.5) );
+     a1b = float(1) + score;
+     a2 = float(1000) * a1b;
      answer = a2/a1;
      return answer;    }
 
-Float ScoreAlignment( const align& a, 
+float ScoreAlignment( const align& a, 
 		      const basevector& rd1, const qualvector& scores1, 
 		      const basevector& rd2, const qualvector& scores2,
                       int start1, int stop1, int start2, int stop2,
@@ -242,7 +242,7 @@ Float ScoreAlignment( const align& a,
                          start1, stop1, start2, stop2, ignore_gaps );
 }
 			 
-Float ScoreAlignment( Bool rd2_is_rc, const align& a, 
+float ScoreAlignment( Bool rd2_is_rc, const align& a, 
 		      const basevector& rd1, const qualvector& scores1, 
 		      const basevector& rd2, const qualvector& scores2,
                       int start1, int stop1, int start2, int stop2,
@@ -279,7 +279,7 @@ int ScoreAlignmentPoly( const align& a,
 
      int p1 = pos1, p2 = pos2, total_qual = 0;
 
-     static vec<Float> mismatches;
+     static vec<float> mismatches;
      mismatches.clear( );
      for ( int j = 0; j < nblocks; j++ )
      {    
@@ -288,9 +288,9 @@ int ScoreAlignmentPoly( const align& a,
 
           for ( int i = 0; i < lengths(j); i++ )
           {    if (p1+i >= start1 && p1+i < stop1 && p2+i >= start2 && p2+i < stop2)
-               {    Float match_score = 
+               {    float match_score = 
                          ScoreMatch( p1+i, p2+i, rd1, scores1, rd2, scores2, trans );
-                    if ( match_score > Float(0.0) ) mismatches.push_back(match_score);    }
+                    if ( match_score > float(0.0) ) mismatches.push_back(match_score);    }
                if ( scores2.size( ) == 0 ) total_qual += scores1[p1+i];
                else total_qual += ( scores1[p1+i] + scores2[p2+i] ) / 2;    }
 
@@ -299,13 +299,13 @@ int ScoreAlignmentPoly( const align& a,
 
      sort( mismatches.begin( ), mismatches.end( ) );
 
-     Float length_pow 
-          = Pow( Float(total_qual)/Float(40) + Float(0.0000001), Float(1.5) );
-     Float score = 0.0;
+     float length_pow 
+          = pow( float(total_qual)/float(40) + float(0.0000001), float(1.5) );
+     float score = 0.0;
      int i;
      for ( i = 0; i < (int) mismatches.size( ); i++ )
      {    score += mismatches[i];
-          if ( Float(1000) * Float(Float(1)+score)/length_pow > Float(50) ) 
+          if ( float(1000) * float(float(1)+score)/length_pow > float(50) ) 
                break;    }
      return (int) mismatches.size( ) - i;    }
 
@@ -369,10 +369,10 @@ void Regap( align& a,
 	   if ( gaps(j) == 1 )
 	   {    // Try to find a better place to the left for the gap.
 	     int shift = 0, best_shift = 0;
-	     Float score = ScoreGapOnFirstRead( p1, p2, 1, 
+	     float score = ScoreGapOnFirstRead( p1, p2, 1, 
 						rd1, scores1, rd2, scores2, 
 						null_coord_xform(), trans );
-	     Float best_score = score;
+	     float best_score = score;
 	     while( --shift >= -lengths(j-1) )
 	     {    
 	       int o = rd1[p1+shift] == trans.base( rd2, p2+shift );
@@ -392,7 +392,7 @@ void Regap( align& a,
 		 score += ScoreMatch( p1+shift, p2+shift+1,
 				      rd1, scores1, rd2, scores2,
 				      trans );
-	       if ( score < best_score - Float(0.01) )
+	       if ( score < best_score - float(0.01) )
 	       {
 		 best_score = score;
 		 best_shift = shift;   
@@ -424,7 +424,7 @@ void Regap( align& a,
 		 score += ScoreMatch( p1+shift-1, p2+shift-1,
 				      rd1, scores1, rd2, scores2,
 				      trans );
-	       if ( score < best_score - Float(0.01) )
+	       if ( score < best_score - float(0.01) )
 	       {
 		 best_score = score;
 		 best_shift = shift;
@@ -450,10 +450,10 @@ void Regap( align& a,
 	   if ( gaps(j) == -1 )
 	   {    // Try to find a better place to the left for the gap.
 	     int shift = 0, best_shift = 0;
-	     Float score = ScoreGapOnSecondRead( p1, p2, 1, 
+	     float score = ScoreGapOnSecondRead( p1, p2, 1, 
 						 rd1, scores1, rd2, scores2,
 						 null_coord_xform(), trans );
-	     Float best_score = score;
+	     float best_score = score;
 	     while( --shift >= -lengths(j-1) )
 	     {    
 	       int o = rd2[p2+shift] == trans.base( rd1, p1+shift );
@@ -473,7 +473,7 @@ void Regap( align& a,
 		 score += ScoreMatch( p1+shift+1, p2+shift,
 				      rd1, scores1, rd2, scores2,
 				      trans );
-	       if ( score < best_score - Float(0.01) )
+	       if ( score < best_score - float(0.01) )
 	       {
 		 best_score = score;
 		 best_shift = shift;  
@@ -505,7 +505,7 @@ void Regap( align& a,
 		 score += ScoreMatch( p1+shift-1, p2+shift-1,
 				      rd1, scores1, rd2, scores2,
 				      trans );
-	       if ( score < best_score - Float(0.01) )
+	       if ( score < best_score - float(0.01) )
 	       {
 		 best_score = score;
 		 best_shift = shift;    
