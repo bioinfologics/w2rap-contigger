@@ -134,7 +134,6 @@ add_library(base_libs OBJECT
         src/paths/long/OverlapReads.cc
         src/paths/long/PreCorrectAlt1.cc
         src/paths/long/PreCorrectOldNew.cc
-        src/paths/long/ReadPath.cc
         src/paths/long/ReadPathTools.cc
         src/paths/long/ReadStack.cc
         src/paths/long/ultra/ConsensusScoreModel.cc
