@@ -2,25 +2,33 @@ cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "-fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -lz -DNDEBUG")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG")
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 
-if (DEFINED MALLOC_LIBRARY)
+set(MALLOC_LIBRARY "" CACHE PATH "Malloc library path")
+
+if (MALLOC_LIBRARY)
     ## MALLOC_LIBRARY, path to libtbbmalloc.so
     get_filename_component(LIBSO_PATH ${MALLOC_LIBRARY} DIRECTORY)
     get_filename_component(LIBSO_NAME ${MALLOC_LIBRARY} NAME)
-
     ## Link directories
     link_directories(${LIBSO_PATH})
 endif()
 
-if (DEFINED ZLIB_PATH)
-  include_directories("${ZLIB_PATH}/include")
-  link_directories("${ZLIB_PATH}/lib")
+#if (DEFINED ZLIB_PATH)
+#  include_directories("${ZLIB_PATH}/include")
+#  link_directories("${ZLIB_PATH}/lib")
+#else()
+#    set(ZLIB_PATH "/usr/lib" CACHE FILEPATH "ZLIB Library path")
+#endif()
+
+find_package(ZLIB REQUIRED)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
 endif()
 
 ## Include directories
@@ -251,13 +259,19 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
         $<TARGET_OBJECTS:base2_libs>
         )
 
-if (DEFINED MALLOC_LIBRARY)
-    ## Link libraries
-    target_link_libraries(w2rap-contigger ${LIBSO_NAME})
+##Zlib link
+if (ZLIB_FOUND)
+  set(ZLIB libz.so)
+  target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
 endif()
 
-##Zlib link
-if (DEFINED ZLIB_PATH)
-  set(ZLIB libz.so)
-  target_link_libraries(w2rap-contigger ${ZLIB})
+#Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc
+if (DEFINED MALLOC_LIBRARY)
+    ## Link libraries
+    if (LIBSO_NAME MATCHES ".*tcmalloc*")
+        target_link_libraries(w2rap-contigger ${LIBSO_NAME} profiler)
+    else ()
+        target_link_libraries(w2rap-contigger ${LIBSO_NAME})
+    endif()
 endif()
+
