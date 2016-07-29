@@ -9,6 +9,7 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
+#include <paths/PathFinder.h>
 #include "CoreTools.h"
 #include "Qualvector.h"
 #include "paths/HyperBasevector.h"
@@ -159,7 +160,17 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           std::cout << Date() << ": there were " << pa.getRemovedReadPaths() <<
                     " read paths removed during separation." << std::endl;
           Validate( hb, inv, paths );    }
-
+     {
+          std::cout << Date() << ": making paths index for PathFinder" << std::endl;
+          VecULongVec invPaths;
+          invert( paths, invPaths, hb.EdgeObjectCount( ) );
+          std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
+          PathFinder(hb,inv,paths,invPaths).untangle_single_choices();
+          std::cout<<"refreshing all structures as precaution"<<std::endl;
+          inv.clear();
+          hb.Involution(inv);
+          std::cout<<"all structures refreshed"<<std::endl;
+     }
      // Improve paths.
 
      if (IMPROVE_PATHS) 

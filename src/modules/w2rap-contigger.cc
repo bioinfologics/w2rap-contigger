@@ -443,8 +443,14 @@ int main(const int argc, const char * argv[]) {
         //GFADump(out_dir +"/"+ out_prefix + "_prePF", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_single_choices();
+        //std::cout<<"refreshing all structures as precaution"<<std::endl;
+        //inv.clear();
+        //hbvr.Involution(inv);
+        //paths_inv.clear();
+        //invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
+        //std::cout<<"all structures refreshed"<<std::endl;
         //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_pins();
-        PathFinder(hbvr,inv,pathsr,paths_inv).untangle_complex_in_out_choices();
+        //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_complex_in_out_choices();
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);

@@ -371,26 +371,32 @@ void PathFinder::untangle_single_choices() {
     const int MIN_START_SEQ_SIZE=1000;
     const int MAX_NEXT_SEQ_SIZE=1000;
     uint64_t uloop=0,ursize=0;
-    std::cout<<"Starting path finding"<<std::endl;
+    std::cout<<"Starting loop finding"<<std::endl;
     init_prev_next_vectors();
     std::cout<<"Prev and Next vectors initialised"<<std::endl;
     //score all possible transitions, discards all decidible and
 
         // is there any score>0 transition that is not incompatible with any other transitions?
-
+    std::vector<std::vector<uint64_t>> new_paths; //these are solved paths, they will be materialised later
     for ( int e = 0; e < mHBV.EdgeObjectCount(); ++e ) {
         if (e<mInv[e]) {
             auto urs=is_unrollable_loop(e,1000);
-            if (urs>0) {
-                ++uloop;
-                ursize+=urs;
+            if (urs.size()>0) {
+                new_paths.push_back(urs[0]);
             }
         }
 
     }
-    std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
+    //std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
 
-    std::cout<<"Path finding finished"<<std::endl;
+    std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
+
+    for (auto p:new_paths){
+        separate_path(p);
+    }
+    std::cout<<"Loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
+    init_prev_next_vectors();
+    std::cout<<"Prev and Next vectors initialised"<<std::endl;
 }
 /*
 void PathFinder::untangle_complex_in_out_choices() {
@@ -521,7 +527,7 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
     return frontiers;
 }
 
-uint64_t PathFinder::is_unrollable_loop(uint64_t loop_e, uint64_t min_size_sizes){
+std::vector<std::vector<uint64_t>> PathFinder::is_unrollable_loop(uint64_t loop_e, uint64_t min_size_sizes){
     //Checks if loop can be unrolled
     //Input: looping edge (i.e. prev_e--->R---->loop_e---->R---->next_e)
     uint64_t prev_e, repeat_e, next_e;
@@ -530,22 +536,22 @@ uint64_t PathFinder::is_unrollable_loop(uint64_t loop_e, uint64_t min_size_sizes
     //1) only one neighbour on each direction, and the same one (repeat_e).
     if (prev_edges[loop_e].size()!=1 or
         next_edges[loop_e].size()!=1 or
-        prev_edges[loop_e][0]!=next_edges[loop_e][0]) return 0;
+        prev_edges[loop_e][0]!=next_edges[loop_e][0]) return {};
     repeat_e=prev_edges[loop_e][0];
 
 
     //2) the repeat edge has only one other neighbour on each direction, and it is a different one;
     if (prev_edges[repeat_e].size()!=2 or
-        next_edges[repeat_e].size()!=2) return 0;
+        next_edges[repeat_e].size()!=2) return {};
 
     prev_e=(prev_edges[repeat_e][0]==loop_e ? prev_edges[repeat_e][1]:prev_edges[repeat_e][0]);
 
     next_e=(next_edges[repeat_e][0]==loop_e ? next_edges[repeat_e][1]:next_edges[repeat_e][0]);
 
-    if (prev_e==next_e or prev_e==mInv[next_e]) return 0;
+    if (prev_e==next_e or prev_e==mInv[next_e]) return {};
 
     //3) size constraints: prev_e and next_e must be at least 1Kbp
-    if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return 0;
+    if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
 
 
     //std::cout<<" LOOP: "<< edge_pstr(prev_e)<<" ---> "<<edge_pstr(repeat_e)<<" -> "<<edge_pstr(loop_e)<<" -> "<<edge_pstr(repeat_e)<<" ---> "<<edge_pstr(next_e)<<std::endl;
@@ -559,11 +565,11 @@ uint64_t PathFinder::is_unrollable_loop(uint64_t loop_e, uint64_t min_size_sizes
 
     if (pvcircleline[0]>0 or pvloop[2]>0 or (pvcircleline[2]==0 and pvcircleline[1]>pvlin[1] and pvcircleline[1]>pvloop[1])) {
         //std::cout<<"   CAN'T be reliably unrolled!"<<std::endl;
-        return 0;
+        return {};
     }
     if (pvloop[3]==0 and pvloop[0]>pvlin[0]){
         //std::cout<<"   LOOP should be traversed as loop at least once!"<<std::endl;
-        return 0;
+        return {};
     }
     if (pvlin==pvcircleline){
         //std::cout<<"   UNDECIDABLE as path support problem, looking at coverages"<<std::endl;
@@ -579,15 +585,78 @@ uint64_t PathFinder::is_unrollable_loop(uint64_t loop_e, uint64_t min_size_sizes
                 loop_cov<sc_min or loop_cov>sc_max or
                 next_cov<sc_min or next_cov>sc_max ){
             //std::cout<<"    Coverage FAIL conditions, CAN'T be reliably unrolled!"<<std::endl;
-            return 0;
+            return {};
         }
         //std::cout<<"    Coverage OK"<<std::endl;
     }
     //std::cout<<"   UNROLLABLE"<<std::endl;
-    return mHBV.EdgeObject(prev_e).size()+mHBV.EdgeObject(repeat_e).size()+
-            mHBV.EdgeObject(loop_e).size()+mHBV.EdgeObject(repeat_e).size()+mHBV.EdgeObject(next_e).size()-4*mHBV.K();
+    return {{prev_e,repeat_e,loop_e,repeat_e,next_e}};
+    //return mHBV.EdgeObject(prev_e).size()+mHBV.EdgeObject(repeat_e).size()+
+            //mHBV.EdgeObject(loop_e).size()+mHBV.EdgeObject(repeat_e).size()+mHBV.EdgeObject(next_e).size()-4*mHBV.K();
 }
 
 uint64_t PathFinder::paths_per_kbp(uint64_t e){
     return 1000 * mEdgeToPathIds[e].size()/mHBV.EdgeObject(e).size();
 };
+
+bool PathFinder::separate_path(std::vector<uint64_t> p){
+
+    //TODO XXX: proposed version 1 (never implemented)
+    //Creates new edges for the "repeaty" parts of the path (either those shared with other edges or those appearing multiple times in this path).
+    //moves paths across to the new reapeat instances as needed
+    //changes neighbourhood (i.e. creates new vertices and moves the to and from for the implicated edges).
+
+    //creates a copy of each node but the first and the last, connects only linearly to the previous copy,
+    std::cout<<std::endl<<"Separating path"<<std::endl;
+    for (auto e:p){
+        if (mInv[e]==e){ std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
+            return false;}
+    }
+    //create two new vertices (for the FW and BW path)
+    uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
+    mHBV.AddVertices(2);
+    //migrate connections (dangerous!!!)
+    std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
+    mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
+    std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
+    mHBV.GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
+
+    for (auto ei=1;ei<p.size()-1;++ei){
+        //add a new vertex for each of FW and BW paths
+        uint64_t prev_vertex_fw=current_vertex_fw,prev_vertex_rev=current_vertex_rev;
+        //create two new vertices (for the FW and BW path)
+        current_vertex_fw=mHBV.N();
+        current_vertex_rev=mHBV.N()+1;
+        mHBV.AddVertices(2);
+        //now, duplicate next edge for the FW and reverse path
+        std::cout<<"Creating new copy of edge "<<p[ei]<<" between vertices: "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
+        auto nef=mHBV.AddEdge(prev_vertex_fw,current_vertex_fw,mHBV.EdgeObject(p[ei]));
+        std::cout<<"Creating new copy of edge "<<mInv[p[ei]]<<" between vertices: "<<prev_vertex_rev<<" - "<<current_vertex_rev<<std::endl;
+        auto ner=mHBV.AddEdge(prev_vertex_rev,current_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
+        mInv.push_back(ner);
+        mInv.push_back(nef);
+        mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
+    }
+    std::cout<<"Migrating edge "<<p[p.size()-1]<<" To node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
+    mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
+    std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
+    mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
+
+    //TODO: migrate paths!!!!
+    //first approach, just invalidate old paths
+    /*std::vector<uint64_t> isolate_edges={p[0],mInv[p[0]],p[p.size()-1],mInv[p[p.size()-1]]};
+    for (auto e:isolate_edges)
+        for (auto rpid:mEdgeToPathIds[e]){
+            if (mPaths[rpid].size()>1){
+                mPaths[rpid].resize(1);
+                mPaths[0]=e;
+            }
+        }*/
+    //TODO: cleanup new isolated elements and leading-nowhere paths.
+    return true;
+
+}
+
+bool PathFinder::join_edges_in_path(std::vector<uint64_t> p){
+    //if a path is scrictly linear, it joins it
+}
