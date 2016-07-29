@@ -450,22 +450,45 @@ void PathFinder::untangle_pins() {
 void PathFinder::untangle_complex_in_out_choices() {
     //find a complex path
     init_prev_next_vectors();
+    std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
-        if (e < mInv[e] && mHBV.EdgeObject(e).size() < 1000) {
+        if (e < mInv[e] && mHBV.EdgeObject(e).size() < 800) {
             auto f=get_all_long_frontiers(e);
-            std::cout<<" Large frontiers for small edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
-            if (f[0].size()>1 and f[1].size()>1){
-                for (auto in_e:f[0]) for (auto out_e:f[1]){
-                        auto shared_paths=0;
-                        for (auto inp:mEdgeToPathIds[in_e])
-                            for (auto outp:mEdgeToPathIds[out_e])
-                                if (inp==outp) shared_paths++;
-                        if (shared_paths) std::cout<<"  Shared paths "<<in_e<<" --> "<<out_e<<": "<<shared_paths<<std::endl;
+            if (f[0].size()>1 and f[1].size()>1 and seen_frontiers.count(f)==0){
+                seen_frontiers.insert(f);
+                bool single_dir=true;
+                for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
+                if (single_dir) {
+                    std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
+                    std::vector<int> in_used(f[0].size(),0);
+                    std::vector<int> out_used(f[1].size(),0);
+                    for (auto in_i=0;in_i<f[0].size();++in_i) {
+                        auto in_e=f[0][in_i];
+                        for (auto out_i=0;out_i<f[1].size();++out_i) {
+                            auto out_e=f[1][out_i];
+                            auto shared_paths = 0;
+                            for (auto inp:mEdgeToPathIds[in_e])
+                                for (auto outp:mEdgeToPathIds[out_e])
+                                    if (inp == outp) shared_paths++;
+                            if (shared_paths) {
+                                out_used[out_i]++;
+                                in_used[in_i]++;
+                                std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths <<
+                                std::endl;
+                            }
+                        }
                     }
+                    if (std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
+                            std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
+                        std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
+                        solved_frontiers.insert(f);
+                    }
+                }
 
             }
         }
     }
+    std::cout<<"Complex Regions completeley solved by paths:"<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<std::endl;
 }
 
 std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e){
@@ -477,11 +500,11 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
         for (auto x:to_explore){
             if (!seen_edges.count(x)){
                 for (auto p:prev_edges[x]) {
-                    if (mHBV.EdgeObject(p).size() >= 2000 )  in_frontiers.insert(p);
+                    if (mHBV.EdgeObject(p).size() >= 800 )  in_frontiers.insert(p);
                     else if (!seen_edges.count(p)) to_explore.insert(p);
                 }
                 for (auto n:next_edges[x]) {
-                    if (mHBV.EdgeObject(n).size() >= 2000) out_frontiers.insert(n);
+                    if (mHBV.EdgeObject(n).size() >= 800) out_frontiers.insert(n);
                     else if (!seen_edges.count(n)) to_explore.insert(n);
                 }
             }

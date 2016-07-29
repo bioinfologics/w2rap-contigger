@@ -354,6 +354,7 @@ int main(const int argc, const char * argv[]) {
         bool IMPROVE_PATHS_LARGE = False;
         bool FINAL_TINY = True;
         bool UNWIND3 = True;
+
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
 
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
