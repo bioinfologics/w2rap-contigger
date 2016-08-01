@@ -153,7 +153,7 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
           std::cout << Date() << ": pulling apart repeats" << std::endl;
           PullAparter pa(hb,inv,paths,invPaths,PULL_APART_TRACE,
-                  PULL_APART_VERBOSE,5,5.0, true, true, true, true);
+                  PULL_APART_VERBOSE,5,5.0);
           size_t count = pa.SeparateAll();
           std::cout << Date() << ": there were " << count << " repeats pulled apart."
                << std::endl;
@@ -201,8 +201,13 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
 
      if (DEGLOOP) 
      {    Degloop( DEGLOOP_MODE, hb, inv, paths, bases, quals, DEGLOOP_MIN_DIST );
+          std::cout << Date( ) << ": removing Hangs" << std::endl;
           RemoveHangs( hb, inv, paths, 700 );
-          Cleanup( hb, inv, paths );    }
+          std::cout << Date( ) << ": cleanup" << std::endl;
+          Cleanup( hb, inv, paths );
+          std::cout << Date( ) << ": cleanup finished" << std::endl;
+
+     }
 
      // Unwind three-edge plasmids.
 

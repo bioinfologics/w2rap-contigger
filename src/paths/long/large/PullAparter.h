@@ -24,14 +24,10 @@ class PullAparter {
                     ReadPathVec& paths, VecULongVec& invPaths,
 		    vec<int> trace_edges = vec<int>{},
                     bool debug = false,
-                    int min_reads = 5, float min_mult = 5.0,
-                    bool bugfix2 = false, bool bugfix3 = false, bool bugfix4 = false,
-                    bool remove_unneeded2 = false ) :
+                    int min_reads = 5, float min_mult = 5.0) :
                     mHBV(hbv), mInv(inv), mPaths(paths), mEdgeToPathIds(invPaths),
                     mTraceEdges(trace_edges), mDebug(debug), mMinReads(min_reads),
-                    mMinMult(min_mult), mRemovedReadPaths(0u),
-                    mBugFix2( bugfix2 ), mBugFix3(bugfix3), mBugFix4(bugfix4),
-                    mRemoveUnneeded2( remove_unneeded2 )
+                    mMinMult(min_mult), mRemovedReadPaths(0u)
                     { hbv.ToLeft(mToLeft); hbv.ToRight(mToRight); }
 
           size_t getRemovedReadPaths() const { return mRemovedReadPaths; }
@@ -41,13 +37,11 @@ class PullAparter {
                ForceAssertLt(edge,mHBV.EdgeObjectCount());
                int vleft = mToLeft[edge];
                int vright = mToRight[edge];
-               if ( mBugFix3 )
-                       return ( mHBV.FromSize(vleft) == 1 && mHBV.ToSize(vleft) == 2 &&
-                                mHBV.ToSize(vright) == 1 && mHBV.FromSize(vright) == 2 &&
-                                mHBV.To(vleft)[0] != vright && mHBV.To(vleft)[1] != vright );
-               else
-                       return ( mHBV.FromSize(vleft) == 1 && mHBV.ToSize(vleft) == 2 &&
-                                mHBV.ToSize(vright) == 1 && mHBV.FromSize(vright) == 2 );
+
+               return ( mHBV.FromSize(vleft) == 1 && mHBV.ToSize(vleft) == 2 &&
+                        mHBV.ToSize(vright) == 1 && mHBV.FromSize(vright) == 2 &&
+                        mHBV.To(vleft)[0] != vright && mHBV.To(vleft)[1] != vright );
+
           }
 
           template <typename TVec>
@@ -320,66 +314,6 @@ class PullAparter {
                return to_separate.size() / 2;
           }
 
-#if 0
-          bool isConsistentReadPath( ReadPath const& rp ) {
-              auto itr = rp.begin();
-              int prev = *itr++;
-
-              while ( itr != rp.end() ) {
-                  int vright = mToRight[prev];
-                  if (!Member(mHBV.FromEdgeObj(vright), *itr ) ) {
-                      if ( mDebug ) {
-                          std::cout << "ReadPath: " << printSeq(rp) << std::endl;
-                          std::cout << "is inconsistent with the graph" << std::endl;
-                          std::cout << "itr=" << *itr << std::endl;
-                          std::cout << "prev=" << prev << std::endl;
-                          std::cout << "FromEdgeObj=" << printSeq(mHBV.FromEdgeObj(vright)) << std::endl;
-                      }
-                      return false;
-                  }
-                  prev = *itr++;
-              }
-              return true;
-          }
-
-          void RemoveInconsistentReadPathsTouchingEdge(int edgeno)
-          {
-              ULongVec to_delete;
-              for ( auto const& readid : mEdgeToPathIds[edgeno] ) {
-                  auto readPath = mPaths[readid];
-                  if (!isConsistentReadPath(readPath)) to_delete.push_back(readid);
-              }
-              nukeReadPaths(to_delete);
-          }
-
-
-          bool isConsistentReadPathPair( ReadPath const& rp0, ReadPath const& rp1 ) {
-              const int max_insert_size =  1000u;
-
-              // is rp0 consistent?
-              if ( !isConsistentReadPath(rp0) ) return false;
-
-              // can we reach rp1 within max_insert_size bases?
-
-              // is rp1 consistent?
-          }
-
-
-          void RemoveInconsistentReadPathPairsTouchingEdge(int edgeno)
-          {
-              ULongVec to_delete;
-              for ( auto const& readid0 : mEdgeToPathIds[edgeno] ) {
-                  int readid1 = (readid0 % 2 == 0) ? (readid0+1) : (readid0-1);
-                  auto readPath0 = mPaths[readid0];
-                  auto readPath1 = mPaths[mInv[readid1]];
-                  if ( !isConsistentReadPathPair(readPath0, readPath1) ) {
-                      to_delete.push_back(readid0);
-                      to_delete.push_back(readid1);
-                  }
-              }
-              nukeReadPaths(to_delete);
-          }
-#endif
 
           // given pairs of paths through canonical repeats,
           // pull apart each of them AND their counterparts on the
@@ -426,8 +360,7 @@ class PullAparter {
                mHBV.ToRight(mToRight);
                // std::cout << mHBV.EdgeObjectCount() <<  "/" << mHBV.N() <<
                //  " edges/vertices before removing unneeded vertices" << std::endl;
-               if ( mRemoveUnneeded2 ) RemoveUnneededVertices2(mHBV, mInv, mPaths);
-               else RemoveUnneededVertices(mHBV, mInv, mPaths);
+               RemoveUnneededVertices2(mHBV, mInv, mPaths);
 
                double clock2 = WallClockTime();
 
@@ -520,8 +453,8 @@ class PullAparter {
                     SerfVec<int> extReadPath = readPath;
                     int pair_offset = ( *itr % 2 == 0 ) ? +1 : -1 ;
                     SerfVec<int> extReadPath1;
-                    if ( mBugFix2 ) extReadPath1 = inversePath(mPaths[*itr + pair_offset]);
-                    else extReadPath1 = mPaths[*itr + pair_offset];
+                    extReadPath1 = inversePath(mPaths[*itr + pair_offset]);
+
                     // make the read path contain the paired read's edges, too.
                     OverlapAppend(extReadPath, extReadPath1);
 
@@ -543,7 +476,7 @@ class PullAparter {
 
                    if ( ldebug ) { std::cout << "..."; PRINT2(path1_support, path2_support); }
 
-                    if ( path1_support && (!mBugFix4 || !path2_support) ) {
+                    if ( path1_support && !path2_support ) {
                          if ( ldebug || trace ) {
                              std::cout << printSeq(readPath) << "," << printSeq(extReadPath1)<< std::endl;
                              std::cout << "   gets new center " << newP1Center << std::endl;
@@ -553,7 +486,7 @@ class PullAparter {
                          std::replace( readPath.begin(), readPath.end(), center, newP1Center );
                          // add to new inverse list for new center edge
                          newInv.push_back(*itr);
-                    } else if ( path2_support && ( !mBugFix4 || !path1_support) ) {
+                    } else if ( path2_support && !path1_support ) {
                          // add to new inverse list for old center edge
                          oldInv.push_back(*itr);
                          if ( ldebug || trace ) {
@@ -568,36 +501,23 @@ class PullAparter {
                              std::cout << printSeq(readPath)  << std::endl;
                              std::cout << "   has no (or conflicting) evidence " << std::endl;
                          }
-                         if ( mBugFix4 ) {
-                                 for ( auto const edge : mPaths[*itr] ) {
-                                     auto& inv = mEdgeToPathIds[edge];
-                                     auto new_end = std::remove( inv.begin(), inv.end(), *itr );
-                                     inv.erase( new_end, inv.end() );
-                                 }
-                                 mPaths[*itr].clear();
-                                 mRemovedReadPaths++;
-                                 if ( mDebug && path1_support && path2_support ) {
-                                     std::cout << "WARNING: CONFLICTING ReadPaths:" << std::endl;
-                                     std::cout << "readPath1: " << printSeq(readPath) << std::endl;
-                                     std::cout << "inv(readPath2): " << printSeq(extReadPath1) << std::endl;
-                                     std::cout << "graph path1: " << printSeq(path1) << std::endl;
-                                     std::cout << "graph path2: " << printSeq(path2) << std::endl;
-                                     std::cout << "newP1Center: " << newP1Center << std::endl;
-                                 }
-                         } else {
-                             if ( readPath.size() != 1 ) {
-                                 std::cout << "WARNING: INVALID READ PATH #" << *itr << printSeq(readPath) << std::endl;
-                                 // for each edge in this readPath, remove the readPath
-                                 // from the index for edge presence.
-                                 for ( auto const edge : readPath ) {
-                                     auto& inv = mEdgeToPathIds[edge];
-                                     auto new_end = std::remove( inv.begin(), inv.end(), *itr );
-                                     inv.erase( new_end, inv.end() );
-                                 }
-                             }
-                             readPath.clear();
-                             mRemovedReadPaths++;
+
+                         for ( auto const edge : mPaths[*itr] ) {
+                             auto& inv = mEdgeToPathIds[edge];
+                             auto new_end = std::remove( inv.begin(), inv.end(), *itr );
+                             inv.erase( new_end, inv.end() );
                          }
+                         mPaths[*itr].clear();
+                         mRemovedReadPaths++;
+                         if ( mDebug && path1_support && path2_support ) {
+                             std::cout << "WARNING: CONFLICTING ReadPaths:" << std::endl;
+                             std::cout << "readPath1: " << printSeq(readPath) << std::endl;
+                             std::cout << "inv(readPath2): " << printSeq(extReadPath1) << std::endl;
+                             std::cout << "graph path1: " << printSeq(path1) << std::endl;
+                             std::cout << "graph path2: " << printSeq(path2) << std::endl;
+                             std::cout << "newP1Center: " << newP1Center << std::endl;
+                         }
+
                     }
                     if (ldebug) std::cout << "XXX final *itr=" << *itr
                         << ", mPaths[*itr]=" << printSeq(mPaths[*itr])
@@ -621,10 +541,6 @@ class PullAparter {
           int mMinReads;
           float mMinMult;
           size_t mRemovedReadPaths;
-          bool mBugFix2;
-          bool mBugFix3;
-          bool mBugFix4;
-          bool mRemoveUnneeded2;
      };
 
 

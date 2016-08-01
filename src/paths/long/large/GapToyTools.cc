@@ -1182,27 +1182,32 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
      vec<int> to_new_id( used.size( ), -1 );
      {    int count = 0;
           for ( int i = 0; i < used.isize( ); i++ )
-               if ( used[i] ) to_new_id[i] = count++;    }
+               if ( used[i] ) to_new_id[i] = count++;
+     }
 
      vec<int> inv2;
      for ( int i = 0; i < hb.EdgeObjectCount( ); i++ )
      {    if ( !used[i] ) continue;
           if ( inv[i] < 0 ) inv2.push_back(-1);
-          else inv2.push_back( to_new_id[ inv[i] ] );    }
+          else inv2.push_back( to_new_id[ inv[i] ] );
+     }
      inv = inv2;
 
      vec<Bool> to_delete( paths.size( ), False );
-     double clock3 = WallClockTime( );
+
      #pragma omp parallel for
      for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
-     {    SerfVec<int>& p = paths[i];
+     {
+         SerfVec<int>& p = paths[i];
           for ( int j = 0; j < (int) p.size( ); j++ )
           {    int n = to_new_id[ p[j] ];
                if ( n < 0 ) to_delete[i] = True;
-               else p[j] = n;    }    }
-     double clock4 = WallClockTime( );
+               else p[j] = n;
+          }
+     }
+
      hb.RemoveDeadEdgeObjects( );
-     double clock5 = WallClockTime( );
+
      hb.RemoveEdgelessVertices( );
 
      
@@ -1210,25 +1215,21 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 
 void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 {    
-     // Function timing 
-     time_t now = time(0);
-     //std::cout << "[GapToyTools.cc] Beginning Cleanup: " << ctime(&now) << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
+     //XXX: truncates paths, which should be already done by the graph-modifying functions
+    {
+        vec<Bool> used;
+        hb.Used(used);
+        for (int64_t i = 0; i < (int64_t) paths.size(); i++) {
+            for (int64_t j = 0; j < (int64_t) paths[i].size(); j++) {
+                if (paths[i][j] < 0 || paths[i][j] >= hb.EdgeObjectCount() || !used[paths[i][j]]) {
+                    paths[i].resize(j);
+                    break;
+                }
+            }
+        }
+    }
 
-     double sclock = WallClockTime( );
-     {    vec<Bool> used;
-          hb.Used(used);
-          for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
-          {    for ( int64_t j = 0; j < (int64_t) paths[i].size( ); j++ )
-               {    if ( paths[i][j] < 0 || paths[i][j] >= hb.EdgeObjectCount( )
-                         || !used[ paths[i][j] ] )
-                    {    paths[i].resize(j);
-                         break;    }    }    }    }
-     //LogTime( sclock, "Resizing and shrinking paths" );
-
-     RemoveUnneededVertices2( hb, inv, paths );
+    RemoveUnneededVertices2( hb, inv, paths );
 
      CleanupCore( hb, inv, paths );    
      // Dump objects ofter each cleanup, 

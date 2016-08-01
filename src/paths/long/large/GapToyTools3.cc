@@ -29,408 +29,7 @@
 #include "paths/long/large/GapToyTools.h"
 #include <ctime>
 
-/*void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
-      VecPQVec const& quals, const ReadPathVec& paths2, const String& work_dir )
-{    
-     // Heuristics.
 
-     const int min_qsum = 1000;
-     const int min_q = 3;
-     const int M = 32;
-     const int min_adv = 20;
-     const int max_to_call_good = 100;
-
-     vec<int> to_left, to_right;
-     hb.ToLeft(to_left), hb.ToRight(to_right);
-     vecbasevector all;
-     int nedges = hb.EdgeObjectCount( );
-     all.reserve(nedges);
-     for ( int e = 0; e < nedges; e++ )
-          all.push_back( hb.EdgeObject(e) );
-     vec< triple<kmer<M>,int,int> > kmers_plus;
-     MakeKmerLookup0( all, kmers_plus );
-     vec< kmer<M> > kmers( kmers_plus.size( ) );
-     for ( int i = 0; i < (int) kmers_plus.size( ); i++ )
-          kmers[i] = kmers_plus[i].first;
-     int printed = 0;
-     vec<int> select;
-     auto qvItr = quals.begin();
-     for ( int64_t id = 0; id < (int64_t) paths2.size( ); id++,++qvItr )
-     {    Bool placed = False;
-          int start = 0;
-          const ReadPath& p = paths2[id];
-          if ( paths2[id].size( ) > 0 )
-          {    start = hb.EdgeLengthBases( p[0] );
-               for ( int j = 1; j < (int) p.size( ); j++ )
-                    start += hb.EdgeLengthKmers( p[j] );    }
-          int qsum = 0;
-          qvec const& qv = *qvItr;
-          for ( int j = start; j < (int) qv.size( ); j++ )
-               if ( qv[j] >= min_q ) qsum += qv[j];
-          if ( qsum < min_qsum ) continue;
-
-          if ( p.size( ) == 0 )
-          {    vec< std::pair<int,int> > places;
-               for ( int j = 0; j <= bases[id].isize( ) - M; j++ )
-               {    kmer<M> x;
-                    x.SetToSubOf( bases[id], j );
-                    int low = LowerBound( kmers, x );
-                    int high = UpperBound( kmers, x );
-                    for ( int k = low; k < high; k++ )
-                    {    int e = kmers_plus[k].second;
-                         int offset = kmers_plus[k].third - j;
-                         places.push( e, offset );    }    }
-               UniqueSort(places);
-
-               vec< std::pair<int,int> > starts;
-               vec< std::pair<int,int> > left_termini;
-               for ( int j = 0; j < places.isize( ); j++ )
-               {    int e = places[j].first, offset = places[j].second;
-                    int v = to_left[e];
-                    if ( offset >= 0 ) starts.push_back( places[j] );
-                    else if ( hb.To(v).empty( ) )
-                    {    left_termini.push_back( places[j] );    }
-                    else
-                    {    for ( int l = 0; l < hb.To(v).isize( ); l++ )
-                         {    int ep = hb.EdgeObjectIndexByIndexTo( v, l );
-                              int offsetp = offset + hb.EdgeLengthKmers(ep);
-                              if ( !Member( places, std::make_pair( ep, offsetp ) ) )
-                                   places.push( ep, offsetp );    }    }    }
-
-               vec<Bool> to_delete( starts.size( ), False );
-               for ( int j = 0; j < starts.isize( ); j++ )
-               {    int e = starts[j].first, offset = starts[j].second;
-                    if ( hb.EdgeLengthBases(e) - offset <= hb.K( ) - 1 )
-                    {    if ( hb.From( to_right[e] ).nonempty( ) ) 
-                              to_delete[j] = True;    }    }
-               EraseIf( starts, to_delete );
-
-               int m = bases[id].size( );
-               for ( int j = 0; j < starts.isize( ); j++ )
-               {    int e = starts[j].first, offset = starts[j].second;
-                    m = Min( m, hb.EdgeLengthBases(e) - offset );    }
-
-               vec<int> qsum_starts( starts.size( ), 0 );
-               for ( int j = 0; j < starts.isize( ); j++ )
-               {    int e = starts[j].first, offset = starts[j].second;
-                    for ( int l = 0; l < m; l++ )
-                    {    if ( bases[id][l] != hb.EdgeObject(e)[offset+l] )
-                              qsum_starts[j] += qv[l];    }    }
-               SortSync( qsum_starts, starts );
-               for ( int j = 0; j < starts.isize( ); j++ )
-               {    if ( j > 0 && qsum_starts[j] - qsum_starts[j-1] >= min_adv )
-                    {    starts.resize(j);
-                         qsum_starts.resize(j);    }    }
-
-               vec< vec< std::pair<int,int> > > full_paths;
-               vec< vec< std::pair<int,int> > > right_termini;
-               for ( int j = 0; j < starts.isize( ); j++ )
-               {    vec< vec< std::pair<int,int> > > partials;
-                    vec< std::pair<int,int> > ini = { starts[j] };
-                    partials.push_back(ini);
-                    while( partials.nonempty( ) )
-                    {    vec< vec< std::pair<int,int> > > partials2;
-                         for ( int l = 0; l < partials.isize( ); l++ )
-                         {    vec< std::pair<int,int> > p = partials[l];
-                              int e = p.back( ).first, offset = p.back( ).second;
-                              int stop = offset + bases[id].isize( );
-                              int w = to_right[e];
-                              if ( stop <= hb.EdgeLengthBases(e) )
-                                   full_paths.push_back(p);
-                              else if ( hb.From(w).empty( ) )
-                              {    right_termini.push_back(p);    }
-                              else
-                              {    for ( int i = 0; i < hb.From(w).isize( ); i++ )
-                                   {    int ep = hb.EdgeObjectIndexByIndexFrom(w, i);
-                                        int offsetp = offset - hb.EdgeLengthKmers(e);
-                                        vec< std::pair<int,int> > pp(p);
-                                        pp.push( ep, offsetp );
-                                        partials2.push_back(pp);    }    }    }
-                         partials = partials2;    }    }
-
-               vec<int> qsum_full_paths( full_paths.size( ), 0 );
-               vec<int> qsum2_full_paths( full_paths.size( ), 0 );
-               for ( int64_t i = 0; i < full_paths.isize( ); i++ )
-               {    const vec< std::pair<int,int> >& p = full_paths[i];
-                    int pos = 0;
-                    int estart = 0;
-                    for ( int l = 0; l < p.isize( ); l++ )
-                    {    if ( pos == bases[id].isize( ) ) break;
-                         int e = p[l].first, offset = p[l].second;
-                         for ( int j = estart; j < hb.EdgeLengthBases(e) - offset; 
-                              j++ )
-                         {    if ( bases[id][pos] != hb.EdgeObject(e)[offset+j] )
-                              {    qsum_full_paths[i] += qv[pos];
-                                   if ( qv[pos] > 2 )
-                                        qsum2_full_paths[i] += qv[pos];    }
-                              pos++;
-                              if ( pos == bases[id].isize( ) ) break;    }
-                         estart = hb.K( ) - 1;    }    }
-
-               // Test for good enough placement.
-
-               if ( full_paths.nonempty( ) 
-                    && Min(qsum_full_paths) <= max_to_call_good )
-               {    placed = True;
-                    continue;    }
-               select.push_back(id);
-
-               // Print report.
-
-               std::cout << "\nread " << id << "\n";
-               PRINT(m);
-               std::cout << "starts:";
-               for ( int j = 0; j < starts.isize( ); j++ )
-               {    std::cout << " " << starts[j].first << "." << starts[j].second 
-                         << "[qsum=" << qsum_starts[j] << "]";     }
-               std::cout << "\n";
-               for ( int64_t i = 0; i < full_paths.isize( ); i++ )
-               {    std::cout << "full path:";
-                    for ( int64_t j = 0; j < full_paths[i].isize( ); j++ )
-                    {    std::cout << " " << full_paths[i][j].first << "."
-                              << full_paths[i][j].second;    }
-                    std::cout << " [qsum=" << qsum_full_paths[i] 
-                         << ",qsum2=" << qsum2_full_paths[i] << "]\n";    }
-               for ( int i = 0; i < right_termini.isize( ); i++ )
-               {    std::cout << "right termini:";
-                    for ( int j = 0; j < right_termini[i].isize( ); j++ )
-                    {    std::cout << " " << right_termini[i][j].first << "."
-                              << right_termini[i][j].second;    }
-                    std::cout << "\n";    }
-               std::cout << "left termini:";
-               for ( int j = 0; j < left_termini.isize( ); j++ )
-               {    std::cout << " " << left_termini[j].first << "." 
-                         << left_termini[j].second;     }
-               std::cout << "\n";    }
-
-          if (placed) continue;
-          if ( p.size( ) > 0 ) std::cout << "\n";
-          bases[id].Print( 
-               std::cout, "id=" + ToString(id) + ",qsum=" + ToString(qsum) );
-          printed++;    }
-
-     // Print summary.
-
-     std::cout << "\n";
-     std::cout << "selected = " << printed << " = " 
-          << PERCENT_RATIO( 3, printed, (int) bases.size( ) ) << std::endl;
-     std::cout << std::endl;
-
-     // Find friends of selected reads.
-
-     const int K = 24;
-     vecbasevector bases2(bases), basesrc(bases);
-     for ( int64_t id = 0; id < (int64_t) bases.size( ); id++ )
-          basesrc[id].ReverseComplement( );
-     bases2.Append(basesrc);
-     vec< triple<kmer<K>,int,int> > kmers_plus2;
-     vec< SerfVec<Friend> > friends( select.size( ) );
-     MakeKmerLookup0( bases2, kmers_plus2 );
-     for ( int64_t i = 0; i < kmers_plus2.jsize( ); i++ )
-     {    int64_t j;
-          for ( j = i + 1; j < kmers_plus2.jsize( ); j++ )
-               if ( kmers_plus2[j].first != kmers_plus2[i].first ) break;
-
-          if ( j - i == 2 )
-          {    i = j - 1;
-               continue;    }
-
-          vec<int> ids;
-          for ( int64_t k = i; k < j; k++ )
-               ids.push_back( kmers_plus2[k].second );
-          Sort(ids);
-          int max_mult = 0;
-          for ( int l = 0; l < ids.isize( ); l++ )
-          {    int m = ids.NextDiff(l);
-               max_mult = Max( max_mult, m - l );
-               l = m - 1;    }
-
-          if ( max_mult > 1 )
-          {    i = j - 1;   
-               continue;    }
-
-          for ( int64_t k1 = i; k1 < j; k1++ )
-          {    int id1 = kmers_plus2[k1].second, pos1 = kmers_plus2[k1].third;
-               if ( id1 >= (int64_t) bases.size( ) ) continue;
-               int id1x = BinPosition( select, id1 );
-               if ( id1x < 0 ) continue;
-               for ( int k2 = i; k2 < j; k2++ )
-               {    if ( k2 == k1 ) continue;
-                    int id2 = kmers_plus2[k2].second, pos2 = kmers_plus2[k2].third;
-                    Bool rc2 = False;
-                    if ( id2 >= (int) bases.size( ) )
-                    {    rc2 = True;
-                         id2 = id2 - (int) bases.size( );    }
-                    friends[id1x].push_back( 
-                         Friend( id2, pos1 - pos2, rc2 ) );    }    }
-          i = j - 1;    }
-     for ( int i = 0; i < select.isize( ); i++ )
-     {    vec<Friend> f;
-          for ( int j = 0; j < (int) friends[i].size( ); j++ )
-               f.push_back( friends[i][j] );
-          UniqueSort(f);
-          friends[i].resize(0);
-          for ( int j = 0; j < f.isize( ); j++ )
-               friends[i].push_back( f[j] );    }
-
-     for ( int i = 0; i < select.isize( ); i++ )
-     {    int id1 = select[i];
-          bvec const& b1 = bases[id1];
-          qvec q1 = quals.begin()[id1];
-          std::cout << "\nfriends of read " << id1 << std::endl;
-          for ( int j = 0; j < (int) friends[i].size( ); j++ )
-          {    const Friend& f = friends[i][j];
-               int id2 = f.readId( );
-               Bool rc2 = f.isRC( );
-               int offset = f.offset( );
-               bvec b2 = bases[id2];
-               qvec q2 = quals.begin()[id2];
-               if (rc2) 
-               {    b2.ReverseComplement( );
-                    q2.ReverseMe( );    }
-               std::cout << "\n" << ( rc2 ? "rc" : "fw" ) << id2 << "." << offset << "\n";
-               int pos1, pos2;
-               if ( offset >= 0 )
-               {    pos1 = offset;
-                    pos2 = 0;    }
-               else
-               {    pos1 = 0;
-                    pos2 = -offset;    }
-               avector<int> gaps(1), lengths(1);
-               gaps(0) = 0;
-               lengths(0) 
-                    = IntervalOverlap( 0, b1.isize( ), offset, offset + b2.isize( ) );
-               align a( pos1, pos2, gaps, lengths );
-               PrintVisualAlignment( True, std::cout, b1, b2, a, q1, q2 );    }    }
-
-     int64_t total_friends = 0;
-     for ( int i = 0; i < select.isize( ); i++ )
-          total_friends += friends[i].size( );
-     std::cout << double(total_friends) / double( select.size( ) )
-          << " friends per selected read" << std::endl;
-     for ( int i = 0; i < select.isize( ); i++ )
-     {    std::cout << "\nfriends of read " << select[i] << " =";
-          for ( int j = 0; j < (int) friends[i].size( ); j++ )
-          {    const Friend& f = friends[i][j];
-               std::cout << " " << ( f.isRC( ) ? "rc" : "fw" ) << f.readId( ) << "."
-                    << f.offset( );    }
-          std::cout << "\n";    }
-
-     // Correct selected reads.
-
-     vecbasevector xbases;
-     xbases.reserve( select.size( ) );
-     for ( int i = 0; i < select.isize( ); i++ )
-          xbases.push_back( bases[ select[i] ] );
-     const int SEP = 0;
-     const int STDEV = 100;
-     const String LIB = "woof";
-     const size_t nreads = select.size( );
-     PairsManager pairs( bases.size( ) );
-     pairs.addLibrary( SEP, STDEV, LIB );
-     size_t npairs = bases.size( ) / 2;
-     for ( size_t pi = 0; pi < npairs; pi++ )
-          pairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
-     pairs.makeCache( );
-     vec<Bool> to_edit( xbases.size( ), True );
-     vec<int> trim_to, trace_ids;
-     long_logging logc( "", "" );
-     ref_data ref;
-     vec<ref_loc> readlocs;
-     long_logging_control log_control( ref, &readlocs, "", "" );
-     long_heuristics heur( "" );
-     String tmp_dir = "tmp.xxx";
-     vec<int> KS = {24,40};
-     // vec<int> KS = {24};
-     vecbasevector new_stuff;
-     for ( int i = 0; i < KS.isize( ); i++ )
-     {    int K = KS[i];
-          trim_to.resize( bases.size( ) );
-          vecbasevector bases_loc( select.size( ) );
-          vecqualvector quals_loc( select.size( ) );
-          const int batch = 100;
-          #pragma omp parallel for schedule(dynamic, 1)
-          for ( int64_t id1a = 0; id1a < (int64_t) select.size( ); id1a += batch )
-          {    readstack stack;
-               vec<Bool> suspect;
-               for ( int64_t id1x = id1a; 
-                    id1x < Min( id1a + batch, (int64_t) select.size( ) ); id1x++ )
-               {    int64_t id1 = select[id1x];
-                    BaseVec& currentBaseVec = bases_loc[id1x];
-                    UCharVec& currentCharVec = quals_loc[id1x];
-                    currentBaseVec = bases[id1];
-                    currentCharVec = quals.begin()[id1];
-                    trim_to[id1] = bases[id1].size( );
-                    if ( bases[id1].empty( ) ) continue;
-                    Friends aligns = friends[id1x];
-                    if ( aligns.size() > static_cast<unsigned>(heur.MAX_STACK) ) 
-                         continue;
-                    stack.Initialize( id1, aligns, 0, aligns.size(),
-                         readstack::strict, bases, quals, pairs );
-                    stack.HighQualDiff( 30, 1, suspect );
-                    stack.Erase(suspect);
-                    if ( heur.HQ_DIFF_WINDOW )
-                    {    stack.HighQualDiffWindow( suspect );
-                         stack.Erase(suspect);    }
-                    Bool verbose = False;
-                    stack.CorrectAll( currentBaseVec, currentCharVec, trim_to[id1], 
-                         verbose );    
-
-                    // if ( BinMember( trace_ids, id1 ) )
-                    /*
-                    {    vec<basevector> cons;
-                         cons.push_back( currentBaseVec );
-                         #pragma omp critical
-                         {    std::cout << "\nCorrect1Pre, K = " << K
-                                   << ", final stack, tracing read " << id1 << std::endl;
-                              std::cout << "stack:\n";
-                              stack.Print( std::cout, cons );    }    }
-                    */
-
-          //               }    }
-
-          /*
-          #pragma omp parallel for schedule(dynamic)
-          for ( size_t id1x = 0 ; id1x < select.size() ; ++id1x )
-          {    const int64_t& id1 = select[id1x];
-               bases[id1] = bases_loc[id1x];
-               quals[id1] = quals_loc[id1x];    }    }
-          */
-
-/*          if ( i == KS.isize( ) - 1 )
-          {    std::cout << "\ncorrected reads:\n";
-               for ( int i = 0; i < select.isize( ); i++ )
-               {    int id = select[i];
-                    basevector b = bases_loc[i];
-                    // b.resize( trim_to[id] );
-                    new_stuff.push_back(b);
-                    b.Print( std::cout, "id=" + ToString(id) );    }    }
-
-          }
-
-
-     /*
-     std::cout << "\ncorrected reads:\n";
-     for ( int i = 0; i < select.isize( ); i++ )
-     {    int id = select[i];
-          bases[id].Print( std::cout, "id=" + ToString(id) );    }    
-     */
-
-/*
-     const int K0 = 60;
-     unsigned const COVERAGE = 50u;
-     HyperBasevector hbn;
-     LongReadsToPaths( new_stuff, K0, COVERAGE, False, False, &hbn );
-
-     std::cout << "hbn has " << hbn.EdgeObjectCount( ) << " edges" << std::endl;
-
-     Ofstream( out, work_dir + "/special/xxx.dot" );
-     hbn.PrintSummaryDOT0w( out, True, False, True );
-     Ofstream( eout, work_dir + "/special/xxx.fasta" );
-     for ( int e = 0; e < hbn.EdgeObjectCount( ); e++ )
-          hbn.EdgeObject(e).Print( eout, e );
-     BinaryWriter::writeFile( work_dir + "/special/xxx.hbv", hbn );    }
-*/
 void FixPath( ReadPath& p, const vec< triple<int,int,int> >& merges,
      const vec< vec<int> >& merges_index, const HyperBasevector& hb_orig )
 {
@@ -485,8 +84,7 @@ void FixPath( ReadPath& p, const vec< triple<int,int,int> >& merges,
      }    // while(1)
 }
 
-void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, 
-     ReadPathVec& paths, Bool debug )
+void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, Bool debug )
 {
     static int debug_serial = 0;
     ++debug_serial;
@@ -494,8 +92,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     debug_fnam_head << "graph." << std::setprecision(3) << debug_serial;
 
 
-    if ( debug )
-            BinaryWriter::writeFile( debug_fnam_head.str() + ".BEFORE.hbv", hbv );
+    if ( debug ) BinaryWriter::writeFile( debug_fnam_head.str() + ".BEFORE.hbv", hbv );
 
     // new algorithm
     // 1. make a list of vertices to kill
@@ -515,14 +112,10 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     vec<int> to_left, to_right;
     hbv.ToLeft(to_left);
     hbv.ToRight(to_right);
-    //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toleft beginning: " << to_left.size() << std::endl;
-    //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toright beginning: " << to_right.size() << std::endl;
+
     // step 1: make a list of vertices to kill
     // o----o----o----o
     // v0   v1   v2   v3
-    //time_t rawtime;
-    //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc] Beginning RemoveUnneededVertices2 Step1 for: " << ctime(&rawtime) << std::endl;
     for ( int v = 0; v < hbv.N(); ++v )
         if ( hbv.FromSize(v) == 1 && hbv.ToSize(v) == 1
                 && hbv.From(v)[0] != hbv.To(v)[0] 
@@ -531,18 +124,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
             vertex_kill[v] = true;
             vertex_queue.push_back(v);
         }
-    //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 vertex_queue has size: "<<vertex_queue.size() <<" - " << ctime(&rawtime) << std::endl;
-    if ( debug ) {
-        PRINT( vertex_queue.size() );
-        std::cout << "serialno: " << debug_serial << std::endl;
-        std::cout << "vertices (edge left,right): " << std::endl;
-        for ( auto v : vertex_queue )
-            std::cout << v << " (" <<
-            hbv.EdgeObjectIndexByIndexTo(v,0) << ","
-            <<  hbv.EdgeObjectIndexByIndexFrom(v,0) << ")" << std::endl;
-        std::cout << "---" << std::endl;
-    }
+
 
     // step 2
     //time(&rawtime);
@@ -597,20 +179,6 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     //time(&rawtime);
     //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 bound has size: "<<bound.size() <<" - " << ctime(&rawtime) << std::endl;
 
-    // validate step 2
-    if ( debug ) {
-        for ( auto const& b : bound ) {
-            int vleft = to_right[b.first];
-            int vright = to_left[b.second];
-
-            for ( int v = vleft; v != vright;  ) {
-                ForceAssertEq( hbv.FromSize(v), 1 );
-                v = hbv.From(v)[0];
-                ForceAssertEq( hbv.ToSize(v), 1 );
-            }
-        }
-    }
-
     // steps 3 and 4
     
     //XXX Optimization START (Gonza & BJ - 2015-09-07)
@@ -632,7 +200,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     vec<int> offsets(hbv.EdgeObjectCount(),0);
     vec<int> new_edge_numbers;
     vec<int> to_delete;
-    //XXX: boudn.size() is how many new edges we'll need, so we can pre-allocate that.
+    //XXX: bound.size() is how many new edges we'll need, so we can pre-allocate that.
     //time(&rawtime);
     //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step3 for: " << ctime(&rawtime) << std::endl;
     while ( bound.size() ) {///TODO: we can make the Adds at the end and the paralelise this easily
@@ -644,16 +212,6 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
         int off = hbv.EdgeLengthKmers( bounds.first );
         edge_renumber0[ bounds.first ] = new_edge_no;
         to_delete.push_back( bounds.first );
-        /*
-        for ( int v = to_right[bounds.first]; v != to_right[bounds.second]; v = hbv.From(v)[0] ) {
-            // for each edge...
-            int edge = hbv.EdgeObjectIndexByIndexFrom(v,0);
-            to_delete.push_back(edge);
-            new_edge = TrimCat(hbv.K(), new_edge, hbv.EdgeObject(edge));
-            offsets[edge] = off;
-            edge_renumber0[edge] = new_edge_no;
-            off += hbv.EdgeLengthKmers(edge);
-        }*/
         //First compute total size and offsets
         //std::cout<<"Computing size and offsets for run from e-v="<<to_right[bounds.first]<<"-> to e-v="<<to_right[bounds.second]<<"->"<<std::endl;
         for ( int v = to_right[bounds.first]; v != to_right[bounds.second]; v = hbv.From(v)[0] ) {
@@ -735,83 +293,6 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv,
     //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toleft finishing: " << to_left.size() << std::endl;
     //std::cout << "[GapToyTools3.cc] Remove unneeded vertices toright finishing: " << to_right.size() << std::endl;
 }
-
-void RemoveUnneededVertices( HyperBasevector& hb, vec<int>& inv,
-     ReadPathVec& paths )
-{    double clock1 = WallClockTime( );
-     vec< triple<int,int,int> > merges;
-     vec<int> to_left, to_right;
-     hb.ToLeft(to_left), hb.ToRight(to_right);
-     for ( int i = 0; i < hb.N( ); i++ )
-     {    if ( hb.From(i).size( ) == 1 && hb.To(i).size( ) == 1 
-               && hb.From(i)[0] != i )
-          {    int e1 = hb.EdgeObjectIndexByIndexTo( i, 0 );
-               int e2 = hb.EdgeObjectIndexByIndexFrom( i, 0 );
-               basevector p = hb.Cat( e1, e2 );
-               int enew = hb.EdgeObjectCount( );
-               int re1 = inv[e1], re2 = inv[e2];
-               if ( re1 < 0 || re2 < 0 ) continue; // ******************************
-               int v = hb.To(i)[0], w = hb.From(i)[0];
-               Bool loop = ( v == w && hb.From(v).solo( ) && hb.To(v).solo( ) );
-               // v --e1--> i --e2--> w
-               merges.push( e1, e2, enew );
-               hb.JoinEdges( i, p );
-               to_left.push_back(v), to_right.push_back(w);
-               // Case 1.
-               if ( re1 == e2 && re2 == e1 )
-               {    // * --e1=re2--> * --e2=re1--> *
-                    inv.push_back(enew);    }
-               // Case 2a.
-               else if ( re2 == e2 && re1 != e1 )
-               {    // * --e1--> * --e2=re2--> * --re1--> *
-                    int enew2 = hb.EdgeObjectCount( );
-                    merges.push( enew, re1, enew2 );
-                    basevector p2 = TrimCat( hb.K( ), p, hb.EdgeObject(re1) );
-                    to_left.push_back(v), to_right.push_back( to_right[re1] );
-                    hb.JoinEdges( w, p2 );
-                    std::cout << "RUN case 2a" << std::endl; // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    inv.push_back( -1, enew2 );    }
-               // Case 2b.
-               else if ( re1 == e1 && re2 != e2 )
-               {    // * --re2--> * --e1=re1--> * --e2--> *
-                    int enew2 = hb.EdgeObjectCount( );
-                    merges.push( re2, enew, enew2 );
-                    basevector p2 = TrimCat( hb.K( ), hb.EdgeObject(re2), p );
-                    to_left.push_back( to_left[re2] ), to_right.push_back(w);
-                    hb.JoinEdges( v, p2 );
-                    std::cout << "RUN case 2b" << std::endl; // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    inv.push_back( -1, enew2 );    }
-               // Case 3.
-               else if ( re1 == e1 && re2 == e2 )
-               {    std::cout << "RUN case 3" << std::endl; // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                    if (loop) inv.push_back(-1);
-                    else
-                    {    // not sure if this can happen
-                         ForceAssert( 0 == 1 );    }    }
-               // Case 4.
-               else
-               {    // e1, e2, re1, re2 all different
-                    int renew = hb.EdgeObjectCount( );
-                    basevector rp = hb.Cat( re2, re1 );
-                    merges.push( re2, re1, renew );
-                    int ri = to_right[re2];
-                    hb.JoinEdges( ri, rp );
-                    int rv = to_left[re2], rw = to_right[re1];
-                    to_left.push_back(rv), to_right.push_back(rw);
-                    inv.push_back(renew, enew);    }    }    }
-     vec< vec<int> > merges_index( hb.EdgeObjectCount( ) );
-     for ( int i = 0; i < merges.isize( ); i++ )
-     {    merges_index[ merges[i].first ].push_back(i);
-          merges_index[ merges[i].second ].push_back(i);    }
-     LogTime( clock1, "removing unneeded vertices 1" );
-     double clock2 = WallClockTime( );
-     #pragma omp parallel for
-     for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
-          FixPath( paths[i], merges, merges_index, hb );
-     LogTime( clock2, "removing unneeded vertices 2" );
-     double clock3 = WallClockTime( );
-     hb.RemoveEdgelessVertices( );
-     LogTime( clock3, "removing unneeded vertices 3" );    }
 
 void RemoveUnneededVerticesLoopsOnly( HyperBasevector& hb, vec<int>& inv,
      ReadPathVec& paths )

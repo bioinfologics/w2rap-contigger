@@ -641,7 +641,6 @@ bool PathFinder::separate_path(std::vector<uint64_t> p){
     mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
     std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
-
     //TODO: migrate paths!!!!
     //first approach, just invalidate old paths
     /*std::vector<uint64_t> isolate_edges={p[0],mInv[p[0]],p[p.size()-1],mInv[p[p.size()-1]]};
