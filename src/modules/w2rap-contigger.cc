@@ -57,7 +57,7 @@ int main(const int argc, const char * argv[]) {
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
-    bool extend_paths,dump_all,dump_perf;
+    bool extend_paths,run_pathfinder,dump_all,dump_perf;
 
     //========== Command Line Option Parsing ==========
 
@@ -92,7 +92,9 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
-             "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
+                                                               "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
+                                                               "Run PathFinder (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
                                                                "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
@@ -109,6 +111,7 @@ int main(const int argc, const char * argv[]) {
         small_K = 60;//small_KArg.getValue();
         min_size = minSizeArg.getValue();
         extend_paths=pathExtensionArg.getValue();
+        run_pathfinder=pathFinderArg.getValue();
         dump_all=dumpAllArg.getValue();
         dump_perf=dumpPerfArg.getValue();
         from_step=fromStep_Arg.getValue();
@@ -360,7 +363,7 @@ int main(const int argc, const char * argv[]) {
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  PLACE_PARTNERS, ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3);
+                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder);
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse

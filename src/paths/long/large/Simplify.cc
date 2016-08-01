@@ -50,7 +50,7 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
      const Bool PULL_APART_VERBOSE, const vec<int>& PULL_APART_TRACE,
      const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
      const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE, 
-     const Bool FINAL_TINY, const Bool UNWIND3 )
+     const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER )
 {
      // Improve read placements and delete funky pairs.
 
@@ -160,6 +160,8 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           std::cout << Date() << ": there were " << pa.getRemovedReadPaths() <<
                     " read paths removed during separation." << std::endl;
           Validate( hb, inv, paths );    }
+
+     if ( RUN_PATHFINDER )
      {
           std::cout << Date() << ": making paths index for PathFinder" << std::endl;
           VecULongVec invPaths;
