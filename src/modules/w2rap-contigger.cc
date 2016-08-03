@@ -355,8 +355,8 @@ int main(const int argc, const char * argv[]) {
         float DEGLOOP_MIN_DIST = 2.5;
         bool IMPROVE_PATHS = True;
         bool IMPROVE_PATHS_LARGE = False;
-        bool FINAL_TINY = True;
-        bool UNWIND3 = False;//True;
+        bool FINAL_TINY = False;//True;
+        bool UNWIND3 = True;
 
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
 

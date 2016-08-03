@@ -112,7 +112,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
     vec<int> to_left, to_right;
     hbv.ToLeft(to_left);
     hbv.ToRight(to_right);
-
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step1"<< std::endl;
     // step 1: make a list of vertices to kill
     // o----o----o----o
     // v0   v1   v2   v3
@@ -128,7 +128,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
 
     // step 2
     //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step2 for: " << ctime(&rawtime) << std::endl;
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step2"<< std::endl;
     vec<std::pair<int,int>> bound;
     while ( vertex_queue.size() ) {
         int v = vertex_queue.back();
@@ -176,9 +176,8 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
         }
     }
     if ( debug ) PRINT(bound.size());
-    //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step1 bound has size: "<<bound.size() <<" - " << ctime(&rawtime) << std::endl;
 
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step3"<< std::endl;
     // steps 3 and 4
     
     //XXX Optimization START (Gonza & BJ - 2015-09-07)
@@ -201,8 +200,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
     vec<int> new_edge_numbers;
     vec<int> to_delete;
     //XXX: bound.size() is how many new edges we'll need, so we can pre-allocate that.
-    //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step3 for: " << ctime(&rawtime) << std::endl;
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step4"<< std::endl;
     while ( bound.size() ) {///TODO: we can make the Adds at the end and the paralelise this easily
         auto bounds = bound.back();
         bound.pop_back();
@@ -250,15 +248,15 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
         new_edge_numbers.push_back(new_edge_no);
     }
     //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step3 edges before deletion: "<<hbv.EdgeObjectCount()<< " - " << ctime(&rawtime) << std::endl;
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 edges before deletion: "<<hbv.EdgeObjectCount()<< std::endl;
     hbv.DeleteEdges(to_delete);
     //time(&rawtime);
-    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 Step3 edges after deletion: "<<hbv.EdgeObjectCount()<< " - " << ctime(&rawtime) << std::endl;
+    //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 edges after deletion: "<<hbv.EdgeObjectCount()<< std::endl;
 
     if ( debug )
         BinaryWriter::writeFile( debug_fnam_head.str() + ".AFTER.hbv", hbv );
 
-
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Updating inv[x]"<< std::endl;
     // for each pair of newly created edges, update mInv
     inv.resize(hbv.EdgeObjectCount() );
     for (auto itr = new_edge_numbers.begin();
@@ -269,6 +267,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
     //time(&rawtime);
     //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 updating paths with new edge numbers: " << ctime(&rawtime) << std::endl;
     // update the read paths for the newly created edges
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Updating paths to new edge numbers"<< std::endl;
 #pragma omp parallel for
     for ( int64_t i = 0; i < paths.size(); ++i ) {
         auto& path = paths[i];
@@ -283,7 +282,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
                     path.push_back( edge_renumber0[ *itr ] );
         }
     }
-
+    //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Finished!"<< std::endl;
     //XXX Optimization END
     //XXX: this is PROPERTY VALIDATION IN PRODUCTION! AWESOME!
     //time(&rawtime);

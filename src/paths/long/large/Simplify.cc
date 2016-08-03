@@ -168,6 +168,10 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
           std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
           PathFinder(hb,inv,paths,invPaths).untangle_single_choices();
+          std::cout << Date() << ": PathFinder: validating" << std::endl;
+          Validate( hb, inv, paths );
+          std::cout<<"Removing Unneded Vertices"<<std::endl;
+          RemoveUnneededVertices2(hb,inv,paths);
           std::cout<<"refreshing all structures as precaution"<<std::endl;
           inv.clear();
           hb.Involution(inv);
@@ -220,4 +224,6 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           RemoveSmallComponents3( hb, True );
           Cleanup( hb, inv, paths );    
           CleanupLoops( hb, inv, paths );
-          RemoveUnneededVerticesGeneralizedLoops( hb, inv, paths );    }    }
+          RemoveUnneededVerticesGeneralizedLoops( hb, inv, paths );
+     }
+}

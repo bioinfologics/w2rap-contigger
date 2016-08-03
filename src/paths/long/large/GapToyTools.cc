@@ -1216,6 +1216,7 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 {    
      //XXX: truncates paths, which should be already done by the graph-modifying functions
+    std::cout<<"Cleanup truncating invalidated paths"<<std::endl;
     {
         vec<Bool> used;
         hb.Used(used);
@@ -1228,42 +1229,13 @@ void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
             }
         }
     }
-
+    std::cout<<"Cleanup Removing Unneded Vertices"<<std::endl;
     RemoveUnneededVertices2( hb, inv, paths );
-
+    std::cout<<"Cleanup calling core graph cleanup"<<std::endl;
      CleanupCore( hb, inv, paths );    
      // Dump objects ofter each cleanup, 
      // controlled by env variable export DISCOVAR_DUMP_ON_CLEANUP=True
-     if ((getenv("DISCOVAR_DUMP_ON_CLEANUP") != NULL) && (strcmp(getenv("DISCOVAR_DUMP_ON_CLEANUP"), "True") == 0)){
-       std::cout << "Dumping objects and fasta" << std::endl;
 
-       time_t rawtime;
-       time(&rawtime);
-       char buffer [150];
-       strftime (buffer,150,"dump_cluenup_%T.fasta",localtime (&rawtime));
-       puts (buffer);
-       hb.DumpFasta(buffer, False);
-
-       time(&rawtime);
-       strftime (buffer,150,"dump_hbv_%T.hbv",localtime (&rawtime));
-       puts (buffer);
-       BinaryWriter::writeFile( buffer, hb );
-
-       time(&rawtime);
-       strftime (buffer,150,"dump_inv_%T.inv",localtime (&rawtime));
-       puts (buffer);
-       BinaryWriter::writeFile( buffer, inv );
-
-       time(&rawtime);
-       strftime (buffer,150,"dump_path_%T.paths",localtime (&rawtime));
-       puts (buffer);
-       BinaryWriter::writeFile( buffer, paths );
-     }
-     // Size measurement
-     //std::cout << "[GapToyTools.cc] Finished Cleanup: " << ctime(&now) << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of hb obj (edges): "<< hb.EdgeObjectCount() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of inv obj: "<< inv.size() << std::endl;
-     //std::cout << "[GapToyTools.cc] Size of paths obj: "<< paths.size() << std::endl;
 }
 
 void CleanupLoops( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )

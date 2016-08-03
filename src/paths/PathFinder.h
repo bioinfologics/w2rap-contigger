@@ -44,6 +44,7 @@ public:
     bool separate_path(std::vector<uint64_t> p);
     bool join_edges_in_path(std::vector<uint64_t> p);
     std::array<std::vector<uint64_t>,2>  get_all_long_frontiers(uint64_t e);
+    void migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap);
 
 
 

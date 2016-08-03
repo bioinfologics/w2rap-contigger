@@ -381,7 +381,9 @@ void PathFinder::untangle_single_choices() {
     for ( int e = 0; e < mHBV.EdgeObjectCount(); ++e ) {
         if (e<mInv[e]) {
             auto urs=is_unrollable_loop(e,1000);
-            if (urs.size()>0) {
+
+            auto iurs=is_unrollable_loop(mInv[e],1000);
+            if (urs.size()>0 && iurs.size()>0) {
                 new_paths.push_back(urs[0]);
             }
         }
@@ -390,11 +392,11 @@ void PathFinder::untangle_single_choices() {
     //std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
 
     std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
-
+    uint64_t sep=0;
     for (auto p:new_paths){
-        separate_path(p);
+        if (separate_path(p)) sep++;
     }
-    std::cout<<"Loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
+    std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
     init_prev_next_vectors();
     std::cout<<"Prev and Next vectors initialised"<<std::endl;
 }
@@ -607,19 +609,25 @@ bool PathFinder::separate_path(std::vector<uint64_t> p){
     //changes neighbourhood (i.e. creates new vertices and moves the to and from for the implicated edges).
 
     //creates a copy of each node but the first and the last, connects only linearly to the previous copy,
-    std::cout<<std::endl<<"Separating path"<<std::endl;
-    for (auto e:p){
-        if (mInv[e]==e){ std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
+    //std::cout<<std::endl<<"Separating path"<<std::endl;
+    std::set<uint64_t> edges_fw;
+    std::set<uint64_t> edges_rev;
+    for (auto e:p){//TODO: this is far too astringent...
+        edges_fw.insert(e);
+        edges_rev.insert(mInv[e]);
+
+        if (edges_fw.count(mInv[e]) ||edges_rev.count(e) ){ //std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
             return false;}
     }
     //create two new vertices (for the FW and BW path)
     uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
     mHBV.AddVertices(2);
     //migrate connections (dangerous!!!)
-    std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
+    //std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
-    std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
+    //std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
+    std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
 
     for (auto ei=1;ei<p.size()-1;++ei){
         //add a new vertex for each of FW and BW paths
@@ -628,31 +636,88 @@ bool PathFinder::separate_path(std::vector<uint64_t> p){
         current_vertex_fw=mHBV.N();
         current_vertex_rev=mHBV.N()+1;
         mHBV.AddVertices(2);
+
         //now, duplicate next edge for the FW and reverse path
-        std::cout<<"Creating new copy of edge "<<p[ei]<<" between vertices: "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
         auto nef=mHBV.AddEdge(prev_vertex_fw,current_vertex_fw,mHBV.EdgeObject(p[ei]));
-        std::cout<<"Creating new copy of edge "<<mInv[p[ei]]<<" between vertices: "<<prev_vertex_rev<<" - "<<current_vertex_rev<<std::endl;
-        auto ner=mHBV.AddEdge(prev_vertex_rev,current_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
+        //std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
+        if (! old_edges_to_new.count(p[ei]))  old_edges_to_new[p[ei]]={};
+        old_edges_to_new[p[ei]].push_back(nef);
+
+        auto ner=mHBV.AddEdge(current_vertex_rev,prev_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
+        //std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
+        if (! old_edges_to_new.count(mInv[p[ei]]))  old_edges_to_new[mInv[p[ei]]]={};
+        old_edges_to_new[mInv[p[ei]]].push_back(ner);
+
+
         mInv.push_back(ner);
         mInv.push_back(nef);
         mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
     }
-    std::cout<<"Migrating edge "<<p[p.size()-1]<<" To node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
+    //std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
-    std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
+    //std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
     //TODO: migrate paths!!!!
-    //first approach, just invalidate old paths
-    /*std::vector<uint64_t> isolate_edges={p[0],mInv[p[0]],p[p.size()-1],mInv[p[p.size()-1]]};
-    for (auto e:isolate_edges)
-        for (auto rpid:mEdgeToPathIds[e]){
-            if (mPaths[rpid].size()>1){
-                mPaths[rpid].resize(1);
-                mPaths[0]=e;
-            }
-        }*/
+
+    migrate_readpaths(old_edges_to_new);
     //TODO: cleanup new isolated elements and leading-nowhere paths.
+    for (auto ei=1;ei<p.size()-1;++ei) mHBV.DeleteEdges({p[ei]});
     return true;
+
+}
+
+//TODO: this should probably be called just once
+void PathFinder::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap){
+    //Migrate readpaths: this changes the readpaths from old edges to new edges
+    //if an old edge has more than one new edge it tries all combinations until it gets the paths to map
+    //if more than one combination is valid, this chooses at random among them (could be done better? should the path be duplicated?)
+    mHBV.ToLeft(mToLeft);
+    mHBV.ToRight(mToRight);
+    for (auto &p:mPaths){
+        std::vector<std::vector<uint64_t>> possible_new_edges;
+        bool translated=false,ambiguous=false;
+        for (auto i=0;i<p.size();++i){
+            if (edgemap.count(p[i])) {
+                possible_new_edges.push_back(edgemap[p[i]]);
+                if (not translated) translated=true;
+                if (possible_new_edges.back().size()>1) ambiguous=true;
+            }
+            else possible_new_edges.push_back({p[i]});
+        }
+        if (translated){
+            if (not ambiguous){ //just straigh forward translation
+                for (auto i=0;i<p.size();++i) p[i]=possible_new_edges[i][0];
+            }
+            else {
+                //ok, this is the complicated case, we first generate all possible combinations
+                std::vector<std::vector<uint64_t>> possible_paths={{}};
+                for (auto i=0;i<p.size();++i) {//for each position
+                    std::vector<std::vector<uint64_t>> new_possible_paths;
+                    for (auto pp:possible_paths) { //take every possible one
+                        for (auto e:possible_new_edges[i]) {
+                            //if i>0 check there is a real connection to the previous edge
+                            if (i == 0 or (mToRight[pp.back()]==mToLeft[e])) {
+                                new_possible_paths.push_back(pp);
+                                new_possible_paths.back().push_back(e);
+                            }
+                        }
+                    }
+                    possible_paths=new_possible_paths;
+                    if (possible_paths.size()==0) break;
+                }
+                if (possible_paths.size()==0){
+                    std::cout<<"Warning, a path could not be updated, truncating it to its first element!!!!"<<std::endl;
+                    p.resize(1);
+                }
+                else{
+                    std::srand (std::time(NULL));
+                    //randomly choose a path
+                    int r=std::rand()%possible_paths.size();
+                    for (auto i=0;i<p.size();++i) p[i]=possible_paths[r][i];
+                }
+            }
+        }
+    }
 
 }
 
