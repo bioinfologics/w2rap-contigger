@@ -259,6 +259,13 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
         $<TARGET_OBJECTS:base2_libs>
         )
 
+add_executable(hbv2gfa src/modules/hbv2gfa.cc
+        $<TARGET_OBJECTS:specific_w2rap-contigger>
+        $<TARGET_OBJECTS:base_libs>
+        $<TARGET_OBJECTS:base2_libs>
+
+        )
+
 ##Zlib link
 if (ZLIB_FOUND)
   set(ZLIB libz.so)

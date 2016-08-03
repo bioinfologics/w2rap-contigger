@@ -150,7 +150,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH){
             "yellowgreen"
     };
     Ofstream(gfa_out,filename+"_lines.gfa");
-
+    std::cout<<std::endl<<std::endl<<std::endl<<"============GFA DUMP STARTING============"<<std::endl;
+    std::cout<<"Graph has "<< hb.EdgeObjectCount() <<" edges"<<std::endl;
     vec<vec<vec<vec<int>>>> lines;
     FindLines(hb, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     SortLines(lines, hb, inv);
@@ -159,8 +160,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH){
     hb.ToLeft(to_left), hb.ToRight(to_right);
 
 
-    std::cout<<std::endl<<std::endl<<std::endl<<"============GFA DUMP STARTING============"<<std::endl;
-    std::cout<<"Graph has "<< hb.EdgeObjectCount() <<" edges"<<std::endl;
+
+
     std::cout<<"There are "<< lines.size() << " lines and "<< paths.size()<<" paths"<<std::endl;
     gfa_out<<"H\tVN:Z:1.0"<<std::endl;
     std::vector<int64_t> canonical_included(hb.EdgeObjectCount(),-1);
