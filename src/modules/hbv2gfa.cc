@@ -39,9 +39,9 @@ int main(const int argc, const char * argv[]) {
     std::cout << "hbv2gfa from w2rap-contigger" << std::endl;
     try {
         TCLAP::CmdLine cmd("", ' ', "0.1");
-        TCLAP::ValueArg<std::string> out_prefixArg("o", "prefix",
+        TCLAP::ValueArg<std::string> out_prefixArg("o", "out_prefix",
              "Prefix for the output files", true, "", "string", cmd);
-        TCLAP::ValueArg<std::string> in_prefixArg("i", "prefix",
+        TCLAP::ValueArg<std::string> in_prefixArg("i", "in_prefix",
                                                    "Prefix for the input files", true, "", "string", cmd);
 
         TCLAP::ValueArg<bool>         find_linesArg        ("l","find_lines",
@@ -50,7 +50,7 @@ int main(const int argc, const char * argv[]) {
 
         // Get the value parsed by each arg.
         out_prefix = out_prefixArg.getValue();
-        in_prefix = out_prefixArg.getValue();
+        in_prefix = in_prefixArg.getValue();
         find_lines = find_linesArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
@@ -61,16 +61,39 @@ int main(const int argc, const char * argv[]) {
     HyperBasevector hbv;
     ReadPathVec paths;
     vec<int> inv;
-    hbv.Involution(inv);
+
     std::cout << "Reading graph and paths..." << std::endl;
     BinaryReader::readFile(in_prefix + ".hbv", &hbv);
+    hbv.Involution(inv);
     paths.ReadAll(in_prefix + ".paths");
     std::cout << "   DONE!" << std::endl;
     std::cout << "Dumping gfa" << std::endl;
     int MAX_CELL_PATHS = 50;
     int MAX_DEPTH = 10;
 
-    GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH);
+    std::cout<<"=== Graph stats === "<<std::endl;
+    std::vector<uint64_t> e_sizes;
+    uint64_t total_size,canonical_size;
+
+    for (int e=0;e<hbv.EdgeObjectCount();e++){
+        auto eo=hbv.EdgeObject(e);
+        total_size+=eo.size();
+        if (inv[e]<0 or inv[e]>e){
+            canonical_size+=eo.size();
+            e_sizes.push_back(eo.size());
+        }
+    }
+    std::sort(e_sizes.begin(),e_sizes.end());
+    auto ns=e_sizes.rbegin();
+    int64_t cs=0;
+    std::cout<<"Total size: "<<total_size<<"     Canonical size:"<<canonical_size<<std::endl;
+    for (auto i=10;i<100;i+=10){
+        while (((double)(cs * 100.0))/ canonical_size < i)
+            cs+=*ns++;
+        std::cout<<"N"<<i<<": "<<*(ns-1)<<std::endl;
+    }
+    GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);
+
 
     return 0;
 }

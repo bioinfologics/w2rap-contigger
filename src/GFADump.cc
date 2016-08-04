@@ -6,7 +6,7 @@
 #include "GFADump.h"
 
 void GFADump (std::string filename, const HyperBasevector &hb, const vec<int> &inv, const
-ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH){
+ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lines){
 
     std::vector<std::string> colour_names={
             "aliceblue",
@@ -149,79 +149,79 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH){
             "yellow",
             "yellowgreen"
     };
-    Ofstream(gfa_out,filename+"_lines.gfa");
     std::cout<<std::endl<<std::endl<<std::endl<<"============GFA DUMP STARTING============"<<std::endl;
     std::cout<<"Graph has "<< hb.EdgeObjectCount() <<" edges"<<std::endl;
     vec<vec<vec<vec<int>>>> lines;
-    FindLines(hb, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    SortLines(lines, hb, inv);
-
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
+    std::vector<int64_t> colour(hb.EdgeObjectCount(), -1);
+
+    if (find_lines) {
+        Ofstream(gfa_out, filename + "_lines.gfa");
+        FindLines(hb, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+        SortLines(lines, hb, inv);
 
 
+        gfa_out << "H\tVN:Z:1.0" << std::endl;
+        std::vector<int64_t> canonical_included(hb.EdgeObjectCount(), -1);
 
-
-    std::cout<<"There are "<< lines.size() << " lines and "<< paths.size()<<" paths"<<std::endl;
-    gfa_out<<"H\tVN:Z:1.0"<<std::endl;
-    std::vector<int64_t> canonical_included(hb.EdgeObjectCount(),-1);
-    std::vector<int64_t> colour(hb.EdgeObjectCount(),-1);
-    int64_t current_colour=1;
-    //TODO: Dump the overlaps correctly
-    //First step, mark Edges as used if they appear in a line
-    for (auto line : lines){
-        std::vector<std::pair<uint64_t,bool>> prev_segment_end_edges;
-        for (auto segment : line){//or cell, or bubble
-            std::vector<std::pair<uint64_t,bool>> end_edges;
-            for (auto path : segment) {//or unitig?-ish
-                if (path.empty()) {//empty path (i.e., gap!)
-                    end_edges=prev_segment_end_edges;//HACK to not disconnect
-                }
-                else {
-                    int64_t prev_in_path = -1;
-                    bool prev_in_path_fw;
-                    for (auto edge: path) {
-                        if (canonical_included[edge] == -1) {
-                            uint64_t ce = edge;
-                            if (hb.EdgeObject(inv[edge]) < hb.EdgeObject(edge)) {
-                                ce = inv[edge];
-                            }
-                            canonical_included[edge] = ce;
-                            canonical_included[inv[edge]] = ce;
-                            gfa_out << "S\tedge" << ce << "\t" << hb.EdgeObject(ce) << "\tCL:z:" <<colour_names[current_colour%colour_names.size()]<< std::endl;
-                            colour[ce]=current_colour;
-                            colour[inv[ce]]=current_colour;
-                            //std::cout<<"edge"<<ce<<": "<<colour_names[current_colour%colour_names.size()]<<std::endl;
-                        } //else {
+        int64_t current_colour = 1;
+        //TODO: Dump the overlaps correctly
+        //First step, mark Edges as used if they appear in a line
+        for (auto line : lines) {
+            std::vector<std::pair<uint64_t, bool>> prev_segment_end_edges;
+            for (auto segment : line) {//or cell, or bubble
+                std::vector<std::pair<uint64_t, bool>> end_edges;
+                for (auto path : segment) {//or unitig?-ish
+                    if (path.empty()) {//empty path (i.e., gap!)
+                        end_edges = prev_segment_end_edges;//HACK to not disconnect
+                    }
+                    else {
+                        int64_t prev_in_path = -1;
+                        bool prev_in_path_fw;
+                        for (auto edge: path) {
+                            if (canonical_included[edge] == -1) {
+                                uint64_t ce = edge;
+                                if (hb.EdgeObject(inv[edge]) < hb.EdgeObject(edge)) {
+                                    ce = inv[edge];
+                                }
+                                canonical_included[edge] = ce;
+                                canonical_included[inv[edge]] = ce;
+                                gfa_out << "S\tedge" << ce << "\t" << hb.EdgeObject(ce) << "\tCL:z:" <<
+                                colour_names[current_colour % colour_names.size()] << std::endl;
+                                colour[ce] = current_colour;
+                                colour[inv[ce]] = current_colour;
+                                //std::cout<<"edge"<<ce<<": "<<colour_names[current_colour%colour_names.size()]<<std::endl;
+                            } //else {
                             //colour[canonical_included[edge]]=0;
                             //std::cout<<"edge"<<canonical_included[edge]<<": black"<<std::endl;
-                        //}
-                        if (prev_in_path != -1) {
-                            gfa_out << "L\tedge" << prev_in_path << (prev_in_path_fw ? "\t+\tedge" : "\t-\tedge") <<
-                            canonical_included[edge] << ((canonical_included[edge] == edge) ? "\t+" : "\t-") <<
-                            "\t0M" << std::endl;
+                            //}
+                            if (prev_in_path != -1) {
+                                gfa_out << "L\tedge" << prev_in_path << (prev_in_path_fw ? "\t+\tedge" : "\t-\tedge") <<
+                                canonical_included[edge] << ((canonical_included[edge] == edge) ? "\t+" : "\t-") <<
+                                "\t0M" << std::endl;
+                            }
+                            prev_in_path = canonical_included[edge];
+                            prev_in_path_fw = (canonical_included[edge] == edge);
+
                         }
-                        prev_in_path = canonical_included[edge];
-                        prev_in_path_fw = (canonical_included[edge] == edge);
-
+                        //Connect all previous elements to the first element in the path
+                        uint64_t ce = canonical_included[path[0]];
+                        bool ce_fw = (ce == path[0]);
+                        for (auto pe:prev_segment_end_edges) {
+                            gfa_out << "L\tedge" << pe.first << (pe.second ? "\t+\tedge" : "\t-\tedge") << ce <<
+                            (ce_fw ? "\t+" : "\t-") << "\t0M" << std::endl;
+                        }
+                        //add last element in the path to the end_elements
+                        end_edges.push_back(std::make_pair(prev_in_path, prev_in_path_fw));
                     }
-                    //Connect all previous elements to the first element in the path
-                    uint64_t ce = canonical_included[path[0]];
-                    bool ce_fw = (ce == path[0]);
-                    for (auto pe:prev_segment_end_edges) {
-                        gfa_out << "L\tedge" << pe.first << (pe.second ? "\t+\tedge" : "\t-\tedge") << ce <<
-                        (ce_fw ? "\t+" : "\t-") << "\t0M" << std::endl;
-                    }
-                    //add last element in the path to the end_elements
-                    end_edges.push_back(std::make_pair(prev_in_path, prev_in_path_fw));
                 }
+                prev_segment_end_edges = end_edges;
+
             }
-            prev_segment_end_edges=end_edges;
-
+            ++current_colour;
         }
-        ++current_colour;
     }
-
     //Now reconstruct the to-left, to-right, RAW thing
     /*
     struct s_link_edge_to_vertex{
@@ -259,6 +259,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH){
     for (auto l:links){*/
 
     Ofstream(gfa_raw_out,filename+"_raw.gfa");
+    std::cout<<"Dumping edges"<<std::endl;
     for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
         if (ei>inv[ei]) continue;
         gfa_raw_out << "S\tedge" << ei <<"\t"<< hb.EdgeObject(ei)
@@ -266,6 +267,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH){
          << std::endl;
 
     }
+    std::cout<<"Dumping connections"<<std::endl;
     for (int64_t i=0;i<to_right.size();++i) {
         for (int64_t j=0;j<to_left.size();++j) {
             if (to_left[j]==to_right[i]) {

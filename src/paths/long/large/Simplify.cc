@@ -166,15 +166,23 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           std::cout << Date() << ": making paths index for PathFinder" << std::endl;
           VecULongVec invPaths;
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
-          std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
+         std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
+         //std::cout << Date() << ": PathFinder: writing BEFORE_PF" << std::endl;
+         //BinaryWriter::writeFile("BEFORE_PF.hbv", hb);
+          //paths.WriteAll("BEFORE_PF.paths");
           PathFinder(hb,inv,paths,invPaths).untangle_single_choices();
+          //BinaryWriter::writeFile("AFTER_PF.hbv", hb);
+          //paths.WriteAll("AFTER_PF.paths");
+         //std::cout << Date() << ": PathFinder: writing AFTER_PF" << std::endl;
           std::cout << Date() << ": PathFinder: validating" << std::endl;
           Validate( hb, inv, paths );
           std::cout<<"Removing Unneded Vertices"<<std::endl;
           RemoveUnneededVertices2(hb,inv,paths);
-          std::cout<<"refreshing all structures as precaution"<<std::endl;
-          inv.clear();
-          hb.Involution(inv);
+         //BinaryWriter::writeFile("AFTER_PFRV.hbv", hb);
+         //paths.WriteAll("AFTER_PFRV.paths");
+          //std::cout<<"refreshing all structures as precaution"<<std::endl;
+          //inv.clear();
+          //hb.Involution(inv);
           std::cout<<"all structures refreshed"<<std::endl;
      }
      // Improve paths.
