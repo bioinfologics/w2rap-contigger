@@ -104,7 +104,7 @@ int main(const int argc, const char * argv[]) {
                                                          "Dump performance info (devel)", false,false,"bool",cmd);
 
         TCLAP::ValueArg<std::string> dev_runArg("", "dev_run_test",
-                                                   "runs development tests", true, "", "devel only", cmd);
+                                                   "runs development tests", false, "", "devel only", cmd);
 
         cmd.parse(argc, argv);
 
