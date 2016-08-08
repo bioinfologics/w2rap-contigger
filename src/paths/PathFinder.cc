@@ -394,12 +394,19 @@ void PathFinder::untangle_single_choices() {
 
     std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
     uint64_t sep=0;
+    std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:new_paths){
-        auto old_edges_to_new=separate_path(p);
-        if (old_edges_to_new.size()>0) {
-            migrate_readpaths(old_edges_to_new);
+        auto oen=separate_path(p);
+        if (oen.size()>0) {
+            for (auto et:oen){
+                if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
+                for (auto ne:et.second) old_edges_to_new[et.first].push_back(ne);
+            }
             sep++;
         }
+    }
+    if (old_edges_to_new.size()>0) {
+        migrate_readpaths(old_edges_to_new);
     }
     std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
     init_prev_next_vectors();
