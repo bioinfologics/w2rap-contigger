@@ -26,6 +26,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <paths/PathFinder.h>
+#include <paths/long/large/ImprovePath.h>
 #include "GFADump.h"
 
 
@@ -50,6 +51,7 @@ int main(const int argc, const char * argv[]) {
     std::string out_prefix;
     std::string read_files;
     std::string out_dir;
+    std::string dev_run;
     unsigned int threads;
     int max_mem;
     unsigned int small_K, large_K, min_size,from_step,to_step;
@@ -89,6 +91,7 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> toStep_Arg("", "to_step",
                                                    "Stop after step (default: 7)", false, 7, &steps, cmd);
 
+
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
@@ -99,6 +102,10 @@ int main(const int argc, const char * argv[]) {
                                                                "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
                                                          "Dump performance info (devel)", false,false,"bool",cmd);
+
+        TCLAP::ValueArg<std::string> dev_runArg("", "dev_run_test",
+                                                   "runs development tests", true, "", "devel only", cmd);
+
         cmd.parse(argc, argv);
 
         // Get the value parsed by each arg.
@@ -116,6 +123,7 @@ int main(const int argc, const char * argv[]) {
         dump_perf=dumpPerfArg.getValue();
         from_step=fromStep_Arg.getValue();
         to_step=toStep_Arg.getValue();
+        dev_run=dev_runArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -134,20 +142,123 @@ int main(const int argc, const char * argv[]) {
     }
 
     //========== Main Program Begins ======
-
-    //== Set computational resources ===
-    SetThreads(threads, False);
-    SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
-
-
-    //== Load reads (and saves in binary format) ======
     vecbvec bases;
     VecPQVec quals;
 
     vec<String> subsam_names = {"C"};
     vec<int64_t> subsam_starts = {0};
     std::ofstream perf_file;
-    double wtimer,cputimer;
+    //double wtimer,cputimer;
+    vec<int> inv;
+    HyperBasevector hbvr;
+    ReadPathVec pathsr;
+
+
+    int MAX_CELL_PATHS = 50;
+    int MAX_DEPTH = 10;
+
+    //== Set computational resources ===
+    SetThreads(threads, False);
+    SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
+    //TODO: try to find out max memory on the system to default to.
+
+    //== Handle "special cases" to test on development==
+
+    if (dev_run!=""){
+        std::cout<<"=== w2rap contigger: development test run ==="<<std::endl;
+        if (dev_run=="pathfinder"){
+            checkpoint_perf_time("");
+            //Pathfinder test, runs from Pathfinder to the end of step 6
+            //LOADS all necessary data
+            std::cout << "Loading reads in fastb/qualp format..." << std::endl;
+            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
+            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+            std::cout << "   DONE!" << std::endl;
+            BinaryReader::readFile("BEFORE_PF.hbv", &hbvr);
+            pathsr.ReadAll("BEFORE_PF.paths");
+            inv.clear();
+            hbvr.Involution(inv);
+            std::cout << Date() << ": making paths index for PathFinder" << std::endl;
+            VecULongVec invPaths;
+            invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
+            std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
+            PathFinder(hbvr,inv,pathsr,invPaths).untangle_single_choices();
+            std::cout << Date() << ": PathFinder: validating" << std::endl;
+            Validate( hbvr, inv, pathsr );
+            std::cout<<"Removing Unneded Vertices"<<std::endl;
+            RemoveUnneededVertices2(hbvr,inv,pathsr);
+            std::cout<<"all structures refreshed"<<std::endl;
+            invPaths.clear();
+            invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
+            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices();
+            path_improver pimp;
+                vec<int64_t> ids;
+                ImprovePaths( pathsr, hbvr, inv, bases, quals, ids, pimp,
+                              False, False );
+            vec<int> to_left,to_right;
+            hbvr.ToLeft(to_left), hbvr.ToRight(to_right);
+            int ext = 0;
+            auto qvItr = quals.begin();
+            for ( int64_t id = 0; id < (int64_t) pathsr.size( ); id++,++qvItr )
+                {    Bool verbose = False;
+                    const int min_gain = 20;
+                    ReadPath p = pathsr[id];
+                    ExtendPath2( pathsr[id], id, hbvr, to_left, to_right, bases[id], *qvItr,
+                                 min_gain, verbose, 1 );
+                    if ( p != pathsr[id] ) ext++;    }
+                std::cout << ext << " paths extended" << std::endl;
+
+            // Degloop.
+
+            Degloop( 1, hbvr, inv, pathsr, bases, quals, 2.5 );
+            std::cout << Date( ) << ": removing Hangs" << std::endl;
+            RemoveHangs( hbvr, inv, pathsr, 700 );
+            std::cout << Date( ) << ": cleanup" << std::endl;
+            Cleanup( hbvr, inv, pathsr );
+            std::cout << Date( ) << ": cleanup finished" << std::endl;
+
+
+
+            UnwindThreeEdgePlasmids( hbvr, inv, pathsr );
+
+            // Remove tiny stuff.
+
+            std::cout << Date( ) << ": removing small components" << std::endl;
+            RemoveSmallComponents3( hbvr, True );
+            Cleanup( hbvr, inv, pathsr );
+            CleanupLoops( hbvr, inv, pathsr );
+            RemoveUnneededVerticesGeneralizedLoops( hbvr, inv, pathsr );
+
+            vec<vec<vec<vec<int>>>> lines;
+
+            FindLines(hbvr, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+            if (dump_perf) perf_file << checkpoint_perf_time("FindLines") << std::endl;
+            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
+
+            // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
+            {
+                vec<int> llens, npairs;
+                GetLineLengths(hbvr, lines, llens);
+                GetLineNpairs(hbvr, inv, pathsr, lines, npairs);
+                BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+
+                vec<vec<covcount>> covs;
+                ComputeCoverage(hbvr, inv, pathsr, lines, subsam_starts, covs);
+
+            }
+
+            //TODO: add contig fasta dump.
+            std::cout << "Dumping contig graph and paths..." << std::endl;
+            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
+            pathsr.WriteAll(out_dir + "/" + out_prefix + ".contig.paths");
+            std::cout << "   DONE!" << std::endl;
+            GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
+
+        }
+    }
+
+    //== Load reads (and saves in binary format) ======
+
     if (dump_perf) {
         perf_file.open(out_dir+"/"+out_prefix+".perf",std::ofstream::out | std::ofstream::app);
     }
@@ -173,9 +284,6 @@ int main(const int argc, const char * argv[]) {
     bool FILL_JOIN = False;
     bool SHORT_KMER_READ_PATHER = False;
     bool RQGRAPHER_VERBOSE = False;
-    vec<int> inv;
-    HyperBasevector hbvr;
-    ReadPathVec pathsr;
     if (from_step>1 && from_step<7){
         std::cout << "Loading reads in fastb/qualp format..." << std::endl;
         bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
@@ -323,8 +431,7 @@ int main(const int argc, const char * argv[]) {
 
     }
 
-    int MAX_CELL_PATHS = 50;
-    int MAX_DEPTH = 10;
+
 
     if (from_step==6){
         std::cout << "Reading large_K final graph and paths..." << std::endl;
@@ -336,7 +443,7 @@ int main(const int argc, const char * argv[]) {
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKFinalLoad") << std::endl;
     }
     if (from_step<=6 and to_step>=6) {
-        std::cout << "--== Step 6: Contigging ==--" << std::endl;
+        std::cout << "--== Step 6: Graph simplification and path finding ==--" << std::endl;
         //==Simplify
         int MAX_SUPP_DEL = 0;
         bool TAMP_EARLY_MIN = True;

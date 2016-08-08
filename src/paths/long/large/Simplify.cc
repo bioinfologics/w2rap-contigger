@@ -171,6 +171,8 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
          //BinaryWriter::writeFile("BEFORE_PF.hbv", hb);
           //paths.WriteAll("BEFORE_PF.paths");
           PathFinder(hb,inv,paths,invPaths).untangle_single_choices();
+
+
           //BinaryWriter::writeFile("AFTER_PF.hbv", hb);
           //paths.WriteAll("AFTER_PF.paths");
          //std::cout << Date() << ": PathFinder: writing AFTER_PF" << std::endl;
@@ -184,6 +186,8 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           //inv.clear();
           //hb.Involution(inv);
           std::cout<<"all structures refreshed"<<std::endl;
+         PathFinder(hb,inv,paths,invPaths).untangle_complex_in_out_choices();
+
      }
      // Improve paths.
 

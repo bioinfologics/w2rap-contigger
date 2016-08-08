@@ -41,7 +41,7 @@ public:
     uint64_t paths_per_kbp(uint64_t e);
     std::string edge_pstr(uint64_t e);
     std::string path_str(std::vector<uint64_t> e);
-    bool separate_path(std::vector<uint64_t> p);
+    std::map<uint64_t,std::vector<uint64_t>> separate_path(std::vector<uint64_t> p);
     bool join_edges_in_path(std::vector<uint64_t> p);
     std::array<std::vector<uint64_t>,2>  get_all_long_frontiers(uint64_t e);
     void migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap);

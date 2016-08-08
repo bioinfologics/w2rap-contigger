@@ -395,7 +395,11 @@ void PathFinder::untangle_single_choices() {
     std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
     uint64_t sep=0;
     for (auto p:new_paths){
-        if (separate_path(p)) sep++;
+        auto old_edges_to_new=separate_path(p);
+        if (old_edges_to_new.size()>0) {
+            migrate_readpaths(old_edges_to_new);
+            sep++;
+        }
     }
     std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
     init_prev_next_vectors();
@@ -490,6 +494,11 @@ void PathFinder::untangle_complex_in_out_choices() {
                     if (std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
                         std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
+                        solved_frontiers.insert(f);
+                    }
+                    if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
+                        std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1){
+                        std::cout<<" REGION SOLVED BY PATHS and a jump"<<std::endl;
                         solved_frontiers.insert(f);
                     }
                 }
@@ -602,7 +611,7 @@ uint64_t PathFinder::paths_per_kbp(uint64_t e){
     return 1000 * mEdgeToPathIds[e].size()/mHBV.EdgeObject(e).size();
 };
 
-bool PathFinder::separate_path(std::vector<uint64_t> p){
+std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<uint64_t> p){
 
     //TODO XXX: proposed version 1 (never implemented)
     //Creates new edges for the "repeaty" parts of the path (either those shared with other edges or those appearing multiple times in this path).
@@ -618,7 +627,7 @@ bool PathFinder::separate_path(std::vector<uint64_t> p){
         edges_rev.insert(mInv[e]);
 
         if (edges_fw.count(mInv[e]) ||edges_rev.count(e) ){ //std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
-            return false;}
+            return {};}
     }
     //create two new vertices (for the FW and BW path)
     uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
@@ -663,10 +672,10 @@ bool PathFinder::separate_path(std::vector<uint64_t> p){
     mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
     //TODO: migrate paths!!!!
 
-    migrate_readpaths(old_edges_to_new);
+
     //TODO: cleanup new isolated elements and leading-nowhere paths.
     //for (auto ei=1;ei<p.size()-1;++ei) mHBV.DeleteEdges({p[ei]});
-    return true;
+    return old_edges_to_new;
 
 }
 
