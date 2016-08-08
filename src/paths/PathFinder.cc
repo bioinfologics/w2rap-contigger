@@ -471,6 +471,7 @@ void PathFinder::untangle_complex_in_out_choices() {
     //find a complex path
     init_prev_next_vectors();
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
+    std::vector<std::vector<uint64_t>> paths_to_separate;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
         if (e < mInv[e] && mHBV.EdgeObject(e).size() < 800) {
             auto f=get_all_long_frontiers(e);
@@ -482,6 +483,8 @@ void PathFinder::untangle_complex_in_out_choices() {
                     std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
                     std::vector<int> in_used(f[0].size(),0);
                     std::vector<int> out_used(f[1].size(),0);
+                    std::vector<std::vector<uint64_t>> first_full_paths;
+                    bool reversed=false;
                     for (auto in_i=0;in_i<f[0].size();++in_i) {
                         auto in_e=f[0][in_i];
                         for (auto out_i=0;out_i<f[1].size();++out_i) {
@@ -489,23 +492,44 @@ void PathFinder::untangle_complex_in_out_choices() {
                             auto shared_paths = 0;
                             for (auto inp:mEdgeToPathIds[in_e])
                                 for (auto outp:mEdgeToPathIds[out_e])
-                                    if (inp == outp) shared_paths++;
+                                    if (inp == outp) {
+
+                                        shared_paths++;
+                                        if (shared_paths==1){//not the best solution, but should work-ish
+                                            std::vector<uint64_t > pv;
+                                            for (auto e:mPaths[inp]) pv.push_back(e);
+                                            //std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+                                            first_full_paths.push_back({});
+                                            int16_t ei=0;
+                                            while (mPaths[inp][ei]!=in_e) ei++;
+
+                                            while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
+                                            if (ei>=mPaths[inp].size()) {
+                                                std::cout<<"reversed path detected!"<<std::endl;
+                                                reversed=true;
+                                            }
+                                            first_full_paths.back().push_back(out_e);
+                                            std::cout<<"added!"<<std::endl;
+                                        }
+                                    }
                             if (shared_paths) {
                                 out_used[out_i]++;
                                 in_used[in_i]++;
                                 std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths <<
                                 std::endl;
+
                             }
                         }
                     }
-                    if (std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
+                    if ((not reversed) and std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
                         std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
                         solved_frontiers.insert(f);
+                        for (auto p:first_full_paths) paths_to_separate.push_back(p);
                     }
                     if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
                         std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1){
-                        std::cout<<" REGION SOLVED BY PATHS and a jump"<<std::endl;
+                        std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
                         solved_frontiers.insert(f);
                     }
                 }
@@ -513,7 +537,23 @@ void PathFinder::untangle_complex_in_out_choices() {
             }
         }
     }
-    std::cout<<"Complex Regions completeley solved by paths:"<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<std::endl;
+    std::cout<<"Complex Regions completeley solved by paths:"<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
+    uint64_t sep=0;
+    std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
+    for (auto p:paths_to_separate){
+        auto oen=separate_path(p);
+        if (oen.size()>0) {
+            for (auto et:oen){
+                if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
+                for (auto ne:et.second) old_edges_to_new[et.first].push_back(ne);
+            }
+            sep++;
+        }
+    }
+    if (old_edges_to_new.size()>0) {
+        migrate_readpaths(old_edges_to_new);
+    }
+    std::cout<<" "<<sep<<" paths separated!"<<std::endl;
 }
 
 std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e){
@@ -540,7 +580,32 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
             to_explore.erase(x);
         }
     }
+    //the "canonical" representation is the one that has the smalled edge on the first vector, and bot ordered
+
+    if (in_frontiers.size()>0 and out_frontiers.size()>0) {
+        uint64_t min_in=*in_frontiers.begin();
+        for (auto i:in_frontiers){
+            if (i<min_in) min_in=i;
+            if (mInv[i]<min_in) min_in=mInv[i];
+        }
+        uint64_t min_out=*out_frontiers.begin();
+        for (auto i:out_frontiers){
+            if (i<min_out) min_out=i;
+            if (mInv[i]<min_out) min_out=mInv[i];
+        }
+        if (min_out<min_in){
+            std::set<uint64_t> new_in, new_out;
+            for (auto e:in_frontiers) new_out.insert(mInv[e]);
+            for (auto e:out_frontiers) new_in.insert(mInv[e]);
+            in_frontiers=new_in;
+            out_frontiers=new_out;
+        }
+    }
+
+    //std::sort(in_frontiers.begin(),in_frontiers.end());
+    //std::sort(out_frontiers.begin(),out_frontiers.end());
     std::array<std::vector<uint64_t>,2> frontiers={std::vector<uint64_t>(in_frontiers.begin(),in_frontiers.end()),std::vector<uint64_t>(out_frontiers.begin(),out_frontiers.end())};
+
 
 
     return frontiers;
