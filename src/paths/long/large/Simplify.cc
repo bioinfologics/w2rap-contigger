@@ -44,7 +44,7 @@ void Trace( const String& TRACE_SEQ, const HyperBasevector& hb,
 void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv, 
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,
      const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2, 
-     const int MAX_DEL2, const Bool PLACE_PARTNERS, 
+     const int MAX_DEL2,
      const Bool ANALYZE_BRANCHES_VERBOSE2, const String& TRACE_SEQ, 
      const Bool DEGLOOP, const Bool EXT_FINAL, const int EXT_FINAL_MODE, 
      const Bool PULL_APART_VERBOSE, const vec<int>& PULL_APART_TRACE,
@@ -53,15 +53,14 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
      const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER )
 {
      // Improve read placements and delete funky pairs.
-
-     TestInvolution( hb, inv );
-     if (PLACE_PARTNERS) PlacePartners( hb, inv, paths, bases, quals );
+     std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+     std::cout<<"Simplify: rerouting paths"<<std::endl;
      ReroutePaths( hb, inv, paths, bases, quals );
      DeleteFunkyPathPairs( hb, inv, bases, paths, False );
 
      // Remove unsupported edges in certain situations.
-
-     if ( TRACE_SEQ != "" ) Trace( TRACE_SEQ, hb, fin_dir, 1 );
+     std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+     std::cout<<"Simplify: removing unsupported edges"<<std::endl;
      {    const int min_mult = 10;
           vec<int> dels;
           {
@@ -105,46 +104,50 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           }
           hb.DeleteEdges(dels);
           Cleanup( hb, inv, paths );    }
-     if ( TRACE_SEQ != "" ) Trace( TRACE_SEQ, hb, fin_dir, 2 );
 
+     std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+     std::cout<<"Simplify: removing small Components"<<std::endl;
      // Clean up assembly.
 
      RemoveSmallComponents3(hb);
      Cleanup( hb, inv, paths );
-     TestInvolution( hb, inv );
-     Validate( hb, inv, paths );
-     if ( TRACE_SEQ != "" ) Trace( TRACE_SEQ, hb, fin_dir, 3 );
-     if (TAMP_EARLY) 
-     {    Tamp( hb, inv, paths, 0 );
-          TestInvolution( hb, inv );    }
+
+     if (TAMP_EARLY) {
+          std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+          std::cout<<"Simplify: Tamping"<<std::endl;
+          Tamp( hb, inv, paths, 0 );
+     }
+
      RemoveHangs( hb, inv, paths, 100 );
      Cleanup( hb, inv, paths );
-     TestInvolution( hb, inv );
-     Validate( hb, inv, paths );
+
+     std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+     std::cout<<"Simplify: analysing branches"<<std::endl;
      vec<int> to_right;
      hb.ToRight(to_right);
-     AnalyzeBranches( hb, to_right, inv, paths, True, MIN_RATIO2,
-          ANALYZE_BRANCHES_VERBOSE2 );
+
+     AnalyzeBranches( hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2 );
      Cleanup( hb, inv, paths );
-     TestInvolution( hb, inv );
      RemoveHangs( hb, inv, paths, MAX_DEL2 );
      Cleanup( hb, inv, paths );
-     TestInvolution( hb, inv );
      RemoveSmallComponents3(hb);
      Cleanup( hb, inv, paths );
-     if ( TRACE_SEQ != "" ) Trace( TRACE_SEQ, hb, fin_dir, 4 );
-     TestInvolution( hb, inv );
+
+     std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+     std::cout<<"Simplify: popping bubbles"<<std::endl;
      PopBubbles( hb, inv, bases, quals, paths );
      Cleanup( hb, inv, paths );
-     TestInvolution( hb, inv );
+
      DeleteFunkyPathPairs( hb, inv, bases, paths, False );
+
+     std::cout<<"Edge count: "<<hb.EdgeObjectCount()<<" Path count:"<<paths.size()<<std::endl;
+     std::cout<<"Simplify: Tamping (700)"<<std::endl;
+
      Tamp( hb, inv, paths, 10 );
-     TestInvolution( hb, inv );
      RemoveHangs( hb, inv, paths, 700 );
      Cleanup( hb, inv, paths );
      RemoveSmallComponents3(hb);
      Cleanup( hb, inv, paths );
-     if ( TRACE_SEQ != "" ) Trace( TRACE_SEQ, hb, fin_dir, 5 );
 
      // Pull apart.
 
@@ -152,41 +155,36 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           VecULongVec invPaths;
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
           std::cout << Date() << ": pulling apart repeats" << std::endl;
-          PullAparter pa(hb,inv,paths,invPaths,PULL_APART_TRACE,
-                  PULL_APART_VERBOSE,5,5.0);
+          PullAparter pa(hb,inv,paths,invPaths,PULL_APART_TRACE, PULL_APART_VERBOSE,5,5.0);
           size_t count = pa.SeparateAll();
-          std::cout << Date() << ": there were " << count << " repeats pulled apart."
-               << std::endl;
-          std::cout << Date() << ": there were " << pa.getRemovedReadPaths() <<
-                    " read paths removed during separation." << std::endl;
-          Validate( hb, inv, paths );    }
+          std::cout << Date() << ": there were " << count << " repeats pulled apart." << std::endl;
+          std::cout << Date() << ": there were " << pa.getRemovedReadPaths() << " read paths removed during separation." << std::endl;
+     }
 
      if ( RUN_PATHFINDER )
      {
           std::cout << Date() << ": making paths index for PathFinder" << std::endl;
           VecULongVec invPaths;
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
-         std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
-         //std::cout << Date() << ": PathFinder: writing BEFORE_PF" << std::endl;
-         //BinaryWriter::writeFile("BEFORE_PF.hbv", hb);
-          //paths.WriteAll("BEFORE_PF.paths");
+         std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
           PathFinder(hb,inv,paths,invPaths).untangle_single_choices();
 
 
           //BinaryWriter::writeFile("AFTER_PF.hbv", hb);
           //paths.WriteAll("AFTER_PF.paths");
          //std::cout << Date() << ": PathFinder: writing AFTER_PF" << std::endl;
-          std::cout << Date() << ": PathFinder: validating" << std::endl;
-          Validate( hb, inv, paths );
           std::cout<<"Removing Unneded Vertices"<<std::endl;
           RemoveUnneededVertices2(hb,inv,paths);
-         //BinaryWriter::writeFile("AFTER_PFRV.hbv", hb);
+          std::cout << Date() << ": PathFinder: collapsed single-direction repeats" << std::endl;
+          //BinaryWriter::writeFile("AFTER_PFRV.hbv", hb);
          //paths.WriteAll("AFTER_PFRV.paths");
           //std::cout<<"refreshing all structures as precaution"<<std::endl;
           //inv.clear();
           //hb.Involution(inv);
-          std::cout<<"all structures refreshed"<<std::endl;
          PathFinder(hb,inv,paths,invPaths).untangle_complex_in_out_choices();
+          std::cout<<"Removing Unneded Vertices"<<std::endl;
+          RemoveUnneededVertices2(hb,inv,paths);
+
 
      }
      // Improve paths.

@@ -384,7 +384,7 @@ void PathFinder::untangle_single_choices() {
 
             auto iurs=is_unrollable_loop(mInv[e],1000);
             if (urs.size()>0 && iurs.size()>0) {
-                std::cout<<"unrolling loop on edge"<<e<<std::endl;
+                //std::cout<<"unrolling loop on edge"<<e<<std::endl;
                 new_paths.push_back(urs[0]);
             }
         }
@@ -480,7 +480,7 @@ void PathFinder::untangle_complex_in_out_choices() {
                 bool single_dir=true;
                 for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
                 if (single_dir) {
-                    std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
+                    //std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
                     std::vector<int> in_used(f[0].size(),0);
                     std::vector<int> out_used(f[1].size(),0);
                     std::vector<std::vector<uint64_t>> first_full_paths;
@@ -490,6 +490,7 @@ void PathFinder::untangle_complex_in_out_choices() {
                         for (auto out_i=0;out_i<f[1].size();++out_i) {
                             auto out_e=f[1][out_i];
                             auto shared_paths = 0;
+
                             for (auto inp:mEdgeToPathIds[in_e])
                                 for (auto outp:mEdgeToPathIds[out_e])
                                     if (inp == outp) {
@@ -505,39 +506,61 @@ void PathFinder::untangle_complex_in_out_choices() {
 
                                             while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
                                             if (ei>=mPaths[inp].size()) {
-                                                std::cout<<"reversed path detected!"<<std::endl;
+                                                //std::cout<<"reversed path detected!"<<std::endl;
                                                 reversed=true;
                                             }
                                             first_full_paths.back().push_back(out_e);
-                                            std::cout<<"added!"<<std::endl;
+                                            //std::cout<<"added!"<<std::endl;
+                                        }
+                                    }
+                            //check for reverse paths too
+                            for (auto inp:mEdgeToPathIds[mInv[out_e]])
+                                for (auto outp:mEdgeToPathIds[mInv[in_e]])
+                                    if (inp == outp) {
+
+                                        shared_paths++;
+                                        if (shared_paths==1){//not the best solution, but should work-ish
+                                            std::vector<uint64_t > pv;
+                                            for (auto e=mPaths[inp].rbegin();e!=mPaths[inp].rend();++e) pv.push_back(mInv[*e]);
+                                            //std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+                                            first_full_paths.push_back({});
+                                            int16_t ei=0;
+                                            while (pv[ei]!=in_e) ei++;
+
+                                            while (pv[ei]!=out_e && ei<pv.size()) first_full_paths.back().push_back(pv[ei++]);
+                                            if (ei>=pv.size()) {
+                                                //std::cout<<"reversed path detected!"<<std::endl;
+                                                reversed=true;
+                                            }
+                                            first_full_paths.back().push_back(out_e);
+                                            //std::cout<<"added!"<<std::endl;
                                         }
                                     }
                             if (shared_paths) {
                                 out_used[out_i]++;
                                 in_used[in_i]++;
-                                std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths <<
-                                std::endl;
+                                //std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths << std::endl;
 
                             }
                         }
                     }
                     if ((not reversed) and std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
-                        std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
+                        //std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
                         solved_frontiers.insert(f);
                         for (auto p:first_full_paths) paths_to_separate.push_back(p);
                     }
                     if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
                         std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1){
-                        std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
-                        solved_frontiers.insert(f);
+                        //std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
+                        //solved_frontiers.insert(f);
                     }
                 }
 
             }
         }
     }
-    std::cout<<"Complex Regions completeley solved by paths:"<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
+    std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:paths_to_separate){
@@ -705,9 +728,9 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
     uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
     mHBV.AddVertices(2);
     //migrate connections (dangerous!!!)
-    std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
+    //std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
-    std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
+    //std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
 
@@ -721,14 +744,14 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
 
         //now, duplicate next edge for the FW and reverse path
         auto nef=mHBV.AddEdge(prev_vertex_fw,current_vertex_fw,mHBV.EdgeObject(p[ei]));
-        std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
+        //std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
         mToLeft.push_back(prev_vertex_fw);
         mToRight.push_back(current_vertex_fw);
         if (! old_edges_to_new.count(p[ei]))  old_edges_to_new[p[ei]]={};
         old_edges_to_new[p[ei]].push_back(nef);
 
         auto ner=mHBV.AddEdge(current_vertex_rev,prev_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
-        std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
+        //std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
         mToLeft.push_back(current_vertex_rev);
         mToRight.push_back(prev_vertex_rev);
         if (! old_edges_to_new.count(mInv[p[ei]]))  old_edges_to_new[mInv[p[ei]]]={};
@@ -738,9 +761,9 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
         mInv.push_back(nef);
         mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
     }
-    std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
+    //std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
-    std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
+    //std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
     //TODO: migrate paths!!!!
 

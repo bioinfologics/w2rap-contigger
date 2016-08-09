@@ -444,12 +444,13 @@ int main(const int argc, const char * argv[]) {
     }
     if (from_step<=6 and to_step>=6) {
         std::cout << "--== Step 6: Graph simplification and path finding ==--" << std::endl;
+
+
         //==Simplify
         int MAX_SUPP_DEL = 0;
         bool TAMP_EARLY_MIN = True;
         int MIN_RATIO2 = 8;
         int MAX_DEL2 = 200;
-        bool PLACE_PARTNERS = False;
         bool ANALYZE_BRANCHES_VERBOSE2 = False;
         const String TRACE_SEQ = "";
         bool DEGLOOP = True;
@@ -465,12 +466,11 @@ int main(const int argc, const char * argv[]) {
         bool FINAL_TINY = False;//True;
         bool UNWIND3 = True;
 
-        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
-
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
-                 PLACE_PARTNERS, ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
+                 ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
                  IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder);
+
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse

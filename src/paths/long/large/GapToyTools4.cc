@@ -807,6 +807,7 @@ void PopBubbles( HyperBasevector& hb , const vec<int>& inv2
                 if(edges.size()==4) to_delete.push_back(edges[2+shift]);
            }
      }
+    std::cout<< to_delete.size() << " edges marked to delete by bubble popper " <<std::endl;
      hb.DeleteEdges(to_delete);
 }
 

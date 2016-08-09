@@ -1216,7 +1216,6 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 {    
      //XXX: truncates paths, which should be already done by the graph-modifying functions
-    std::cout<<"Cleanup truncating invalidated paths"<<std::endl;
     {
         vec<Bool> used;
         hb.Used(used);
@@ -1229,13 +1228,8 @@ void Cleanup( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
             }
         }
     }
-    std::cout<<"Cleanup Removing Unneded Vertices"<<std::endl;
     RemoveUnneededVertices2( hb, inv, paths );
-    std::cout<<"Cleanup calling core graph cleanup"<<std::endl;
-     CleanupCore( hb, inv, paths );    
-     // Dump objects ofter each cleanup, 
-     // controlled by env variable export DISCOVAR_DUMP_ON_CLEANUP=True
-
+    CleanupCore( hb, inv, paths );
 }
 
 void CleanupLoops( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )

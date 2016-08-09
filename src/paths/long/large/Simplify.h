@@ -20,7 +20,7 @@
 void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv, 
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,
      const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2, 
-     const int MAX_DEL2, const Bool PLACE_PARTNERS, 
+     const int MAX_DEL2,
      const Bool ANALYZE_BRANCHES_VERBOSE2, const String& TRACE_SEQ, 
      const Bool DEGLOOP, const Bool EXT_FINAL, const int EXT_FINAL_MODE,
      const Bool PULL_APART_VERBOSE, const vec<int>& PULL_APART_TRACE,
