@@ -166,22 +166,22 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           std::cout << Date() << ": making paths index for PathFinder" << std::endl;
           VecULongVec invPaths;
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
-         std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
+          std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
           PathFinder(hb, inv, paths, invPaths).unroll_loops(1000);
 
 
           //BinaryWriter::writeFile("AFTER_PF.hbv", hb);
           //paths.WriteAll("AFTER_PF.paths");
-         //std::cout << Date() << ": PathFinder: writing AFTER_PF" << std::endl;
+          //std::cout << Date() << ": PathFinder: writing AFTER_PF" << std::endl;
           std::cout<<"Removing Unneded Vertices"<<std::endl;
           RemoveUnneededVertices2(hb,inv,paths);
           std::cout << Date() << ": PathFinder: collapsed single-direction repeats" << std::endl;
           //BinaryWriter::writeFile("AFTER_PFRV.hbv", hb);
-         //paths.WriteAll("AFTER_PFRV.paths");
+          //paths.WriteAll("AFTER_PFRV.paths");
           //std::cout<<"refreshing all structures as precaution"<<std::endl;
           //inv.clear();
           //hb.Involution(inv);
-         PathFinder(hb,inv,paths,invPaths).untangle_complex_in_out_choices(700);
+          PathFinder(hb,inv,paths,invPaths).untangle_complex_in_out_choices(700);
           std::cout<<"Removing Unneded Vertices"<<std::endl;
           RemoveUnneededVertices2(hb,inv,paths);
 

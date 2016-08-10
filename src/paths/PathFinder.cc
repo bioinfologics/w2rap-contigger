@@ -549,7 +549,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
                         //std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
                         solved_frontiers.insert(f);
                         for (auto p:first_full_paths) paths_to_separate.push_back(p);
-                    } else if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
+                    } /*else if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
                             std::count(in_used.begin(),in_used.end(),0) == 1 and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1 and
                             std::count(out_used.begin(),out_used.end(),0) == 1){
@@ -577,7 +577,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
                         std::count(out_used.begin(),out_used.end(),0) == 0){
                         msf++;
                         msf_paths+=in_used.size();
-                    }
+                    }*/
 
                 }
 
@@ -585,8 +585,8 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
         }
     }
     std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
-    std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
-    std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
+    //std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
+    //std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
 
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
