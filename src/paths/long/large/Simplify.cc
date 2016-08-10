@@ -167,7 +167,7 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           VecULongVec invPaths;
           invert( paths, invPaths, hb.EdgeObjectCount( ) );
          std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
-          PathFinder(hb,inv,paths,invPaths).untangle_single_choices();
+          PathFinder(hb, inv, paths, invPaths).unroll_loops(1000);
 
 
           //BinaryWriter::writeFile("AFTER_PF.hbv", hb);
@@ -181,7 +181,7 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
           //std::cout<<"refreshing all structures as precaution"<<std::endl;
           //inv.clear();
           //hb.Involution(inv);
-         PathFinder(hb,inv,paths,invPaths).untangle_complex_in_out_choices();
+         PathFinder(hb,inv,paths,invPaths).untangle_complex_in_out_choices(700);
           std::cout<<"Removing Unneded Vertices"<<std::endl;
           RemoveUnneededVertices2(hb,inv,paths);
 

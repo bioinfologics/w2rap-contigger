@@ -366,10 +366,8 @@ void PathFinder::classify_forks(){
 
 }
 
-void PathFinder::untangle_single_choices() {
+void PathFinder::unroll_loops(uint64_t min_side_sizes) {
     //find nodes where in >1 or out>1 and in>0 and out>0
-    const int MIN_START_SEQ_SIZE=1000;
-    const int MAX_NEXT_SEQ_SIZE=1000;
     uint64_t uloop=0,ursize=0;
     std::cout<<"Starting loop finding"<<std::endl;
     init_prev_next_vectors();
@@ -380,9 +378,9 @@ void PathFinder::untangle_single_choices() {
     std::vector<std::vector<uint64_t>> new_paths; //these are solved paths, they will be materialised later
     for ( int e = 0; e < mHBV.EdgeObjectCount(); ++e ) {
         if (e<mInv[e]) {
-            auto urs=is_unrollable_loop(e,1000);
+            auto urs=is_unrollable_loop(e,min_side_sizes);
 
-            auto iurs=is_unrollable_loop(mInv[e],1000);
+            auto iurs=is_unrollable_loop(mInv[e],min_side_sizes);
             if (urs.size()>0 && iurs.size()>0) {
                 //std::cout<<"unrolling loop on edge"<<e<<std::endl;
                 new_paths.push_back(urs[0]);
@@ -467,14 +465,16 @@ void PathFinder::untangle_pins() {
     std::cout<<"Total number of pinholes: "<<pins;
 }
 
-void PathFinder::untangle_complex_in_out_choices() {
+void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
     //find a complex path
+    uint64_t qsf=0,qsf_paths=0;
+    uint64_t msf=0,msf_paths=0;
     init_prev_next_vectors();
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     std::vector<std::vector<uint64_t>> paths_to_separate;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
-        if (e < mInv[e] && mHBV.EdgeObject(e).size() < 800) {
-            auto f=get_all_long_frontiers(e);
+        if (e < mInv[e] && mHBV.EdgeObject(e).size() < large_frontier_size) {
+            auto f=get_all_long_frontiers(e, large_frontier_size);
             if (f[0].size()>1 and f[1].size()>1 and seen_frontiers.count(f)==0){
                 seen_frontiers.insert(f);
                 bool single_dir=true;
@@ -549,18 +549,45 @@ void PathFinder::untangle_complex_in_out_choices() {
                         //std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
                         solved_frontiers.insert(f);
                         for (auto p:first_full_paths) paths_to_separate.push_back(p);
-                    }
-                    if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
-                        std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1){
+                    } else if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
+                            std::count(in_used.begin(),in_used.end(),0) == 1 and
+                            std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1 and
+                            std::count(out_used.begin(),out_used.end(),0) == 1){
                         //std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
                         //solved_frontiers.insert(f);
+                        qsf++;
+                        qsf_paths+=in_used.size();
+                        unsigned int in_index=0;
+                        while (in_used[in_index]!=0) in_index++;
+                        unsigned int out_index=0;
+                        while (out_used[out_index]!=0) out_index++;
+                        std::cout<<"Trying to solve region by reducing last choice to unique path between "<<f[0][in_index]<< " and "<< f[1][out_index]<<std::endl;
+
+                        auto all_paths=AllPathsFromTo({f[0][in_index]},{f[1][out_index]},10);
+                        if (all_paths.size()==1){
+                            solved_frontiers.insert(f);
+                            for (auto p:first_full_paths) paths_to_separate.push_back(p);
+                            paths_to_separate.push_back(all_paths[0]);
+
+                            std::cout<<"Solved!!!"<<std::endl;
+                        }
+                        else std::cout<<"Not solved, "<<all_paths.size()<<" different paths :("<<std::endl;
+
+                    } else if (std::count(in_used.begin(),in_used.end(),0) == 0 and
+                        std::count(out_used.begin(),out_used.end(),0) == 0){
+                        msf++;
+                        msf_paths+=in_used.size();
                     }
+
                 }
 
             }
         }
     }
     std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
+    std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
+    std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
+
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:paths_to_separate){
@@ -579,7 +606,29 @@ void PathFinder::untangle_complex_in_out_choices() {
     std::cout<<" "<<sep<<" paths separated!"<<std::endl;
 }
 
-std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e){
+std::vector<std::vector<uint64_t>> PathFinder::AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length) {
+    std::vector<std::vector<uint64_t>> current_paths;
+    std::vector<std::vector<uint64_t>> paths;
+    //First, start all paths from in_edges
+    for (auto ine:in_edges) current_paths.push_back({ine});
+    while (max_length--) {
+        auto old_paths=current_paths;
+        current_paths.clear();
+        for (auto op:old_paths) {
+            //grow each path, adding variations if needed
+            for (auto ne:next_edges[op.back()]){
+                //if new edge on out_edges, add to paths
+                op.push_back(ne);
+                if (std::count(out_edges.begin(),out_edges.end(),ne)) paths.push_back(op);
+                else current_paths.push_back(op);
+            }
+        }
+    }
+    return paths;
+
+}
+
+std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e, uint64_t large_frontier_size){
 
     std::set<uint64_t> seen_edges, to_explore={e}, in_frontiers, out_frontiers;
 
@@ -588,11 +637,11 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
         for (auto x:to_explore){
             if (!seen_edges.count(x)){
                 for (auto p:prev_edges[x]) {
-                    if (mHBV.EdgeObject(p).size() >= 800 )  in_frontiers.insert(p);
+                    if (mHBV.EdgeObject(p).size() >= large_frontier_size )  in_frontiers.insert(p);
                     else if (!seen_edges.count(p)) to_explore.insert(p);
                 }
                 for (auto n:next_edges[x]) {
-                    if (mHBV.EdgeObject(n).size() >= 800) out_frontiers.insert(n);
+                    if (mHBV.EdgeObject(n).size() >= large_frontier_size) out_frontiers.insert(n);
                     else if (!seen_edges.count(n)) to_explore.insert(n);
                 }
             }
