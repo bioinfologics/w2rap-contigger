@@ -185,7 +185,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         }
 
         std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
-        PathFinder(hb, inv, paths, invPaths).unroll_loops(1000);
+        PathFinder(hb, inv, paths, invPaths).unroll_loops(800);
         std::cout << "Removing Unneded Vertices" << std::endl;
         RemoveUnneededVertices2(hb, inv, paths);
         Cleanup(hb, inv, paths);
@@ -194,7 +194,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             BinaryWriter::writeFile(fin_dir + "/pf_unrolled_loops.hbv", hb);
             paths.WriteAll(fin_dir + "/pf_unrolled_loops.paths");
         }
-
+        invPaths.clear();
+        invert( paths, invPaths, hb.EdgeObjectCount( ) );
         std::cout << Date() << ": PathFinder: analysing single-direction repeats" << std::endl;
         PathFinder(hb, inv, paths, invPaths).untangle_complex_in_out_choices(700);
         std::cout << "Removing Unneded Vertices" << std::endl;

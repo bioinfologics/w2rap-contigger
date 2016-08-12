@@ -186,33 +186,20 @@ int main(const int argc, const char * argv[]) {
             VecULongVec invPaths;
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
             std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
-            //PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(1000);
-            //RemoveUnneededVertices2(hbvr,inv,pathsr);
-            //PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(900);
-            //RemoveUnneededVertices2(hbvr,inv,pathsr);
+
             PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
             RemoveUnneededVertices2(hbvr,inv,pathsr);
+            Cleanup( hbvr, inv, pathsr );
+
             std::cout << Date() << ": PathFinder: validating" << std::endl;
-            //Validate( hbvr, inv, pathsr );
             std::cout<<"Removing Unneded Vertices"<<std::endl;
 
             std::cout<<"all structures refreshed"<<std::endl;
             invPaths.clear();
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(1000);
-            RemoveUnneededVertices2(hbvr,inv,pathsr);
-            Cleanup( hbvr, inv, pathsr );
-
-            /*PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(800);
-            RemoveUnneededVertices2(hbvr,inv,pathsr);
             PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700);
             RemoveUnneededVertices2(hbvr,inv,pathsr);
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(600);
-            RemoveUnneededVertices2(hbvr,inv,pathsr);
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(500);
-            RemoveUnneededVertices2(hbvr,inv,pathsr);
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(400);
-            RemoveUnneededVertices2(hbvr,inv,pathsr);*/
+            Cleanup( hbvr, inv, pathsr );
 
             path_improver pimp;
                 vec<int64_t> ids;
