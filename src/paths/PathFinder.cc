@@ -470,6 +470,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
     uint64_t qsf=0,qsf_paths=0;
     uint64_t msf=0,msf_paths=0;
     init_prev_next_vectors();
+    std::cout<<"vectors initialised"<<std::endl;
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     std::vector<std::vector<uint64_t>> paths_to_separate;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
@@ -480,7 +481,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
                 bool single_dir=true;
                 for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
                 if (single_dir) {
-                    //std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
+                    std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
                     std::vector<int> in_used(f[0].size(),0);
                     std::vector<int> out_used(f[1].size(),0);
                     std::vector<std::vector<uint64_t>> first_full_paths;
@@ -499,14 +500,14 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
                                         if (shared_paths==1){//not the best solution, but should work-ish
                                             std::vector<uint64_t > pv;
                                             for (auto e:mPaths[inp]) pv.push_back(e);
-                                            //std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
                                             first_full_paths.push_back({});
                                             int16_t ei=0;
                                             while (mPaths[inp][ei]!=in_e) ei++;
 
                                             while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
                                             if (ei>=mPaths[inp].size()) {
-                                                //std::cout<<"reversed path detected!"<<std::endl;
+                                                std::cout<<"reversed path detected!"<<std::endl;
                                                 reversed=true;
                                             }
                                             first_full_paths.back().push_back(out_e);
@@ -522,14 +523,14 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
                                         if (shared_paths==1){//not the best solution, but should work-ish
                                             std::vector<uint64_t > pv;
                                             for (auto e=mPaths[inp].rbegin();e!=mPaths[inp].rend();++e) pv.push_back(mInv[*e]);
-                                            //std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
                                             first_full_paths.push_back({});
                                             int16_t ei=0;
                                             while (pv[ei]!=in_e) ei++;
 
                                             while (pv[ei]!=out_e && ei<pv.size()) first_full_paths.back().push_back(pv[ei++]);
                                             if (ei>=pv.size()) {
-                                                //std::cout<<"reversed path detected!"<<std::endl;
+                                                std::cout<<"reversed path detected!"<<std::endl;
                                                 reversed=true;
                                             }
                                             first_full_paths.back().push_back(out_e);
@@ -546,7 +547,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
                     }
                     if ((not reversed) and std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
-                        //std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
+                        std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
                         solved_frontiers.insert(f);
                         for (auto p:first_full_paths) paths_to_separate.push_back(p);
                     } /*else if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and

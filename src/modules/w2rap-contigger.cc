@@ -59,11 +59,13 @@ int main(const int argc, const char * argv[]) {
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
-    bool extend_paths,run_pathfinder,dump_all,dump_perf;
+    bool extend_paths,run_pathfinder,dump_all,dump_perf,dump_pf;
 
     //========== Command Line Option Parsing ==========
-
+    for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
+    std::cout<<std::endl<<std::endl;
     std::cout << "Welcome to w2rap-contigger" << std::endl;
+
     try {
         TCLAP::CmdLine cmd("", ' ', "0.1");
         TCLAP::ValueArg<unsigned int> threadsArg("t", "threads",
@@ -102,12 +104,13 @@ int main(const int argc, const char * argv[]) {
                                                                "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
                                                          "Dump performance info (devel)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         dumpPFArg        ("","dump_pf",
+                                                          "Dump pathfinder info (devel)", false,false,"bool",cmd);
 
         TCLAP::ValueArg<std::string> dev_runArg("", "dev_run_test",
                                                    "runs development tests", false, "", "devel only", cmd);
 
         cmd.parse(argc, argv);
-
         // Get the value parsed by each arg.
         out_dir = out_dirArg.getValue();
         out_prefix = out_prefixArg.getValue();
@@ -124,6 +127,7 @@ int main(const int argc, const char * argv[]) {
         from_step=fromStep_Arg.getValue();
         to_step=toStep_Arg.getValue();
         dev_run=dev_runArg.getValue();
+        dump_pf=dumpPFArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -174,8 +178,8 @@ int main(const int argc, const char * argv[]) {
             bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
             quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
             std::cout << "   DONE!" << std::endl;
-            BinaryReader::readFile("BEFORE_PF.hbv", &hbvr);
-            pathsr.ReadAll("BEFORE_PF.paths");
+            BinaryReader::readFile(out_dir + "/pf_start.hbv", &hbvr);
+            pathsr.ReadAll(out_dir + "/pf_start.paths");
             inv.clear();
             hbvr.Involution(inv);
             std::cout << Date() << ": making paths index for PathFinder" << std::endl;
@@ -198,6 +202,7 @@ int main(const int argc, const char * argv[]) {
             PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(1000);
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );
+
             /*PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(800);
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700);
@@ -481,13 +486,13 @@ int main(const int argc, const char * argv[]) {
         float DEGLOOP_MIN_DIST = 2.5;
         bool IMPROVE_PATHS = True;
         bool IMPROVE_PATHS_LARGE = False;
-        bool FINAL_TINY = False;//True;
+        bool FINAL_TINY = True;
         bool UNWIND3 = True;
 
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder);
+                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
 
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
