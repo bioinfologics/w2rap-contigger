@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -lz -DNDEBUG")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG")
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
 
@@ -18,9 +18,9 @@ if (DEFINED MALLOC_LIBRARY)
     link_directories(${LIBSO_PATH})
 endif()
 
-if (DEFINED ZLIB_PATH)
-  include_directories("${ZLIB_PATH}/include")
-  link_directories("${ZLIB_PATH}/lib")
+find_package(ZLIB REQUIRED)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
 endif()
 
 ## Include directories
@@ -300,12 +300,12 @@ if (DEFINED MALLOC_LIBRARY)
 endif()
 
 ##Zlib link
-if (DEFINED ZLIB_PATH)
+if (ZLIB_FOUND)
   set(ZLIB libz.so)
-  target_link_libraries(01_unipaths ${ZLIB})
-  target_link_libraries(02_qgraph ${ZLIB})
-  target_link_libraries(03_clean ${ZLIB})
-  target_link_libraries(04_patching ${ZLIB})
-  target_link_libraries(05_simplify ${ZLIB})
-  target_link_libraries(06_scaffolding ${ZLIB})
+  target_link_libraries(01_unipaths ${ZLIB_LIBRARIES})
+  target_link_libraries(02_qgraph ${ZLIB_LIBRARIES})
+  target_link_libraries(03_clean ${ZLIB_LIBRARIES})
+  target_link_libraries(04_patching ${ZLIB_LIBRARIES})
+  target_link_libraries(05_simplify ${ZLIB_LIBRARIES})
+  target_link_libraries(06_scaffolding ${ZLIB_LIBRARIES})
 endif()
