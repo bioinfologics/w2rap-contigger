@@ -470,8 +470,8 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                     y.push_back( inv[ x[j] ] );
                Bool rc = ( y < x );
                x = Min( x, y );
-               int pos = BinPosition( places, x );
-               int n = ipaths2[pos].size( );
+               long pos = BinPosition( places, x );
+               long n = ipaths2[pos].size( );
                paths2[id].resize(n);
 
                int offset;
