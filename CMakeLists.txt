@@ -1,6 +1,15 @@
 cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
+## Add compiler that work here
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.2.0")
+    message(FATAL_ERROR "Insufficient gcc version, use gcc-5.2.0+")
+  endif()
+else ()
+  message(FATAL_ERROR "This compiler is not supported")
+endif()
+
 ## Compiler flags
 SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG")
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
