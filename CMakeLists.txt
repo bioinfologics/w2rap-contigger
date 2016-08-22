@@ -3,7 +3,7 @@ project (w2rap-contigger)
 
 ## Add compiler that work here
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.2.0")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.1.0")
     message(FATAL_ERROR "Insufficient gcc version, use gcc-5.2.0+")
   endif()
 else ()
