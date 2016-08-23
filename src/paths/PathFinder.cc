@@ -592,6 +592,12 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:paths_to_separate){
+
+        if (old_edges_to_new.count(p.front()) < 0 or old_edges_to_new.count(p.back()) < 0) {
+            std::cout<<"path starts or ends in an already modified edge, skipping"<<std::endl;
+            continue;
+        }
+
         auto oen=separate_path(p);
         if (oen.size()>0) {
             for (auto et:oen){
