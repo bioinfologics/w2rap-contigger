@@ -43,13 +43,13 @@ public:
     void untangle_path(std::vector<uint64_t> path);
     void untangle_pins();
     void unroll_loops(uint64_t min_side_sizes);//untangles all single choices when support is uncontested
-    void untangle_complex_in_out_choices(uint64_t large_frontier_size);
+    void untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation=false);
     void init_prev_next_vectors();
     std::vector<std::vector<uint64_t>> is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);//returns size of the unrolled loop
     uint64_t paths_per_kbp(uint64_t e);
     std::string edge_pstr(uint64_t e);
     std::string path_str(std::vector<uint64_t> e);
-    std::map<uint64_t,std::vector<uint64_t>> separate_path(std::vector<uint64_t> p);
+    std::map<uint64_t,std::vector<uint64_t>> separate_path(std::vector<uint64_t> p, bool verbose_separation=false);
     bool join_edges_in_path(std::vector<uint64_t> p);
     std::array<std::vector<uint64_t>,2>  get_all_long_frontiers(uint64_t e,uint64_t large_frontier_size);
     void migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap);

@@ -465,7 +465,7 @@ void PathFinder::untangle_pins() {
     std::cout<<"Total number of pinholes: "<<pins;
 }
 
-void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
+void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation) {
     //find a complex path
     uint64_t qsf=0,qsf_paths=0;
     uint64_t msf=0,msf_paths=0;
@@ -593,12 +593,12 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size) {
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:paths_to_separate){
 
-        if (old_edges_to_new.count(p.front()) < 0 or old_edges_to_new.count(p.back()) < 0) {
-            std::cout<<"path starts or ends in an already modified edge, skipping"<<std::endl;
+        if (old_edges_to_new.count(p.front()) > 0 or old_edges_to_new.count(p.back()) > 0) {
+            std::cout<<"WARNING: path starts or ends in an already modified edge, skipping"<<std::endl;
             continue;
         }
 
-        auto oen=separate_path(p);
+        auto oen=separate_path(p, verbose_separation);
         if (oen.size()>0) {
             for (auto et:oen){
                 if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
@@ -644,11 +644,21 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
         for (auto x:to_explore){
             if (!seen_edges.count(x)){
                 for (auto p:prev_edges[x]) {
-                    if (mHBV.EdgeObject(p).size() >= large_frontier_size )  in_frontiers.insert(p);
+                    if (mHBV.EdgeObject(p).size() >= large_frontier_size )  {
+                        in_frontiers.insert(p);
+                        for (auto other_n:next_edges[p]){
+                            if (!seen_edges.count(other_n)) to_explore.insert(other_n);
+                        }
+                    }
                     else if (!seen_edges.count(p)) to_explore.insert(p);
                 }
                 for (auto n:next_edges[x]) {
-                    if (mHBV.EdgeObject(n).size() >= large_frontier_size) out_frontiers.insert(n);
+                    if (mHBV.EdgeObject(n).size() >= large_frontier_size) {
+                        out_frontiers.insert(n);
+                        for (auto other_p:prev_edges[n]){
+                            if (!seen_edges.count(other_p)) to_explore.insert(other_p);
+                        }
+                    }
                     else if (!seen_edges.count(n)) to_explore.insert(n);
                 }
             }
@@ -762,7 +772,7 @@ uint64_t PathFinder::paths_per_kbp(uint64_t e){
     return 1000 * mEdgeToPathIds[e].size()/mHBV.EdgeObject(e).size();
 };
 
-std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<uint64_t> p){
+std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<uint64_t> p, bool verbose_separation){
 
     //TODO XXX: proposed version 1 (never implemented)
     //Creates new edges for the "repeaty" parts of the path (either those shared with other edges or those appearing multiple times in this path).
@@ -784,9 +794,9 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
     uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
     mHBV.AddVertices(2);
     //migrate connections (dangerous!!!)
-    //std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
+    if (verbose_separation) std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
-    //std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
+    if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
 
@@ -800,14 +810,14 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
 
         //now, duplicate next edge for the FW and reverse path
         auto nef=mHBV.AddEdge(prev_vertex_fw,current_vertex_fw,mHBV.EdgeObject(p[ei]));
-        //std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
+        if (verbose_separation)  std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
         mToLeft.push_back(prev_vertex_fw);
         mToRight.push_back(current_vertex_fw);
         if (! old_edges_to_new.count(p[ei]))  old_edges_to_new[p[ei]]={};
         old_edges_to_new[p[ei]].push_back(nef);
 
         auto ner=mHBV.AddEdge(current_vertex_rev,prev_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
-        //std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
+        if (verbose_separation) std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
         mToLeft.push_back(current_vertex_rev);
         mToRight.push_back(prev_vertex_rev);
         if (! old_edges_to_new.count(mInv[p[ei]]))  old_edges_to_new[mInv[p[ei]]]={};
@@ -817,12 +827,10 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
         mInv.push_back(nef);
         mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
     }
-    //std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
+    if (verbose_separation) std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
-    //std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
+    if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
-    //TODO: migrate paths!!!!
-
 
     //TODO: cleanup new isolated elements and leading-nowhere paths.
     //for (auto ei=1;ei<p.size()-1;++ei) mHBV.DeleteEdges({p[ei]});
