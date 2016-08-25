@@ -669,6 +669,7 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
             to_explore.erase(x);
         }
     }
+    if (to_explore.size()>0) return std::array<std::vector<uint64_t>,2>();
     //the "canonical" representation is the one that has the smalled edge on the first vector, and bot ordered
 
     if (in_frontiers.size()>0 and out_frontiers.size()>0) {
