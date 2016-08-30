@@ -641,33 +641,41 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
 
     int horizon=10;
     while (horizon--){
-        for (auto x:to_explore){
+        std::set<uint64_t> next_to_explore;
+        for (auto x:to_explore){ //to_explore: replace rather and "update" (use next_to_explore)
+
             if (!seen_edges.count(x)){
+
+                //What about reverse complements and paths that include loops that "reverse the flow"?
+                if (seen_edges.count(mInv[x])) return std::array<std::vector<uint64_t>,2>(); //just cancel for now
                 for (auto p:prev_edges[x]) {
                     if (mHBV.EdgeObject(p).size() >= large_frontier_size )  {
+                        //What about frontiers on both sides?
                         in_frontiers.insert(p);
                         for (auto other_n:next_edges[p]){
-                            if (!seen_edges.count(other_n)) to_explore.insert(other_n);
+                            if (!seen_edges.count(other_n)) next_to_explore.insert(other_n);
                         }
                     }
-                    else if (!seen_edges.count(p)) to_explore.insert(p);
+                    else if (!seen_edges.count(p)) next_to_explore.insert(p);
                 }
                 for (auto n:next_edges[x]) {
                     if (mHBV.EdgeObject(n).size() >= large_frontier_size) {
+                        //What about frontiers on both sides?
                         out_frontiers.insert(n);
                         for (auto other_p:prev_edges[n]){
-                            if (!seen_edges.count(other_p)) to_explore.insert(other_p);
+                            if (!seen_edges.count(other_p)) next_to_explore.insert(other_p);
                         }
                     }
-                    else if (!seen_edges.count(n)) to_explore.insert(n);
+                    else if (!seen_edges.count(n)) next_to_explore.insert(n);
                 }
             }
             seen_edges.insert(x);
             if (seen_edges.size()>50) {
                 return std::array<std::vector<uint64_t>,2>();
             }
-            to_explore.erase(x);
+
         }
+        to_explore=next_to_explore;
     }
     if (to_explore.size()>0) return std::array<std::vector<uint64_t>,2>();
     //the "canonical" representation is the one that has the smalled edge on the first vector, and bot ordered
