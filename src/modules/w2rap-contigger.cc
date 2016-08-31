@@ -170,30 +170,32 @@ int main(const int argc, const char * argv[]) {
 
     if (dev_run!=""){
         std::cout<<"=== w2rap contigger: development test run ==="<<std::endl;
-        if (dev_run=="pathfinder"){
-            checkpoint_perf_time("");
+        if (dev_run=="pathfinder" or dev_run=="pathfinder2"){
             //Pathfinder test, runs from Pathfinder to the end of step 6
-            //LOADS all necessary data
-            std::cout << "Loading reads in fastb/qualp format..." << std::endl;
-            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
-            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
-            std::cout << "   DONE!" << std::endl;
-            BinaryReader::readFile(out_dir + "/pf_start.hbv", &hbvr);
-            pathsr.ReadAll(out_dir + "/pf_start.paths");
-            inv.clear();
-            hbvr.Involution(inv);
-            std::cout << Date() << ": making paths index for PathFinder" << std::endl;
             VecULongVec invPaths;
-            invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
-            std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
-            PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
-            std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
-            RemoveUnneededVertices2(hbvr,inv,pathsr);
-            Cleanup( hbvr, inv, pathsr );
-            std::cout<<"Dumping"<<std::endl;
-            BinaryWriter::writeFile(out_dir + "/pf_after_loops.hbv", hbvr);
-            pathsr.WriteAll(out_dir + "/pf_after_loops.paths");
+            std::cout << Date() << ": loading HVB and paths" << std::endl;
+            if (dev_run=="pathfinder") {
+                BinaryReader::readFile(out_dir + "/pf_start.hbv", &hbvr);
+                pathsr.ReadAll(out_dir + "/pf_start.paths");
+                inv.clear();
+                hbvr.Involution(inv);
+                std::cout << Date() << ": making paths index for PathFinder" << std::endl;
 
+                invert(pathsr, invPaths, hbvr.EdgeObjectCount());
+                std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
+                PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
+                std::cout << "Removing Unneeded Vertices & Cleanup" << std::endl;
+                RemoveUnneededVertices2(hbvr, inv, pathsr);
+                Cleanup(hbvr, inv, pathsr);
+                std::cout << "Dumping" << std::endl;
+                BinaryWriter::writeFile(out_dir + "/pf_after_loops.hbv", hbvr);
+                pathsr.WriteAll(out_dir + "/pf_after_loops.paths");
+            } else {
+                BinaryReader::readFile(out_dir + "/pf_after_loops.hbv", &hbvr);
+                pathsr.ReadAll(out_dir + "/pf_after_loops.paths");
+                inv.clear();
+                hbvr.Involution(inv);
+            }
             std::cout << Date() << ": making paths index for PathFinder" << std::endl;
             invPaths.clear();
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
@@ -203,6 +205,11 @@ int main(const int argc, const char * argv[]) {
             std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );
+
+            std::cout << "Loading reads in fastb/qualp format..." << std::endl;
+            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
+            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+            std::cout << "   DONE!" << std::endl;
 
             path_improver pimp;
                 vec<int64_t> ids;

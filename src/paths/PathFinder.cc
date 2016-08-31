@@ -658,12 +658,13 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
                     }
                     else if (!seen_edges.count(p)) next_to_explore.insert(p);
                 }
+
                 for (auto n:next_edges[x]) {
                     if (mHBV.EdgeObject(n).size() >= large_frontier_size) {
                         //What about frontiers on both sides?
                         out_frontiers.insert(n);
                         for (auto other_p:prev_edges[n]){//XXX (BJ): as of now, this could be a potential frontier and end as internal, still wont break anything
-                            if (!seen_edges.count(mInv[other_p])) next_to_explore.insert(mInv[other_p]);
+                            if (!seen_edges.count(other_p)) next_to_explore.insert(other_p);
                         }
                     }
                     else if (!seen_edges.count(n)) next_to_explore.insert(n);
