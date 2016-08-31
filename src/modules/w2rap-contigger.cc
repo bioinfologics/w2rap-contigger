@@ -185,19 +185,22 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": making paths index for PathFinder" << std::endl;
             VecULongVec invPaths;
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
-            std::cout << Date() << ": PathFinder: untangling simple choices" << std::endl;
-
+            std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
             PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
+            std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );
+            std::cout<<"Dumping"<<std::endl;
+            BinaryWriter::writeFile(out_dir + "/pf_after_loops.hbv", hbvr);
+            pathsr.WriteAll(out_dir + "/pf_after_loops.paths");
 
-            std::cout << Date() << ": PathFinder: validating" << std::endl;
-            std::cout<<"Removing Unneded Vertices"<<std::endl;
-
-            std::cout<<"all structures refreshed"<<std::endl;
+            std::cout << Date() << ": making paths index for PathFinder" << std::endl;
             invPaths.clear();
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
+
+            std::cout << Date() << ": PathFinder: Separating solved single-flow repeats" << std::endl;
             PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+            std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );
 

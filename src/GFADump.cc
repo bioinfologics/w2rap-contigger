@@ -313,16 +313,6 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             if (cp<e) continue;
             gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t+" : "\t-") << "\t0M" << std::endl;
         }
-
-//
-//        for (int64_t j=0;j<to_left.size();++j) {
-//            if (to_left[j]==to_right[i]) {
-//                int64_t ce1= (i<inv[i]?i:inv[i]);
-//                int64_t ce2= (j<inv[j]?j:inv[j]);
-//                gfa_raw_out << "L\tedge" << ce1 << (ce1==i ? "\t+\tedge" : "\t-\tedge") << ce2 <<
-//                (ce2==j ? "\t+" : "\t-") << "\t0M" << std::endl;
-//            }
-//        }
     }
 
 
