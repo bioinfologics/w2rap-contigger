@@ -636,11 +636,10 @@ std::vector<std::vector<uint64_t>> PathFinder::AllPathsFromTo(std::vector<uint64
 }
 
 std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t e, uint64_t large_frontier_size){
-
+    //TODO: return all components in the region
     std::set<uint64_t> seen_edges, to_explore={e}, in_frontiers, out_frontiers;
 
-    int horizon=10;
-    while (horizon--){
+    while (to_explore.size()>0){
         std::set<uint64_t> next_to_explore;
         for (auto x:to_explore){ //to_explore: replace rather and "update" (use next_to_explore)
 
@@ -648,6 +647,7 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
 
                 //What about reverse complements and paths that include loops that "reverse the flow"?
                 if (seen_edges.count(mInv[x])) return std::array<std::vector<uint64_t>,2>(); //just cancel for now
+
                 for (auto p:prev_edges[x]) {
                     if (mHBV.EdgeObject(p).size() >= large_frontier_size )  {
                         //What about frontiers on both sides?
@@ -668,8 +668,8 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
                     }
                     else if (!seen_edges.count(n)) next_to_explore.insert(n);
                 }
+                seen_edges.insert(x);
             }
-            seen_edges.insert(x);
             if (seen_edges.size()>50) {
                 return std::array<std::vector<uint64_t>,2>();
             }
@@ -677,6 +677,7 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
         }
         to_explore=next_to_explore;
     }
+
     if (to_explore.size()>0) return std::array<std::vector<uint64_t>,2>();
     //the "canonical" representation is the one that has the smalled edge on the first vector, and bot ordered
 

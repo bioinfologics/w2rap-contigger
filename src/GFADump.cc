@@ -268,15 +268,61 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
     }
     std::cout<<"Dumping connections"<<std::endl;
-    for (int64_t i=0;i<to_right.size();++i) {
-        for (int64_t j=0;j<to_left.size();++j) {
-            if (to_left[j]==to_right[i]) {
-                int64_t ce1= (i<inv[i]?i:inv[i]);
-                int64_t ce2= (j<inv[j]?j:inv[j]);
-                gfa_raw_out << "L\tedge" << ce1 << (ce1==i ? "\t+\tedge" : "\t-\tedge") << ce2 <<
-                (ce2==j ? "\t+" : "\t-") << "\t0M" << std::endl;
-            }
+    std::vector<std::vector<uint64_t>> next_edges,prev_edges;
+    //TODO: this is stupid duplication of the digraph class, but it's so weird!!!
+    prev_edges.resize(to_left.size());
+    next_edges.resize(to_right.size());
+    for (auto e=0;e<to_left.size();++e){
+
+        uint64_t prev_node=to_left[e];
+
+        prev_edges[e].resize(hb.ToSize(prev_node));
+        for (int i=0;i<hb.ToSize(prev_node);++i){
+            prev_edges[e][i]=hb.EdgeObjectIndexByIndexTo(prev_node,i);
         }
+
+        uint64_t next_node=to_right[e];
+
+        next_edges[e].resize(hb.FromSize(next_node));
+        for (int i=0;i<hb.FromSize(next_node);++i){
+            next_edges[e][i]=hb.EdgeObjectIndexByIndexFrom(next_node,i);
+        }
+    }
+    for (uint64_t e=0;e<next_edges.size();e++) {
+        //only process the canonical edge
+        if (e>inv[e]) continue;
+
+        std::set<uint64_t> all_next;
+        all_next.insert(next_edges[e].begin(),next_edges[e].end());
+        for (auto pi:prev_edges[inv[e]]) all_next.insert(inv[pi]);
+
+        for (auto n:all_next){
+            //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
+            uint64_t cn=(n<inv[n]?n:inv[n]);
+            if (cn<e) continue;
+            gfa_raw_out << "L\tedge" << e << "\t+\tedge" << cn << (cn==n ? "\t+" : "\t-") << "\t0M" << std::endl;
+        }
+
+        std::set<uint64_t> all_prev;
+        all_prev.insert(prev_edges[e].begin(),prev_edges[e].end());
+        for (auto ni:next_edges[inv[e]]) all_prev.insert(inv[ni]);
+
+        for (auto p:all_prev){
+            //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
+            uint64_t cp=(p<inv[p]?p:inv[p]);
+            if (cp<e) continue;
+            gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t+" : "\t-") << "\t0M" << std::endl;
+        }
+
+//
+//        for (int64_t j=0;j<to_left.size();++j) {
+//            if (to_left[j]==to_right[i]) {
+//                int64_t ce1= (i<inv[i]?i:inv[i]);
+//                int64_t ce2= (j<inv[j]?j:inv[j]);
+//                gfa_raw_out << "L\tedge" << ce1 << (ce1==i ? "\t+\tedge" : "\t-\tedge") << ce2 <<
+//                (ce2==j ? "\t+" : "\t-") << "\t0M" << std::endl;
+//            }
+//        }
     }
 
 
