@@ -311,7 +311,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
             uint64_t cp=(p<inv[p]?p:inv[p]);
             if (cp<e) continue;
-            gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t+" : "\t-") << "\t0M" << std::endl;
+            gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t-" : "\t+") << "\t0M" << std::endl;
         }
     }
 
