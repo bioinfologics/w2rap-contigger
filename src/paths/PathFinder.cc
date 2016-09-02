@@ -652,8 +652,14 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
                     if (mHBV.EdgeObject(p).size() >= large_frontier_size )  {
                         //What about frontiers on both sides?
                         in_frontiers.insert(p);
-                        for (auto other_n:next_edges[p]){//XXX (BJ): as of now, this could be a potential frontier and end as internal, still wont break anything
-                            if (!seen_edges.count(other_n)) next_to_explore.insert(other_n);
+                        for (auto other_n:next_edges[p]){
+                            if (!seen_edges.count(other_n)) {
+                                if (mHBV.EdgeObject(other_n).size() >= large_frontier_size) {
+                                    out_frontiers.insert(other_n);
+                                    seen_edges.insert(other_n);
+                                }
+                                else next_to_explore.insert(other_n);
+                            }
                         }
                     }
                     else if (!seen_edges.count(p)) next_to_explore.insert(p);
@@ -663,8 +669,14 @@ std::array<std::vector<uint64_t>,2> PathFinder::get_all_long_frontiers(uint64_t 
                     if (mHBV.EdgeObject(n).size() >= large_frontier_size) {
                         //What about frontiers on both sides?
                         out_frontiers.insert(n);
-                        for (auto other_p:prev_edges[n]){//XXX (BJ): as of now, this could be a potential frontier and end as internal, still wont break anything
-                            if (!seen_edges.count(other_p)) next_to_explore.insert(other_p);
+                        for (auto other_p:prev_edges[n]){
+                            if (!seen_edges.count(other_p)) {
+                                if (mHBV.EdgeObject(other_p).size() >= large_frontier_size) {
+                                    in_frontiers.insert(other_p);
+                                    seen_edges.insert(other_p);
+                                }
+                                else next_to_explore.insert(other_p);
+                            }
                         }
                     }
                     else if (!seen_edges.count(n)) next_to_explore.insert(n);
