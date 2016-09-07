@@ -32,8 +32,9 @@ int main(const int argc, const char * argv[]) {
 
     std::string out_prefix;
     std::string in_prefix;
-    bool find_lines;
+    bool find_lines, stats_only;
 
+    uint64_t genome_size;
     //========== Command Line Option Parsing ==========
 
     std::cout << "hbv2gfa from w2rap-contigger" << std::endl;
@@ -43,15 +44,20 @@ int main(const int argc, const char * argv[]) {
              "Prefix for the output files", true, "", "string", cmd);
         TCLAP::ValueArg<std::string> in_prefixArg("i", "in_prefix",
                                                    "Prefix for the input files", true, "", "string", cmd);
-
+        TCLAP::ValueArg<uint32_t> genomeSize_Arg("g", "genome_size",
+                                                 "Genome size for NGXX stats in Kbp (default: 0, no NGXX stats)", false, 0,"int", cmd);
         TCLAP::ValueArg<bool>         find_linesArg        ("l","find_lines",
-                                                         "Find lines", false,false,"bool",cmd);
+                                                            "Find lines", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         statsOnly_Arg        ("","stats_only",
+                                                            "Compute stats only (do not dump GFA)", false,false,"bool",cmd);
         cmd.parse(argc, argv);
 
         // Get the value parsed by each arg.
         out_prefix = out_prefixArg.getValue();
         in_prefix = in_prefixArg.getValue();
         find_lines = find_linesArg.getValue();
+        genome_size = 1000UL * genomeSize_Arg.getValue();
+        stats_only = statsOnly_Arg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -86,14 +92,28 @@ int main(const int argc, const char * argv[]) {
     std::sort(e_sizes.begin(),e_sizes.end());
     auto ns=e_sizes.rbegin();
     int64_t cs=0;
-    std::cout<<"Total size: "<<total_size<<"     Canonical size:"<<canonical_size<<std::endl;
+    std::cout<<"Canonical graph sequences size: "<<canonical_size<<std::endl;
     for (auto i=10;i<100;i+=10){
         while (((double)(cs * 100.0))/ canonical_size < i)
             cs+=*ns++;
         std::cout<<"N"<<i<<": "<<*(ns-1)<<std::endl;
     }
-    GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);
-
+    if (genome_size) {
+        ns=e_sizes.rbegin();
+        cs=0;
+        std::cout<<std::endl<<"User provided size: "<<genome_size<<std::endl;
+        for (auto i = 10; i < 100; i += 10) {
+            while (((double) (cs * 100.0)) / genome_size < i and ns!=e_sizes.rend())
+                cs += *ns++;
+            if (ns==e_sizes.rend())
+                std::cout << "NG" << i << ": n/a" << std::endl;
+            else
+                std::cout<<"NG" << i << ": " << *(ns-1) << std::endl;
+        }
+    }
+    if (!stats_only) {
+        GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);
+    }
 
     return 0;
 }

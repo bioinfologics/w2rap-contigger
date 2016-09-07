@@ -25,7 +25,7 @@
 
 #ifndef TCLAP_ARGTRAITS_H
 #define TCLAP_ARGTRAITS_H
-
+#include <sys/types.h>
 namespace TCLAP {
 
 // We use two empty structs to get compile type specialization

@@ -222,42 +222,6 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             ++current_colour;
         }
     }
-    //Now reconstruct the to-left, to-right, RAW thing
-    /*
-    struct s_link_edge_to_vertex{
-        uint64_t vert;
-        uint64_t edge;
-        bool in;
-    };
-    std::set<struct s_link> links;
-    for (uint64_t i=0;i<to_left.size();++i){
-
-        struct s_link_edge_to_vertex l;
-        if (inv[i]<i) continue;//only process canonical edges
-        l.edge;
-        links.insert(l);
-
-    };
-    for (uint64_t i=0;i<to_right.size();++i){
-        struct s_link l;
-        l.e1=i;
-        l.o1=true;
-        if (inv[l.e1]<l.e1) {
-            l.e1=inv[l.e1];
-            l.o1=false;
-        }
-        l.e2=to_right[i];
-        l.o2=true;
-        if (inv[l.e2]<l.e2) {
-            l.e2=inv[l.e2];
-            l.o2=false;
-        }
-        //TODO: dist
-        l.dist=0;
-        links.insert(l);
-    };
-    for (auto l:links){*/
-
     Ofstream(gfa_raw_out,filename+"_raw.gfa");
     std::cout<<"Dumping edges"<<std::endl;
     for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
