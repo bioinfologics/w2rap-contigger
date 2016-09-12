@@ -163,9 +163,7 @@ add_library(base_libs OBJECT
         src/system/file/FileReader.cc
         src/system/file/FileWriter.cc
         src/system/file/TempFile.cc
-        src/util/Logger.cc)
-
-add_library(base2_libs OBJECT
+        src/util/Logger.cc
         src/fastg/FastgGraph.cc
         src/graphics/BasicGraphics.cc
         src/kmers/kmer_parcels/KmerParcelsBuilder.cc
@@ -175,7 +173,6 @@ add_library(base2_libs OBJECT
         src/pairwise_aligners/SmithWatAffine.cc
         src/paths/MakeAlignsPathsParallelX.cc
         src/paths/ReadsToPathsCoreX.cc
-        src/paths/RemodelGapTools.cc
         src/paths/RemodelGapTools.cc
         src/paths/UnibaseUtils.cc
         src/paths/Unipath.cc
@@ -213,6 +210,158 @@ add_library(base2_libs OBJECT
         src/random/NormalDistribution.cc
         src/util/TextTable.cc)
 
+add_library(hb_base_libs OBJECT
+        src/Alignment.cc
+        src/BlockAlign.cc
+        src/Charvector.cc
+        src/Equiv.cc
+        src/FastIfstream.cc
+        src/Fastavector.cc
+        src/Floatvector.cc
+        src/IndexedAlignmentPlusVector.cc
+        src/IntPairVec.cc
+        src/Intvector.cc
+        src/LinkTimestamp.cc
+        src/MemberOf.cc
+        src/PackAlign.cc
+        src/PairsManager.cc
+        src/ParseRange.cc
+        src/ParseSet.cc
+        src/PrintAlignment.cc
+        src/Qualvector.cc
+        src/ScoreAlignment.cc
+        src/Superb.cc
+        src/TokenizeString.cc
+        src/Vec.cc
+        src/VecAlignmentPlus.cc
+        src/dna/Bases.cc
+        src/efasta/AmbiguityScore.cc
+        src/efasta/EfastaTools.cc
+        src/feudal/BaseVec.cc
+        src/feudal/BinaryStream.cc
+        src/feudal/BitVec.cc
+        src/feudal/CharString.cc
+        src/feudal/FeudalControlBlock.cc
+        src/feudal/FeudalFileReader.cc
+        src/feudal/FeudalFileWriter.cc
+        src/feudal/FeudalTools.cc
+        src/feudal/FieldVec.cc
+        src/feudal/Generic.cc
+        src/feudal/Mempool.cc
+        src/feudal/Oob.cc
+        src/feudal/PQVec.cc
+        src/graph/Digraph.cc
+        src/graph/FindCells.cc
+        src/kmers/BigKPather.cc
+        src/kmers/KMerContext.cc
+        src/kmers/KmerRecord.cc
+        src/kmers/ReadPather.cc
+        src/lookup/LookAlign.cc
+        src/lookup/SAM.cc
+        src/lookup/SAM2CRD.cc
+        src/math/Functions.cc
+        src/math/HoInterval.cc
+        src/math/Matrix.cc
+        src/math/Permutation.cc
+        src/math/PowerOf2.cc
+        src/pairwise_aligners/ClusterAligner.cc
+        src/pairwise_aligners/SmithWatBandedA.cc
+        src/pairwise_aligners/SmithWatFree.cc
+        src/paths/BigMapTools.cc
+        src/paths/FindErrorsCore.cc
+        src/paths/HyperBasevector.cc
+        src/paths/HyperEfasta.cc
+        src/paths/KmerBaseBroker.cc
+        src/paths/KmerPath.cc
+        src/paths/KmerPathInterval.cc
+        src/paths/LongReadTools.cc
+        src/paths/MergeReadSetsCore.cc
+        src/paths/ProcessGap.cc
+        src/paths/Sepdev.cc
+        src/paths/UnipathScaffold.cc
+        src/paths/Uniseq.cc
+        src/paths/long/Correct1.cc
+        src/paths/long/Correct1Pre.cc
+        src/paths/long/CorrectByStack.cc
+        src/paths/long/CorrectPairs1.cc
+        src/paths/long/DiscovarTools.cc
+        src/paths/long/EMEC3.cc
+        src/paths/long/FillPairs.cc
+        src/paths/long/FriendAligns.cc
+        src/paths/long/HBVFromEdges.cc
+        src/paths/long/LargeKDispatcher.cc
+        src/paths/long/LoadCorrectCore.cc
+        src/paths/long/LongProtoTools.cc
+        src/paths/long/LongReadsToPaths.cc
+        src/paths/long/MakeAlignments.cc
+        src/paths/long/PreCorrectAlt1.cc
+        src/paths/long/PreCorrectOldNew.cc
+        src/paths/long/ReadPathTools.cc
+        src/paths/long/ReadStack.cc
+        src/random/Bernoulli.cc
+        src/random/RNGen.cc
+        src/reporting/PerfStat.cc
+        src/system/Assert.cc
+        src/system/ErrNo.cc
+        src/system/Exit.cc
+        src/system/HostName.cc
+        src/system/ParsedArgs.cc
+        src/system/ProcBuf.cc
+        src/system/SysConf.cc
+        src/system/System.cc
+        src/system/Thread.cc
+        src/system/ThreadsafeIO.cc
+        src/system/TraceVal.cc
+        src/system/UseGDB.cc
+        src/system/WorklistUtils.cc
+        src/system/file/File.cc
+        src/system/file/FileReader.cc
+        src/system/file/FileWriter.cc
+        src/system/file/TempFile.cc
+        src/util/Logger.cc
+        src/fastg/FastgGraph.cc
+        src/graphics/BasicGraphics.cc
+        src/kmers/kmer_parcels/KmerParcelsBuilder.cc
+        src/math/IntDistribution.cc
+        src/pairwise_aligners/MaxMutmerFromMer.cc
+        src/pairwise_aligners/SmithWatAffine.cc
+        src/paths/MakeAlignsPathsParallelX.cc
+        src/paths/ReadsToPathsCoreX.cc
+        src/paths/RemodelGapTools.cc
+        src/paths/UnibaseUtils.cc
+        src/paths/Unipath.cc
+        src/paths/long/AssessBestAlignCore.cc
+        src/paths/long/CleanEfasta.cc
+        src/paths/long/CreateGenome.cc
+        src/paths/long/DigraphFromWords.cc
+        src/paths/long/EvalByReads.cc
+        src/paths/long/KmerCount.cc
+        src/paths/long/LongHyper.cc
+        src/paths/long/ReadOriginTracker.cc
+        src/paths/long/RefTrace.cc
+        src/paths/long/RefTraceControl.cc
+        src/paths/long/RefTraceTools.cc
+        src/paths/long/SupportedHyperBasevector.cc
+        src/paths/long/SupportedHyperBasevector3.cc
+        src/paths/long/SupportedHyperBasevector4.cc
+        src/paths/long/SupportedHyperBasevector5.cc
+        src/paths/long/SupportedHyperBasevector6.cc
+        src/paths/long/SupportedHyperBasevector7.cc
+        src/paths/long/VariantCallTools.cc
+        src/paths/long/VariantFilters.cc
+        src/paths/long/VariantPostProcess.cc
+        src/paths/long/VariantReadSupport.cc
+        src/paths/long/Variants.cc
+        src/paths/long/large/CN1PeakFinder.cc
+        src/paths/long/large/GapToyTools.cc
+        src/paths/long/large/GapToyTools3.cc
+        src/paths/long/large/Lines.cc
+        src/paths/long/large/LocalLayout.cc
+        src/paths/simulation/VCF.cc
+        src/random/NormalDistribution.cc
+        src/util/TextTable.cc
+        src/GFADump.cc)
+
 add_library(specific_w2rap-contigger OBJECT
         src/AnnotatedContig.cc
         src/BasevectorTools.cc
@@ -249,21 +398,18 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/tools/NhoodInfoCore.cc
         src/paths/long/large/tools/NhoodInfoState.cc
         src/paths/long/large/tools/NhoodInfoStuff.cc
-        src/GFADump.cc src/paths/PathFinder.cc src/paths/PathFinder.h)
-
+        src/GFADump.cc
+        src/paths/PathFinder.cc
+        src/paths/PathFinder.h)
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
         $<TARGET_OBJECTS:specific_w2rap-contigger>
         $<TARGET_OBJECTS:base_libs>
-        $<TARGET_OBJECTS:base2_libs>
         )
 
 add_executable(hbv2gfa src/modules/hbv2gfa.cc
-        $<TARGET_OBJECTS:specific_w2rap-contigger>
-        $<TARGET_OBJECTS:base_libs>
-        $<TARGET_OBJECTS:base2_libs>
-
+        $<TARGET_OBJECTS:hb_base_libs>
         )
 
 ##Zlib link

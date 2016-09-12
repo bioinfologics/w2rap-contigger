@@ -2,30 +2,30 @@
 // Created by Bernardo Clavijo (TGAC) on 21/06/2016.
 //
 #include <paths/long/large/Repath.h>
-#include <paths/long/large/Clean200.h>
-#include <paths/long/large/Simplify.h>
-#include <paths/long/large/MakeGaps.h>
+//#include <paths/long/large/Clean200.h>
+//#include <paths/long/large/Simplify.h>
+//#include <paths/long/large/MakeGaps.h>
 #include <paths/long/large/FinalFiles.h>
-#include "FastIfstream.h"
-#include "FetchReads.h"
-#include "MainTools.h"
-#include "PairsManager.h"
+//#include "FastIfstream.h"
+//#include "FetchReads.h"
+//#include "MainTools.h"
+//#include "PairsManager.h"
 #include "ParallelVecUtilities.h"
-#include "feudal/PQVec.h"
+//#include "feudal/PQVec.h"
 #include "lookup/LookAlign.h"
-#include "paths/HyperBasevector.h"
-#include "paths/RemodelGapTools.h"
-#include "paths/long/BuildReadQGraph.h"
+//#include "paths/HyperBasevector.h"
+//#include "paths/RemodelGapTools.h"
+//#include "paths/long/BuildReadQGraph.h"
 //#include "paths/long/PlaceReads0.h"
-#include "paths/long/SupportedHyperBasevector.h"
-#include "paths/long/large/AssembleGaps.h"
-#include "paths/long/large/ExtractReads.h"
+//#include "paths/long/SupportedHyperBasevector.h"
+//#include "paths/long/large/AssembleGaps.h"
+//#include "paths/long/large/ExtractReads.h"
 #include "tclap/CmdLine.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <sys/time.h>
-#include <paths/PathFinder.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <time.h>
+//#include <sys/time.h>
+//#include <paths/PathFinder.h>
 #include "GFADump.h"
 
 int main(const int argc, const char * argv[]) {
