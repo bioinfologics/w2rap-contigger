@@ -73,9 +73,6 @@ int main(const int argc, const char * argv[]) {
     hbv.Involution(inv);
     paths.ReadAll(in_prefix + ".paths");
     std::cout << "   DONE!" << std::endl;
-    std::cout << "Dumping gfa" << std::endl;
-    int MAX_CELL_PATHS = 50;
-    int MAX_DEPTH = 10;
 
     std::cout<<"=== Graph stats === "<<std::endl;
     std::vector<uint64_t> e_sizes;
@@ -111,7 +108,11 @@ int main(const int argc, const char * argv[]) {
                 std::cout<<"NG" << i << ": " << *(ns-1) << std::endl;
         }
     }
+
+    int MAX_CELL_PATHS = 50;
+    int MAX_DEPTH = 10;
     if (!stats_only) {
+        std::cout << "Dumping gfa" << std::endl;
         GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);
     }
 
