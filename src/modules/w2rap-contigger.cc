@@ -413,8 +413,6 @@ int main(const int argc, const char * argv[]) {
 
 
         int K2_FLOOR = 0;
-        int DUMP_LOCAL_LROOT = -1;
-        int DUMP_LOCAL_RROOT = -1;
         bool CYCLIC_SAVE = True;
         int A2V = 5;
         int GAP_CAP = -1;
@@ -422,7 +420,7 @@ int main(const int argc, const char * argv[]) {
         int MAX_PROX_RIGHT = 400;
         int MAX_BPATHS = 100000;
 
-        AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, K2_FLOOR, DUMP_LOCAL_LROOT, DUMP_LOCAL_RROOT,
+        AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, K2_FLOOR,
                       new_stuff, CYCLIC_SAVE, A2V, GAP_CAP, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS);
         if (dump_perf) perf_file << checkpoint_perf_time("AssembleGaps2") << std::endl;
         int MIN_GAIN = 5;

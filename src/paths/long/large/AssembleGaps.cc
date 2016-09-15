@@ -62,7 +62,6 @@ struct MakeStartStopFunctor {
 void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                    VecULongVec &paths2_index, vecbasevector &bases, VecPQVec const &quals,
                    const String &work_dir, int K2_FLOOR,
-                   const int DUMP_LOCAL_LROOT, const int DUMP_LOCAL_RROOT,
                    vecbvec &new_stuff, const Bool CYCLIC_SAVE,
                    const int A2V, const int GAP_CAP, const int MAX_PROX_LEFT,
                    const int MAX_PROX_RIGHT, const int MAX_BPATHS) {
@@ -140,11 +139,10 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int lrc = LR.size();
     if (GAP_CAP >= 0) lrc = GAP_CAP;
     std::cout << "And now for the really slow part..." << std::endl;
+    //TODO: check local variable usage, should be made minimal!!!
     #pragma omp parallel for schedule(dynamic, 1)
     for (int bl = 0; bl < lrc; bl++) {
         // Get ready.
-
-        double aclock1 = WallClockTime();
         const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second;
         int K2_FLOOR_LOCAL = K2_FLOOR;
         vec<int64_t> pids;
@@ -279,14 +277,11 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         }
 
         UniqueSort(pids);
-        //mout << "using " << pids.size( ) << " pairs" << std::endl;
-        //mout << "pids = " << printSeq(pids) << std::endl;
 
+        //Assembly starts
         String TMP;
         TMP = work_dir + "/local/" + ToString(omp_get_thread_num());
 
-        //mout << "assembling in " << TMP << "\n";
-        //mout << "total setup time = " << TimeSince(aclock1) << std::endl;
         VecEFasta corrected;
         vecbasevector creads;
         vec<pairing_info> cpartner;
@@ -296,7 +291,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
         int lroot = lefts[0], rroot = rights[0];
 
-        MakeLocalAssembly1(lroot, rroot, hb, bases, quals, pids, K2_FLOOR_LOCAL, work_dir, corrected, creads, cpartner,
+        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, work_dir, corrected, creads, cpartner,
                            cid, tmp_mgr);
 
 
@@ -383,7 +378,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         xshb.Sources(sources), xshb.Sinks(sinks);
         vec<int> zto_left, zto_right;
         xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
-        for (int i1 = 0; i1 < sources.isize(); i1++)
+        for (int i1 = 0; i1 < sources.isize(); i1++) {
             for (int i2 = 0; i2 < sinks.isize(); i2++) {
                 vec<vec<int>> p;
                 xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
@@ -397,6 +392,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                     if (bpaths.isize() > MAX_BPATHS) break;
                 }
             }
+        }
         //PRINT_TO( mout, bpaths.size( ) );
         if (bpaths.isize() > MAX_BPATHS) {    //mout << "Too many bpaths." << std::endl;
             //mreport[bl] += mout.str( );
@@ -432,26 +428,15 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             }
             if (!ext) bpaths.push_back(hb.EdgeObject(rights[r]));
         }
-        //PRINT_TO( mout, bpaths.size( ) );
-
-        if (lroot == DUMP_LOCAL_LROOT && rroot == DUMP_LOCAL_RROOT)
-            DumpBPaths(bpaths, lroot, rroot, work_dir + "/loc/bpaths");
-
         // Make the bpaths into a HyperBasevector.
 
-        //mout << "initial patch creation time = " << TimeSince(aclock2) << std::endl;
         vecbasevector bpathsx;
         for (int l = 0; l < bpaths.isize(); l++)
             bpathsx.push_back(bpaths[l]);
         BasesToGraph(bpathsx, K, mhbp[bl]);
-        //mout << "patch creation time = " << TimeSince(aclock2) << std::endl;
-
-
 
         // Save.
 
-        //mreport[bl] += mout.str( );
-        //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
     }
     std::cout << " ... finally finished" << std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "

@@ -1040,15 +1040,12 @@ void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
      mout << "assembly time 2 = " << TimeSince(clock) << std::endl;*/
 }
 
-void MakeLocalAssembly1( const int lroot, const int rroot,
-     const HyperBasevector& hb, const vecbasevector& bases, 
-     const VecPQVec& quals, const vec<int64_t>& pids, const int K2_FLOOR,
-     const String& work_dir, VecEFasta& corrected, vecbasevector& creads, 
-     vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr )
+void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, const vec<int64_t>& pids,
+                         const int K2_FLOOR, const String& work_dir, VecEFasta& corrected, vecbasevector& creads,
+                         vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr )
 {
      //std::cout<<"MakeLocalAssembly1 called!"<<std::endl;
      //mout << Date( ) << ": begin gap assembly" << std::endl;
-     double clock1 = WallClockTime( );
      //long_logging logc( "", "" );
      //logc.STATUS_LOGGING = False;
      //logc.MIN_LOGGING = False;
@@ -1057,6 +1054,8 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      long_logging_control log_control( ref, &readlocs, "", "" );
      long_heuristics heur( "" );
      heur.K2_FLOOR = K2_FLOOR;
+
+     //STEP 1: get "local" reads/quals
      double clock = WallClockTime( );
      const bool bDelOldFile=true;
 
@@ -1084,6 +1083,8 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
      double clock2 = WallClockTime( );
      uint NUM_THREADS = 1;
+
+     //STEP 2: run correction suite in the local reads and repair as needed
      CorrectionSuite( tmp_mgr, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False );
 
      int count = 0;

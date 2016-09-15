@@ -108,8 +108,7 @@ void BasesToGraph( vecbasevector& bpathsx, const int K, HyperBasevector& hb );
 void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
      const vec<int>& lefts, const vec<int>& rights, int& lroot, int& rroot );
 
-void MakeLocalAssembly1( const int lroot, const int rroot, 
-     const HyperBasevector& hb, const vecbasevector& bases, 
+void MakeLocalAssembly1( const vecbasevector& bases,
      const VecPQVec& quals, const vec<int64_t>& pids,
      const int K2_FLOOR,
      const String& work_dir, VecEFasta& corrected, vecbasevector& creads,
