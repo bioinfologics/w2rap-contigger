@@ -23,6 +23,16 @@
 #include "paths/long/large/Unsat.h"
 #include "system/SortInPlace.h"
 
+
+uint64_t IntTime( )
+{    struct timeval tp;
+    struct timezone tzp;
+    int ftime_ret = gettimeofday( &tp, &tzp ) ;
+    ForceAssert( ftime_ret == 0 );
+    return ((uint64_t) tp.tv_sec) * 1000000 + tp.tv_usec;
+}
+
+
 template<int M>
 void MakeStartStop(const vecbasevector &bell,
                    const HyperBasevector &hb, const HyperBasevector &shb, const vec<int> &lefts,
@@ -138,10 +148,22 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
     int lrc = LR.size();
     if (GAP_CAP >= 0) lrc = GAP_CAP;
+    std::atomic_uint_fast64_t part1_total_clock(0);
+    std::atomic_uint_fast64_t part2_total_clock(0);
+    std::atomic_uint_fast64_t part3_total_clock(0);
+    std::atomic_uint_fast64_t part4_total_clock(0);
+    std::atomic_uint_fast64_t part5_total_clock(0);
+
+
+
     std::cout << "And now for the really slow part..." << std::endl;
     //TODO: check local variable usage, should be made minimal!!!
-    #pragma omp parallel for schedule(dynamic, 1)
+    #pragma omp parallel for schedule(static, 1)
     for (int bl = 0; bl < lrc; bl++) {
+
+        //PART1-------------------------------
+        uint64_t partial_clock = IntTime();
+
         // Get ready.
         const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second;
         int K2_FLOOR_LOCAL = K2_FLOOR;
@@ -275,8 +297,10 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 }
             }
         }
-
         UniqueSort(pids);
+        //PART2-----------------------------------------------------
+        part1_total_clock+=IntTime()-partial_clock;
+        partial_clock = IntTime();
 
         //Assembly starts
         String TMP;
@@ -291,6 +315,9 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
         //Local readset creation and error correction.
         MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, tmp_mgr);
+        //PART3-----------------------------------------------------
+        part2_total_clock+=IntTime()-partial_clock;
+        partial_clock = IntTime();
 
         retry:
         MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner);
@@ -355,6 +382,9 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 goto retry;
             }
         }
+        //PART4-----------------------------------------------------
+        part3_total_clock+=IntTime()-partial_clock;
+        partial_clock = IntTime();
 
         if (!xshb.Acyclic() ||
             xshb.N() == 0) {    //if ( !xshb.Acyclic( ) ) mout << "has cycle, not using" << std::endl;
@@ -390,6 +420,10 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 }
             }
         }
+        //PART5-----------------------------------------------------
+        part4_total_clock+=IntTime()-partial_clock;
+        partial_clock = IntTime();
+
         //PRINT_TO( mout, bpaths.size( ) );
         if (bpaths.isize() > MAX_BPATHS) {    //mout << "Too many bpaths." << std::endl;
             //mreport[bl] += mout.str( );
@@ -433,9 +467,12 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         BasesToGraph(bpathsx, K, mhbp[bl]);
 
         // Save.
+        //PART5 ends-----------------------------------------------------
+        part5_total_clock+=IntTime()-partial_clock;
+        partial_clock = IntTime();
 
     }
-    std::cout << " ... finally finished" << std::endl;
+    std::cout << " ... finally finished, part times: " <<part1_total_clock<<" "<<part2_total_clock<<" "<<part3_total_clock<<" "<<part4_total_clock<<" "<<part5_total_clock<<" " << std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "
               << "memory in use = " << MemUsageGBString()
               #ifdef __linux
