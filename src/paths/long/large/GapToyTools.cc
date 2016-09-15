@@ -1001,7 +1001,7 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
      */
      }
 
-void MakeLocalAssembly2(VecEFasta &corrected, const HyperBasevector &hb,
+void MakeLocalAssembly2(VecEFasta &corrected,
                         const vec<int> &lefts, const vec<int> &rights,
                         SupportedHyperBasevector &shb, const int K2_FLOOR,
                         vecbasevector &creads, LongProtoTmpDirManager &tmp_mgr, vec<int> &cid,
@@ -1017,19 +1017,22 @@ void MakeLocalAssembly2(VecEFasta &corrected, const HyperBasevector &hb,
     int count = 0;
     for (int l = 0; l < (int) corrected.size(); l++)
         if (corrected[l].size() > 0) count++;
-    if (count == 0) {//mout << "No reads were corrected." << std::endl;
+    if (count == 0) {
+        //mout << "No reads were corrected." << std::endl;
     } else {
-        vecbasevector injections;
-        if (!LongHyper("", corrected, cpartner, shb, heur,
-                       log_control, logc, tmp_mgr, False)) {    //mout << "No paths were found." << std::endl;
+        if (!LongHyper("", corrected, cpartner, shb, heur, log_control, logc, tmp_mgr, False)) {
+            //mout << "No paths were found." << std::endl;
             SupportedHyperBasevector shb0;
             shb = shb0;
-        } else {    // heur.LC_CAREFUL = True;
+        } else {
+            // heur.LC_CAREFUL = True;
             shb.DeleteLowCoverage(heur, log_control, logc);
-            if (shb.NPaths() == 0) {    //mout << "No paths were found." << std::endl;
+            if (shb.NPaths() == 0) {
+                //mout << "No paths were found." << std::endl;
                 SupportedHyperBasevector shb0;
                 shb = shb0;
-            } else shb.TestValid(logc);
+            } //TODO bj, check this is really not needed!
+            // else shb.TestValid(logc);
         }
     }
     /*mout << "using K2 = " << shb.K( ) << "\n";

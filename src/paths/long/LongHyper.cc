@@ -252,7 +252,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
                for ( int j = 0; j < hb.EdgeObjectCount( ); j++ )
                     LL.push_back( hb.EdgeLengthKmers(j) );
                digraphE<int> G( hb, LL );
-               #pragma omp parallel for
+               //#pragma omp parallel for
                for ( int64_t pid = 0; pid < (int64_t) Pairs.nPairs( ); pid++ )
                {    int64_t id1 = Pairs.ID1(pid), id2 = Pairs.ID2(pid);
                     vec< vec<read_place> > places(2);
@@ -312,7 +312,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
                          Bool remap_verbose = False;
                          if (remap_verbose)
                          {
-                         #pragma omp critical
+                         //#pragma omp critical
                          {    std::cout << "\n";
                               PRINT2( id1, id2 );
                               for ( int pass = 0; pass < 2; pass++ )
@@ -337,7 +337,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
 
                          if ( ids_index[id1].empty( ) && ids_index[id2].empty( ) )
                          {
-                              #pragma omp critical
+                              //#pragma omp critical
                               {    us.push_back( joins[0][0] );
                                    weight_fw.push_back(1), weight_rc.push_back(0);
                                    denom_fw.push_back(1), denom_rc.push_back(0);
@@ -439,7 +439,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
 
                vec< vec<int> > us_copy(us);
 
-               #pragma omp parallel for
+               //#pragma omp parallel for
                for ( int i = 0; i < nus; i++ )
                {    
                     vec<int> target = us_copy[i];
@@ -606,7 +606,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
 
                          if (verbose)
                          {    
-                              #pragma omp critical
+                              //#pragma omp critical
                               {    std::cout << "\nlooking at pair " << id1 << "/" << id2 
                                         << std::endl;
                                    std::cout << "weight = " << weight << std::endl;
@@ -647,7 +647,7 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
                                              std::cout << " ***";
                                    std::cout << "\n";    }    }    }
                               
-                         #pragma omp critical
+                         //#pragma omp critical
                          {    udel[i] = True;
                               for ( int j = 0; j < where.isize( ); j++ )
 

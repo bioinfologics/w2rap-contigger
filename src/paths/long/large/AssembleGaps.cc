@@ -293,7 +293,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, tmp_mgr);
 
         retry:
-        MakeLocalAssembly2(corrected, hb, lefts, rights, shb, K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner);
+        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner);
 
 
         if (shb.K() == 0) {    // TODO: no more dots in advances...

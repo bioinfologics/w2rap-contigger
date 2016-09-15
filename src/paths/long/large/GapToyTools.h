@@ -113,8 +113,7 @@ void MakeLocalAssembly1( const vecbasevector& bases,
      const int K2_FLOOR, VecEFasta& corrected, vecbasevector& creads,
      vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr );
 
-void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
-     const vec<int>& lefts, const vec<int>& rights,
+void MakeLocalAssembly2( VecEFasta& corrected, const vec<int>& lefts, const vec<int>& rights,
      SupportedHyperBasevector& shb, const int K2_FLOOR,
      vecbasevector& creads, LongProtoTmpDirManager& tmp_mgr, vec<int>& cid,
      vec<pairing_info>& cpartner );
