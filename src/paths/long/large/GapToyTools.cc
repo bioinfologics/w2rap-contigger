@@ -1003,7 +1003,7 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
 
 void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb, 
      const vec<int>& lefts, const vec<int>& rights,
-     SupportedHyperBasevector& shb, const Bool INJECT, const int K2_FLOOR,
+     SupportedHyperBasevector& shb, const int K2_FLOOR,
      vecbasevector& creads, LongProtoTmpDirManager& tmp_mgr, vec<int>& cid,
      vec<pairing_info>& cpartner )
 {
@@ -1022,14 +1022,6 @@ void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
      if ( count == 0 ) {//mout << "No reads were corrected." << std::endl;
      } else
      {    vecbasevector injections;
-          if (INJECT)
-          {    for ( int i = 0; i < lefts.isize( ); i++ )
-                    injections.push_back( hb.EdgeObject( lefts[i] ) );
-               for ( int i = 0; i < rights.isize( ); i++ )
-                    injections.push_back( hb.EdgeObject( rights[i] ) );    }
-          if ( injections.size( ) > 0 )
-          {    heur.INJECT_REF = True;
-               log_control.G = &injections;    }
           if ( !LongHyper( "", corrected, cpartner, shb, heur,
                log_control, logc, tmp_mgr, False ) )
           {    //mout << "No paths were found." << std::endl;
@@ -1050,8 +1042,7 @@ void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb,
 
 void MakeLocalAssembly1( const int lroot, const int rroot,
      const HyperBasevector& hb, const vecbasevector& bases, 
-     const VecPQVec& quals, const vec<int64_t>& pids, const String& TMP,
-     const Bool LOCAL_LAYOUT, const int K2_FLOOR,
+     const VecPQVec& quals, const vec<int64_t>& pids, const int K2_FLOOR,
      const String& work_dir, VecEFasta& corrected, vecbasevector& creads, 
      vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr )
 {
@@ -1067,11 +1058,8 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      long_heuristics heur( "" );
      heur.K2_FLOOR = K2_FLOOR;
      double clock = WallClockTime( );
-     if( IsDirectory( TMP.RevBefore("/") ) ) Mkdir777(TMP);
-     // Remove(TMP+"/frag_reads_orig.fastb");
-     // Remove(TMP+"/frag_reads_orig.qualb");
-     // Remove(TMP+"/frag_reads_orig.pairs");
      const bool bDelOldFile=true;
+
      vecbasevector& gbases=tmp_mgr["frag_reads_orig"].reads(bDelOldFile);
      vecqualvector& gquals=tmp_mgr["frag_reads_orig"].quals(bDelOldFile);
      qvec qv;
@@ -1084,8 +1072,6 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
           gquals.push_back( qv );
           quals[id2].unpack(&qv);
           gquals.push_back( qv );    }
-     // gbases.WriteAll( TMP + "/frag_reads_orig.fastb" );
-     // gquals.WriteAll( TMP + "/frag_reads_orig.qualb" );
      const int SEP = 0;
      const int STDEV = 100;
      const String LIB = "woof";
@@ -1095,14 +1081,10 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      gpairs = PairsManager(nreads);
      gpairs.addLibrary( SEP, STDEV, LIB );
      size_t npairs = nreads / 2;
-     for ( size_t pi = 0; pi < npairs; pi++ )
-          gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
-     // gpairs.Write( TMP + "/frag_reads_orig.pairs" );
+     for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
      double clock2 = WallClockTime( );
-     // tmp_mgr["frag_reads_orig"].write();
      uint NUM_THREADS = 1;
      CorrectionSuite( tmp_mgr, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False );
-     //mout << "total correction time = " << TimeSince(clock2) << std::endl;
 
      int count = 0;
      for ( int l = 0; l < (int) corrected.size( ); l++ )
@@ -1110,14 +1092,10 @@ void MakeLocalAssembly1( const int lroot, const int rroot,
      if ( count > 0 )
      {    vec<Bool> to_delete( corrected.size( ), False );
           DefinePairingInfo( 
-               tmp_mgr, creads, to_delete, cid, corrected, cpartner/*, logc*/ );    }
+               tmp_mgr, creads, to_delete, cid, corrected, cpartner/*, logc*/ );
+     }
 
-     // Experiment.
-
-     if (LOCAL_LAYOUT) LocalLayout( lroot, rroot, tmp_mgr, work_dir );
-
-     //mout << "assembly time 1 = " << TimeSince(clock1) << std::endl;
-    }
+}
 
 String ToStringN( const vec<int>& x, const int vis )
 {    String v = "{" + ToString( x.size( ) ) + ":";

@@ -54,9 +54,7 @@ template <int M> struct MakeStartStopFunctor
 
 void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2, 
      VecULongVec& paths2_index, vecbasevector& bases, VecPQVec const& quals,
-     const String& work_dir, const Bool EXTEND, const Bool ANNOUNCE, 
-     const Bool KEEP_ALL_LOCAL, const Bool CONSERVATIVE_KEEP, const Bool INJECT, 
-     const Bool LOCAL_LAYOUT, const String DUMP_LOCAL, int K2_FLOOR, 
+     const String& work_dir, int K2_FLOOR,
      const int DUMP_LOCAL_LROOT, const int DUMP_LOCAL_RROOT, 
      vecbvec& new_stuff, const Bool CYCLIC_SAVE,
      const int A2V, const int GAP_CAP, const int MAX_PROX_LEFT, 
@@ -109,11 +107,6 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
      vec< vec<int64_t> > layout_id(nedges);
      vec< vec<Bool> > layout_or(nedges);
      LayoutReads( hb, inv2, bases, paths2, layout_pos, layout_id, layout_or );
-
-     // Extend terminal edges.
-
-     if (EXTEND) 
-          ExtendTerminalEdges( hb, layout_pos, layout_id, layout_or, bases, quals );
 
      // Make gap assemblies.
 
@@ -266,22 +259,8 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
           //mout << "using " << pids.size( ) << " pairs" << std::endl;
           //mout << "pids = " << printSeq(pids) << std::endl;
 
-          if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": MID1 " << bl
-                         << ", time used so far = " << TimeSince(aclock1)
-                         << ", npids = " << pids.size( ) << std::endl;    }    }
-
-          // Attempt local assembly.
-
           String TMP;
-          if ( KEEP_ALL_LOCAL ) {
-               #pragma omp atomic
-               tmpdir_serial++;
-               TMP = work_dir + "/local/" + ToString( tmpdir_serial );
-                     } else
-               TMP = work_dir + "/local/" + ToString( omp_get_thread_num() );
+          TMP = work_dir + "/local/" + ToString( omp_get_thread_num() );
 
           //mout << "assembling in " << TMP << "\n";
           //mout << "total setup time = " << TimeSince(aclock1) << std::endl;
@@ -294,27 +273,13 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
 
           int lroot = lefts[0], rroot = rights[0];
 
-          MakeLocalAssembly1( lroot, rroot, hb, bases, quals, pids, TMP,
-               LOCAL_LAYOUT, K2_FLOOR_LOCAL, work_dir, corrected, creads, cpartner, 
+          MakeLocalAssembly1( lroot, rroot, hb, bases, quals, pids, K2_FLOOR_LOCAL, work_dir, corrected, creads, cpartner,
                cid, tmp_mgr );
 
-          if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": MID2 " << bl
-                         << ", time used so far = " << TimeSince(aclock1)
-                         << std::endl;    }    }
 
           retry:
-          MakeLocalAssembly2( corrected, hb, lefts, rights, shb, INJECT,
-               K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner );
+          MakeLocalAssembly2( corrected, hb, lefts, rights, shb, K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner );
 
-          if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": MID3 " << bl << ", K = "
-                         << shb.K( ) << ", time used so far = " 
-                         << TimeSince(aclock1) << std::endl;    }    }
 
           if ( shb.K( ) == 0 )
           {    // TODO: no more dots in advances...
@@ -322,19 +287,6 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );*/
                continue;    }
 
-          if ( DUMP_LOCAL != "" )
-          {    static Bool special(False);
-               if ( !special && lroot == DUMP_LOCAL_LROOT
-                         && rroot == DUMP_LOCAL_RROOT )
-               {    
-                    #pragma omp critical
-                    {    std::cout << "dumping special1" << std::endl;
-                         Ofstream( out, work_dir + "/special/1.dot" );
-                         shb.PrintSummaryDOT0w( out, True, False, True );
-                         Ofstream( fout, work_dir + "/special/1.fasta" );
-                         for ( int e = 0; e < shb.EdgeObjectCount( ); e++ )
-                              shb.EdgeObject(e).Print( fout, e );
-                         special = True;    }    }    }
 
           // Find edges "starts" and "stops" overlapping root edges.
 
@@ -351,28 +303,19 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                shb.K( ), bell, hb, shb, lefts, rights, starts, stops );
           UniqueSort(starts), UniqueSort(stops);
 
-          if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": MID4 " << bl
-                         << ", time used so far = " << TimeSince(aclock1)
-                         << std::endl;    }    }
-
           // Reduce shb to those edges between starts and stops.
 
           vec<int> yto_left, yto_right;
           shb.ToLeft(yto_left), shb.ToRight(yto_right);
           vec<int> keep = Intersection( starts, stops );
-          if ( !CONSERVATIVE_KEEP )
-          {    keep.append(starts);
-               keep.append(stops);    }
+          keep.append(starts);
+          keep.append(stops);
           for ( int j1 = 0; j1 < starts.isize( ); j1++ )
-          for ( int j2 = 0; j2 < stops.isize( ); j2++ )
-          {    int v = yto_right[ starts[j1] ], w = yto_left[ stops[j2] ];
+          for ( int j2 = 0; j2 < stops.isize( ); j2++ ) {
+               int v = yto_right[ starts[j1] ], w = yto_left[ stops[j2] ];
                vec<int> b = shb.EdgesSomewhereBetween( v, w );
                keep.append(b);
-               if ( CONSERVATIVE_KEEP && ( b.nonempty( ) || v == w ) )
-               {     keep.push_back( starts[j1], stops[j2] );    }    }
+          }
           UniqueSort(keep);
           vec<int> ydels;
           for ( int e = 0; e < shb.EdgeObjectCount( ); e++ )
@@ -383,19 +326,6 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
           xshb.RemoveDeadEdgeObjects( );
           //mout << TimeSince(sclock) << " used contracting" << std::endl;
 
-          if ( DUMP_LOCAL != "" )
-          {    static Bool special(False);
-               if ( !special && lroot == DUMP_LOCAL_LROOT
-                         && rroot == DUMP_LOCAL_RROOT )
-               {    
-                    #pragma omp critical
-                    {    std::cout << "dumping special2" << std::endl;
-                         Ofstream( out, work_dir + "/special/2.dot" );
-                         xshb.PrintSummaryDOT0w( out, True, False, True );
-                         Ofstream( fout, work_dir + "/special/2.fasta" );
-                         for ( int e = 0; e < xshb.EdgeObjectCount( ); e++ )
-                              xshb.EdgeObject(e).Print( fout, e );
-                         special = True;    }    }    }
 
           // Attempt to recover assemblies with cycles by raising K.
 
@@ -408,13 +338,6 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
                {    K2_FLOOR_LOCAL = K2s[j];
                     //PRINT_TO( mout, K2_FLOOR_LOCAL );
                     goto retry;    }    }
-
-          if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": MID5 " << bl
-                         << ", time used so far = " << TimeSince(aclock1)
-                         << std::endl;    }    }
 
           if ( !xshb.Acyclic( ) || xshb.N( ) == 0 )
           {    //if ( !xshb.Acyclic( ) ) mout << "has cycle, not using" << std::endl;
@@ -488,20 +411,13 @@ void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2,
           BasesToGraph( bpathsx, K, mhbp[bl] );
           //mout << "patch creation time = " << TimeSince(aclock2) << std::endl;
 
-          if (ANNOUNCE)
-          {   
-               #pragma omp critical
-               {    std::cout << "\n" << Date( ) << ": SAVING " << bl << ", lefts = "
-                         << printSeq(lefts) << ", rights = " 
-                         << printSeq(rights) << ", npids = " << pids.size( )
-                         << ", time used so far = " << TimeSince(aclock1)
-                         << std::endl;    }    }
+
 
           // Save.
      
           //mreport[bl] += mout.str( );
           //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
-            }
+     }
 
      std::cout << TimeSince(clockp1) << " spent in local assemblies, "
           << "memory in use = " << MemUsageGBString( )
