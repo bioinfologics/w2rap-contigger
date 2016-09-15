@@ -1062,6 +1062,8 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      vecbasevector& gbases=tmp_mgr["frag_reads_orig"].reads(bDelOldFile);
      vecqualvector& gquals=tmp_mgr["frag_reads_orig"].quals(bDelOldFile);
      qvec qv;
+     gbases.reserve(2*pids.isize());
+     gquals.reserve(2*pids.isize());
      for ( int l = 0; l < pids.isize( ); l++ )
      {    int64_t pid = pids[l];
           int64_t id1 = 2*pid, id2 = 2*pid + 1;
