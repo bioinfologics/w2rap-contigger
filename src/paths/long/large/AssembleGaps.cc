@@ -289,11 +289,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         LongProtoTmpDirManager tmp_mgr(TMP);
         SupportedHyperBasevector shb;
 
-        int lroot = lefts[0], rroot = rights[0];
-
-        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, work_dir, corrected, creads, cpartner,
-                           cid, tmp_mgr);
-
+        //Local readset creation and error correction.
+        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, tmp_mgr);
 
         retry:
         MakeLocalAssembly2(corrected, hb, lefts, rights, shb, K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner);

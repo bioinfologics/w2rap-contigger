@@ -1001,47 +1001,44 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
      */
      }
 
-void MakeLocalAssembly2( VecEFasta& corrected, const HyperBasevector& hb, 
-     const vec<int>& lefts, const vec<int>& rights,
-     SupportedHyperBasevector& shb, const int K2_FLOOR,
-     vecbasevector& creads, LongProtoTmpDirManager& tmp_mgr, vec<int>& cid,
-     vec<pairing_info>& cpartner )
-{
-     double clock = WallClockTime( );
-     long_logging logc( "", "" );
-     logc.STATUS_LOGGING = False;
-     logc.MIN_LOGGING = False;
-     ref_data ref;
-     vec<ref_loc> readlocs;
-     long_logging_control log_control( ref, &readlocs, "", "" );
-     long_heuristics heur( "" );
-     heur.K2_FLOOR = K2_FLOOR;
-     int count = 0;
-     for ( int l = 0; l < (int) corrected.size( ); l++ )
-          if ( corrected[l].size( ) > 0 ) count++;
-     if ( count == 0 ) {//mout << "No reads were corrected." << std::endl;
-     } else
-     {    vecbasevector injections;
-          if ( !LongHyper( "", corrected, cpartner, shb, heur,
-               log_control, logc, tmp_mgr, False ) )
-          {    //mout << "No paths were found." << std::endl;
-               SupportedHyperBasevector shb0;
-               shb = shb0;    }
-          else 
-          {    // heur.LC_CAREFUL = True;
-               shb.DeleteLowCoverage( heur, log_control, logc );
-               if ( shb.NPaths( ) == 0 )
-               {    //mout << "No paths were found." << std::endl;
-                    SupportedHyperBasevector shb0;
-                    shb = shb0;    }
-               else shb.TestValid(logc);    }    }
-     /*mout << "using K2 = " << shb.K( ) << "\n";
-     mout << "local assembly has " << shb.EdgeObjectCount( ) << " edges" << "\n";
-     mout << "assembly time 2 = " << TimeSince(clock) << std::endl;*/
+void MakeLocalAssembly2(VecEFasta &corrected, const HyperBasevector &hb,
+                        const vec<int> &lefts, const vec<int> &rights,
+                        SupportedHyperBasevector &shb, const int K2_FLOOR,
+                        vecbasevector &creads, LongProtoTmpDirManager &tmp_mgr, vec<int> &cid,
+                        vec<pairing_info> &cpartner) {
+    long_logging logc("", "");
+    logc.STATUS_LOGGING = False;
+    logc.MIN_LOGGING = False;
+    ref_data ref;
+    vec<ref_loc> readlocs;
+    long_logging_control log_control(ref, &readlocs, "", "");
+    long_heuristics heur("");
+    heur.K2_FLOOR = K2_FLOOR;
+    int count = 0;
+    for (int l = 0; l < (int) corrected.size(); l++)
+        if (corrected[l].size() > 0) count++;
+    if (count == 0) {//mout << "No reads were corrected." << std::endl;
+    } else {
+        vecbasevector injections;
+        if (!LongHyper("", corrected, cpartner, shb, heur,
+                       log_control, logc, tmp_mgr, False)) {    //mout << "No paths were found." << std::endl;
+            SupportedHyperBasevector shb0;
+            shb = shb0;
+        } else {    // heur.LC_CAREFUL = True;
+            shb.DeleteLowCoverage(heur, log_control, logc);
+            if (shb.NPaths() == 0) {    //mout << "No paths were found." << std::endl;
+                SupportedHyperBasevector shb0;
+                shb = shb0;
+            } else shb.TestValid(logc);
+        }
+    }
+    /*mout << "using K2 = " << shb.K( ) << "\n";
+    mout << "local assembly has " << shb.EdgeObjectCount( ) << " edges" << "\n";
+    mout << "assembly time 2 = " << TimeSince(clock) << std::endl;*/
 }
 
 void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, const vec<int64_t>& pids,
-                         const int K2_FLOOR, const String& work_dir, VecEFasta& corrected, vecbasevector& creads,
+                         const int K2_FLOOR, VecEFasta& corrected, vecbasevector& creads,
                          vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr )
 {
      //std::cout<<"MakeLocalAssembly1 called!"<<std::endl;
