@@ -204,7 +204,6 @@ add_library(base_libs OBJECT
         src/paths/long/large/GapToyTools4.cc
         src/paths/long/large/GapToyTools5.cc
         src/paths/long/large/Lines.cc
-        src/paths/long/large/LocalLayout.cc
         src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
         src/util/TextTable.cc)
@@ -354,7 +353,6 @@ add_library(hb_base_libs OBJECT
         src/paths/long/large/GapToyTools.cc
         src/paths/long/large/GapToyTools3.cc
         src/paths/long/large/Lines.cc
-        src/paths/long/large/LocalLayout.cc
         src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
         src/util/TextTable.cc

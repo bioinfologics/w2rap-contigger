@@ -16,7 +16,7 @@
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
 
-void Correct1Pre( String const& tmpDir, const int K, const int max_freq, 
+void Correct1Pre(const int K,
      vecbasevector& bases, vecqualvector& quals, const PairsManager& pairs, 
      const vec<Bool>& to_edit, vec<int>& trim_to, const vec<int>& trace_ids, 
      /*const long_logging& logc,*/ const long_heuristics& heur );

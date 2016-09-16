@@ -42,8 +42,8 @@ void append_read( const std::string& filename, size_t serial, const veclike& r)
      }
 }
 
-void Correct1Pre( String const& tmpDir, const int K, const int max_freq, 
-     vecbasevector& bases, vecqualvector& quals, const PairsManager& pairs, 
+void Correct1Pre( const int K,
+     vecbasevector& bases, vecqualvector& quals, const PairsManager& pairs,
      const vec<Bool>& to_edit, vec<int>& trim_to, const vec<int>& trace_ids, 
      /*const long_logging& logc,*/ const long_heuristics& heur )
 {
@@ -94,7 +94,7 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
      const int batch = 100;
      //REPORT_TIME( clock1, "used in Correct1Pre head" );
      double clock2 = WallClockTime( );
-     #pragma omp parallel for schedule(dynamic, 1)
+     //#pragma omp parallel for schedule(dynamic, 1)
      for ( int64_t id1a = 0; id1a < (int64_t) use.size( ); id1a += batch )
      {    readstack stack;
           vec<Bool> suspect;
@@ -123,7 +123,7 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
                if ( BinMember( trace_ids, id1 ) )
                {    vec<basevector> cons;
                     cons.push_back( currentBaseVec );
-                    #pragma omp critical
+                    //#pragma omp critical
                     {    std::cout << "\nCorrect1Pre, K = " << K 
                               << ", initial stack, tracing read " << id1 << std::endl;
                          std::cout << "stack:\n";
@@ -154,7 +154,7 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
                if ( BinMember( trace_ids, id1 ) )
                {    vec<basevector> cons;
                     cons.push_back( currentBaseVec );
-                    #pragma omp critical
+                    //#pragma omp critical
                     {    std::cout << "\nCorrect1Pre, K = " << K 
                               << ", final stack, tracing read " << id1 << std::endl;
                          std::cout << "stack:\n";
@@ -162,7 +162,7 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
 
      // Save results.
 
-     #pragma omp parallel for schedule(dynamic)
+     //#pragma omp parallel for schedule(dynamic)
      for( size_t id1x = 0 ; id1x < use.size() ; ++id1x){
           const int64_t& id1 = use[id1x];
           bases[id1] = bases_loc[id1x];

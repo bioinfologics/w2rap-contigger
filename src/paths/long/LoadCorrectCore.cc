@@ -336,7 +336,6 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 
     const String sFragReadsOrig = "frag_reads_orig";
     const String sFragReadsMod0 = "frag_reads_mod0";
-    const bool bOrgReadsInMem = tmp_mgr[sFragReadsOrig].inMem();
 
 
     double bclock = WallClockTime();
@@ -429,7 +428,7 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     // Do precorrection.
 
     for (int j = 0; j < precorrect_seq.isize(); j++) {
-        Correct1Pre(tmp_mgr.dir(), precorrect_seq[j], max_freq, creads, cquals,
+        Correct1Pre(precorrect_seq[j], creads, cquals,
                     pairs, to_edit, trim_to, trace_ids, /*logc,*/ heur);
     }
     /*
