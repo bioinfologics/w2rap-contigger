@@ -41,9 +41,9 @@ void CorrectionSuite( vecbasevector& gbases, vecqualvector& gquals, PairsManager
      //const long_logging& logc, const long_logging_control& log_control,
      vecbasevector& creads, VecEFasta& corrected, vec<int>& cid, 
      vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT, 
-     const double clock, bool useOldLRPMethod, LongProtoTmpDirManager &tmp_mgr );
+     const double clock, bool useOldLRPMethod/*, LongProtoTmpDirManager &tmp_mgr*/ );
 
-void DefinePairingInfo( const LongProtoTmpDirManager& tmp_mgr, const vecbasevector& creads,
+void DefinePairingInfo( const PairsManager & gpairs, const vecbasevector& creads,
      const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
      vec<pairing_info>& cpartner/*, const long_logging& logc*/ );
 

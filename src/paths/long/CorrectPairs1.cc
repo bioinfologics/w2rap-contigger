@@ -37,7 +37,7 @@ Bool cmp_ho_start_stop( const ho_interval& h1, const ho_interval& h2 )
 
 } // close anonymous namespace
 
-void CorrectPairs1( String const& tmpDir, const int K, const int max_freq, vecbasevector& bases,
+void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
      vecqualvector& quals, const PairsManager& pairs, const vec<Bool>& to_edit, 
      const vec<int>& trace_ids, const long_heuristics& heur, 
      //const long_logging_control& log_control, const long_logging& logc,

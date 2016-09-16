@@ -34,12 +34,12 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
      const vec<pairing_info>& cpartner, SupportedHyperBasevector& shb, 
      const long_heuristics& heur,
      const long_logging_control& log_control, const long_logging& logc, 
-     const LongProtoTmpDirManager& tmp_mgr, bool useOldLRPMethod )
+     /*const LongProtoTmpDirManager& tmp_mgr,*/ bool useOldLRPMethod)
 {
      // Choose K2.
 
      double K2frac_mult = 1.0;
-     if ( READS != "" && !READS.Contains( ".fastb", -1 ) && heur.CORRECT_PAIRS ) 
+     if ( READS != "" && !READS.Contains( ".fastb", -1 ) && heur.CORRECT_PAIRS )
           K2frac_mult = 0.82;
      double K2frac_to_use = heur.K2frac * K2frac_mult;
      int K2 = SelectK2( correctede, K2frac_to_use, logc, heur );
@@ -49,11 +49,15 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
 
      // Setup for PERTURB_TRANSLATIONS.
 
-     const bool bUseOrgReads= ( heur.PERTURB_TRANSLATIONS || logc.TRACE_EDGES0 != "" || heur.REMAP_READS );
+     /*const bool bUseOrgReads= ( heur.PERTURB_TRANSLATIONS || logc.TRACE_EDGES0 != "" || heur.REMAP_READS );
      vecbasevector const& Bases = bUseOrgReads? tmp_mgr.get("frag_reads_orig").reads() : vecbasevector();
      vecqualvector const& Quals = bUseOrgReads? tmp_mgr.get("frag_reads_orig").quals() : vecqualvector();
      if(bUseOrgReads){ tmp_mgr.get("frag_reads_orig").pairs().makeCache(); }
-     PairsManager const& Pairs = bUseOrgReads? tmp_mgr.get("frag_reads_orig").pairs() : PairsManager();
+     PairsManager const& Pairs = bUseOrgReads? tmp_mgr.get("frag_reads_orig").pairs() : PairsManager();*/
+    const bool bUseOrgReads= false;
+    vecbasevector const& Bases = vecbasevector();
+    vecqualvector const& Quals = vecqualvector();
+    PairsManager const& Pairs = PairsManager();
 
      // Expand correctede.  Note that this is exponential and thus totally unsound.
 

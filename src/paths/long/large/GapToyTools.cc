@@ -38,7 +38,6 @@
 #include "paths/long/RefTrace.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/large/GapToyTools.h"
-//#include "paths/long/large/LocalLayout.h"
 #include "random/Random.h"
 #include <fstream>
 #include <ctime>
@@ -1004,7 +1003,7 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
 void MakeLocalAssembly2(VecEFasta &corrected,
                         const vec<int> &lefts, const vec<int> &rights,
                         SupportedHyperBasevector &shb, const int K2_FLOOR,
-                        vecbasevector &creads, LongProtoTmpDirManager &tmp_mgr, vec<int> &cid,
+                        vecbasevector &creads/*, LongProtoTmpDirManager &tmp_mgr*/, vec<int> &cid,
                         vec<pairing_info> &cpartner) {
     long_logging logc("", "");
     logc.STATUS_LOGGING = False;
@@ -1020,7 +1019,7 @@ void MakeLocalAssembly2(VecEFasta &corrected,
     if (count == 0) {
         //mout << "No reads were corrected." << std::endl;
     } else {
-        if (!LongHyper("", corrected, cpartner, shb, heur, log_control, logc, tmp_mgr, False)) {
+        if (!LongHyper("", corrected, cpartner, shb, heur, log_control, logc, /*tmp_mgr,*/ False)) {
             //mout << "No paths were found." << std::endl;
             SupportedHyperBasevector shb0;
             shb = shb0;
@@ -1043,7 +1042,7 @@ void MakeLocalAssembly2(VecEFasta &corrected,
 void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, const vec<int64_t>& pids,
                          const int K2_FLOOR, VecEFasta& corrected, vecbasevector& creads,
                          vec<pairing_info>& cpartner, vec<int>& cid,
-                         vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs, LongProtoTmpDirManager &tmp_mgr)
+                         vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs)
 {
      //std::cout<<"MakeLocalAssembly1 called!"<<std::endl;
      //mout << Date( ) << ": begin gap assembly" << std::endl;
@@ -1052,6 +1051,8 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      //logc.MIN_LOGGING = False;
      ref_data ref;
      vec<ref_loc> readlocs;
+
+
      long_logging_control log_control( ref, &readlocs, "", "" );
 
 
@@ -1062,6 +1063,7 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      qvec qv;
      gbases.reserve(2*pids.isize());
      gquals.reserve(2*pids.isize());
+
      for ( int l = 0; l < pids.isize( ); l++ )
      {    int64_t pid = pids[l];
           int64_t id1 = 2*pid, id2 = 2*pid + 1;
@@ -1071,6 +1073,7 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
           gquals.push_back( qv );
           quals[id2].unpack(&qv);
           gquals.push_back( qv );    }
+
      const int SEP = 0;
      const int STDEV = 100;
      const String LIB = "woof";
@@ -1087,7 +1090,7 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      long_heuristics heur( "" );
      heur.K2_FLOOR = K2_FLOOR;
      //STEP 2: run correction suite in the local reads and repair as needed
-     CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False, tmp_mgr );
+     CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False);
 
      int count = 0;
      for ( int l = 0; l < (int) corrected.size( ); l++ )
@@ -1095,7 +1098,7 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      if ( count > 0 )
      {    vec<Bool> to_delete( corrected.size( ), False );
           DefinePairingInfo( 
-               tmp_mgr, creads, to_delete, cid, corrected, cpartner/*, logc*/ );
+               gpairs, creads, to_delete, cid, corrected, cpartner/*, logc*/ );
      }
 
 }

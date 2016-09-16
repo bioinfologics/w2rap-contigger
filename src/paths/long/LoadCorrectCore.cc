@@ -318,7 +318,7 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
                      vecbasevector &creads,
                      VecEFasta &corrected, vec<int> &cid, vec<pairing_info> &cpartner,
                      const uint NUM_THREADS, const String &EXIT, const double clock,
-                     bool useOldLRPMethod,  LongProtoTmpDirManager &tmp_mgr) {
+                     bool useOldLRPMethod/*,  LongProtoTmpDirManager &tmp_mgr*/) {
     // Run Correct1.
 
     vec<int> trace_ids, precorrect_seq;
@@ -335,13 +335,13 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     const int max_freq = heur.FF_MAX_FREQ;
 
     const String sFragReadsOrig = "frag_reads_orig";
-    const String sFragReadsMod0 = "frag_reads_mod0";
+    //const String sFragReadsMod0 = "frag_reads_mod0";
 
 
     double bclock = WallClockTime();
     vecqualvector cquals;
-    creads = tmp_mgr[sFragReadsOrig].reads();
-    cquals = tmp_mgr[sFragReadsOrig].quals();
+    creads = gbases;
+    cquals = gquals;
     size_t nReads = creads.size();
     ForceAssertEq(nReads, cquals.size());
     size_t nBases = 0, qualSum = 0;
@@ -363,9 +363,9 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
                              -1, NUM_THREADS);
     }
 
-    ZeroCorrectedQuals(tmp_mgr[sFragReadsOrig].reads(), creads, &cquals);
+    ZeroCorrectedQuals(gbases, creads, &cquals);
 
-    PairsManager const &pairs = tmp_mgr[sFragReadsOrig].pairs();
+    PairsManager const &pairs = gpairs;
     pairs.makeCache();
 
     // Carry out initial pair filling.
@@ -438,9 +438,9 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 
     double nclock = WallClockTime();
 
-    tmp_mgr[sFragReadsMod0].reads(true) = creads;
-    tmp_mgr[sFragReadsMod0].quals(true) = cquals;
-    tmp_mgr[sFragReadsMod0].pairs(true);
+    //tmp_mgr[sFragReadsMod0].reads(true) = creads;
+    //tmp_mgr[sFragReadsMod0].quals(true) = cquals;
+    //tmp_mgr[sFragReadsMod0].pairs(true);
 
 
 
@@ -574,7 +574,7 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 
 
     corrected.clear().resize(creads.size());
-    CorrectPairs1(tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
+    CorrectPairs1( 40, max_freq, creads, cquals, pairs, to_edit,
                   trace_ids, heur, /*log_control, logc,*/ corrected);
     for (size_t id = 0; id < corrected.size(); id++) {
         if (corrected[id].size() > 0) {
@@ -600,7 +600,7 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
         heur2.CP_RAISE_ZERO = True;
         heur2.CP_MAX_QDIFF = 25.0;
 
-        CorrectPairs1(tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
+        CorrectPairs1( 40, max_freq, creads, cquals, pairs, to_edit,
                       trace_ids, heur2, /*log_control, logc,*/ corrected);
     } // end of heur.CP2
 
@@ -613,11 +613,11 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 
 // Define pairing info.  Note that for now we set all the library ids to 0.
 
-void DefinePairingInfo( const LongProtoTmpDirManager& tmp_mgr, const vecbasevector& creads,
+void DefinePairingInfo( const PairsManager & gpairs, const vecbasevector& creads,
      const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
      vec<pairing_info>& cpartner/*, const long_logging& logc*/ )
 {    double clock = WallClockTime( );
-     PairsManager const& pairs = tmp_mgr.get("frag_reads_orig").pairs();
+     PairsManager const& pairs = gpairs;
 //     pairs.Read( TMP + "/frag_reads_orig.pairs" );
      for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
           if ( !to_delete[id] ) cid.push_back(id);

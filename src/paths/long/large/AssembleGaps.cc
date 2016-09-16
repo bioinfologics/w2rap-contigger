@@ -332,15 +332,15 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         vecqualvector& gquals=tmp_mgr["frag_reads_orig"].quals(bDelOldFile);
         PairsManager& gpairs = tmp_mgr["frag_reads_orig"].pairs(bDelOldFile);
 
-        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs, tmp_mgr);
+        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs);
 
         part2_total_clock+=IntTime()-partial_clock;
 
         //PART3-----------------------------------------------------
         partial_clock = IntTime();
-
+        //TODO: warning tmp_mgr doesn't have the corrected reads here?
         retry:
-        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, tmp_mgr, cid, cpartner);
+        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, /* tmp_mgr, */ cid, cpartner);
 
 
         if (shb.K() == 0) {    // TODO: no more dots in advances...

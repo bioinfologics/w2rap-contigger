@@ -21,6 +21,6 @@ Bool LongHyper( const String& READS, const VecEFasta& correctede,
      const vec<pairing_info>& cpartner, SupportedHyperBasevector& shb,
      const long_heuristics& heur,
      const long_logging_control& log_control, const long_logging& logc, 
-     const LongProtoTmpDirManager& tmp_mgr, bool useOldLRPMethod );
+     /*const LongProtoTmpDirManager& tmp_mgr,*/ bool useOldLRPMethod );
 
 #endif
