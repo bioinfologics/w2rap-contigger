@@ -11,7 +11,6 @@
 
 #include "paths/long/FriendAligns.h"
 #include "paths/long/FriendAlignFinder.h"
-//#include "paths/long/FriendAlignFinderQ.h"
 #include "paths/long/FriendAlignFinderNaif.h"
 #include "paths/long/MakeAlignments.h"
 
@@ -55,28 +54,15 @@ private:
 }
 
 
-FriendAligner::FriendAligner( vecbvec const& bases, vecqvec const& quals,
-                               vec<Bool> const& toEdit,
-                               String const& friendsCache,
+FriendAligner::FriendAligner( vecbvec const& bases, /*vecqvec const& quals,*/
+                               /*vec<Bool> const& toEdit,*/
+                               /*String const& friendsCache,*/
                                int MAKE_ALIGN_IMPL, unsigned const K,
-                               unsigned const min_freq, unsigned const max_freq,
-                               unsigned const min_qual, unsigned const coverage,
+                               /*unsigned const min_freq,*/ unsigned const max_freq,
+                               /*unsigned const min_qual,*/ /*unsigned const coverage,*/
                                bool downSample, int verbosity )
 {
-    if ( MAKE_ALIGN_IMPL == 2 )
-    {
-        if ( K <= 29 )
-            mpImpl = new FriendAlignFinderNaif<Kmer29>(friendsCache,K,bases,max_freq);
-        else if ( K <= 60 )
-            mpImpl = new FriendAlignFinderNaif<Kmer60>(friendsCache,K,bases,max_freq);
-        else if ( K <= 124 )
-            mpImpl = new FriendAlignFinderNaif<Kmer124>(friendsCache,K,bases,max_freq);
-        else {
-            std::cout << "\nIllegal K value for MakeAlignments." << std::endl;
-            CRD::exit(1);
-        }
-    }
-    else if ( MAKE_ALIGN_IMPL==1 )
+    if ( MAKE_ALIGN_IMPL==1 )
     {
         if      ( K == 12 ) mpImpl = new FriendAlignFinder<12>( bases, max_freq, downSample, verbosity );
         else if ( K == 16 ) mpImpl = new FriendAlignFinder<16>( bases, max_freq, downSample, verbosity );
@@ -90,15 +76,15 @@ FriendAligner::FriendAligner( vecbvec const& bases, vecqvec const& quals,
             CRD::exit(1);
         }
     }
-    else if ( MAKE_ALIGN_IMPL==0 )
+    /*else if ( MAKE_ALIGN_IMPL==0 )
     {
         vec<simple_align_data> aligns_all;
         MakeAlignments( K, max_freq, bases, toEdit, aligns_all, verbosity );
         mpImpl = new FriendsCache(aligns_all,bases.size());
         if ( verbosity ) std::cout << Date( ) << ": read starts defined" << std::endl;
-    }
+    }*/
     else
-        FatalErr("Illegal value for MAKE_ALIGN_EXP (must be 0, 1, 2, or 3).");
+        FatalErr("Illegal value for MAKE_ALIGN_EXP (must be 1)");
 }
 
 FriendAlignerImpl::~FriendAlignerImpl()

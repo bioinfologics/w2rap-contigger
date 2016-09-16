@@ -1042,7 +1042,8 @@ void MakeLocalAssembly2(VecEFasta &corrected,
 
 void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, const vec<int64_t>& pids,
                          const int K2_FLOOR, VecEFasta& corrected, vecbasevector& creads,
-                         vec<pairing_info>& cpartner, vec<int>& cid, LongProtoTmpDirManager& tmp_mgr )
+                         vec<pairing_info>& cpartner, vec<int>& cid,
+                         vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs, LongProtoTmpDirManager &tmp_mgr)
 {
      //std::cout<<"MakeLocalAssembly1 called!"<<std::endl;
      //mout << Date( ) << ": begin gap assembly" << std::endl;
@@ -1052,15 +1053,12 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      ref_data ref;
      vec<ref_loc> readlocs;
      long_logging_control log_control( ref, &readlocs, "", "" );
-     long_heuristics heur( "" );
-     heur.K2_FLOOR = K2_FLOOR;
+
 
      //STEP 1: get "local" reads/quals
      double clock = WallClockTime( );
-     const bool bDelOldFile=true;
 
-     vecbasevector& gbases=tmp_mgr["frag_reads_orig"].reads(bDelOldFile);
-     vecqualvector& gquals=tmp_mgr["frag_reads_orig"].quals(bDelOldFile);
+
      qvec qv;
      gbases.reserve(2*pids.isize());
      gquals.reserve(2*pids.isize());
@@ -1078,7 +1076,7 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      const String LIB = "woof";
      const size_t nreads = gbases.size( );
      // PairsManager gpairs(nreads);
-     PairsManager& gpairs = tmp_mgr["frag_reads_orig"].pairs(bDelOldFile);
+
      gpairs = PairsManager(nreads);
      gpairs.addLibrary( SEP, STDEV, LIB );
      size_t npairs = nreads / 2;
@@ -1086,8 +1084,10 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      double clock2 = WallClockTime( );
      uint NUM_THREADS = 1;
 
+     long_heuristics heur( "" );
+     heur.K2_FLOOR = K2_FLOOR;
      //STEP 2: run correction suite in the local reads and repair as needed
-     CorrectionSuite( tmp_mgr, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False );
+     CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False, tmp_mgr );
 
      int count = 0;
      for ( int l = 0; l < (int) corrected.size( ); l++ )
@@ -1103,7 +1103,7 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
 String ToStringN( const vec<int>& x, const int vis )
 {    String v = "{" + ToString( x.size( ) ) + ":";
      for ( int j = 0; j < x.isize( ); j++ )
-     {    if ( vis >= 0 && j > vis ) 
+     {    if ( vis >= 0 && j > vis )
           {    v += ",...";
                break;    }
           if ( j > 0 ) v += ",";

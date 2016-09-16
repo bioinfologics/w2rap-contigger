@@ -77,12 +77,12 @@ public:
 class FriendAligner
 {
   public:
-    FriendAligner( vecbvec const& bases, vecqvec const& quals,
+    FriendAligner( vecbvec const& bases, /*vecqvec const& quals,
                     vec<Bool> const& toEdit,
-                    String const& friendsCache,
+                    String const& friendsCache,*/
                     int MAKE_ALIGN_IMPL, unsigned const K,
-                    unsigned const min_freq, unsigned const max_freq,
-                    unsigned const min_qual, unsigned const coverage,
+                    /*unsigned const min_freq,*/ unsigned const max_freq,
+                    /*unsigned const min_qual, unsigned const coverage,*/
                     bool downSample, int verbosity );
     ~FriendAligner() { delete mpImpl; }
 

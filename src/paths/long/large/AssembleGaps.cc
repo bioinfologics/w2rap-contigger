@@ -327,9 +327,16 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         SupportedHyperBasevector shb;
 
         //Local readset creation and error correction.
-        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, tmp_mgr);
-        //PART3-----------------------------------------------------
+        const bool bDelOldFile=true;
+        vecbasevector& gbases=tmp_mgr["frag_reads_orig"].reads(bDelOldFile);
+        vecqualvector& gquals=tmp_mgr["frag_reads_orig"].quals(bDelOldFile);
+        PairsManager& gpairs = tmp_mgr["frag_reads_orig"].pairs(bDelOldFile);
+
+        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs, tmp_mgr);
+
         part2_total_clock+=IntTime()-partial_clock;
+
+        //PART3-----------------------------------------------------
         partial_clock = IntTime();
 
         retry:

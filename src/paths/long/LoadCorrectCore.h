@@ -36,17 +36,12 @@ void MergeReadSets( const vec<String>& heads, const String& TMP,
 void SelectRandom( const String& TMP, const double SELECT_FRAC, 
      const long_logging& logc, const long_data_spec& spec );
 
-void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& heur,
+void CorrectionSuite( vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs,
+     const long_heuristics& heur,
      //const long_logging& logc, const long_logging_control& log_control,
      vecbasevector& creads, VecEFasta& corrected, vec<int>& cid, 
      vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT, 
-     const double clock, bool useOldLRPMethod );
-
-void CorrectionSuite( const String& TMP, const long_heuristics& heur,
-     //const long_logging& logc, const long_logging_control& log_control,
-     vecbasevector& creads, VecEFasta& corrected, vec<int>& cid,
-     vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
-     const double clock, bool useOldLRPMethod );
+     const double clock, bool useOldLRPMethod, LongProtoTmpDirManager &tmp_mgr );
 
 void DefinePairingInfo( const LongProtoTmpDirManager& tmp_mgr, const vecbasevector& creads,
      const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,

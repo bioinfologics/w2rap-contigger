@@ -115,7 +115,6 @@ add_library(base_libs OBJECT
         src/paths/Sepdev.cc
         src/paths/UnipathScaffold.cc
         src/paths/Uniseq.cc
-        src/paths/long/Correct1.cc
         src/paths/long/Correct1Pre.cc
         src/paths/long/CorrectByStack.cc
         src/paths/long/CorrectPairs1.cc
@@ -280,7 +279,6 @@ add_library(hb_base_libs OBJECT
         src/paths/Sepdev.cc
         src/paths/UnipathScaffold.cc
         src/paths/Uniseq.cc
-        src/paths/long/Correct1.cc
         src/paths/long/Correct1Pre.cc
         src/paths/long/CorrectByStack.cc
         src/paths/long/CorrectPairs1.cc

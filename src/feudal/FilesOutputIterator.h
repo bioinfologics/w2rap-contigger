@@ -29,9 +29,14 @@ public:
     explicit FilesOutput( S const& head, S const& ext, size_t maxrecs,
                             size_t firstFileNo = 0,
                             char const*(S::*)() const=&S::c_str )
-    : _head(head), _ext(ext), _maxrecs(maxrecs), _fileno(firstFileNo) {}
+    : _head(head), _ext(ext), _maxrecs(maxrecs), _fileno(firstFileNo) {
+        std::cout<<"Creating a filesoutput "<<_head<<" / "<<_ext<<std::endl;
+    }
 
-    ~FilesOutput() { delete _pwriter; }
+    ~FilesOutput() {
+        if (!_pwriter) std::cout<<"Destroying unused filesoutput "<<_head<<" / "<<_ext<<std::endl;
+        else std::cout<<"Destroying USED filesoutput "<<_head<<" / "<<_ext<<std::endl;
+        delete _pwriter; }
 
     FilesOutput( FilesOutput const& )=delete;
     FilesOutput& operator=( FilesOutput const& )=delete;
@@ -81,6 +86,7 @@ private:
     BinaryWriter& getWriter()
     { if ( !_pwriter )
       { String newName = _head + '.' + ToString(_fileno++) + '.' + _ext;
+          std::cout<<" Creating a Fileoutput at "<<newName<<std::endl;
         _files.push_back(newName);
         _pwriter = new BinaryWriter(newName,false); }
       return *_pwriter; }

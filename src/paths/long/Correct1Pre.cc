@@ -52,12 +52,10 @@ void Correct1Pre( String const& tmpDir, const int K, const int max_freq,
 
      // Build alignments.
 
-     FriendAligner faligns(bases,quals,to_edit,
-                             tmpDir+"/correct1pre."+ToString(K)+".friends",
-                             heur.FF_MAKE_ALIGN_IMPL, K,
-                             heur.FF_MIN_FREQ,heur.FF_MAX_FREQ,
-                             heur.FF_MIN_QUAL,heur.FF_COVERAGE,
-                             heur.FF_DOWN_SAMPLE,heur.FF_VERBOSITY);
+     FriendAligner faligns(bases,
+                           heur.FF_MAKE_ALIGN_IMPL, K,
+                           heur.FF_MAX_FREQ,
+                           heur.FF_DOWN_SAMPLE,heur.FF_VERBOSITY);
      //if (logc.STATUS_LOGGING) ReportPeakMem( "alignment data created" );
 
      //// Define read starts.

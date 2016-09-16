@@ -168,27 +168,6 @@ public:
 
 	    if (parcel_buf.in_one_parcel(kmer)) {
 
-#if 0
-		// DEBUG
-		std::cout << "---------------------------" << std::endl;
-		std::cout << "KMER=" << kmer.to_string() << std::endl;
-		if ( kmer_cur.is_canonical_fw() ) {
-		    size_t start = kmer_cur.index_start();
-		    size_t stop = kmer_cur.index_stop();
-		    std::cout << "FORW=";
-		    for ( size_t i = start; i < stop; ++i )
-			std::cout <<  Base::val2Char(_bvv[ibv][i]);
-		} else {
-		    size_t start = kmer_cur.index_start();
-		    size_t stop = kmer_cur.index_stop();
-		    std::cout << "BACK=";
-		    for ( size_t i = stop-1; i >= start; --i )
-			std::cout <<  Base::val2Char((3^_bvv[ibv][i]));
-		}
-		std::cout << std::endl;
-		// END OF DEBUG
-#endif
-
 		size_t ib1, ib2;
 
 		// set ib to one base before the fw k-mer (if fw is
@@ -262,48 +241,10 @@ public:
 		   const size_t i0k,
 		   const size_t i1k)
     {
-//	vec<Alignment> aligns;
 
-#if 0
-	Locker lock2( _outfiles.getLockedData() );
-	std::cout << "KMER=" << krecs[i0k].to_string() << std::endl;
-	for (size_t i = i0k; i < i1k; ++i ) {
-	    std::cout << "XXXX=" << krecs[i].to_string() << "|" << krecs[i].get_lc_char() << "|" << krecs[i].is_rc() << std::endl;
-	    size_t ibv = krecs[i].ibv();
-	    size_t ib  = krecs[i].ib();
-	    BaseVec bv = _bvv[ibv];
-
-	    if ( krecs[i].is_rc() ) bv.ReverseComplement();
-
-	    std::cout << "KMER ";
-	    for ( size_t i = ib; i < ib+_K; ++i )
-		std::cout << Base::val2Char(bv[i]);
-	    std::cout << std::endl;
-	}
-	return;
-#endif
 
 	if ( i1k-i0k > _max_aligns ) return;
-/*
-        // dumb way to count how much output we might generate
-        // for now, silently leaves if we exceed the max.  The thought is:
-        // if there are too many alignments, then this is a pathological k-mer and we can
-        // pick our friends more wisely.
-	int count = 0;
-	for (size_t i = i0k; i != i1k; ++i ) {		// process a single kmer
-	    for ( size_t j = i0k; j != i1k; ++j ) {
-                if ( i == j ) continue;
 
-	        const rec_type& r1 = krecs[i];
-		const rec_type& r2 = krecs[j];
-
-		if ( !r1.is_lc_null() && !r2.is_lc_null()
-			&& r1.get_lc_start() == r2.get_lc_start()
-			&& r1.get_lc_stop() == r2.get_lc_stop() ) continue;
-		if ( ++count > _max_aligns ) return;
-	    }
-	}
-*/
 	for (size_t i = i0k; i != i1k; ++i ) {		// process a single kmer
 	    for ( size_t j = i+1; j != i1k; ++j ) {
 
@@ -314,8 +255,6 @@ public:
 		if ( !r1.is_lc_null() && !r2.is_lc_null()
 			&& r1.get_lc_start() == r2.get_lc_start()
 			&& r1.get_lc_stop() == r2.get_lc_stop() ) continue;
-
-//		std::cout << "i=" << i << ", j=" << j << ", r1_lc=" << r1.get_lc_char() << ", r2_lc=" << r2.get_lc_char() << std::endl;
 
 		// okay, we have a valid pair -- emit an alignment for them
 		bool rc = r1.is_rc() ^ r2.is_rc();
@@ -328,26 +267,9 @@ public:
 
 		Alignment align( r1.ibv(), r2.ibv(), offset, rc );
 
-//		std::cout << "r1.is_rc=" << r1.is_rc() << ", r2.is_rc=" << r2.is_rc() << ", rc=" << rc << ", offset=" << offset << ", VALID=" << validate_align( align ) << std::endl;
-
 		_aligns.push_back( align );
 	    }
 	}
-
-#if 0			// WRITE OUTPUT HERE
-	Locker lock( _outfiles.getLockedData() );
-#if 0
-	size_t count = 0;
-	for ( auto itr = aligns.begin(); itr != aligns.end(); ++itr ) {
-	    std::cout << "count=" << ++count << std::endl;
-	    ForceAssert( validate_align( *itr ) );
-	}
-#endif
-
-	// need to write out aligns here
-	auto iter = _outfiles.getIterator<Alignment>(&aligns[0]);
-	std::copy( aligns.begin(), aligns.end(), iter );
-#endif
 
     }
 
@@ -390,7 +312,8 @@ private:
     {
         String tmpDir(friendsCache.SafeBeforeLast("/"));
         // note about memory usage: we'll double the Alignments in memory and double again to ParallelSort
-        FilesOutput fo(tmpDir+"/tmp",String("aligns"),0.2*MemAvailable()/sizeof(Alignment));
+        //XXX: bj mod FilesOutput fo(tmpDir+"/tmp",String("aligns"),0.2*MemAvailable()/sizeof(Alignment));
+        FilesOutput fo(String(""),String("aligns"),0.2*MemAvailable()/sizeof(Alignment));
         KernelFriendFinder<KmerLcLoc<KMER_T>> finder(reads, K, fo, max_freq);
         naif_kmerize(&finder,NUM_THREADS,1);
         fo.close();

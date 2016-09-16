@@ -22,7 +22,7 @@
 #include "lookup/LibInfo.h"
 #include "lookup/SAM2CRD.h"
 #include "paths/MergeReadSetsCore.h"
-#include "paths/long/Correct1.h"
+//#include "paths/long/Correct1.h"
 #include "paths/long/Correct1Pre.h"
 #include "paths/long/CorrectPairs1.h"
 #include "paths/long/DataSpec.h"
@@ -313,395 +313,304 @@ void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done )
                cquals[id][j] = q[j];    }    }
 
 
+void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager &gpairs,
+                     const long_heuristics &heur,
+                     vecbasevector &creads,
+                     VecEFasta &corrected, vec<int> &cid, vec<pairing_info> &cpartner,
+                     const uint NUM_THREADS, const String &EXIT, const double clock,
+                     bool useOldLRPMethod,  LongProtoTmpDirManager &tmp_mgr) {
+    // Run Correct1.
 
-void CorrectionSuite( LongProtoTmpDirManager& tmp_mgr, const long_heuristics& heur,
-     vecbasevector& creads,
-     VecEFasta& corrected, vec<int>& cid, vec<pairing_info>& cpartner,
-     const uint NUM_THREADS, const String& EXIT, const double clock,
-     bool useOldLRPMethod )
-{
-     // Run Correct1.
+    vec<int> trace_ids, precorrect_seq;
+    //ParseIntSet( logc.TRACE_IDS, trace_ids );
 
-     vec<int> trace_ids, precorrect_seq;
-     //ParseIntSet( logc.TRACE_IDS, trace_ids );
+    vec<int> trace_pids;
+    //ParseIntSet( logc.TRACE_PIDS, trace_pids );
+    for (int i = 0; i < trace_pids.isize(); i++) {
+        int64_t pid = trace_pids[i];
+        trace_ids.push_back(2 * pid, 2 * pid + 1);
+    }
 
-     vec<int> trace_pids;
-     //ParseIntSet( logc.TRACE_PIDS, trace_pids );
-     for ( int i = 0; i < trace_pids.isize( ); i++ )
-     {    int64_t pid = trace_pids[i];
-          trace_ids.push_back( 2*pid, 2*pid + 1 );    }
+    ParseIntSet("{" + heur.PRECORRECT_SEQ + "}", precorrect_seq, false);
+    const int max_freq = heur.FF_MAX_FREQ;
 
-     ParseIntSet( "{" + heur.PRECORRECT_SEQ + "}", precorrect_seq, false );
-     const int max_freq = heur.FF_MAX_FREQ;
-
-     const String sFragReadsOrig="frag_reads_orig";
-     const String sFragReadsMod0="frag_reads_mod0";
-     const bool bOrgReadsInMem = tmp_mgr[sFragReadsOrig].inMem();
-
-     {    double bclock = WallClockTime( );
-          vecqualvector cquals;
-          if( bOrgReadsInMem ){
-              creads = tmp_mgr[sFragReadsOrig].reads();
-              cquals = tmp_mgr[sFragReadsOrig].quals();
-          }
-          else{
-              creads.ReadAll( tmp_mgr.dir() + "/frag_reads_orig.fastb" );
-              cquals.ReadAll( tmp_mgr.dir() + "/frag_reads_orig.qualb" );
-          }
-          size_t nReads = creads.size();
-          ForceAssertEq(nReads,cquals.size());
-          size_t nBases = 0, qualSum = 0;
-          for ( qvec const& qv : cquals )
-          {   nBases += qv.size();
-              qualSum = std::accumulate(qv.begin(),qv.end(),qualSum);   }
-          ForceAssertEq(nBases,creads.SizeSum());
-
-          /*if (logc.MIN_LOGGING)
-          {    std::cout << Date( ) << ": there are " << nReads
-                    << " reads" << std::endl;
-               std::cout << Date( ) << ": mean read length = " << std::setiosflags(std::ios::fixed)
-                    << std::setprecision(1) << double(nBases)/nReads
-                    << std::resetiosflags(std::ios::fixed) << std::endl;
-               std::cout << Date( ) << ": mean base quality = " << std::setiosflags(std::ios::fixed)
-                    << std::setprecision(1) << double(qualSum)/nBases
-                    << std::resetiosflags(std::ios::fixed) << std::endl;    }
-
-          if (logc.STATUS_LOGGING) ReportPeakMem( "start precorrection" );*/
-          if ( heur.PRECORRECT_ALT1 )
-              precorrectAlt1(&creads);
-          else if (heur.PRECORRECT_OLD_NEW)
-              PreCorrectOldNew( &creads, cquals, trace_ids );
-          else
-          {   PC_Params pcp;
-              const int K_PC = 25;
-              KmerSpectrum kspec(K_PC);
-              pre_correct_parallel( pcp, K_PC, &creads, &cquals, &kspec,
-                                        -1, NUM_THREADS );    }
-
-          if( bOrgReadsInMem ){
-              ZeroCorrectedQuals(tmp_mgr[sFragReadsOrig].reads(),creads,&cquals);
-          }
-          else{
-              ZeroCorrectedQuals(tmp_mgr.dir()+"/frag_reads_orig.fastb",creads,&cquals);
-          }
+    const String sFragReadsOrig = "frag_reads_orig";
+    const String sFragReadsMod0 = "frag_reads_mod0";
+    const bool bOrgReadsInMem = tmp_mgr[sFragReadsOrig].inMem();
 
 
-          /*if ( logc.DUMP_PRE )
-          {    creads.WriteAll( tmp_mgr.dir() + "/frag_reads_pre.fastb" );
-               cquals.WriteAll( tmp_mgr.dir() + "/frag_reads_pre.qualb" );    }
-          if (logc.STATUS_LOGGING) ReportPeakMem("precorrection done");
-          REPORT_TIME( bclock, "used in initial precorrection" );*/
+    double bclock = WallClockTime();
+    vecqualvector cquals;
+    creads = tmp_mgr[sFragReadsOrig].reads();
+    cquals = tmp_mgr[sFragReadsOrig].quals();
+    size_t nReads = creads.size();
+    ForceAssertEq(nReads, cquals.size());
+    size_t nBases = 0, qualSum = 0;
+    for (qvec const &qv : cquals) {
+        nBases += qv.size();
+        qualSum = std::accumulate(qv.begin(), qv.end(), qualSum);
+    }
+    ForceAssertEq(nBases, creads.SizeSum());
 
-          /*if ( (*log_control.G).size( ) > 0 )
-          {    double true_size = 0;
-               for ( int g = 0; g < (int) (*log_control.G).size( ); g++ )
-               {    true_size += (*log_control.G)[g].size( )
-                         * (*log_control.ploidy)[g];    }
-               std::cout << Date( ) << ": nominal coverage = "
-                    << std::setiosflags(std::ios::fixed) << std::setprecision(1)
-                    << double(nBases)/true_size
-                    << std::resetiosflags(std::ios::fixed) << "x" << std::endl;    }
-          if ( EXIT == "NOMINAL_COV" ) Done(clock);*/
+    if (heur.PRECORRECT_ALT1)
+        precorrectAlt1(&creads);
+    else if (heur.PRECORRECT_OLD_NEW)
+        PreCorrectOldNew(&creads, cquals, trace_ids);
+    else {
+        PC_Params pcp;
+        const int K_PC = 25;
+        KmerSpectrum kspec(K_PC);
+        pre_correct_parallel(pcp, K_PC, &creads, &cquals, &kspec,
+                             -1, NUM_THREADS);
+    }
 
-          PairsManager const& pairs = tmp_mgr[sFragReadsOrig].pairs();
-//          pairs.Read( TMP + "/frag_reads_orig.pairs" );
-          pairs.makeCache( );
+    ZeroCorrectedQuals(tmp_mgr[sFragReadsOrig].reads(), creads, &cquals);
 
-          // Carry out initial pair filling.
+    PairsManager const &pairs = tmp_mgr[sFragReadsOrig].pairs();
+    pairs.makeCache();
 
-          vecbasevector creads_done;
-          vec<Bool> to_edit( nReads, True );
-          vec<Bool> done( nReads, False );
-          if (heur.CORRECT_PAIRS)
-          {    double fclock = WallClockTime( );
-               creads_done = creads;
-               vecbasevector filled;
-               //if (logc.STATUS_LOGGING)
-               //     std::cout << Date( ) << ": start initial pair filling" << std::endl;
-               const int MIN_FREQ = 5;
-               FillPairs( creads, pairs, MIN_FREQ, filled, heur.FILL_PAIRS_ALT);
-               //REPORT_TIME( fclock, "used in FillPairs" );
-               double f2clock = WallClockTime( );
-               int64_t fill_count = 0;
-               for ( int64_t id = 0; id < (int64_t) filled.size( ); id++ )
-               {    if ( filled[id].size( ) == 0 ) continue;
-                    fill_count++;
-                    int n = creads[id].size( );
-                    creads_done[id] = filled[id];
-                    cquals[id].resize(0);
-                    cquals[id].resize( filled[id].size( ), 40 );
-                    creads[id] = creads_done[id];
-                    if ( n < creads[id].isize( ) )
-                    {    cquals[id].resize(n);
-                         if ( pairs.getPartnerID(id) >= id ) creads[id].resize(n);
-                         else
-                         {    creads[id].SetToSubOf( creads[id],
-                                   creads[id].isize( ) - n, n );    }    }
+    // Carry out initial pair filling.
 
-                    done[id] = True;
-                    if ( pairs.getPartnerID(id) < id )
-                    {    creads_done[id].resize(0);    }
-                    to_edit[id] = False;    }
-               //if (logc.STATUS_LOGGING)
-               //{    std::cout << Date( ) << ": "
-               //          << PERCENT_RATIO( 3, fill_count, (int64_t) filled.size( ) )
-               //          << " of pairs filled" << std::endl;    }
-               //REPORT_TIME( f2clock, "used in filling tail" );
-          }
+    vecbasevector creads_done;
+    vec<Bool> to_edit(nReads, True);
+    vec<Bool> done(nReads, False);
 
-          // New precorrection.
+    double fclock = WallClockTime();
+    creads_done = creads;
+    vecbasevector filled;
+    //if (logc.STATUS_LOGGING)
+    //     std::cout << Date( ) << ": start initial pair filling" << std::endl;
+    const int MIN_FREQ = 5;
+    FillPairs(creads, pairs, MIN_FREQ, filled, heur.FILL_PAIRS_ALT);
+    //REPORT_TIME( fclock, "used in FillPairs" );
+    double f2clock = WallClockTime();
+    int64_t fill_count = 0;
+    for (int64_t id = 0; id < (int64_t) filled.size(); id++) {
+        if (filled[id].size() == 0) continue;
+        fill_count++;
+        int n = creads[id].size();
+        creads_done[id] = filled[id];
+        cquals[id].resize(0);
+        cquals[id].resize(filled[id].size(), 40);
+        creads[id] = creads_done[id];
+        if (n < creads[id].isize()) {
+            cquals[id].resize(n);
+            if (pairs.getPartnerID(id) >= id) creads[id].resize(n);
+            else {
+                creads[id].SetToSubOf(creads[id],
+                                      creads[id].isize() - n, n);
+            }
+        }
 
-          vec<int> trim_to;
-          if (heur.CORRECT_PAIRS)
-          {    double mclock = WallClockTime( );
-               //if (logc.STATUS_LOGGING)
-               //     std::cout << Date( ) << ": begin new precorrection" << std::endl;
+        done[id] = True;
+        if (pairs.getPartnerID(id) < id) { creads_done[id].resize(0); }
+        to_edit[id] = False;
+    }
+    //if (logc.STATUS_LOGGING)
+    //{    std::cout << Date( ) << ": "
+    //          << PERCENT_RATIO( 3, fill_count, (int64_t) filled.size( ) )
+    //          << " of pairs filled" << std::endl;    }
+    //REPORT_TIME( f2clock, "used in filling tail" );
 
-               // Cap quality scores.
 
-               CapQualityScores( cquals, done );
-               //REPORT_TIME( mclock, "used capping" );
+    // New precorrection.
 
-               // Do precorrection.
+    vec<int> trim_to;
 
-               for ( int j = 0; j < precorrect_seq.isize( ); j++ )
-               {    Correct1Pre( tmp_mgr.dir(), precorrect_seq[j], max_freq, creads, cquals,
-                         pairs, to_edit, trim_to, trace_ids, /*logc,*/ heur );    }
-               /*
-               Correct1( 40, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, log_control, logc );
-               */
+    double mclock = WallClockTime();
+    //if (logc.STATUS_LOGGING)
+    //     std::cout << Date( ) << ": begin new precorrection" << std::endl;
 
-               double nclock = WallClockTime( );
-               if(bOrgReadsInMem){
-                   tmp_mgr[sFragReadsMod0].reads(true)=creads;
-                   tmp_mgr[sFragReadsMod0].quals(true)=cquals;
-                   tmp_mgr[sFragReadsMod0].pairs(true);
+    // Cap quality scores.
 
-               }
-               else{
-                   creads.WriteAll( tmp_mgr.dir() + "/frag_reads_mod0.fastb" );
-                   cquals.WriteAll( tmp_mgr.dir() + "/frag_reads_mod0.qualb" );
-               }
+    CapQualityScores(cquals, done);
+    //REPORT_TIME( mclock, "used capping" );
 
-               // Path the precorrected reads.
+    // Do precorrection.
 
-               //if (logc.STATUS_LOGGING)
-               //     std::cout << Date( ) << ": pathing precorrected reads" << std::endl;
-               unsigned const COVERAGE = 50u;
-               const int K2 = 80; // SHOULD NOT BE HARDCODED!
-               vecbasevector correctedv(creads);
-               for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-                    correctedv[id].resize( trim_to[id] );
-               HyperBasevector hb;
-               HyperKmerPath h;
-               vecKmerPath paths, paths_rc;
-               LongReadsToPaths( correctedv, K2, COVERAGE, &hb, &h, &paths, &paths_rc );
-               vecKmerPath hpaths;
-               vec<tagged_rpint> hpathsdb;
-               for ( int e = 0; e < h.EdgeObjectCount( ); e++ )
-                    hpaths.push_back_reserve( h.EdgeObject(e) );
-               CreateDatabase( hpaths, hpathsdb );
-               //if (logc.STATUS_LOGGING) std::cout << Date( ) << ": done" << std::endl;
+    for (int j = 0; j < precorrect_seq.isize(); j++) {
+        Correct1Pre(tmp_mgr.dir(), precorrect_seq[j], max_freq, creads, cquals,
+                    pairs, to_edit, trim_to, trace_ids, /*logc,*/ heur);
+    }
+    /*
+    Correct1( 40, max_freq, creads, cquals, pairs, to_edit, trim_to,
+         trace_ids, log_control, logc );
+    */
 
-               // Close pairs that we're done with.  Code copied with minor
-               // changes from LongHyper.cc.  Should be completely rewritten.
+    double nclock = WallClockTime();
 
-               //if (logc.STATUS_LOGGING)
-               //     std::cout << Date( ) << ": initially closing pairs" << std::endl;
-               #pragma omp parallel for
-               for ( int64_t id1 = 0; id1 < (int64_t) creads.size( ); id1++ )
-               {    if ( done[id1] ) continue;
-                    const int id2 = pairs.getPartnerID(id1);
-                    if ( id2 < id1 ) continue;
-                    vec< vec<int> > u(2);
-                    vec<int> left(2);
+    tmp_mgr[sFragReadsMod0].reads(true) = creads;
+    tmp_mgr[sFragReadsMod0].quals(true) = cquals;
+    tmp_mgr[sFragReadsMod0].pairs(true);
 
-                    for ( int pass = 0; pass < 2; pass++ )
-                    {    const KmerPath& p
-                              = ( pass == 0 ? paths[id1] : paths_rc[id2] );
-                         vec< triple<ho_interval,int,ho_interval> > M, M2;
-                         int rpos = 0;
-                         for ( int j = 0; j < p.NSegments( ); j++ )
-                         {    const KmerPathInterval& I = p.Segment(j);
-                              vec<longlong> locs;
-                              Contains( hpathsdb, I, locs );
-                              for ( int l = 0; l < locs.isize( ); l++ )
-                              {    const tagged_rpint& t = hpathsdb[ locs[l] ];
-                                   int hid = t.PathId( );
-                                   if ( hid < 0 ) continue;
-                                   longlong hpos = I.Start( ) - t.Start( );
-                                   longlong start = Max( I.Start( ), t.Start( ) );
-                                   longlong stop = Min( I.Stop( ), t.Stop( ) );
-                                   longlong hstart = start - t.Start( );
-                                   for ( int r = 0; r < t.PathPos( ); r++ )
-                                        hstart += hpaths[hid].Segment(r).Length( );
-                                   longlong hstop = hstart + stop - start;
-                                   longlong rstart = rpos + start - I.Start( );
-                                   longlong rstop = rstart + stop - start;
-                                   M.push( ho_interval( rstart, rstop ), hid,
-                                        ho_interval( hstart, hstop ) );    }
-                              rpos += I.Length( );    }
-                         Bool bad = False;
-                         for ( int i = 0; i < M.isize( ); i++ )
-                         {    int j;
-                              for ( j = i + 1; j < M.isize( ); j++ )
-                              {    if ( M[j].first.Start( )
-                                        != M[j-1].first.Stop( ) + 1 )
-                                   {    break;    }
-                                   if ( M[j].second != M[j-1].second ) break;
-                                        if ( M[j].third.Start( )
-                                        != M[j-1].third.Stop( ) + 1 )
-                                   {    break;    }    }
-                              u[pass].push_back( M[i].second );
-                              Bool incomplete = False;
-                              if ( i > 0 && M[i].third.Start( ) > 0 )
-                                   incomplete = True;
-                              if ( j < M.isize( ) && M[j-1].third.Stop( )
-                                   != hpaths[ M[i].second ].KmerCount( ) - 1 )
-                              {    incomplete = True;
-                                   bad = True;    }
-                              if ( i == 0 && j == M.isize( ) && !incomplete )
-                              {    i = j - 1;
-                                   continue;    }
-                              int last = ( i == 0 ? -1 : M2.back( ).first.Stop( ) );
-                              if ( M[i].first.Start( ) > last + 1 ) bad = True;
-                              M2.push( ho_interval( M[i].first.Start( ),
-                                   M[j-1].first.Stop( ) ), M[i].second,
-                                   ho_interval( M[i].third.Start( ),
-                                   M[j-1].third.Stop( ) ) );
-                              if ( j == M.isize( ) && M[j-1].first.Stop( )
-                                   < p.KmerCount( ) - 1 )
-                              {    bad = True;    }
-                              i = j - 1;    }
-                         if (bad) u[pass].clear( );
-                         if ( u[pass].nonempty( ) )
-                         {    left[pass] = M.front( ).third.Start( );    }    }
-                    if ( u[0].solo( ) && u[1].solo( ) && u[0][0] == u[1][0] )
-                    {    int b1siz = correctedv[id1].isize();
-                         int b2siz = correctedv[id2].isize();
-                         int offset = left[1] - left[0];
-                         if ( b1siz == creads[id1].isize( )
-                              && b2siz == creads[id2].isize( ) && offset >= 0 )
-                         {    auto beg = hb.EdgeObject(u[0][0]).begin()+left[0];
-                              auto end = beg+(left[1]-left[0]+b2siz);
-                              creads_done[id1].assign(beg,end);
-                              creads_done[id2] = creads_done[id1];
-                              creads_done[id2].ReverseComplement();
 
-                              creads[id1] = creads_done[id1];
-                              creads[id1].resize( b1siz );
-                              creads[id2] = creads_done[id2];
 
-                              creads[id2].SetToSubOf( creads[id2],
-                                   creads[id2].isize( ) - b2siz, b2siz );
-                              cquals[id1].resize(0);
-                              cquals[id1].resize( creads[id1].size( ), 40 );
-                              cquals[id2].resize(0);
-                              cquals[id2].resize( creads[id2].size( ), 40 );
+    // Path the precorrected reads.
 
-                              done[id1] = done[id2] = True;
-                              creads_done[id2].resize(0);
-                              to_edit[id1] = False;
-                              to_edit[id2] = False;    }    }    }
-               //if (logc.STATUS_LOGGING)
-               //{    std::cout << Date( ) << ": "
-               //          << PERCENT_RATIO( 3, Sum(done), done.isize( ) )
-               //          << " of pairs were preclosed" << std::endl;    }
-               //REPORT_TIME( nclock, "used in main precorrection tail" );
-          }
+    //if (logc.STATUS_LOGGING)
+    //     std::cout << Date( ) << ": pathing precorrected reads" << std::endl;
+    unsigned const COVERAGE = 50u;
+    const int K2 = 80; // SHOULD NOT BE HARDCODED!
+    vecbasevector correctedv(creads);
+    for (int64_t id = 0; id < (int64_t) creads.size(); id++)
+        correctedv[id].resize(trim_to[id]);
+    HyperBasevector hb;
+    HyperKmerPath h;
+    vecKmerPath paths, paths_rc;
+    LongReadsToPaths(correctedv, K2, COVERAGE, &hb, &h, &paths, &paths_rc);
+    vecKmerPath hpaths;
+    vec<tagged_rpint> hpathsdb;
+    for (int e = 0; e < h.EdgeObjectCount(); e++)
+        hpaths.push_back_reserve(h.EdgeObject(e));
+    CreateDatabase(hpaths, hpathsdb);
+    //if (logc.STATUS_LOGGING) std::cout << Date( ) << ": done" << std::endl;
 
-          if (heur.CORRECT_PAIRS)
-          {    corrected.clear().resize( creads.size( ) );
-               CorrectPairs1( tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
-                    trace_ids, heur, /*log_control, logc,*/ corrected );
-               for ( size_t id = 0; id < corrected.size( ); id++ )
-               {    if ( corrected[id].size( ) > 0 )
-                    {    to_edit[id] = False;
-                         const int64_t idp = pairs.getPartnerID(id);
-                         to_edit[idp] = False;    }    }
+    // Close pairs that we're done with.  Code copied with minor
+    // changes from LongHyper.cc.  Should be completely rewritten.
 
-               if (heur.CP2)
-               {
-               double cp2_clock = WallClockTime( );
-               vec<Bool> special;
-               PopulateSpecials( creads, pairs, creads_done, done, corrected,
-                    NUM_THREADS, special/*, logc*/ );
+    //if (logc.STATUS_LOGGING)
+    //     std::cout << Date( ) << ": initially closing pairs" << std::endl;
+    //#pragma omp parallel for
+    for (int64_t id1 = 0; id1 < (int64_t) creads.size(); id1++) {
+        if (done[id1]) continue;
+        const int id2 = pairs.getPartnerID(id1);
+        if (id2 < id1) continue;
+        vec<vec<int> > u(2);
+        vec<int> left(2);
 
-               for ( size_t id = 0; id < corrected.size( ); id++ )
-                    if ( !special[id] ) to_edit[id] = False;
-               //if (logc.STATUS_LOGGING)
-               //{    std::cout << Date( ) << ": second pass of CorrectPairs1 to use "
-               //          << Sum(to_edit)/2 << " pairs" << std::endl;    }
+        for (int pass = 0; pass < 2; pass++) {
+            const KmerPath &p
+                    = (pass == 0 ? paths[id1] : paths_rc[id2]);
+            vec<triple<ho_interval, int, ho_interval> > M, M2;
+            int rpos = 0;
+            for (int j = 0; j < p.NSegments(); j++) {
+                const KmerPathInterval &I = p.Segment(j);
+                vec<longlong> locs;
+                Contains(hpathsdb, I, locs);
+                for (int l = 0; l < locs.isize(); l++) {
+                    const tagged_rpint &t = hpathsdb[locs[l]];
+                    int hid = t.PathId();
+                    if (hid < 0) continue;
+                    longlong hpos = I.Start() - t.Start();
+                    longlong start = Max(I.Start(), t.Start());
+                    longlong stop = Min(I.Stop(), t.Stop());
+                    longlong hstart = start - t.Start();
+                    for (int r = 0; r < t.PathPos(); r++)
+                        hstart += hpaths[hid].Segment(r).Length();
+                    longlong hstop = hstart + stop - start;
+                    longlong rstart = rpos + start - I.Start();
+                    longlong rstop = rstart + stop - start;
+                    M.push(ho_interval(rstart, rstop), hid,
+                           ho_interval(hstart, hstop));
+                }
+                rpos += I.Length();
+            }
+            Bool bad = False;
+            for (int i = 0; i < M.isize(); i++) {
+                int j;
+                for (j = i + 1; j < M.isize(); j++) {
+                    if (M[j].first.Start()
+                        != M[j - 1].first.Stop() + 1) { break; }
+                    if (M[j].second != M[j - 1].second) break;
+                    if (M[j].third.Start()
+                        != M[j - 1].third.Stop() + 1) { break; }
+                }
+                u[pass].push_back(M[i].second);
+                Bool incomplete = False;
+                if (i > 0 && M[i].third.Start() > 0)
+                    incomplete = True;
+                if (j < M.isize() && M[j - 1].third.Stop()
+                                     != hpaths[M[i].second].KmerCount() - 1) {
+                    incomplete = True;
+                    bad = True;
+                }
+                if (i == 0 && j == M.isize() && !incomplete) {
+                    i = j - 1;
+                    continue;
+                }
+                int last = (i == 0 ? -1 : M2.back().first.Stop());
+                if (M[i].first.Start() > last + 1) bad = True;
+                M2.push(ho_interval(M[i].first.Start(),
+                                    M[j - 1].first.Stop()), M[i].second,
+                        ho_interval(M[i].third.Start(),
+                                    M[j - 1].third.Stop()));
+                if (j == M.isize() && M[j - 1].first.Stop()
+                                      < p.KmerCount() - 1) { bad = True; }
+                i = j - 1;
+            }
+            if (bad) u[pass].clear();
+            if (u[pass].nonempty()) { left[pass] = M.front().third.Start(); }
+        }
+        if (u[0].solo() && u[1].solo() && u[0][0] == u[1][0]) {
+            int b1siz = correctedv[id1].isize();
+            int b2siz = correctedv[id2].isize();
+            int offset = left[1] - left[0];
+            if (b1siz == creads[id1].isize()
+                && b2siz == creads[id2].isize() && offset >= 0) {
+                auto beg = hb.EdgeObject(u[0][0]).begin() + left[0];
+                auto end = beg + (left[1] - left[0] + b2siz);
+                creads_done[id1].assign(beg, end);
+                creads_done[id2] = creads_done[id1];
+                creads_done[id2].ReverseComplement();
 
-               //if ( logc.verb[ "CP2" ] >= 1 )
-               //{    std::cout << "\nCP2, using ids:\n";
-               //     for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-               //          if ( to_edit[id] ) std::cout << id << std::endl;
-               //     std::cout << std::endl;    }
+                creads[id1] = creads_done[id1];
+                creads[id1].resize(b1siz);
+                creads[id2] = creads_done[id2];
 
-               long_heuristics heur2(heur);
-               // heur2.CP_MIN_GLUE = 5;
-               heur2.CP_MIN_GLUE = 15;
-               heur2.CP_MINQ_FLOOR = 0;
-               heur2.CP_RAISE_ZERO = True;
-               heur2.CP_MAX_QDIFF = 25.0;
+                creads[id2].SetToSubOf(creads[id2],
+                                       creads[id2].isize() - b2siz, b2siz);
+                cquals[id1].resize(0);
+                cquals[id1].resize(creads[id1].size(), 40);
+                cquals[id2].resize(0);
+                cquals[id2].resize(creads[id2].size(), 40);
 
-               //if (logc.STATUS_LOGGING)
-               //{    std::cout << Date( ) << ": running second pass of CorrectPairs1, "
-               //          << "using " << Sum(to_edit)/2 << " pairs" << std::endl;    }
-               //REPORT_TIME( cp2_clock, "used in prep for CP2" );
+                done[id1] = done[id2] = True;
+                creads_done[id2].resize(0);
+                to_edit[id1] = False;
+                to_edit[id2] = False;
+            }
+        }
+    }
 
-               CorrectPairs1( tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
-                    trace_ids, heur2, /*log_control, logc,*/ corrected );
-               } // end of heur.CP2
 
-               double pclock = WallClockTime( );
-               for ( int64_t id = 0; id < done.jsize( ); id++ )
-               {    if ( done[id] ) corrected[id] = creads_done[id];    }
-               //REPORT_TIME( pclock, "used in pair correction copying" );
-          }
 
-          else // Non-default!
-          {    double oclock = WallClockTime( );
-               Correct1( tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, /*log_control, logc,*/ heur );
-               for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-                    if ( trim_to[id] == creads[id].isize( ) ) to_edit[id] = False;
-               Correct1( tmp_mgr.dir(), 60, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, /*log_control, logc,*/ heur );
-               for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-                    if ( trim_to[id] == creads[id].isize( ) ) to_edit[id] = False;
-               Correct1( tmp_mgr.dir(), 80, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, /*log_control, logc,*/ heur );
-               for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-                    if ( trim_to[id] == creads[id].isize( ) ) to_edit[id] = False;
-               Correct1( tmp_mgr.dir(), 28, max_freq, creads, cquals, pairs, to_edit, trim_to,
-                    trace_ids, /*log_control, logc,*/ heur );
-               for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
-               {    creads[id].resize( Max( 1, trim_to[id] ) );
-                    cquals[id].resize( Max( 1, trim_to[id] ) );    }
+    corrected.clear().resize(creads.size());
+    CorrectPairs1(tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
+                  trace_ids, heur, /*log_control, logc,*/ corrected);
+    for (size_t id = 0; id < corrected.size(); id++) {
+        if (corrected[id].size() > 0) {
+            to_edit[id] = False;
+            const int64_t idp = pairs.getPartnerID(id);
+            to_edit[idp] = False;
+        }
+    }
 
-               // Convert to efasta.
+    if (heur.CP2) {
+        double cp2_clock = WallClockTime();
+        vec<Bool> special;
+        PopulateSpecials(creads, pairs, creads_done, done, corrected,
+                         NUM_THREADS, special/*, logc*/ );
 
-               corrected.assign(creads.begin(),creads.end());
-               //REPORT_TIME( oclock, "used in old unpair correction" );
-          }
+        for (size_t id = 0; id < corrected.size(); id++)
+            if (!special[id]) to_edit[id] = False;
 
-          // Write corrected pairs.
+        long_heuristics heur2(heur);
+        // heur2.CP_MIN_GLUE = 5;
+        heur2.CP_MIN_GLUE = 15;
+        heur2.CP_MINQ_FLOOR = 0;
+        heur2.CP_RAISE_ZERO = True;
+        heur2.CP_MAX_QDIFF = 25.0;
 
-          double wclock = WallClockTime( );
-          if(!bOrgReadsInMem){
-               vecbasevector correctedb( creads.size( ) );
-               Ofstream( out, tmp_mgr.dir() + "/frag_reads_mod.efasta" );
-               for ( size_t i = 0; i < corrected.size( ); i++ )
-               {    corrected[i].FlattenTo( correctedb[i] );
-                    corrected[i].Print( out, ToString(i) );    }
-               correctedb.WriteAll( tmp_mgr.dir() + "/frag_reads_mod.fastb" );
-          }
-          //REPORT_TIME( wclock, "used writing corrected" )
-      }
-  }
+        CorrectPairs1(tmp_mgr.dir(), 40, max_freq, creads, cquals, pairs, to_edit,
+                      trace_ids, heur2, /*log_control, logc,*/ corrected);
+    } // end of heur.CP2
+
+    double pclock = WallClockTime();
+    for (int64_t id = 0; id < done.jsize(); id++) { if (done[id]) corrected[id] = creads_done[id]; }
+
+
+
+}
 
 // Define pairing info.  Note that for now we set all the library ids to 0.
 
