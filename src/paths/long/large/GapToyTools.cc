@@ -1045,8 +1045,6 @@ void MakeLocalAssembly1( const int K2_FLOOR, VecEFasta& corrected, vecbasevector
 {
 
      uint NUM_THREADS = 1;
-
-
      long_heuristics heur( "" ); //TODO: this is allocated in stack and wastes both time and space!
      heur.K2_FLOOR = K2_FLOOR;
      //STEP 2: run correction suite in the local reads and repair as needed
