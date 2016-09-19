@@ -26,8 +26,24 @@
 
 typedef SerfVec<char> StackBaseVec;
 typedef MasterVec<StackBaseVec> StackBaseVecVec;
-typedef SerfVec<int> StackQualVec;
-typedef MasterVec<StackQualVec> StackQualVecVec;
+typedef std::vector<int> StackQualVec;
+
+class StackQualVecVec : public std::vector<StackQualVec> {
+public:
+    void EraseIf( const vec<Bool> & to_remove ) {
+        size_t j=0;
+        for (auto i=0; i<this->size();++i)
+            if (!to_remove[i]) {
+                if (i!=j) {
+                    //todo change to std::move?
+                    (*this)[j]=(*this)[i];
+                }
+                ++j;
+            }
+        this->resize(j);
+    }
+};
+
 
 class readstack {
 

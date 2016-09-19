@@ -72,7 +72,8 @@ void readstack::Initialize(const int nrows, const int ncols) {
     cols_ = ncols;
     bases_.clear().resize(nrows);
     for (auto &read : bases_) read.assign(ncols, ' ');
-    quals_.clear().resize(nrows);
+    quals_.clear();
+    quals_.resize(nrows);
     for (auto &qual : quals_) qual.assign(ncols, -1);
     id_.resize_and_set(nrows, -1);
     rc2_.resize_and_set(nrows, False);
@@ -344,7 +345,7 @@ void readstack::Reverse() {
         bases_[i].ReverseMe();
         for (int j = 0; j < Cols(); j++)
             if (bases_[i][j] != ' ') bases_[i][j] = 3 - bases_[i][j];
-        quals_[i].ReverseMe();
+        std::reverse(quals_[i].begin(),quals_[i].end());
         rc2_[i] = !rc2_[i];
         offset_[i] = -(offset_[i] + len_[i] - Cols());
     }
@@ -371,7 +372,8 @@ void readstack::Merge(const readstack &s, const int offset) {
         quals_[i].resize(quals_[i].size() + right_ext1, -1);
     }
     bases_.append(s.Bases().begin(), s.Bases().end());
-    quals_.append(s.Quals().begin(), s.Quals().end());
+    //quals_.append(s.Quals().begin(), s.Quals().end());
+    quals_.insert(quals_.end(), s.Quals().begin(), s.Quals().end());
     int left_ext2 = Max(0, offset);
     int right_ext2 = Max(0, cols1 - (offset + cols2));
     for (int i = 0; i < rows2; i++) {
@@ -760,7 +762,8 @@ void readstack::Trim(const int start, const int stop) {
             }
         }
         bases_[i].SetToSubOf(bases_[i], start, stop - start);
-        quals_[i].SetToSubOf(quals_[i], start, stop - start);
+        //quals_[i].SetToSubOf(quals_[i], start, stop - start);
+        quals_[i].assign(quals_[i].begin()+start,quals_[i].begin()+stop);
         offset_[i] -= start;
     }
     cols_ = stop - start;
