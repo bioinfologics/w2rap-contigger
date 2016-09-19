@@ -38,142 +38,9 @@
 #include <numeric>
 #include <type_traits>
 
-void SamIAm( const int i, const String& getsam, const String& TMP, bool keepLocs, 
-     String const& dexterLibs, Bool PF_ONLY, const Bool KEEP_NAMES )
-{
-    std::ofstream ofs((TMP+"/SAMProcessing"+ToString(i)+".log").c_str());
-    ofs << "Running: " << getsam << std::endl;
-    Logger logger(ofs);
-    procbuf buf(getsam.c_str(),std::ios::in);
-    std::istream is(&buf);
-    SAM::SAMFile samfile(is,logger);
-    vecbasevector seqs;
-    vecqualvector quals;
-    vec<look_align_x> alns;
-    vec<pairinfo> pairsVec;
-    vecString namesv;
-    vecString libNames;
-    bool use_OQ = true;
-    vec<Bool> first_in_pair;
-    SAM2CRD(samfile, seqs, quals, alns, pairsVec, namesv, first_in_pair, libNames,
-                false, true, use_OQ, PF_ONLY, false, KEEP_NAMES );
-    if (KEEP_NAMES)
-    {    for ( int64_t i = 0; i < (int64_t) namesv.size( ); i++ )
-         {    if ( first_in_pair[i] ) namesv[i] += ".1";
-              else namesv[i] += ".2";    }    }
-    int samtoolsResult = buf.close();
-    if ( samtoolsResult )
-    {
-        ofs << "Error: samtools returned with non-zero status="
-                << samtoolsResult << '\n';
-        ofs.close();
-        DiscovarTools::ExitSamtoolsFailed();
-    }
+#define TIME_LOGGING
 
-    String outHead = TMP+'/'+ToString(i);
-    if ( keepLocs )
-    {
-        Ofstream( aout, outHead + ".qltout");
-        Ofstream( mapout, outHead + ".mapq");
-        for ( auto itr=alns.begin(),end=alns.end(); itr != end; ++itr )
-        {
-            itr->PrintParseable(aout);
-            mapout << (int)itr->mapQ() << "\n";
-        }
-    }
-
-    int const SEP = -15;
-    int const DEV = 12;
-    int const NOMINAL_READ_LEN = 251;
-    PairsManager pairs(seqs.size());
-    if ( dexterLibs.empty() )
-        for ( auto itr(libNames.begin()),end(libNames.end()); itr!=end; ++itr )
-            pairs.addLibrary(SEP, DEV, *itr);
-    else
-    {
-        LibInfoDB libInfoDB(dexterLibs);
-        for ( auto itr(libNames.begin()),end(libNames.end()); itr!=end; ++itr )
-        {
-            LibInfo const* pInfo = libInfoDB.getInfo(*itr);
-            if ( pInfo )
-            {
-                int sep = pInfo->mMean-2*NOMINAL_READ_LEN;
-                pairs.addLibrary(sep,pInfo->mStdDev,*itr);
-            }
-            else
-            {
-                ofs << "Warning: Cannot find entry for library: "
-                        << (*itr) << " in library information file: "
-                        << dexterLibs << '\n';
-                ofs << "Using default SEP and DEV.\n";
-                pairs.addLibrary(SEP, DEV, *itr);
-            }
-        }
-    }
-
-    for ( auto itr(pairsVec.begin()),end(pairsVec.end()); itr != end; ++itr )
-        pairs.addPairToLib(itr->readID1,itr->readID2,itr->libraryID,false);
-
-    pairs.Write( outHead + ".pairs" );
-    seqs.WriteAll(outHead + ".fastb");
-    quals.WriteAll(outHead + ".qualb");
-    if (KEEP_NAMES) namesv.WriteAll( outHead + ".names" );
-    ofs.close();
-}
-
-void MergeReadSets( const vec<String>& heads, const String& TMP,
-     const long_logging& logc, const Bool KEEP_NAMES )
-{    if ( heads.empty( ) )
-     {    std::cout << "\nInternal error, heads is empty." << std::endl;
-          std::cout << "Please send us a report.\n" << std::endl;
-          _exit(1);    }
-     else if ( heads.solo( ) )
-     {    System( "cp " + TMP + "/" + heads[0] + ".fastb "
-               + TMP + "/frag_reads_orig.fastb" );
-          System( "cp " + TMP + "/" + heads[0] + ".qualb "
-               + TMP + "/frag_reads_orig.qualb" );
-          System( "cp " + TMP + "/" + heads[0] + ".pairs "
-               + TMP + "/frag_reads_orig.pairs" );
-          if (KEEP_NAMES)
-          {    System( "cp " + TMP + "/" + heads[0] + ".names "
-                    + TMP + "/frag_reads_orig.names" );    }
-          const String& qltout = TMP + "/" + heads[0] + ".qltout";
-          if ( logc.KEEP_LOCS ) {
-              if ( IsRegularFile( qltout ) )
-                  System( "cp " + qltout + " " +
-                        TMP + "/frag_reads_orig.qltout" );
-              else
-                  std::cout << "warning: missing aligns file: " << qltout << std::endl;
-          }
-     }
-     else
-     {    String head_out = TMP + "/frag_reads_orig";
-          vec<String> headsp( heads.size( ) );
-          for ( int i = 0; i < heads.isize( ); i++ )
-               headsp[i] = TMP + "/" + heads[i];
-          if (CheckFileSetExists( headsp, ".fastb", true ) == false)
-               FatalErr("Fastb file missing - see above for details");
-          //[GONZA] changed from size_t to uint64_t to match the function definition, it's not used anywhere else
-          vec<uint64_t> sizes;
-          for ( size_t i = 0; i < heads.size( ); i++ )
-               sizes.push_back(MastervecFileObjectCount( headsp[i] + ".fastb") );
-          //[GONZA] commented, never used
-          //size_t size_sum = BigSum(sizes);
-          MergeFeudal( head_out, headsp, ".fastb", sizes );
-          MergeFeudal( head_out, headsp, ".qualb", sizes );
-          if (KEEP_NAMES) MergeFeudal( head_out, headsp, ".names", sizes );
-          PairsManager pairs;
-          for ( size_t i = 0; i < heads.size( ); ++i )
-          {    PairsManager pairs_loc;
-               pairs_loc.Read( headsp[i] + ".pairs" );
-               ForceAssertEq( pairs_loc.nReads( ), sizes[i] );
-               pairs.Append(pairs_loc);    }
-          pairs.Write( head_out + ".pairs" );
-          if ( logc.KEEP_LOCS && CheckFileSetExists( headsp, ".qltout", true ) )
-               MergeQltout( head_out, headsp, sizes );
-      }  }
-
-
+#include "util/w2rap_timers.h"
 
 void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      const vecbasevector& creads_done, const vec<Bool>& done,
@@ -285,13 +152,7 @@ struct ZeroCorrectedQuals_impl{
         }
     }
 };
-// zero all quality scores associated with corrections (for reads in a file)
-void ZeroCorrectedQuals( String const& readsFile, vecbvec const& creads,
-                            vecqvec* pQuals )
-{
-    VirtualMasterVec<bvec> oreads(readsFile);
-    ZeroCorrectedQuals_impl<typename std::add_lvalue_reference<decltype(oreads)>::type>::do_it(oreads,creads,pQuals);
-}
+
 // zero all quality scores associated with corrections (for reads already in memory)
 void ZeroCorrectedQuals( vecbasevector const& oreads, vecbvec const& creads,
                             vecqvec* pQuals )
@@ -320,21 +181,9 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
                      const uint NUM_THREADS, const String &EXIT,
                      bool useOldLRPMethod/*,  LongProtoTmpDirManager &tmp_mgr*/) {
     // Run Correct1.
-    uint64_t part1,part2,part3,part4,part5,part6,part7;
-
-    //PART1---------
-    uint64_t last_time=LCCIntTime();
 
 
     vec<int> trace_ids, precorrect_seq;
-    //ParseIntSet( logc.TRACE_IDS, trace_ids );
-
-    //vec<int> trace_pids;
-    //ParseIntSet( logc.TRACE_PIDS, trace_pids );
-    //for (int i = 0; i < trace_pids.isize(); i++) {
-    //    int64_t pid = trace_pids[i];
-    //    trace_ids.push_back(2 * pid, 2 * pid + 1);
-    //}
 
     //A really complicated way to hardcode this to {24,40}
     ParseIntSet("{" + heur.PRECORRECT_SEQ + "}", precorrect_seq, false);
@@ -342,7 +191,6 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     const int max_freq = heur.FF_MAX_FREQ;
 
     const String sFragReadsOrig = "frag_reads_orig";
-    //const String sFragReadsMod0 = "frag_reads_mod0";
 
     vecqualvector cquals;
     creads = gbases;
@@ -410,25 +258,14 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
         if (pairs.getPartnerID(id) < id) { creads_done[id].resize(0); }
         to_edit[id] = False;
     }
-    //if (logc.STATUS_LOGGING)
-    //{    std::cout << Date( ) << ": "
-    //          << PERCENT_RATIO( 3, fill_count, (int64_t) filled.size( ) )
-    //          << " of pairs filled" << std::endl;    }
-    //REPORT_TIME( f2clock, "used in filling tail" );
 
 
     // New precorrection.
 
     vec<int> trim_to;
 
-    double mclock = WallClockTime();
-    //if (logc.STATUS_LOGGING)
-    //     std::cout << Date( ) << ": begin new precorrection" << std::endl;
-
-    // Cap quality scores.
 
     CapQualityScores(cquals, done);
-    //REPORT_TIME( mclock, "used capping" );
 
     // Do precorrection.
 
@@ -436,23 +273,10 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
         Correct1Pre(precorrect_seq[j], creads, cquals,
                     pairs, to_edit, trim_to, trace_ids, /*logc,*/ heur);
     }
-    /*
-    Correct1( 40, max_freq, creads, cquals, pairs, to_edit, trim_to,
-         trace_ids, log_control, logc );
-    */
-
-    double nclock = WallClockTime();
-
-    //tmp_mgr[sFragReadsMod0].reads(true) = creads;
-    //tmp_mgr[sFragReadsMod0].quals(true) = cquals;
-    //tmp_mgr[sFragReadsMod0].pairs(true);
-
 
 
     // Path the precorrected reads.
 
-    //if (logc.STATUS_LOGGING)
-    //     std::cout << Date( ) << ": pathing precorrected reads" << std::endl;
     unsigned const COVERAGE = 50u;
     const int K2 = 80; // SHOULD NOT BE HARDCODED!
     vecbasevector correctedv(creads);
@@ -467,13 +291,10 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     for (int e = 0; e < h.EdgeObjectCount(); e++)
         hpaths.push_back_reserve(h.EdgeObject(e));
     CreateDatabase(hpaths, hpathsdb);
-    //if (logc.STATUS_LOGGING) std::cout << Date( ) << ": done" << std::endl;
 
     // Close pairs that we're done with.  Code copied with minor
     // changes from LongHyper.cc.  Should be completely rewritten.
 
-    //if (logc.STATUS_LOGGING)
-    //     std::cout << Date( ) << ": initially closing pairs" << std::endl;
     //#pragma omp parallel for
     for (int64_t id1 = 0; id1 < (int64_t) creads.size(); id1++) {
         if (done[id1]) continue;
@@ -577,7 +398,6 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     }
 
 
-
     corrected.clear().resize(creads.size());
     CorrectPairs1( 40, max_freq, creads, cquals, pairs, to_edit,
                   trace_ids, heur, /*log_control, logc,*/ corrected);
@@ -589,9 +409,6 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
         }
     }
 
-    part6=LCCIntTime()-last_time;
-    //PART7---------
-    last_time=LCCIntTime();
 
     if (heur.CP2) {
         vec<Bool> special;
@@ -612,10 +429,7 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
                       trace_ids, heur2, /*log_control, logc,*/ corrected);
     } // end of heur.CP2
 
-    double pclock = WallClockTime();
     for (int64_t id = 0; id < done.jsize(); id++) { if (done[id]) corrected[id] = creads_done[id]; }
-
-
 
 }
 

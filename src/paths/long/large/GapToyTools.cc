@@ -1044,17 +1044,6 @@ void MakeLocalAssembly1( const int K2_FLOOR, VecEFasta& corrected, vecbasevector
                          vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs)
 {
 
-     const int SEP = 0;
-     const int STDEV = 100;
-     const String LIB = "woof";
-     const size_t nreads = gbases.size( );
-     // PairsManager gpairs(nreads);
-
-     gpairs = PairsManager(nreads);
-     gpairs.addLibrary( SEP, STDEV, LIB );
-     size_t npairs = nreads / 2;
-     for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
-
      uint NUM_THREADS = 1;
 
 
@@ -1072,56 +1061,6 @@ void MakeLocalAssembly1( const int K2_FLOOR, VecEFasta& corrected, vecbasevector
      }
 
 }
-
-String ToStringN( const vec<int>& x, const int vis )
-{    String v = "{" + ToString( x.size( ) ) + ":";
-     for ( int j = 0; j < x.isize( ); j++ )
-     {    if ( vis >= 0 && j > vis )
-          {    v += ",...";
-               break;    }
-          if ( j > 0 ) v += ",";
-          v += ToString( x[j] );    }
-     v += "}";
-     return v;    }
-
-void FetchPids( const String& FETCH_PIDS, const vec<int>& fosmids,
-     const String& work_dir, const int mq )
-{    if ( !fosmids.solo( ) )
-     {    std::cout << "Can't use FETCH_PIDS unless there is just one Fosmid." << std::endl;
-          Scram(1);    }
-     int fid = fosmids[0];
-     int start = FETCH_PIDS.Before( "," ).Int( );
-     int stop = FETCH_PIDS.After( "," ).Int( );
-     String lookup = "L=/wga/scr4/jaffe/CompareVars/" 
-          + ToString(fid) + "/fos." + ToString(fid) + ".lookup";
-     SystemSucceed( "QueryLookupTable K=12 MM=12 MC=0.15 SEQS=" + work_dir
-          + "/a.200/a.fastb " + lookup + " FW_ONLY=True SMITH_WAT=True "
-          + "MAX_MISMATCHES=10 PARSEABLE=True > " + work_dir + "/logs/qlt.out1" );
-     vec<look_align> aligns1, aligns2;
-     std::cout << "output from FETCH_PIDS\n" << "original edge alignments:\n";
-     LoadLookAligns( work_dir + "/logs/qlt.out1", aligns1 );
-     for ( int i = 0; i < aligns1.isize( ); i++ )
-     {    const look_align& la = aligns1[i];
-          if ( IntervalOverlap( la.pos2( ), la.Pos2( ), start, stop ) > 0 )
-               la.PrintReadableBrief(std::cout);    }
-     SystemSucceed( "QueryLookupTable K=12 MM=12 MC=0.15 SEQS=" + work_dir 
-          + "/data/frag_reads_orig.fastb QUALS=" + work_dir 
-          + "/data/frag_reads_orig.qualb " + lookup
-          + " PARSEABLE=True MAX_QUAL_SCORE=" + ToString(mq) + " > " 
-          + work_dir + "/logs/qlt.out2" );
-     LoadLookAligns( work_dir + "/logs/qlt.out2", aligns2 );
-     vec<int> pid, id;
-     for ( int i = 0; i < aligns2.isize( ); i++ )
-     {    const look_align& la = aligns2[i];
-          if ( IntervalOverlap( la.pos2( ), la.Pos2( ), start, stop ) > 0 )
-               pid.push_back( la.query_id/2 );    }
-     UniqueSort(pid);
-     std::cout << "pid = " << printSeq(pid) << std::endl;
-     for ( int j = 0; j < pid.isize( ); j++ )
-          id.push_back( 2*pid[j], 2*pid[j]+1 );
-     std::cout << "id = " << printSeq(id) << std::endl;
-     Scram(0);    }
-
 
 void LogTime( const double clock, const String& what, const String& work_dir )
 {    static String dir;

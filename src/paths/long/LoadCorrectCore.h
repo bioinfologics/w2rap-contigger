@@ -19,22 +19,10 @@
 
 void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done );
 
-// zero all quality scores associated with corrections (for reads in file)
-void ZeroCorrectedQuals( String const& readsFile, vecbvec const& creads,
-                            vecqvec* pQuals );
+
 // zero all quality scores associated with corrections (for reads already in memory)
 void ZeroCorrectedQuals( vecbasevector const& readsFile, vecbvec const& creads,
                             vecqvec* pQuals );
-
-void SamIAm( const int i, const String& getsam, const String& TMP,
-                bool keepLocs = false, String const& dexterLibs = "",
-                const Bool PF_ONLY = False, const Bool KEEP_NAMES = False );
-
-void MergeReadSets( const vec<String>& heads, const String& TMP, 
-     const long_logging& logc, const Bool KEEP_NAMES = False );
-
-void SelectRandom( const String& TMP, const double SELECT_FRAC, 
-     const long_logging& logc, const long_data_spec& spec );
 
 void CorrectionSuite( vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs,
      const long_heuristics& heur,

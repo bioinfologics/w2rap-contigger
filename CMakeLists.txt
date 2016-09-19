@@ -3,6 +3,7 @@ project (w2rap-contigger)
 
 ## Compiler flags
 SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG")
+
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
 
@@ -206,7 +207,7 @@ add_library(base_libs OBJECT
         src/paths/long/large/Lines.cc
         src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
-        src/util/TextTable.cc)
+        src/util/TextTable.cc src/util/w2rap_timers.h)
 
 add_library(hb_base_libs OBJECT
         src/Alignment.cc

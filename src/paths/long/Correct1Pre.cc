@@ -20,8 +20,7 @@
 #include "paths/long/FriendAligns.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadStack.h"
-//#include "paths/long/ColorCompare.h"
-
+#include "util/w2rap_timers.h"
 
 namespace {
 template <class veclike>
@@ -47,8 +46,11 @@ void Correct1Pre( const int K,
      const vec<Bool>& to_edit, vec<int>& trim_to, const vec<int>& trace_ids, 
      /*const long_logging& logc,*/ const long_heuristics& heur )
 {
-     double clock1 = WallClockTime( );
-     //if (logc.STATUS_LOGGING) ReportPeakMem( "begin Correct1Pre" );
+     TIMELOG_DECLARE(C1P_Align);
+     TIMELOG_DECLARE(C1P_Others);
+
+    //PART1---------
+     TIMELOG_START(C1P_Align);
 
      // Build alignments.
 
@@ -57,17 +59,10 @@ void Correct1Pre( const int K,
                            heur.FF_MAX_FREQ,
                            heur.FF_DOWN_SAMPLE,heur.FF_VERBOSITY);
      //if (logc.STATUS_LOGGING) ReportPeakMem( "alignment data created" );
+     TIMELOG_STOP(C1P_Align);
 
-     //// Define read starts.
-
-     //vec<int64_t> id1_start( bases.size( ) + 1, -1 );
-     //id1_start[ bases.size( ) ] = aligns_all.size( );
-     //for ( int64_t j = aligns_all.jsize( ) - 1; j >= 0; j-- )
-     //     id1_start[ aligns_all[j].id1 ] = j;
-     //for ( int id = (int) bases.size( ) - 1; id >= 0; id-- )
-     //     if ( id1_start[id] < 0 ) id1_start[id] = id1_start[id+1];
-     //std::cout << Date( ) << ": read starts defined" << std::endl;
-
+     //PART2---------
+     TIMELOG_START(C1P_InitBasesQuals);
      // Go through the reads.
 
      trim_to.resize( bases.size( ) );
@@ -84,16 +79,14 @@ void Correct1Pre( const int K,
      // bases[0] and quals[0] for initial value
      vecbasevector bases_loc(use.size(),bases[0]);
      vecqualvector quals_loc(use.size(),quals[0]);
+     TIMELOG_STOP(C1P_InitBasesQuals);
 
+     //PART3---------
+     TIMELOG_START(C1P_Correct);
 
      // Do the corrections.
 
-     //if (logc.STATUS_LOGGING)
-     //{    std::cout << Date( ) << ": going through " << use.size( )
-     //          << " reads" << std::endl;    }
      const int batch = 100;
-     //REPORT_TIME( clock1, "used in Correct1Pre head" );
-     double clock2 = WallClockTime( );
      //#pragma omp parallel for schedule(dynamic, 1)
      for ( int64_t id1a = 0; id1a < (int64_t) use.size( ); id1a += batch )
      {    readstack stack;
@@ -161,7 +154,9 @@ void Correct1Pre( const int K,
                          stack.Print( std::cout, cons );    }    }    }    }
 
      // Save results.
-
+     TIMELOG_STOP(C1P_Correct);
+     //PART4---------
+     TIMELOG_START(C1P_UpdateBasesQuals);
      //#pragma omp parallel for schedule(dynamic)
      for( size_t id1x = 0 ; id1x < use.size() ; ++id1x){
           const int64_t& id1 = use[id1x];
@@ -169,4 +164,8 @@ void Correct1Pre( const int K,
           quals[id1] = quals_loc[id1x];
      }
      //REPORT_TIME( clock2, "used in Correct1Pre main" );
+     TIMELOG_STOP(C1P_UpdateBasesQuals);
+
+     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);
+
 }

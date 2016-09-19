@@ -22,14 +22,8 @@
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Unsat.h"
 #include "system/SortInPlace.h"
-
-uint64_t IntTime( )
-{    struct timeval tp;
-    struct timezone tzp;
-    int ftime_ret = gettimeofday( &tp, &tzp ) ;
-    ForceAssert( ftime_ret == 0 );
-    return ((uint64_t) tp.tv_sec) * 1000000 + tp.tv_usec;
-}
+#define TIME_LOGGING
+#include <util/w2rap_timers.h>
 
 
 template<int M>
@@ -287,32 +281,44 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
     int lrc = LR.size();
     if (GAP_CAP >= 0) lrc = GAP_CAP;
-    std::atomic_uint_fast64_t part1_total_clock(0);
-    std::atomic_uint_fast64_t part2_total_clock(0);
-    std::atomic_uint_fast64_t part3_total_clock(0);
-    std::atomic_uint_fast64_t part4_total_clock(0);
-    std::atomic_uint_fast64_t part5_total_clock(0);
 
 
 
     std::cout << "And now for the really slow part..." << std::endl;
     //TODO: check local variable usage, should be made minimal!!!
+    TIMELOG_DECLARE_ATOMIC(AG2_FindPids);
+    TIMELOG_DECLARE_ATOMIC(AG2_ReadSetCreation);
+    TIMELOG_DECLARE_ATOMIC(AG2_LocalAssembly1);
+    TIMELOG_DECLARE_ATOMIC(AG2_LocalAssembly2);
+    TIMELOG_DECLARE_ATOMIC(AG2_LocalAssemblyEval);
+    TIMELOG_DECLARE_ATOMIC(AG2_CreateBpaths);
+    TIMELOG_DECLARE_ATOMIC(AG2_PushBpathsToGraph);
+
     #pragma omp parallel for schedule(dynamic, 1)
     for (int bl = 0; bl < lrc; bl++) {
+
+        TIMELOG_DECLARE_LOCAL(AG2_FindPids,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_ReadSetCreation,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_LocalAssembly1,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_LocalAssembly2,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_LocalAssemblyEval,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_CreateBpaths,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_PushBpathsToGraph,Loop);
+
 
         vec<int64_t> pids;
         const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
         int K2_FLOOR_LOCAL = K2_FLOOR;
 
         //PART1-------------------------------
-        uint64_t partial_clock = IntTime();
+        TIMELOG_START_LOCAL(AG2_FindPids,Loop);
 
         FindPidsST(pids,lefts,rights,layout_pos,layout_id,layout_or,MAX_PROX_LEFT,MAX_PROX_RIGHT);
 
-        part1_total_clock+=IntTime()-partial_clock;
+        TIMELOG_STOP_LOCAL(AG2_FindPids,Loop);
 
         //PART2-----------------------------------------------------
-        partial_clock = IntTime();
+        TIMELOG_START_LOCAL(AG2_ReadSetCreation,Loop);
 
 
         //Assembly starts
@@ -342,28 +348,42 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             quals[id2].unpack(&qv);
             gquals.push_back( qv );    }
 
-        part2a_total_clock+=IntTime()-partial_clock;
-        partial_clock = IntTime();
-        MakeLocalAssembly1(K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs);
-        part2b_total_clock+=IntTime()-partial_clock;
+        const int SEP = 0;
+        const int STDEV = 100;
+        const String LIB = "woof";
+        const size_t nreads = gbases.size( );
+        // PairsManager gpairs(nreads);
 
+        gpairs = PairsManager(nreads);
+        gpairs.addLibrary( SEP, STDEV, LIB );
+        size_t npairs = nreads / 2;
+        for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
+        TIMELOG_STOP_LOCAL(AG2_ReadSetCreation,Loop);
+
+        TIMELOG_START_LOCAL(AG2_LocalAssembly1,Loop);
+        MakeLocalAssembly1(K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs);
+
+
+        TIMELOG_STOP_LOCAL(AG2_LocalAssembly1,Loop);
         //PART3-----------------------------------------------------
-        partial_clock = IntTime();
+
 
         retry:
+        TIMELOG_START_LOCAL(AG2_LocalAssembly2,Loop);
         MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
-
-
+        TIMELOG_STOP_LOCAL(AG2_LocalAssembly2,Loop);
+        TIMELOG_START_LOCAL(AG2_LocalAssemblyEval,Loop);
         if (shb.K() == 0) {    // TODO: no more dots in advances...
             /*mreport[bl] = mout.str( );
             Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );*/
+            TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
             continue;
         }
 
 
         // Find edges "starts" and "stops" overlapping root edges.
 
-        double sclock = WallClockTime();
+
         vec<int> starts, stops;
         vecbasevector bell;
         for (int e = 0; e < shb.EdgeObjectCount(); e++)
@@ -410,12 +430,12 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             if (j < K2s.isize()) {
                 K2_FLOOR_LOCAL = K2s[j];
                 //PRINT_TO( mout, K2_FLOOR_LOCAL );
+                TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
                 goto retry;
             }
         }
+        TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
         //PART4-----------------------------------------------------
-        part3_total_clock+=IntTime()-partial_clock;
-        partial_clock = IntTime();
 
         if (!xshb.Acyclic() ||
             xshb.N() == 0) {    //if ( !xshb.Acyclic( ) ) mout << "has cycle, not using" << std::endl;
@@ -429,6 +449,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
         // Make bpaths.  These are all source-sink paths through the
         // local graph.
+        TIMELOG_START_LOCAL(AG2_CreateBpaths,Loop);
 
         double aclock2 = WallClockTime();
         vec<basevector> bpaths;
@@ -451,14 +472,12 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 }
             }
         }
-        //PART5-----------------------------------------------------
-        part4_total_clock+=IntTime()-partial_clock;
-        partial_clock = IntTime();
 
         //PRINT_TO( mout, bpaths.size( ) );
         if (bpaths.isize() > MAX_BPATHS) {    //mout << "Too many bpaths." << std::endl;
             //mreport[bl] += mout.str( );
             //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
+            TIMELOG_STOP_LOCAL(AG2_CreateBpaths,Loop);
             continue;
         }
 
@@ -490,28 +509,29 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             }
             if (!ext) bpaths.push_back(hb.EdgeObject(rights[r]));
         }
+
+        TIMELOG_STOP_LOCAL(AG2_CreateBpaths,Loop);
         // Make the bpaths into a HyperBasevector.
 
+        TIMELOG_START_LOCAL(AG2_PushBpathsToGraph,Loop);
         vecbasevector bpathsx;
         for (int l = 0; l < bpaths.isize(); l++)
             bpathsx.push_back(bpaths[l]);
         BasesToGraph(bpathsx, K, mhbp[bl]);
-
-        // Save.
-        //PART5 ends-----------------------------------------------------
-        part5_total_clock+=IntTime()-partial_clock;
-        partial_clock = IntTime();
+        TIMELOG_STOP_LOCAL(AG2_PushBpathsToGraph,Loop);
 
     }
-    std::cout << " ... finally finished, part times: " <<part1_total_clock<<" "<<part2a_total_clock<<" "<<part2b_total_clock<<" "<<part3_total_clock<<" "<<part4_total_clock<<" "<<part5_total_clock<<" " << std::endl;
+    std::cout << " ... finally finished."<< std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "
               << "memory in use = " << MemUsageGBString()
               #ifdef __linux
               << ", peak = " << PeakMemUsageGBString( )
               #endif
               << std::endl;
-    // Do the patching.
 
+    TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_LocalAssembly1,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
+    TIMELOG_REPORT(std::cout,CorrectPairs1,CP1_Align,CP1_MakeStacks,CP1_Correct);
+    // Do the patching.
     const vec<std::pair<int, int> > blobs(LR.size());
     Patch(hb, blobs, mhbp, work_dir, mreport, new_stuff);
 }
