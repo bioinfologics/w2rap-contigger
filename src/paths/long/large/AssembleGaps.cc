@@ -24,6 +24,7 @@
 #include "system/SortInPlace.h"
 #define TIME_LOGGING
 #include <util/w2rap_timers.h>
+#include <paths/long/LoadCorrectCore.h>
 
 
 template<int M>
@@ -288,18 +289,18 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //TODO: check local variable usage, should be made minimal!!!
     TIMELOG_DECLARE_ATOMIC(AG2_FindPids);
     TIMELOG_DECLARE_ATOMIC(AG2_ReadSetCreation);
-    TIMELOG_DECLARE_ATOMIC(AG2_LocalAssembly1);
+    TIMELOG_DECLARE_ATOMIC(AG2_CorrectionSuite);
     TIMELOG_DECLARE_ATOMIC(AG2_LocalAssembly2);
     TIMELOG_DECLARE_ATOMIC(AG2_LocalAssemblyEval);
     TIMELOG_DECLARE_ATOMIC(AG2_CreateBpaths);
     TIMELOG_DECLARE_ATOMIC(AG2_PushBpathsToGraph);
 
-    #pragma omp parallel for schedule(dynamic, 1)
+    #pragma omp parallel for schedule(static, 1)
     for (int bl = 0; bl < lrc; bl++) {
 
         TIMELOG_DECLARE_LOCAL(AG2_FindPids,Loop);
         TIMELOG_DECLARE_LOCAL(AG2_ReadSetCreation,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_LocalAssembly1,Loop);
+        TIMELOG_DECLARE_LOCAL(AG2_CorrectionSuite,Loop);
         TIMELOG_DECLARE_LOCAL(AG2_LocalAssembly2,Loop);
         TIMELOG_DECLARE_LOCAL(AG2_LocalAssemblyEval,Loop);
         TIMELOG_DECLARE_LOCAL(AG2_CreateBpaths,Loop);
@@ -360,11 +361,16 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
         TIMELOG_STOP_LOCAL(AG2_ReadSetCreation,Loop);
 
-        TIMELOG_START_LOCAL(AG2_LocalAssembly1,Loop);
-        MakeLocalAssembly1(K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs);
+        TIMELOG_START_LOCAL(AG2_CorrectionSuite,Loop);
+
+        uint NUM_THREADS = 1;
+        long_heuristics heur( "" ); //TODO: this is allocated in stack and wastes both time and space!
+        heur.K2_FLOOR = K2_FLOOR_LOCAL;
+        CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", False);
 
 
-        TIMELOG_STOP_LOCAL(AG2_LocalAssembly1,Loop);
+
+        TIMELOG_STOP_LOCAL(AG2_CorrectionSuite,Loop);
         //PART3-----------------------------------------------------
 
 
@@ -529,7 +535,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
               #endif
               << std::endl;
 
-    TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_LocalAssembly1,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
+    TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);
     TIMELOG_REPORT(std::cout,CorrectPairs1,CP1_Align,CP1_MakeStacks,CP1_Correct);
     // Do the patching.

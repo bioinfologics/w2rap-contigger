@@ -431,6 +431,14 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 
     for (int64_t id = 0; id < done.jsize(); id++) { if (done[id]) corrected[id] = creads_done[id]; }
 
+    int count = 0;
+    for ( int l = 0; l < (int) corrected.size( ); l++ )
+        if ( corrected[l].size( ) > 0 ) count++;
+    if ( count > 0 )
+    {    vec<Bool> to_delete( corrected.size( ), False );
+        DefinePairingInfo( gpairs, creads, to_delete, cid, corrected, cpartner/*, logc*/ );
+    }
+
 }
 
 // Define pairing info.  Note that for now we set all the library ids to 0.
