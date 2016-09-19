@@ -317,28 +317,33 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
                      const long_heuristics &heur,
                      vecbasevector &creads,
                      VecEFasta &corrected, vec<int> &cid, vec<pairing_info> &cpartner,
-                     const uint NUM_THREADS, const String &EXIT, const double clock,
+                     const uint NUM_THREADS, const String &EXIT,
                      bool useOldLRPMethod/*,  LongProtoTmpDirManager &tmp_mgr*/) {
     // Run Correct1.
+    uint64_t part1,part2,part3,part4,part5,part6,part7;
+
+    //PART1---------
+    uint64_t last_time=LCCIntTime();
+
 
     vec<int> trace_ids, precorrect_seq;
     //ParseIntSet( logc.TRACE_IDS, trace_ids );
 
-    vec<int> trace_pids;
+    //vec<int> trace_pids;
     //ParseIntSet( logc.TRACE_PIDS, trace_pids );
-    for (int i = 0; i < trace_pids.isize(); i++) {
-        int64_t pid = trace_pids[i];
-        trace_ids.push_back(2 * pid, 2 * pid + 1);
-    }
+    //for (int i = 0; i < trace_pids.isize(); i++) {
+    //    int64_t pid = trace_pids[i];
+    //    trace_ids.push_back(2 * pid, 2 * pid + 1);
+    //}
 
+    //A really complicated way to hardcode this to {24,40}
     ParseIntSet("{" + heur.PRECORRECT_SEQ + "}", precorrect_seq, false);
+
     const int max_freq = heur.FF_MAX_FREQ;
 
     const String sFragReadsOrig = "frag_reads_orig";
     //const String sFragReadsMod0 = "frag_reads_mod0";
 
-
-    double bclock = WallClockTime();
     vecqualvector cquals;
     creads = gbases;
     cquals = gquals;
@@ -351,9 +356,9 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     }
     ForceAssertEq(nBases, creads.SizeSum());
 
-    if (heur.PRECORRECT_ALT1)
+    if (heur.PRECORRECT_ALT1) //This is always false
         precorrectAlt1(&creads);
-    else if (heur.PRECORRECT_OLD_NEW)
+    else if (heur.PRECORRECT_OLD_NEW) //This is always false too
         PreCorrectOldNew(&creads, cquals, trace_ids);
     else {
         PC_Params pcp;
@@ -374,15 +379,15 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
     vec<Bool> to_edit(nReads, True);
     vec<Bool> done(nReads, False);
 
-    double fclock = WallClockTime();
+
     creads_done = creads;
     vecbasevector filled;
-    //if (logc.STATUS_LOGGING)
-    //     std::cout << Date( ) << ": start initial pair filling" << std::endl;
+
+
     const int MIN_FREQ = 5;
     FillPairs(creads, pairs, MIN_FREQ, filled, heur.FILL_PAIRS_ALT);
-    //REPORT_TIME( fclock, "used in FillPairs" );
-    double f2clock = WallClockTime();
+
+
     int64_t fill_count = 0;
     for (int64_t id = 0; id < (int64_t) filled.size(); id++) {
         if (filled[id].size() == 0) continue;
@@ -584,8 +589,11 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
         }
     }
 
+    part6=LCCIntTime()-last_time;
+    //PART7---------
+    last_time=LCCIntTime();
+
     if (heur.CP2) {
-        double cp2_clock = WallClockTime();
         vec<Bool> special;
         PopulateSpecials(creads, pairs, creads_done, done, corrected,
                          NUM_THREADS, special/*, logc*/ );
@@ -616,23 +624,22 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 void DefinePairingInfo( const PairsManager & gpairs, const vecbasevector& creads,
      const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
      vec<pairing_info>& cpartner/*, const long_logging& logc*/ )
-{    double clock = WallClockTime( );
-     PairsManager const& pairs = gpairs;
-//     pairs.Read( TMP + "/frag_reads_orig.pairs" );
+{
+
      for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
           if ( !to_delete[id] ) cid.push_back(id);
      corrected.EraseIf(to_delete);
      cpartner.resize( creads.size( ) );
      for ( int64_t xid1 = 0; xid1 < (int64_t) corrected.size( ); xid1++ )
      {    int id1 = cid[xid1];
-          int64_t pid = pairs.getPairID(id1);
-          if ( pairs.isUnpaired(id1) ) cpartner[xid1] = pairing_info(0,-1,-1);
+          int64_t pid = gpairs.getPairID(id1);
+          if ( gpairs.isUnpaired(id1) ) cpartner[xid1] = pairing_info(0,-1,-1);
           else
-          {    int id2 = pairs.getPartnerID(id1);
+          {    int id2 = gpairs.getPartnerID(id1);
                int xid2 = BinPosition( cid, id2 );
                if ( xid2 < 0 ) cpartner[xid1] = pairing_info(0,-1,-1);
                else
-               {    if ( pairs.ID1(pid) == id1 )
+               {    if ( gpairs.ID1(pid) == id1 )
                          cpartner[xid1] = pairing_info(1,xid2,0);
                     else cpartner[xid1] = pairing_info(2,xid2,0);    }    }    }
      /*REPORT_TIME( clock, "used in load tail" );*/

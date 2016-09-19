@@ -11,7 +11,7 @@
 
 #include "paths/long/FriendAligns.h"
 #include "paths/long/FriendAlignFinder.h"
-#include "paths/long/FriendAlignFinderNaif.h"
+//#include "paths/long/FriendAlignFinderNaif.h"
 #include "paths/long/MakeAlignments.h"
 
 namespace

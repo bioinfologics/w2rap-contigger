@@ -64,6 +64,7 @@ private:
 typedef SerfVec<Friend> Friends;
 //extern template class SmallVec<Friend,MempoolAllocator<Friend> >;
 //extern template class OuterVec<Friends>;
+TRIVIALLY_SERIALIZABLE(Friend);
 
 class FriendAlignerImpl
 {

@@ -1039,40 +1039,10 @@ void MakeLocalAssembly2(VecEFasta &corrected,
     mout << "assembly time 2 = " << TimeSince(clock) << std::endl;*/
 }
 
-void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, const vec<int64_t>& pids,
-                         const int K2_FLOOR, VecEFasta& corrected, vecbasevector& creads,
+void MakeLocalAssembly1( const int K2_FLOOR, VecEFasta& corrected, vecbasevector& creads,
                          vec<pairing_info>& cpartner, vec<int>& cid,
                          vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs)
 {
-     //std::cout<<"MakeLocalAssembly1 called!"<<std::endl;
-     //mout << Date( ) << ": begin gap assembly" << std::endl;
-     //long_logging logc( "", "" );
-     //logc.STATUS_LOGGING = False;
-     //logc.MIN_LOGGING = False;
-     ref_data ref;
-     vec<ref_loc> readlocs;
-
-
-     long_logging_control log_control( ref, &readlocs, "", "" );
-
-
-     //STEP 1: get "local" reads/quals
-     double clock = WallClockTime( );
-
-
-     qvec qv;
-     gbases.reserve(2*pids.isize());
-     gquals.reserve(2*pids.isize());
-
-     for ( int l = 0; l < pids.isize( ); l++ )
-     {    int64_t pid = pids[l];
-          int64_t id1 = 2*pid, id2 = 2*pid + 1;
-          gbases.push_back( bases[id1] ); 
-          gbases.push_back( bases[id2] );
-          quals[id1].unpack(&qv);
-          gquals.push_back( qv );
-          quals[id2].unpack(&qv);
-          gquals.push_back( qv );    }
 
      const int SEP = 0;
      const int STDEV = 100;
@@ -1084,21 +1054,21 @@ void MakeLocalAssembly1( const vecbasevector& bases, const VecPQVec& quals, cons
      gpairs.addLibrary( SEP, STDEV, LIB );
      size_t npairs = nreads / 2;
      for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
-     double clock2 = WallClockTime( );
+
      uint NUM_THREADS = 1;
 
-     long_heuristics heur( "" );
+
+     long_heuristics heur( "" ); //TODO: this is allocated in stack and wastes both time and space!
      heur.K2_FLOOR = K2_FLOOR;
      //STEP 2: run correction suite in the local reads and repair as needed
-     CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", clock, False);
+     CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", False);
 
      int count = 0;
      for ( int l = 0; l < (int) corrected.size( ); l++ )
           if ( corrected[l].size( ) > 0 ) count++;
      if ( count > 0 )
      {    vec<Bool> to_delete( corrected.size( ), False );
-          DefinePairingInfo( 
-               gpairs, creads, to_delete, cid, corrected, cpartner/*, logc*/ );
+          DefinePairingInfo( gpairs, creads, to_delete, cid, corrected, cpartner/*, logc*/ );
      }
 
 }

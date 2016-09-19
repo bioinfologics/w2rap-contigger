@@ -23,7 +23,6 @@
 #include "paths/long/large/Unsat.h"
 #include "system/SortInPlace.h"
 
-
 uint64_t IntTime( )
 {    struct timeval tp;
     struct timezone tzp;
@@ -298,7 +297,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
     std::cout << "And now for the really slow part..." << std::endl;
     //TODO: check local variable usage, should be made minimal!!!
-    #pragma omp parallel for schedule(static, 1)
+    #pragma omp parallel for schedule(dynamic, 1)
     for (int bl = 0; bl < lrc; bl++) {
 
         vec<int64_t> pids;
@@ -315,32 +314,44 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         //PART2-----------------------------------------------------
         partial_clock = IntTime();
 
+
         //Assembly starts
-        String TMP;
-        TMP = work_dir + "/local/" + ToString(omp_get_thread_num());
 
         VecEFasta corrected;
         vecbasevector creads;
         vec<pairing_info> cpartner;
         vec<int> cid;
-        LongProtoTmpDirManager tmp_mgr(TMP);
         SupportedHyperBasevector shb;
 
         //Local readset creation and error correction.
-        const bool bDelOldFile=true;
-        vecbasevector& gbases=tmp_mgr["frag_reads_orig"].reads(bDelOldFile);
-        vecqualvector& gquals=tmp_mgr["frag_reads_orig"].quals(bDelOldFile);
-        PairsManager& gpairs = tmp_mgr["frag_reads_orig"].pairs(bDelOldFile);
+        vecbasevector gbases;
+        vecqualvector gquals;
+        PairsManager gpairs;
 
-        MakeLocalAssembly1( bases, quals, pids, K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs);
+        qvec qv;
+        gbases.reserve(2*pids.isize());
+        gquals.reserve(2*pids.isize());
 
-        part2_total_clock+=IntTime()-partial_clock;
+        for ( int l = 0; l < pids.isize( ); l++ )
+        {    int64_t pid = pids[l];
+            int64_t id1 = 2*pid, id2 = 2*pid + 1;
+            gbases.push_back( bases[id1] );
+            gbases.push_back( bases[id2] );
+            quals[id1].unpack(&qv);
+            gquals.push_back( qv );
+            quals[id2].unpack(&qv);
+            gquals.push_back( qv );    }
+
+        part2a_total_clock+=IntTime()-partial_clock;
+        partial_clock = IntTime();
+        MakeLocalAssembly1(K2_FLOOR_LOCAL, corrected, creads, cpartner, cid, gbases, gquals, gpairs);
+        part2b_total_clock+=IntTime()-partial_clock;
 
         //PART3-----------------------------------------------------
         partial_clock = IntTime();
-        //TODO: warning tmp_mgr doesn't have the corrected reads here?
+
         retry:
-        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, /* tmp_mgr, */ cid, cpartner);
+        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
 
 
         if (shb.K() == 0) {    // TODO: no more dots in advances...
@@ -492,7 +503,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         partial_clock = IntTime();
 
     }
-    std::cout << " ... finally finished, part times: " <<part1_total_clock<<" "<<part2_total_clock<<" "<<part3_total_clock<<" "<<part4_total_clock<<" "<<part5_total_clock<<" " << std::endl;
+    std::cout << " ... finally finished, part times: " <<part1_total_clock<<" "<<part2a_total_clock<<" "<<part2b_total_clock<<" "<<part3_total_clock<<" "<<part4_total_clock<<" "<<part5_total_clock<<" " << std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "
               << "memory in use = " << MemUsageGBString()
               #ifdef __linux

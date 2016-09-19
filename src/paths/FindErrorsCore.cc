@@ -74,8 +74,7 @@ void pre_correct_parallel(const PC_Params  & pcp,
 
   ForceAssertLe(K, 29u);
   if (K <= 29) {
-    PreCorrector<Kmer29H, QVV_t> pre_corrector(pcp, K, *bases_p, *quals_p, 
-                                               & bases_new, kspec_p, NUM_THREADS);
+    PreCorrector<Kmer29H, QVV_t> pre_corrector(pcp, K, *bases_p, *quals_p, & bases_new, kspec_p, NUM_THREADS);
     naif_kmerize(&pre_corrector, NUM_THREADS, Max(0,VERBOSITY), mem_mean_ceil);
   }
 

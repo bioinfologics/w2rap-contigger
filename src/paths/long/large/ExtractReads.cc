@@ -175,7 +175,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                     << "This means that it does not correspond to a "
                     << "file or files according to the\n"
                     << "rules for globbing.  "
-                    << "Please see the DISCOVAR de novo manual.\n"
                     << std::endl;
                     Scram(1);
                }
