@@ -482,7 +482,6 @@ int main(const int argc, const char * argv[]) {
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
                  IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
 
-        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse
         for (int i = 0; i < (int) pathsr.size(); i++) { //XXX TODO: change this int for uint 32
@@ -562,7 +561,7 @@ int main(const int argc, const char * argv[]) {
         bool GAP_CLEANUP = True;
 
         //GFADump(out_dir +"/"+ out_prefix + "_prePF", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
-        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
+        //PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         //PathFinder(hbvr,inv,pathsr,paths_inv).unroll_loops();
         //std::cout<<"refreshing all structures as precaution"<<std::endl;
         //inv.clear();

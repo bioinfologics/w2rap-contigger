@@ -70,7 +70,8 @@ private:
 
 void readstack::Initialize(const int nrows, const int ncols) {
     cols_ = ncols;
-    bases_.clear().resize(nrows);
+    bases_.clear();
+    bases_.resize(nrows);
     for (auto &read : bases_) read.assign(ncols, ' ');
     quals_.clear();
     quals_.resize(nrows);
@@ -239,12 +240,12 @@ void readstack::AddToStack(const vec<triple<int, int64_t, Bool> > &offset_id_rc2
 void readstack::Erase(const vec<Bool> &to_remove) {
     bases_.EraseIf(to_remove);
     quals_.EraseIf(to_remove);
-    EraseIf(id_, to_remove);
-    EraseIf(rc2_, to_remove);
-    EraseIf(pid_, to_remove);
-    EraseIf(pair_pos_, to_remove);
-    EraseIf(offset_, to_remove);
-    EraseIf(len_, to_remove);
+    id_.EraseIf( to_remove);
+    rc2_.EraseIf(to_remove);
+    pid_.EraseIf(to_remove);
+    pair_pos_.EraseIf(to_remove);
+    offset_.EraseIf(to_remove);
+    len_.EraseIf(to_remove);
 }
 
 void readstack::Unique() // only works with SortByPid
@@ -342,7 +343,8 @@ void readstack::SortByPid(const int64_t pid1, const int i1, const int i2) {
 
 void readstack::Reverse() {
     for (int i = 0; i < Rows(); i++) {
-        bases_[i].ReverseMe();
+        //bases_[i].ReverseMe();
+        std::reverse(bases_[i].begin(), bases_[i].end());
         for (int j = 0; j < Cols(); j++)
             if (bases_[i][j] != ' ') bases_[i][j] = 3 - bases_[i][j];
         std::reverse(quals_[i].begin(),quals_[i].end());
@@ -371,7 +373,8 @@ void readstack::Merge(const readstack &s, const int offset) {
         bases_[i].resize(bases_[i].size() + right_ext1, ' ');
         quals_[i].resize(quals_[i].size() + right_ext1, -1);
     }
-    bases_.append(s.Bases().begin(), s.Bases().end());
+    //bases_.append(s.Bases().begin(), s.Bases().end());
+    bases_.insert(bases_.end(),s.Bases().begin(), s.Bases().end());
     //quals_.append(s.Quals().begin(), s.Quals().end());
     quals_.insert(quals_.end(), s.Quals().begin(), s.Quals().end());
     int left_ext2 = Max(0, offset);
@@ -393,16 +396,16 @@ void readstack::Merge(const readstack &s, const int offset) {
         bases_[ip].resize(bases_[ip].size() + right_ext2, ' ');
         quals_[ip].resize(quals_[ip].size() + right_ext2, -1);
     }
-    offset_.append(s.Offset());
+    offset_.insert(offset_.end(),s.offset_.begin(),s.offset_.end());
     for (int i = 0; i < rows1; i++)
         SetOffset(i, Offset(i) + left_ext1);
     for (int i = rows1; i < rows1 + rows2; i++)
         SetOffset(i, Offset(i) + (offset > 0 ? offset : 0));
-    id_.append(s.Id());
-    rc2_.append(s.Rc2());
-    pid_.append(s.Pid());
-    pair_pos_.append(s.PairPos());
-    len_.append(s.Len());
+    id_.insert(id_.end(),s.id_.begin(),s.id_.end());
+    rc2_.insert(rc2_.end(),s.rc2_.begin(),s.rc2_.end());
+    pid_.insert(pid_.end(),s.pid_.begin(),s.pid_.end());
+    pair_pos_.insert(pair_pos_.end(),s.pair_pos_.begin(),s.pair_pos_.end());
+    len_.insert(len_.end(),s.pair_pos_.begin(),s.pair_pos_.end());
     cols_ = bases_[0].size();
 }
 
@@ -761,7 +764,8 @@ void readstack::Trim(const int start, const int stop) {
                 break;
             }
         }
-        bases_[i].SetToSubOf(bases_[i], start, stop - start);
+        //bases_[i].SetToSubOf(bases_[i], start, stop - start);
+        bases_[i].assign(bases_[i].begin()+start,bases_[i].begin()+stop);
         //quals_[i].SetToSubOf(quals_[i], start, stop - start);
         quals_[i].assign(quals_[i].begin()+start,quals_[i].begin()+stop);
         offset_[i] -= start;

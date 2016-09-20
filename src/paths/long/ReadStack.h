@@ -24,11 +24,8 @@
 #include "paths/long/FriendAligns.h"
 #include "paths/long/MakeAlignments.h"
 
-typedef SerfVec<char> StackBaseVec;
-typedef MasterVec<StackBaseVec> StackBaseVecVec;
-typedef std::vector<int> StackQualVec;
-
-class StackQualVecVec : public std::vector<StackQualVec> {
+template<class T>
+class VecPlus : public std::vector<T> {
 public:
     void EraseIf( const vec<Bool> & to_remove ) {
         size_t j=0;
@@ -42,8 +39,17 @@ public:
             }
         this->resize(j);
     }
+    void resize_and_set(const size_t len, const T value){
+        this->resize(len);
+        for (auto &e:*this) e=value;
+    }
 };
 
+
+typedef std::vector<char> StackBaseVec;
+typedef VecPlus<StackBaseVec> StackBaseVecVec;
+typedef std::vector<int> StackQualVec;
+typedef VecPlus<StackQualVec> StackQualVecVec;
 
 class readstack {
 
@@ -344,12 +350,12 @@ private:
     int cols_;
     StackBaseVecVec bases_;
     StackQualVecVec quals_;
-    vec<int64_t> id_;
-    vec<Bool> rc2_;
-    vec<int64_t> pid_;
-    vec<int> pair_pos_;
-    vec<int> offset_;
-    vec<int> len_;
+    VecPlus<int64_t> id_;
+    VecPlus<Bool> rc2_;
+    VecPlus<int64_t> pid_;
+    VecPlus<int> pair_pos_;
+    VecPlus<int> offset_;
+    VecPlus<int> len_;
 
 };
 
