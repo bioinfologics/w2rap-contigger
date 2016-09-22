@@ -200,8 +200,8 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
      // Form neighborhoods.
 
      std::cout << Date( ) << ": forming neighborhoods" << std::endl;
+
      vec<vec<int>> n( hb.EdgeObjectCount( ) );
-     #pragma omp parallel for
      for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
           n[e] = Nhood( hb, to_left, to_right, e, radius );
 
@@ -209,7 +209,7 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
      
      std::cout << Date( ) << ": forming initial clusters" << std::endl;
      xs.clear( );
-     #pragma omp parallel for
+
      for ( int id1 = 0; id1 < hb.EdgeObjectCount( ); id1++ )
      {    for ( int m = 0; m < unsats[id1].isize( ); m++ )
           {    int id2 = unsats[id1][m].first;
@@ -223,8 +223,7 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
                          if ( BinMember( n[ id[1] ], unsats[e1][j].first ) )
                               x.push( e1, e2 );    }    }
                Sort(x);
-               #pragma omp critical
-               {    xs.push_back(x);    }    }     }
+               xs.push_back(x);    }     }
      std::cout << Date( ) << ": start sort" << std::endl; // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
      double clock = WallClockTime( ); // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
      sortInPlaceParallel(xs.begin(),xs.end());
