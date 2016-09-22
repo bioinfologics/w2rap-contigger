@@ -20,7 +20,6 @@
 #include "paths/long/FriendAligns.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadStack.h"
-#define TIME_LOGGING
 #include "util/w2rap_timers.h"
 
 TIMELOG_CREATE_GLOBAL(C1P_Align);

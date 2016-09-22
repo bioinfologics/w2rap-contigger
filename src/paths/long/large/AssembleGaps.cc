@@ -22,7 +22,6 @@
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Unsat.h"
 #include "system/SortInPlace.h"
-#define TIME_LOGGING
 #include <util/w2rap_timers.h>
 #include <paths/long/LoadCorrectCore.h>
 

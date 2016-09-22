@@ -27,7 +27,6 @@
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadStack.h"
 #include "random/Bernoulli.h"
-#define TIME_LOGGING
 #include "util/w2rap_timers.h"
 TIMELOG_CREATE_GLOBAL(CP1_Align);
 TIMELOG_CREATE_GLOBAL(CP1_MakeStacks);

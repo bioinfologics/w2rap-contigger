@@ -37,9 +37,6 @@
 #include "paths/long/DiscovarTools.h"
 #include <numeric>
 #include <type_traits>
-
-#define TIME_LOGGING
-
 #include "util/w2rap_timers.h"
 
 void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
