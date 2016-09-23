@@ -68,6 +68,29 @@ private:
     double mVal[N][N];
 };
 
+/*template<unsigned N>
+class PrecomputedQuals {
+public:
+    PrecomputedQuals(unsigned maxd) {
+        val.resize;
+        for (unsigned n = 0; n < maxd; ++n) {
+            double *pVal = mVal[n];
+            10.0 * log10(2 * dist) * qfudge
+
+        }
+    }
+
+    double const *operator[](unsigned n) const {
+        AssertLt(n, N);
+        return mVal[n];
+    }
+
+private:
+    double mVal[N][N];
+};*/
+
+double readstack::new_qual_LUT_s[1000];
+
 void readstack::Initialize(const int nrows, const int ncols) {
     cols_ = ncols;
     bases_.clear();
@@ -82,6 +105,7 @@ void readstack::Initialize(const int nrows, const int ncols) {
     pair_pos_.resize_and_set(nrows, -1);
     offset_.resize_and_set(nrows, -1);
     len_.resize_and_set(nrows, -1);
+    memcpy(new_qual_LUT_l,new_qual_LUT_s, sizeof(double)*1000);
 }
 
 void readstack::Initialize(const int64_t id1, Friends const &aligns,
@@ -474,6 +498,71 @@ void readstack::StrongConsensus1(basevector &con, qualvector &conq,
                     if (!raise_zero && q[l] == 0)
                         continue;
                     q[l] = std::max(q[l], 10.0 * log10(2 * dist) * qfudge);
+                }
+            }
+            if (itrPair.first == end) break;
+            itr = itrPair.first;
+            cItr = itrPair.second;
+        }
+        for (int i = 0; i < Cols(); i++) {
+            if (qs[i] >= 0) {
+                double p = q[i];
+                if (p <= 2) p = std::min(p, 0.2);
+                if (p == 0) p = 0.1;
+                sum[i].val(bs[i]) += p;
+            }
+        }
+    }
+
+    for (int i = 0; i < Cols(); i++) {
+        BaseMetrics<int> &mx = sum[i];
+        mx.reverseSort();
+        const int qual_cap = 50;
+        conq[i] = Min(qual_cap, int(round(mx.val(0) - mx.val(1))));
+        const int max_qcomp = 100;
+        if (mx.val(1) > max_qcomp) {
+            int badcount = 0;
+            for (int j = 0; j < Rows(); j++)
+                if (Qual(j, i) >= 30 && Base(j, i) == mx.id(1)) badcount++;
+            if (badcount >= 2) conq[i] = 0;
+        }
+    }
+}
+
+void readstack::StrongConsensus2(basevector &con, qualvector &conq, const Bool raise_zero) const {
+    con.resize(Cols()), conq.resize(Cols());
+    for (int i = 0; i < Cols(); i++)
+        con.Set(i, ColumnConsensus1(i));
+
+    const int min_window = 41;
+    const double qfudge = 0.5;
+    // TODO: this is a mistake -- should be a double metric value, but I don't
+    // want to change results.  --Ted 5/16/14
+    vec<BaseMetrics<int>> sum(Cols());
+    vec<double> q; //new quality values for the consensus
+    for (int j = 0; j < Rows(); j++) { //for each read
+        auto const &qs = quals_[j]; //read's original qual
+        q.assign(qs.begin(), qs.end());
+        auto const &bs = bases_[j]; //read's sequence
+        auto beg = bs.begin();
+        auto end = bs.end();
+        auto cItr = con.begin(); //consensus sequence
+        for (auto itr = beg; itr != end; ++itr, ++cItr) { // for every position of the read
+            auto itrPair = std::mismatch(itr, end, cItr);
+            if (itrPair.first - itr >= min_window) { //if the next mismatch to consensus is min_window away
+                int i1 = itr - beg; // i1 is the index on the read
+                int i2 = itrPair.first - beg; //i2 is the index of the mismatch in the read
+                int i3 = i2 - min_window / 2; //i3 is 20bp before the next mismatch
+                for (int l = i1 + min_window / 2; l <= i3; ++l) { // from 20bp after the last mismatch to 20bp before the next mismatch
+                    int dist = std::min(l - i1, i2 - l - 1);
+                    if (2 * dist < min_window) //this can't ever be true!!!
+                        continue;
+                    if (!raise_zero && q[l] == 0)
+                        continue;
+                    if (dist<1000)
+                        q[l] = std::max(q[l], new_qual_LUT_s[dist]);
+                    else
+                        q[l] = std::max(q[l], 10.0 * log10(2 * dist) * qfudge);// OK, so basically each position 20bp in-between
                 }
             }
             if (itrPair.first == end) break;
@@ -911,73 +1000,6 @@ void readstack::MotifDiff(const int top, vec<Bool> &to_delete) const {
             }
         }
     }
-}
-
-vec<basevector> readstack::Consensuses1() const {
-    vec<vec<char> > cons, cons_term;
-    vec<char> init;
-    for (int i = 0; i < Rows(); i++)
-        if (Qual(i, 0) >= 30) init.push_back(Base(i, 0));
-    UniqueSort(init);
-    for (int i = 0; i < init.isize(); i++) {
-        vec<char> x;
-        x.push_back(init[i]);
-        cons.push_back(x);
-    }
-    for (int j = 1; j < Cols(); j++) {
-        vec<vec<char> > cons2;
-        for (int i = 0; i < cons.isize(); i++) {
-            const vec<char> &x = cons[i];
-            vec<char> nexts;
-            for (int i = 0; i < Rows(); i++) {
-                if (Qual(i, j) < 30) continue;
-                Bool mismatch = False;
-                int support = 0;
-                for (int l = 0; l < j; l++) {
-                    if (j - l <= 40) {
-                        if (Base(i, l) != x[l]) {
-                            mismatch = True;
-                            break;
-                        }
-                    }
-                    if (Qual(i, l) >= 30) {
-                        support++;
-                        if (Base(i, l) != x[l]) {
-                            mismatch = True;
-                            break;
-                        }
-                    }
-                }
-                if (mismatch) continue;
-                // if ( support < Min( j/2, 20 ) ) continue;
-                nexts.push_back(Base(i, j));
-            }
-            Sort(nexts);
-            vec<char> nextsx;
-            for (int m1 = 0; m1 < nexts.isize(); m1++) {
-                int m2 = nexts.NextDiff(m1);
-                if (m2 - m1 >= 2) nextsx.push_back(nexts[m1]);
-                m1 = m2 - 1;
-            }
-            nexts = nextsx;
-            for (int l = 0; l < nexts.isize(); l++) {
-                vec<char> y = x;
-                y.push_back(nexts[l]);
-                cons2.push_back(y);
-            }
-            if (nexts.empty()) cons_term.push_back(x);
-        }
-        cons = cons2;
-    }
-    cons.append(cons_term);
-    vec<basevector> x;
-    for (int i = 0; i < cons.isize(); i++) {
-        basevector b(cons[i].size());
-        for (int j = 0; j < b.isize(); j++)
-            b.Set(j, cons[i][j]);
-        x.push_back(b);
-    }
-    return x;
 }
 
 vec<basevector> readstack::Consensuses2(const int K, const int top) const {

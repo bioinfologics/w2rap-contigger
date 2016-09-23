@@ -24,6 +24,7 @@
 #include "system/SortInPlace.h"
 #include <util/w2rap_timers.h>
 #include <paths/long/LoadCorrectCore.h>
+#include <paths/long/ReadStack.h>
 
 
 template<int M>
@@ -293,6 +294,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     TIMELOG_DECLARE_ATOMIC(AG2_LocalAssemblyEval);
     TIMELOG_DECLARE_ATOMIC(AG2_CreateBpaths);
     TIMELOG_DECLARE_ATOMIC(AG2_PushBpathsToGraph);
+    //Init readstacks, we'll need them!
+    readstack::init_LUTs();
 
     #pragma omp parallel for schedule(static, 1)
     for (int bl = 0; bl < lrc; bl++) {

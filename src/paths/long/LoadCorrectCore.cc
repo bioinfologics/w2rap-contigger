@@ -38,6 +38,7 @@
 #include <numeric>
 #include <type_traits>
 #include "util/w2rap_timers.h"
+#include "ReadStack.h"
 
 void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
      const vecbasevector& creads_done, const vec<Bool>& done,
@@ -177,6 +178,7 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
                      VecEFasta &corrected, vec<int> &cid, vec<pairing_info> &cpartner,
                      const uint NUM_THREADS, const String &EXIT,
                      bool useOldLRPMethod/*,  LongProtoTmpDirManager &tmp_mgr*/) {
+
     // Run Correct1.
 
 

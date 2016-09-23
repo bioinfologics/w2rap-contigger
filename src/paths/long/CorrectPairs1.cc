@@ -227,203 +227,213 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
 
                // Create and edit consensus.
 
+               /*basevector con,con2;
+               qualvector conq,conq2;
+               stack.StrongConsensus1( con, conq, heur.CP_RAISE_ZERO );
+               stack.StrongConsensus2( con2, conq2, heur.CP_RAISE_ZERO );
+               if (con!=con2 || conq!=conq2) (FatalErr("StrongConsensus2 is WRONG!!!"));*/
                basevector con;
                qualvector conq;
-               stack.StrongConsensus1( con, conq, heur.CP_RAISE_ZERO );
+               stack.StrongConsensus2( con, conq, heur.CP_RAISE_ZERO );
 
-               const int protected_bases = 10;
-               const int q_to_protect = 20;
-               for ( int j = 0; j < protected_bases; j++ )
-               {    if ( j >= stack.Cols( ) ) break;
-                    if ( stack.Def(0,j) && stack.Base(0,j) != con[j]
-                         && stack.Qual(0,j) >= q_to_protect )
-                    {    con.Set( j, stack.Base(0,j) );
-                         conq[j] = stack.Qual(0,j);    }    }
-               for ( int j = 0; j < protected_bases; j++ )
-               {    int jr = stack.Cols( ) - j - 1;
-                    if ( jr < 0 ) break;
-                    if ( stack.Def(1,jr) && stack.Base(1,jr) != con[jr]
-                         && stack.Qual(1,jr) >= q_to_protect )
-                    {    con.Set( jr, stack.Base(1,jr) );
-                         conq[jr] = stack.Qual(1,jr);    }    }
 
-               for ( int j = 0; j < con.isize( ); j++ )
-               {    if ( stack.Qual(0,j) >= 30 && stack.Base(0,j) != con[j] )
-                         conq[j] = 0;
-                    if ( stack.Qual(1,j) >= 30 && stack.Base(1,j) != con[j] )
-                         conq[j] = 0;    }
 
-               // Test for suspicious inconsistencies between the founder
-               // and the consensus.
+              const int protected_bases = 10;
+              const int q_to_protect = 20;
+              for ( int j = 0; j < protected_bases; j++ )
+              {    if ( j >= stack.Cols( ) ) break;
+                   if ( stack.Def(0,j) && stack.Base(0,j) != con[j]
+                        && stack.Qual(0,j) >= q_to_protect )
+                   {    con.Set( j, stack.Base(0,j) );
+                        conq[j] = stack.Qual(0,j);    }    }
+              for ( int j = 0; j < protected_bases; j++ )
+              {    int jr = stack.Cols( ) - j - 1;
+                   if ( jr < 0 ) break;
+                   if ( stack.Def(1,jr) && stack.Base(1,jr) != con[jr]
+                        && stack.Qual(1,jr) >= q_to_protect )
+                   {    con.Set( jr, stack.Base(1,jr) );
+                        conq[jr] = stack.Qual(1,jr);    }    }
 
-               for ( int j = 0; j < con.isize( ); j++ )
-               for ( int m = 0; m < 2; m++ )
-               {    if ( !stack.Def(m,j) || stack.Base(m,j) == con[j] ) 
-                         continue;
-                    const int flank = 5;
-                    const int min_mult = 3;
-                    if ( j < flank || j + flank >= con.isize( ) ) continue;
-                    Bool mismatch = False;
-                    for ( int l = 0; l < flank; l++ )
-                    {    if ( stack.Base(m,j-l-1) != con[j-l-1] )
-                              mismatch = True;
-                         if ( stack.Base(m,j+l+1) != con[j+l+1] )
-                              mismatch = True;    }
-                    if (mismatch) continue;
-                    int mult = 0;
-                    for ( int r = 2; r < stack.Rows( ); r++ )
-                    {    Bool mismatch = False;
-                         for ( int p = j - flank; p <= j + flank; p++ )
-                         {    if ( stack.Base(r,p) != stack.Base(m,p) )
-                              {    mismatch = True;
-                                   break;    }    }
-                         if (mismatch) continue;
-                         if ( ++mult == min_mult ) break;    }
-                    if ( mult == min_mult ) conq[j] = 0;    }
+              for ( int j = 0; j < con.isize( ); j++ )
+              {    if ( stack.Qual(0,j) >= 30 && stack.Base(0,j) != con[j] )
+                        conq[j] = 0;
+                   if ( stack.Qual(1,j) >= 30 && stack.Base(1,j) != con[j] )
+                        conq[j] = 0;    }
 
-               // Attempt to recover conflicted columns.
+              // Test for suspicious inconsistencies between the founder
+              // and the consensus.
 
-               vec<Bool> to_del( stack.Rows( ), False );
-               for ( int j = 0; j < stack.Cols( ); j++ )
-               {    if ( conq[j] < minq_floor )
-                    {    const int qmin = 2;
-                         const int qdelta = 10;
-                         if ( stack.Qual(0,j) < qmin && stack.Qual(1,j) < qmin )
-                              continue;
-                         if ( stack.Qual(0,j) >= qmin && stack.Qual(1,j) >= qmin
-                              && stack.Base(0,j) != stack.Base(1,j)
-                              && Abs( stack.Qual(0,j) - stack.Qual(1,j) ) < qdelta )
-                         {    continue;    }
-                         char b;
-                         if ( stack.Qual(0,j) >= qmin 
-                              && stack.Qual(0,j) >= stack.Qual(1,j) ) 
-                         {    b = stack.Base(0,j);    }
-                         else b = stack.Base(1,j);
-                         for ( int i = 2; i < stack.Rows( ); i++ )
-                         {    if ( stack.Qual(i,j) >= qmin && stack.Base(i,j) != b )
-                              {
-                                   to_del[i] = True;    }    }    }    }
-               stack.Erase(to_del);
-               stack.StrongConsensus1( con, conq, heur.CP_RAISE_ZERO );
+              for ( int j = 0; j < con.isize( ); j++ )
+              for ( int m = 0; m < 2; m++ )
+              {    if ( !stack.Def(m,j) || stack.Base(m,j) == con[j] )
+                        continue;
+                   const int flank = 5;
+                   const int min_mult = 3;
+                   if ( j < flank || j + flank >= con.isize( ) ) continue;
+                   Bool mismatch = False;
+                   for ( int l = 0; l < flank; l++ )
+                   {    if ( stack.Base(m,j-l-1) != con[j-l-1] )
+                             mismatch = True;
+                        if ( stack.Base(m,j+l+1) != con[j+l+1] )
+                             mismatch = True;    }
+                   if (mismatch) continue;
+                   int mult = 0;
+                   for ( int r = 2; r < stack.Rows( ); r++ )
+                   {    Bool mismatch = False;
+                        for ( int p = j - flank; p <= j + flank; p++ )
+                        {    if ( stack.Base(r,p) != stack.Base(m,p) )
+                             {    mismatch = True;
+                                  break;    }    }
+                        if (mismatch) continue;
+                        if ( ++mult == min_mult ) break;    }
+                   if ( mult == min_mult ) conq[j] = 0;    }
 
-               for ( int j = 0; j < protected_bases; j++ )
-               {    if ( j >= stack.Cols( ) ) break;
-                    if ( stack.Def(0,j) && stack.Base(0,j) != con[j]
-                         && stack.Qual(0,j) >= q_to_protect )
-                    {    con.Set( j, stack.Base(0,j) );
-                         conq[j] = stack.Qual(0,j);    }    }
-               for ( int j = 0; j < protected_bases; j++ )
-               {    int jr = stack.Cols( ) - j - 1;
-                    if ( jr < 0 ) break;
-                    if ( stack.Def(1,jr) && stack.Base(1,jr) != con[jr]
-                         && stack.Qual(1,jr) >= q_to_protect )
-                    {    con.Set( jr, stack.Base(1,jr) );
-                         conq[jr] = stack.Qual(1,jr);    }    }
+              // Attempt to recover conflicted columns.
 
-               const int qfloor = 20;
-               vec<placementy> p;
-                    
-               // Probably doesn't do anything:
+              vec<Bool> to_del( stack.Rows( ), False );
+              for ( int j = 0; j < stack.Cols( ); j++ )
+              {    if ( conq[j] < minq_floor )
+                   {    const int qmin = 2;
+                        const int qdelta = 10;
+                        if ( stack.Qual(0,j) < qmin && stack.Qual(1,j) < qmin )
+                             continue;
+                        if ( stack.Qual(0,j) >= qmin && stack.Qual(1,j) >= qmin
+                             && stack.Base(0,j) != stack.Base(1,j)
+                             && Abs( stack.Qual(0,j) - stack.Qual(1,j) ) < qdelta )
+                        {    continue;    }
+                        char b;
+                        if ( stack.Qual(0,j) >= qmin
+                             && stack.Qual(0,j) >= stack.Qual(1,j) )
+                        {    b = stack.Base(0,j);    }
+                        else b = stack.Base(1,j);
+                        for ( int i = 2; i < stack.Rows( ); i++ )
+                        {    if ( stack.Qual(i,j) >= qmin && stack.Base(i,j) != b )
+                             {
+                                  to_del[i] = True;    }    }    }    }
+              stack.Erase(to_del);
+             /*stack.StrongConsensus1( con, conq, heur.CP_RAISE_ZERO );
+             stack.StrongConsensus2( con2, conq2, heur.CP_RAISE_ZERO );
+             if (con!=con2 || conq!=conq2) (FatalErr("StrongConsensus2 is WRONG!!!"));*/
+              stack.StrongConsensus2( con, conq, heur.CP_RAISE_ZERO );
 
-               Bool yes1 = False, yes2 = False;
-               for ( int j = 0; j < stack.Cols( ); j++ )
-               {    if ( stack.Def(0,j) ) yes1 = True;
-                    if ( stack.Def(1,j) ) yes2 = True;    }
-               if ( !yes1 || !yes2 ) continue;
+              for ( int j = 0; j < protected_bases; j++ )
+              {    if ( j >= stack.Cols( ) ) break;
+                   if ( stack.Def(0,j) && stack.Base(0,j) != con[j]
+                        && stack.Qual(0,j) >= q_to_protect )
+                   {    con.Set( j, stack.Base(0,j) );
+                        conq[j] = stack.Qual(0,j);    }    }
+              for ( int j = 0; j < protected_bases; j++ )
+              {    int jr = stack.Cols( ) - j - 1;
+                   if ( jr < 0 ) break;
+                   if ( stack.Def(1,jr) && stack.Base(1,jr) != con[jr]
+                        && stack.Qual(1,jr) >= q_to_protect )
+                   {    con.Set( jr, stack.Base(1,jr) );
+                        conq[jr] = stack.Qual(1,jr);    }    }
 
-               // Determine minimum consensus quality.
+              const int qfloor = 20;
+              vec<placementy> p;
 
-               int minq = 1000000000;
-               for ( int j = 0; j < con.isize( ); j++ )
-                    minq = Min( minq, (int) conq[j] );
+              // Probably doesn't do anything:
 
-               // Check for glue.
+              Bool yes1 = False, yes2 = False;
+              for ( int j = 0; j < stack.Cols( ); j++ )
+              {    if ( stack.Def(0,j) ) yes1 = True;
+                   if ( stack.Def(1,j) ) yes2 = True;    }
+              if ( !yes1 || !yes2 ) continue;
 
-               vec<ho_interval> agree;
-               for ( int i = 0; i < stack.Rows( ); i++ )
-               for ( int j = 0; j < stack.Cols( ); j++ )
-               {    if ( stack.Base(i,j) != con[j] ) continue;
-                    int k;
-                    for ( k = j + 1; k < stack.Cols( ); k++ )
-                         if ( stack.Base(i,k) != con[k] ) break;
-                    if ( k - j >= 40 ) agree.push( j, k );
-                    j = k - 1;    }
-               sort( agree.begin( ), agree.end( ), cmp_ho_start_stop );
-               vec<Bool> to_delete( agree.size( ), False );
-               for ( int i = 0; i < agree.isize( ); i++ )
-               {    int j;
-                    for ( j = i + 1; j < agree.isize( ); j++ )
-                    {    if ( agree[j].Stop( ) > agree[i].Stop( ) ) break;    }
-                    for ( int k = i + 1; k < j; k++ )
-                         to_delete[k] = True;
-                    i = j - 1;    }
-               EraseIf( agree, to_delete );
-               int min_glue;
-               if ( agree.empty( ) || agree[0].Start( ) > 0 ) min_glue = 0;
-               else
-               {    min_glue = agree[0].Length( );
-                    int stop = agree[0].Stop( );
-                    for ( int i = 1; i < agree.isize( ); i++ )
-                    {    if ( agree[i].Stop( ) > stop )
-                         {    min_glue = Min( min_glue, stop - agree[i].Start( ) );
-                              stop = agree[i].Stop( );    }    }
-                    if ( stop < con.isize( ) ) min_glue = 0;    }
-               if ( minq >= minq_floor && min_glue >= min_glue_floor )
-               {
-                    closures.push_back(con), closuresq.push_back(conq);
-                    closureso.push_back( offsets[oj] );
-                    stacks.push_back(stack);    }
-          }
+              // Determine minimum consensus quality.
 
-          // Save closures.  Currently we only save a longest one.
-          // (NO, CHANGED.)
+              int minq = 1000000000;
+              for ( int j = 0; j < con.isize( ); j++ )
+                   minq = Min( minq, (int) conq[j] );
 
-          if ( closures.nonempty( ) )
-          {    
-               if (heur.CP_CONDENSE_HOMOPOLYMERS)
-               {    efasta eclosure(closures);
-                    if ( eclosure.AmbEventCount( ) == 1 )
-                    {    String mid = eclosure.Between( "{", "}" );
-                         mid.GlobalReplaceBy( ",", "" );
-                         Bool homopolymer = True;
-                         for ( int j = 1; j < mid.isize( ); j++ )
-                              if ( mid[j] != mid[0] ) homopolymer = False;
-                         if (homopolymer)
-                         {    corrected[id1] = eclosure;
-                              eclosure.ReverseComplement( );
-                              corrected[id1p] = eclosure;
-                              continue;    }    }    }
+              // Check for glue.
 
-               int mc = 1000000000;
-               for ( int i = 0; i < closures.isize( ); i++ )
-                    mc = Min( mc, closures[i].isize( ) );
-               basevector left(mc), right(mc);
+              vec<ho_interval> agree;
+              for ( int i = 0; i < stack.Rows( ); i++ )
+              for ( int j = 0; j < stack.Cols( ); j++ )
+              {    if ( stack.Base(i,j) != con[j] ) continue;
+                   int k;
+                   for ( k = j + 1; k < stack.Cols( ); k++ )
+                        if ( stack.Base(i,k) != con[k] ) break;
+                   if ( k - j >= 40 ) agree.push( j, k );
+                   j = k - 1;    }
+              sort( agree.begin( ), agree.end( ), cmp_ho_start_stop );
+              vec<Bool> to_delete( agree.size( ), False );
+              for ( int i = 0; i < agree.isize( ); i++ )
+              {    int j;
+                   for ( j = i + 1; j < agree.isize( ); j++ )
+                   {    if ( agree[j].Stop( ) > agree[i].Stop( ) ) break;    }
+                   for ( int k = i + 1; k < j; k++ )
+                        to_delete[k] = True;
+                   i = j - 1;    }
+              EraseIf( agree, to_delete );
+              int min_glue;
+              if ( agree.empty( ) || agree[0].Start( ) > 0 ) min_glue = 0;
+              else
+              {    min_glue = agree[0].Length( );
+                   int stop = agree[0].Stop( );
+                   for ( int i = 1; i < agree.isize( ); i++ )
+                   {    if ( agree[i].Stop( ) > stop )
+                        {    min_glue = Min( min_glue, stop - agree[i].Start( ) );
+                             stop = agree[i].Stop( );    }    }
+                   if ( stop < con.isize( ) ) min_glue = 0;    }
+              if ( minq >= minq_floor && min_glue >= min_glue_floor )
+              {
+                   closures.push_back(con), closuresq.push_back(conq);
+                   closureso.push_back( offsets[oj] );
+                   stacks.push_back(stack);    }
+         }
 
-               for ( int j = 0; j < mc; j++ )
-               {    vec<char> seen;
-                    for ( int i = 0; i < closures.isize( ); i++ )
-                         seen.push_back( closures[i][j] );
-                    UniqueSort(seen);
-                    if ( seen.solo( ) ) left.Set( j, seen[0] );
-                    else
-                    {    left.resize(j);
-                         break;    }    }    
-               for ( int j = 0; j < mc; j++ )
-               {    vec<char> seen;
-                    for ( int i = 0; i < closures.isize( ); i++ )
-                    {    int jb = closures[i].isize( ) - j - 1;
-                         seen.push_back( closures[i][jb] );    }
-                    UniqueSort(seen);
-                    if ( seen.solo( ) ) right.Set( mc - j - 1, seen[0] );
-                    else
-                    {    right.SetToSubOf( right, mc - j, j );
-                         break;    }    }
+         // Save closures.  Currently we only save a longest one.
+         // (NO, CHANGED.)
 
-               corrected[id1] = left;
-               if ( left != right )
-               {    right.ReverseComplement( );
-                    corrected[id1p] = right;    }    }
-          TIMELOG_STOP_LOCAL(CP1_Correct,Loop);
-     }
+         if ( closures.nonempty( ) )
+         {
+              if (heur.CP_CONDENSE_HOMOPOLYMERS)
+              {    efasta eclosure(closures);
+                   if ( eclosure.AmbEventCount( ) == 1 )
+                   {    String mid = eclosure.Between( "{", "}" );
+                        mid.GlobalReplaceBy( ",", "" );
+                        Bool homopolymer = True;
+                        for ( int j = 1; j < mid.isize( ); j++ )
+                             if ( mid[j] != mid[0] ) homopolymer = False;
+                        if (homopolymer)
+                        {    corrected[id1] = eclosure;
+                             eclosure.ReverseComplement( );
+                             corrected[id1p] = eclosure;
+                             continue;    }    }    }
+
+              int mc = 1000000000;
+              for ( int i = 0; i < closures.isize( ); i++ )
+                   mc = Min( mc, closures[i].isize( ) );
+              basevector left(mc), right(mc);
+
+              for ( int j = 0; j < mc; j++ )
+              {    vec<char> seen;
+                   for ( int i = 0; i < closures.isize( ); i++ )
+                        seen.push_back( closures[i][j] );
+                   UniqueSort(seen);
+                   if ( seen.solo( ) ) left.Set( j, seen[0] );
+                   else
+                   {    left.resize(j);
+                        break;    }    }
+              for ( int j = 0; j < mc; j++ )
+              {    vec<char> seen;
+                   for ( int i = 0; i < closures.isize( ); i++ )
+                   {    int jb = closures[i].isize( ) - j - 1;
+                        seen.push_back( closures[i][jb] );    }
+                   UniqueSort(seen);
+                   if ( seen.solo( ) ) right.Set( mc - j - 1, seen[0] );
+                   else
+                   {    right.SetToSubOf( right, mc - j, j );
+                        break;    }    }
+
+              corrected[id1] = left;
+              if ( left != right )
+              {    right.ReverseComplement( );
+                   corrected[id1p] = right;    }    }
+         TIMELOG_STOP_LOCAL(CP1_Correct,Loop);
+    }
 
 }

@@ -51,9 +51,17 @@ typedef VecPlus<StackBaseVec> StackBaseVecVec;
 typedef std::vector<int> StackQualVec;
 typedef VecPlus<StackQualVec> StackQualVecVec;
 
+
+
 class readstack {
 
 public:
+    static void init_LUTs() {
+        for (auto i=0;i<1000;++i){
+            new_qual_LUT_s[i]=5.0 * log10(2 * i);
+        }
+    };
+
 
     // ======================== CONSTRUCTORS ======================================
 
@@ -251,8 +259,9 @@ public:
 
     void Consensus1(basevector &con, qualvector &conq) const;
 
-    void StrongConsensus1(basevector &con, qualvector &conq,
-                          const Bool raise_zero) const;
+    void StrongConsensus1(basevector &con, qualvector &conq, const Bool raise_zero) const;
+
+    void StrongConsensus2(basevector &con, qualvector &conq, const Bool raise_zero) const;
 
     // Consensuses1: an algorithm for computing multiple consensuses.
 
@@ -346,7 +355,8 @@ public:
 
 
 private:
-
+    static double new_qual_LUT_s[1000];
+    double new_qual_LUT_l[1000];
     int cols_;
     StackBaseVecVec bases_;
     StackQualVecVec quals_;
