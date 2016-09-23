@@ -304,7 +304,7 @@ int main(const int argc, const char * argv[]) {
     bool FILL_JOIN = False;
     bool SHORT_KMER_READ_PATHER = False;
     bool RQGRAPHER_VERBOSE = False;
-    if (from_step>1 && from_step<7){
+    if (from_step>1 && from_step<7 and not (from_step==3 and to_step==3)){
         std::cout << "Loading reads in fastb/qualp format..." << std::endl;
         bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
         quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
