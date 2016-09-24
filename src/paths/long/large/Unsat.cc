@@ -51,32 +51,45 @@ void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
      for ( int i = 0; i < N; i++ )
      {    UniqueSort( ind1[i] ), UniqueSort( ind2[i] );    }
      equiv_rel e( x.size( ) );
-     //#pragma omp parallel for
-     for ( int i = 0; i < x.isize( ); i++ )
-     {    vec<int> s1, s2, t1, t2;
-          for ( int j = 0; j < x[i].isize( ); j++ )
-          {    s1.push_back( x[i][j].first );
-               s2.push_back( x[i][j].second );    }
-          UniqueSort(s1), UniqueSort(s2);
+     #pragma omp parallel
+     {
+         std::vector<std::vector<int>> tt1;
+         #pragma omp for nowait
+         for ( int i = 0; i < x.isize( ); i++ ) {
+             vec<int> s1, s2, t1, t2;
+             for (int j = 0; j < x[i].isize(); j++) {
+                 s1.push_back(x[i][j].first);
+                 s2.push_back(x[i][j].second);
+             }
+             UniqueSort(s1), UniqueSort(s2);
 
-          vec<int> ss1, ss2;
-          for ( int j = 0; j < s1.isize( ); j++ )
-               ss1.append( n[ s1[j] ] );
-          for ( int j = 0; j < s2.isize( ); j++ )
-               ss2.append( n[ s2[j] ] );
-          UniqueSort(ss1), UniqueSort(ss2);
-          s1 = ss1;
-          s2 = ss2;
+             vec<int> ss1, ss2;
+             for (int j = 0; j < s1.isize(); j++)
+                 ss1.append(n[s1[j]]);
+             for (int j = 0; j < s2.isize(); j++)
+                 ss2.append(n[s2[j]]);
+             UniqueSort(ss1), UniqueSort(ss2);
+             s1 = ss1;
+             s2 = ss2;
 
-          for ( int j = 0; j < s1.isize( ); j++ )
-               t1.append( ind1[ s1[j] ] );
-          for ( int j = 0; j < s2.isize( ); j++ )
-               t2.append( ind2[ s2[j] ] );
-          UniqueSort(t1), UniqueSort(t2);
-          vec<int> t = Intersection( t1, t2 );
-          //#pragma omp critical
-          {    for ( int j = 1; j < t.isize( ); j++ )
-                    e.Join( t[0], t[j] );    }    }
+             for (int j = 0; j < s1.isize(); j++)
+                 t1.append(ind1[s1[j]]);
+             for (int j = 0; j < s2.isize(); j++)
+                 t2.append(ind2[s2[j]]);
+             UniqueSort(t1), UniqueSort(t2);
+             vec<int> t = Intersection(t1, t2);
+             tt1.insert(tt1.end(),t);
+         }
+         #pragma omp critical
+         {
+             for (auto &t:tt1)
+                 for ( auto x : t )
+                     e.Join( t[0], x );
+         }
+     }
+
+
+
      vec< vec< std::pair<int,int> > > z;
      vec<int> reps;
      e.OrbitReps(reps);
