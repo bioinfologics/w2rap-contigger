@@ -449,35 +449,42 @@ void ValidatePaths( vecbvec const& reads, ReadPathVec const& readPaths,
 template <unsigned BIGK>
 void readsToHBV( vecbvec const& reads, unsigned coverage,
                     HyperBasevector* pHBV, ReadPathVec* pReadPaths,
-                    HyperKmerPath* pHKP, vecKmerPath* pKmerPaths )
-{
+                    HyperKmerPath* pHKP, vecKmerPath* pKmerPaths ) {
     //std::cout<< "Constructing "<<BIGK<<"-mer graph..."<<std::endl;
-    if ( pReadPaths )
-    {
+    if (pReadPaths) {
         //std::cout<< "Clearing read paths..."<<std::endl;
         pReadPaths->clear();
         pReadPaths->resize(reads.size());
     }
-    if ( pKmerPaths )
-    {
+    if (pKmerPaths) {
         //std::cout<< "Clearing kmer paths..."<<std::endl;
         pKmerPaths->clear();
         pKmerPaths->resize(reads.size());
     }
 
     size_t nKmers = reads.getKmerCount(BIGK);
-    if ( !nKmers )
-    {
+    if (!nKmers) {
         pHBV->Clear();
-        if ( pHKP ) pHKP->Clear();
+        if (pHKP) pHKP->Clear();
         return;
     }
     //std::cout<< "Creating dict..."<<std::endl;
-    BigDict<BIGK> bigDict(nKmers/coverage);
+    BigDict<BIGK> bigDict(nKmers / coverage);
     BigKMerizer<BIGK> kmerizer(&bigDict);
-    parallelFor(0ul,reads.size(),
-            [kmerizer,&reads]( size_t readId ) mutable
-            { kmerizer.kmerize(reads[readId]); });
+
+    //This is not really parallel, mostly loses time with locks and things.
+    //parallelFor(0ul,reads.size(),
+    //        [kmerizer,&reads]( size_t readId ) mutable
+    //        { kmerizer.kmerize(reads[readId]); });
+
+    #pragma omp parallel
+    {
+        BigKMerizer<BIGK> tkmerizer(&bigDict);
+        #pragma omp for
+        for (auto i = 0; i < reads.size(); i++) {
+            tkmerizer.kmerize(reads[i]);
+        }
+    }
     //std::cout<< "Building Edges..."<<std::endl;
     vecbvec edges;
     edges.reserve(bigDict.size()/100);
