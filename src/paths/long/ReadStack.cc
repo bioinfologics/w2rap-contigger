@@ -560,7 +560,7 @@ void readstack::StrongConsensus2(basevector &con, qualvector &conq, const Bool r
                     if (!raise_zero && q[l] == 0)
                         continue;
                     if (dist<1000)
-                        q[l] = std::max(q[l], new_qual_LUT_s[dist]);
+                        q[l] = std::max(q[l], new_qual_LUT_l[dist]);
                     else
                         q[l] = std::max(q[l], 10.0 * log10(2 * dist) * qfudge);// OK, so basically each position 20bp in-between
                 }
