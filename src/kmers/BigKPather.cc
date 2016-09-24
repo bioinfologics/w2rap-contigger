@@ -319,74 +319,83 @@ public:
       mFwdXlat(fwdXlat), mRevXlat(revXlat), mpReadPaths(pReadPaths),
       mpHKP(pHKP), mpKmerPaths(pKmerPaths) {}
 
-    void operator()( size_t readId )
-    { bvec const& read = mReads[readId];
-      if ( read.size() < BIGK ) return;
-      KMerHasher<BIGK> hasher;
-      BigKMer<BIGK> kmer(read,hasher(read.begin()));
-      BigKMer<BIGK> entry = lookup(kmer);
-      mTmpReadPath.setFirstSkip(entry.getOffset());
-      size_t idx = &entry.getBV()-&mEdges[0];
-      size_t edgeId = entry.isRC()?mRevXlat[idx]:mFwdXlat[idx];
-      mTmpReadPath.push_back(edgeId);
-      size_t readLenRemaining = read.size();
-      size_t edgeLenRemaining = entry.getBV().size()-entry.getOffset();
-      while ( readLenRemaining > edgeLenRemaining )
-      { readLenRemaining = readLenRemaining-edgeLenRemaining+BIGK-1;
-        unsigned readOffset = read.size()-readLenRemaining;
-        BigKMer<BIGK> nextKmer(read,hasher(read.begin(readOffset)),
-                                KMerContext(),readOffset);
-        BigKMer<BIGK> nextEntry = lookup(nextKmer);
-        ForceAssertEq(nextEntry.getOffset(),0u);
-        idx = &nextEntry.getBV()-&mEdges[0];
-        edgeId = nextEntry.isRC()?mRevXlat[idx]:mFwdXlat[idx];
+    void operator()( size_t readId ) {
+        bvec const &read = mReads[readId];
+        if (read.size() < BIGK) return;
+        KMerHasher<BIGK> hasher;
+        BigKMer<BIGK> kmer(read, hasher(read.begin()));
+        BigKMer<BIGK> entry = lookup(kmer);
+        mTmpReadPath.setFirstSkip(entry.getOffset());
+        size_t idx = &entry.getBV() - &mEdges[0];
+        size_t edgeId = entry.isRC() ? mRevXlat[idx] : mFwdXlat[idx];
         mTmpReadPath.push_back(edgeId);
-        edgeLenRemaining = nextEntry.getBV().size(); }
-      edgeLenRemaining -= readLenRemaining;
-      /* mTmpReadPath.setLastSkip(edgeLenRemaining); */
-      if ( mpReadPaths )
-        (*mpReadPaths)[readId] = mTmpReadPath;
-      if ( mpKmerPaths )
-      { buildKmerPath(edgeLenRemaining);
-        (*mpKmerPaths)[readId] = mTmpKmerPath; mTmpKmerPath.clear(); }
-      mTmpReadPath.clear(); }
+        size_t readLenRemaining = read.size();
+        size_t edgeLenRemaining = entry.getBV().size() - entry.getOffset();
+        while (readLenRemaining > edgeLenRemaining) {
+            readLenRemaining = readLenRemaining - edgeLenRemaining + BIGK - 1;
+            unsigned readOffset = read.size() - readLenRemaining;
+            BigKMer<BIGK> nextKmer(read, hasher(read.begin(readOffset)),
+                                   KMerContext(), readOffset);
+            BigKMer<BIGK> nextEntry = lookup(nextKmer);
+            ForceAssertEq(nextEntry.getOffset(), 0u);
+            idx = &nextEntry.getBV() - &mEdges[0];
+            edgeId = nextEntry.isRC() ? mRevXlat[idx] : mFwdXlat[idx];
+            mTmpReadPath.push_back(edgeId);
+            edgeLenRemaining = nextEntry.getBV().size();
+        }
+        edgeLenRemaining -= readLenRemaining;
+        /* mTmpReadPath.setLastSkip(edgeLenRemaining); */
+        if (mpReadPaths)
+            (*mpReadPaths)[readId] = mTmpReadPath;
+        if (mpKmerPaths) {
+            buildKmerPath(edgeLenRemaining);
+            (*mpKmerPaths)[readId] = mTmpKmerPath;
+            mTmpKmerPath.clear();
+        }
+        mTmpReadPath.clear();
+    }
 
 private:
-    BigKMer<BIGK> lookup( BigKMer<BIGK> const& kmer )
-    { if ( kmer.isRev() )
-      { BigKMer<BIGK> const* pEnt = mDict.lookup(kmer.rc());
+    BigKMer<BIGK> lookup(BigKMer<BIGK> const &kmer) {
+        if (kmer.isRev()) {
+            BigKMer<BIGK> const *pEnt = mDict.lookup(kmer.rc());
+            ForceAssert(pEnt);
+            return pEnt->rc();
+        }
+        BigKMer<BIGK> const *pEnt = mDict.lookup(kmer);
         ForceAssert(pEnt);
-        return pEnt->rc(); }
-      BigKMer<BIGK> const* pEnt = mDict.lookup(kmer);
-      ForceAssert(pEnt);
-      return *pEnt; }
+        return *pEnt;
+    }
 
-    void buildKmerPath( size_t edgeLenRemaining )
-    { if ( mTmpReadPath.size() == 1 )
-      { KmerPath const& edge = mpHKP->EdgeObject(mTmpReadPath.front());
-        mTmpKmerPath.Assign(edge.front().Start()+mTmpReadPath.getFirstSkip(),
-                            edge.back().Stop()-edgeLenRemaining); }
-      else
-      { KmerPath const& edge1 = mpHKP->EdgeObject(mTmpReadPath.front());
-        mTmpKmerPath.Assign(edge1.front().Start()+mTmpReadPath.getFirstSkip(),
-                            edge1.back().Stop());
-        auto end = mTmpReadPath.end()-1;
-        for ( auto itr=mTmpReadPath.begin()+1; itr != end; ++itr )
-        { KmerPath const& edge = mpHKP->EdgeObject(*itr);
-          SerfVec<KmerPathInterval>& tmp = mTmpKmerPath;
-          tmp.append(edge.begin(),edge.end()); }
-        KmerPath const& edgeN = mpHKP->EdgeObject(*end);
-        kmer_id_t stop = edgeN.back().Stop()-edgeLenRemaining;
-        mTmpKmerPath.Append(edgeN.front().Start(),stop); } }
+    void buildKmerPath(size_t edgeLenRemaining) {
+        if (mTmpReadPath.size() == 1) {
+            KmerPath const &edge = mpHKP->EdgeObject(mTmpReadPath.front());
+            mTmpKmerPath.Assign(edge.front().Start() + mTmpReadPath.getFirstSkip(),
+                                edge.back().Stop() - edgeLenRemaining);
+        } else {
+            KmerPath const &edge1 = mpHKP->EdgeObject(mTmpReadPath.front());
+            mTmpKmerPath.Assign(edge1.front().Start() + mTmpReadPath.getFirstSkip(),
+                                edge1.back().Stop());
+            auto end = mTmpReadPath.end() - 1;
+            for (auto itr = mTmpReadPath.begin() + 1; itr != end; ++itr) {
+                KmerPath const &edge = mpHKP->EdgeObject(*itr);
+                SerfVec<KmerPathInterval> &tmp = mTmpKmerPath;
+                tmp.append(edge.begin(), edge.end());
+            }
+            KmerPath const &edgeN = mpHKP->EdgeObject(*end);
+            kmer_id_t stop = edgeN.back().Stop() - edgeLenRemaining;
+            mTmpKmerPath.Append(edgeN.front().Start(), stop);
+        }
+    }
 
-    vecbvec const& mReads;
-    BigKDict const& mDict;
-    vecbvec const& mEdges;
-    vec<int> const& mFwdXlat;
-    vec<int> const& mRevXlat;
-    ReadPathVec* mpReadPaths;
-    HyperKmerPath const* mpHKP;
-    vecKmerPath* mpKmerPaths;
+    vecbvec const &mReads;
+    BigKDict const &mDict;
+    vecbvec const &mEdges;
+    vec<int> const &mFwdXlat;
+    vec<int> const &mRevXlat;
+    ReadPathVec *mpReadPaths;
+    HyperKmerPath const *mpHKP;
+    vecKmerPath *mpKmerPaths;
     ReadPath mTmpReadPath;
     KmerPath mTmpKmerPath;
 };
@@ -468,7 +477,7 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
         if (pHKP) pHKP->Clear();
         return;
     }
-    //std::cout<< "Creating dict..."<<std::endl;
+    //std::cout<< Date() << " Creating dict..."<<std::endl;
     BigDict<BIGK> bigDict(nKmers / coverage);
     BigKMerizer<BIGK> kmerizer(&bigDict);
 
@@ -485,7 +494,7 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
             tkmerizer.kmerize(reads[i]);
         }
     }
-    //std::cout<< "Building Edges..."<<std::endl;
+    //std::cout<< Date() <<  "Building Edges..."<<std::endl;
     vecbvec edges;
     edges.reserve(bigDict.size()/100);
     BigKEdgeBuilder<BIGK>::buildEdges(bigDict,&edges);
@@ -494,28 +503,37 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
     vec<int> revXlat;
     if ( !pReadPaths && !pKmerPaths )
     {
-        //std::cout<< "Building HBV from Edges..."<<std::endl;
+        //std::cout<< Date() <<  "Building HBV from Edges..."<<std::endl;
         buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
         if ( pHKP ) {
-            //std::cout<< "Building HKPF..."<<std::endl;
+            //std::cout<< Date() <<  "Building HKPF..."<<std::endl;
             buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
         }
     }
     else
     {
-        //std::cout<< "Updating Dict..."<<std::endl;
-        parallelForBatch(0ul,edges.size(),100,
-                [&edges,&kmerizer]( size_t edgeId )
-                { kmerizer.updateDict(edges[edgeId]); });
-        //std::cout<< "Building HBV from Edges..."<<std::endl;
+        //std::cout<< Date() <<  "Updating Dict..."<<std::endl;
+        //parallelForBatch(0ul,edges.size(),100,
+        //                 [&edges,&kmerizer]( size_t edgeId )
+        //                 { kmerizer.updateDict(edges[edgeId]); });
+
+        #pragma omp parallel
+        {
+            BigKMerizer<BIGK> tkmerizer(&bigDict);
+            #pragma omp for
+            for (auto i = 0; i < edges.size(); i++) {
+                tkmerizer.updateDict(edges[i]);
+            }
+        }
+        //std::cout<< Date() <<  "Building HBV from Edges..."<<std::endl;
         buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
         HyperKmerPath hkp;
         if ( pKmerPaths && !pHKP ) {
-            //std::cout<< "Creating new HKP..."<<std::endl;
+            //std::cout<< Date() <<  "Creating new HKP..."<<std::endl;
             pHKP = &hkp;
         }
         if ( pHKP ) {
-            //std::cout<< "Building HKPF..."<<std::endl;
+            //std::cout<< Date() <<  "Building HKPF..."<<std::endl;
             buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
         }
         //std::cout<< "Running pather..."<<std::endl;
