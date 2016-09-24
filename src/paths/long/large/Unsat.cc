@@ -51,7 +51,7 @@ void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
      for ( int i = 0; i < N; i++ )
      {    UniqueSort( ind1[i] ), UniqueSort( ind2[i] );    }
      equiv_rel e( x.size( ) );
-     #pragma omp parallel for
+     //#pragma omp parallel for
      for ( int i = 0; i < x.isize( ); i++ )
      {    vec<int> s1, s2, t1, t2;
           for ( int j = 0; j < x[i].isize( ); j++ )
@@ -74,7 +74,7 @@ void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
                t2.append( ind2[ s2[j] ] );
           UniqueSort(t1), UniqueSort(t2);
           vec<int> t = Intersection( t1, t2 );
-          #pragma omp critical
+          //#pragma omp critical
           {    for ( int j = 1; j < t.isize( ); j++ )
                     e.Join( t[0], t[j] );    }    }
      vec< vec< std::pair<int,int> > > z;
