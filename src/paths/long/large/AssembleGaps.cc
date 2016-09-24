@@ -269,9 +269,9 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int min_gap_count = mgc[0], nobj = hb.EdgeObjectCount();
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
-    vec<vec<basevector> > extras(LR.size());
-    vec<String> mreport(LR.size());
-    vec<HyperBasevector> mhbp(LR.size());
+    vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
+    vec<String> mreport(LR.size());//this is accumulation, generates memory blocks
+    vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
     std::cout << Date() << ": now processing " << LR.size() << " blobs" << std::endl;
     std::cout << Date() << ": memory in use = " << MemUsageGBString()
               #ifdef __linux
@@ -297,8 +297,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
 
-    #pragma omp parallel for schedule(static, 1)
-    for (int bl = 0; bl < lrc; bl++) {
+    #pragma omp parallel for schedule(dynamic, 10)
+    for (int bl = lrc-1; bl >= 0; --bl) {
 
         TIMELOG_DECLARE_LOCAL(AG2_FindPids,Loop);
         TIMELOG_DECLARE_LOCAL(AG2_ReadSetCreation,Loop);
