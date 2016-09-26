@@ -1,282 +1,112 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2013) by the     //
-//   Broad Institute.  All rights are reserved.  This software is supplied   //
-//   without any warranty or guaranteed support whatsoever. The Broad        //
+//       This software and its documentation are copyright (2016) by the     //
+//  Earlham Institute.  All rights are reserved.  This software is supplied  //
+//   without any warranty or guaranteed support whatsoever. The Earlham      //
 //   Institute is not responsible for its use, misuse, or functionality.     //
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * HBVFromEdges.cc
  *
- *  Created on: Dec 13, 2013
- *      Author: tsharpe
+ *  Created on: Sept 26, 2016
+ *      Author: bjclavijo/kebarr
  */
 
 #include "paths/long/HBVFromEdges.h"
-#include "MapReduceEngine.h"
 #include "dna/CanonicalForm.h"
-#include "feudal/HashSet.h"
-#include "math/Hash.h"
 #include "paths/KmerPathInterval.h"
 #include "system/ID.h"
 #include <list>
 
-namespace
-{
 
-class EdgeEnd
-{
+
+class EdgeEnd{
 public:
-    EdgeEnd()=default;
-    EdgeEnd( bvec const* pBV, bool rc, bool distal, unsigned K )
-    : mItr(pBV,distal?pBV->size()-K:0,rc), mK(K), mHash(FNV1a(mItr,mItr+K)) {}
+    std::string seq;
+    bool distal,rc;
+    uint64_t edge_index;
+    EdgeEnd(const uint64_t _edge_index, const bvec & bvseq,const bool &_rc,const bool &_distal, const unsigned K) {//K is the HBV's k, overlaps are k-1
+        edge_index=_edge_index;
+        distal=_distal;
+        rc=_rc;
+        auto b=bvseq;
+        if (rc) seq=b.ReverseComplement().ToString();
+        seq=b.ToString();
+        if (_distal)
+            seq=seq.substr(seq.length()-K+1,seq.length());
+        else
+            seq.resize(K-1);
+    };
+    bool operator<(const EdgeEnd & other){return seq<other.seq;};//WARNING, for simplicity
+    bool operator==(const EdgeEnd & other){return seq==other.seq;};//WARNING, for simplicity
 
-    size_t getHash() const { return mHash; }
-    bvec::SwitchHitterIter begin() const { return mItr; }
-    bvec::SwitchHitterIter end() const { return mItr+mK; }
-
-    struct Hasher
-    { typedef EdgeEnd argument_type;
-      size_t operator()( EdgeEnd const& ee ) const { return ee.getHash(); } };
-
-    friend bool operator<( EdgeEnd const& ee1, EdgeEnd const& ee2 )
-    { if ( ee1.mHash != ee2.mHash ) return ee1.mHash < ee2.mHash;
-      for ( auto i1=ee1.begin(),e1=ee1.end(),i2=ee2.begin(); i1!=e1; ++i1,++i2 )
-        if ( *i1 != *i2 ) return *i1 < *i2;
-      return false; }
-
-    friend bool operator==( EdgeEnd const& ee1, EdgeEnd const& ee2 )
-    { if ( ee1.mHash != ee2.mHash ) return false;
-      for ( auto i1=ee1.begin(),e1=ee1.end(),i2=ee2.begin(); i1!=e1; ++i1,++i2 )
-        if ( *i1 != *i2 ) return false;
-      return true; }
-
-private:
-    bvec::SwitchHitterIter mItr;
-    unsigned mK;
-    size_t mHash;
 };
 
-class IandO
-{
-public:
-    IandO()=default;
-    IandO( size_t edgeId, bool rc ) : mEdgeID(edgeId), mRC(rc) {}
+typedef struct {
+    uint64_t fw_v1,fw_v2,rc_v1,rc_v2;
+} edge_vertex_list;
 
-    int getId() const { return mEdgeID.val(); }
-    bool isRC() const { return mRC; }
-
-private:
-    ID<5> mEdgeID;
-    bool mRC;
-};
-
-// edges and orientations connected to a vertex
-class Vertex : public EdgeEnd
-{
-    static int const UNASSIGNED = -1;
-    static size_t const MAX_EDGES = 8;
-
-public:
-    Vertex() : mId(UNASSIGNED), mNEdges(0) {}
-    Vertex( EdgeEnd const& ee ) : EdgeEnd(ee), mId(UNASSIGNED), mNEdges(0) {}
-
-    int getId() const { return mId; }
-    int getId( int& nextId )
-    { if ( mId == UNASSIGNED ) mId = nextId++;
-      return mId; }
-
-    void addEdge( size_t edgeId, bool rc )
-    { ForceAssertLt(mNEdges,MAX_EDGES);
-      mEdges[mNEdges++] = IandO(edgeId,rc); }
-
-    IandO const* begin() const { return mEdges; }
-    IandO const* end() const { return mEdges+mNEdges; }
-
-private:
-    int mId;
-    size_t mNEdges;
-    IandO mEdges[MAX_EDGES];
-};
-size_t const Vertex::MAX_EDGES;
-
-typedef HashSet<Vertex,EdgeEnd::Hasher,std::equal_to<EdgeEnd>> VertexDict;
-
-struct BVComp
-{
-    bool operator()( bvec const& bv1, bvec const& bv2 )
-    { if ( bv1.size() != bv2.size() ) return bv1.size() > bv2.size();
-      return bv1 < bv2; }
-};
-
-struct EEComp
-{
-    bool operator()( EdgeEnd const& ee1, EdgeEnd const& ee2 )
-    { auto itr1 = ee1.begin(), itr2 = ee2.begin();
-      if ( &itr1.container() != &itr2.container() )
-          return BVComp()(itr1.container(),itr2.container());
-      if ( itr1.isRC() != itr2.isRC() ) return itr1.isRC() < itr2.isRC();
-      return itr1.pos() < itr2.pos(); }
-};
-
-class EOComp
-{
-public:
-    EOComp( vecbvec const& edges )
-    : mEdges(edges) {}
-
-    bool operator()( size_t idx1, size_t idx2 )
-    { return BVComp()(mEdges[idx1],mEdges[idx2]); }
-
-private:
-    vecbvec const& mEdges;
-};
-
-class VertexDictBuilder
-{
-public:
-    VertexDictBuilder( vecbvec const& edges, unsigned K, VertexDict* pDict )
-    : mEdges(edges), mKLO(K-1), mpDict(pDict) {}
-
-    template <class OItr>
-    void map( size_t edgeId, OItr oItr )
-    { bvec const& edge = mEdges[edgeId];
-      *oItr = EdgeEnd(&edge,false,false,mKLO); ++oItr;
-      *oItr = EdgeEnd(&edge,false,true,mKLO); ++oItr;
-      if ( edge.getCanonicalForm() != CanonicalForm::PALINDROME )
-      { *oItr = EdgeEnd(&edge,true,false,mKLO); ++oItr;
-        *oItr = EdgeEnd(&edge,true,true,mKLO); ++oItr; } }
-
-    void reduce( EdgeEnd* key1, EdgeEnd* key2 )
-    { bvec const* pBV0 = &*mEdges.begin();
-      std::sort(key1,key2,EEComp());
-      mpDict->apply(*key1,
-            [key1,key2,pBV0]( Vertex const& vtx )
-            { Vertex& vertex = const_cast<Vertex&>(vtx);
-              for ( auto key=key1; key != key2; ++key )
-              { auto itr = key->begin();
-                vertex.addEdge(&itr.container()-pBV0,itr.isRC()); } }); }
-
-    EdgeEnd* overflow( EdgeEnd* key1, EdgeEnd* key2 )
-    { return key2; }
-
-private:
-    vecbvec const& mEdges;
-    unsigned mKLO;
-    VertexDict* mpDict;
-};
-
-class HBVBuilder
-{
-    static int const NULL_EDGEID = -1;
-public:
-    HBVBuilder( vecbvec const& edges, unsigned K, VertexDict const& dict,
-                    HyperBasevector* pHBV, vec<int>* pFwd, vec<int>* pRev )
-    : mEdges(edges), mKLO(K-1), mDict(dict),
-      mpHBV(pHBV), mFwd(*pFwd), mRev(*pRev), mNextVId(0)
-    { size_t nEdges = mEdges.size();
-      mpHBV->Clear();
-      mpHBV->SetK(K);
-      mpHBV->AddVertices(dict.size());
-      mpHBV->EdgesMutable().reserve(2*nEdges);
-      mFwd.clear(); mFwd.resize(nEdges,NULL_EDGEID);
-      mRev.clear(); mRev.resize(nEdges,NULL_EDGEID); }
-
-    ~HBVBuilder()
-    { AssertEq(mNextVId,mpHBV->N());
-      Assert(std::find(mFwd.begin(),mFwd.end(),NULL_EDGEID)==mFwd.end());
-      Assert(std::find(mRev.begin(),mRev.end(),NULL_EDGEID)==mRev.end()); }
-
-    void add( IandO const& iAndO )
-    { if ( !isDone(iAndO) )
-      { mQueue.push_back(iAndO); processQueue(); } }
-
-private:
-    bool isDone( IandO const& iAndO ) const
-    { return (iAndO.isRC() ? mRev : mFwd)[iAndO.getId()] != NULL_EDGEID; }
-
-    void processQueue()
-    { while ( !mQueue.empty() )
-      { IandO iAndO = mQueue.front();
-        mQueue.pop_front();
-        if ( isDone(iAndO) ) continue;
-
-        bvec const& edge = mEdges[iAndO.getId()];
-        bool rc = iAndO.isRC();
-        Vertex* pV1 =
-                const_cast<Vertex*>(mDict.lookup(EdgeEnd(&edge,rc,false,mKLO)));
-        ForceAssert(pV1);
-        int v1 = pV1->getId(mNextVId);
-        Vertex* pV2 =
-                const_cast<Vertex*>(mDict.lookup(EdgeEnd(&edge,rc,true,mKLO)));
-        ForceAssert(pV2);
-        int v2 = pV2->getId(mNextVId);
-        int newEdgeId = mpHBV->EdgeObjectCount();
-        mpHBV->AddEdge(v1,v2,edge);
-        if ( rc ) mpHBV->EdgeObjectMutable(newEdgeId).ReverseComplement();
-        bool isPalindrome = edge.getCanonicalForm()==CanonicalForm::PALINDROME;
-        if ( !rc || isPalindrome ) mFwd[iAndO.getId()] = newEdgeId;
-        if ( rc || isPalindrome ) mRev[iAndO.getId()] = newEdgeId;
-        for ( auto itr=pV1->begin(),end=pV1->end(); itr != end; ++itr )
-          if ( !isDone(*itr) )
-            mQueue.push_back(*itr);
-        for ( auto itr=pV2->begin(),end=pV2->end(); itr != end; ++itr )
-          if ( !isDone(*itr) )
-            mQueue.push_back(*itr);
-      }
-    }
-
-    vecbvec const& mEdges;
-    unsigned mKLO;
-    VertexDict const& mDict;
-    HyperBasevector* mpHBV;
-    vec<int>& mFwd;
-    vec<int>& mRev;
-    std::list<IandO> mQueue;
-    int mNextVId;
-};
-int const HBVBuilder::NULL_EDGEID;
-
-
-}
 
 void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
-                             vec<int>* pFwdEdgeXlat, vec<int>* pRevEdgeXlat )
+                            vec<int>* pFwdEdgeXlat, vec<int>* pRevEdgeXlat )
 {
+    pHBV->Clear();
+    pFwdEdgeXlat->clear();
+    pRevEdgeXlat->clear();
     if ( edges.empty() )
     {
-        pHBV->Clear();
-        pFwdEdgeXlat->clear();
-        pRevEdgeXlat->clear();
         return;
     }
 
-    // find all the K-1 overlaps on the edge ends: those sequences mark vertices
-    size_t nEdges = edges.size();
-    VertexDict dict(2*nEdges);
-    if ( true )
-    {
-        VertexDictBuilder vdb(edges,K,&dict);
-        MapReduceEngine<VertexDictBuilder,EdgeEnd,EdgeEnd::Hasher> mre(vdb);
-        if ( !mre.run(4*nEdges,0ul,nEdges) )
-            FatalErr("Map/Reduce operation failed in finding vertices.");
-    }
+    std::vector<EdgeEnd> ends;
+    ends.reserve(2*edges.size());
 
-    // try to make the graph identical even if the edges don't always occur
-    // in the same order -- tag sort on edge length descending, then lexically.
-    vec<size_t> edgeOrder(nEdges,vec<size_t>::IDENTITY);
-    std::sort(edgeOrder.begin(),edgeOrder.end(),EOComp(edges));
-
-    HBVBuilder hbvb(edges,K,dict,pHBV,pFwdEdgeXlat,pRevEdgeXlat);
-    for ( size_t edgeId : edgeOrder )
-    {
-        IandO iAndO(edgeId,false);
-        hbvb.add(iAndO);
+    for (uint64_t i=0;i<edges.size();++i){
+        ends.push_back(EdgeEnd(i,edges[i],false,false,K));
+        ends.push_back(EdgeEnd(i,edges[i],false,true,K));
+        if ( edges[i].getCanonicalForm() != CanonicalForm::PALINDROME ) {
+            ends.push_back(EdgeEnd(i,edges[i],true,false,K));
+            ends.push_back(EdgeEnd(i,edges[i],true,true,K));
+        }
     }
-    for ( size_t edgeId : edgeOrder )
-    {
-        IandO iAndO(edgeId,true);
-        hbvb.add(iAndO);
+    std::sort(ends.begin(),ends.end());
+
+    //number the vertices and fill a list of vertex numbers for the edges
+    std::vector<edge_vertex_list> edge_vertices;
+    edge_vertices.resize(edges.size());
+    uint64_t vID=0;
+    //Can't be parallel, because vID depends on previous iteration
+    for (auto i=0; i<ends.size(); ++i){
+        if (i>0 and not (ends[i-1]==ends[i])) vID++;
+        if (!ends[i].rc) {
+            if (!ends[i].distal) edge_vertices[ends[i].edge_index].fw_v1=vID;
+            else edge_vertices[ends[i].edge_index].fw_v2=vID;
+        } else {
+            if (!ends[i].distal) edge_vertices[ends[i].edge_index].rc_v1=vID;
+            else edge_vertices[ends[i].edge_index].rc_v2=vID;
+        }
+    }
+    ++vID;
+
+    pHBV->SetK(K);
+    pHBV->AddVertices(vID);
+    pHBV->EdgesMutable().reserve(2*edges.size());
+
+    pFwdEdgeXlat->resize(edges.size(),-1);
+    pRevEdgeXlat->resize(edges.size(),-1);
+
+    //Now add the edges, and their rcs to the graph, this probably shouldn't be parallel neither (data corruption)
+    for (uint64_t i=0;i<edges.size();++i){
+        auto fwEdgeId = pHBV->EdgeObjectCount();
+        pHBV->AddEdge(edge_vertices[i].fw_v1,edge_vertices[i].fw_v2,edges[i]);
+        (*pFwdEdgeXlat)[i]=fwEdgeId;
+        if ( edges[i].getCanonicalForm() != CanonicalForm::PALINDROME ) {
+            auto bwEdgeId = pHBV->EdgeObjectCount();
+            auto rcedge=edges[i];
+            rcedge.ReverseComplement();
+            pHBV->AddEdge(edge_vertices[i].rc_v1, edge_vertices[i].rc_v2, rcedge);
+            (*pRevEdgeXlat)[i] = bwEdgeId;
+        }
     }
 }
 

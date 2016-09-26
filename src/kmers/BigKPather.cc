@@ -459,14 +459,11 @@ template <unsigned BIGK>
 void readsToHBV( vecbvec const& reads, unsigned coverage,
                     HyperBasevector* pHBV, ReadPathVec* pReadPaths,
                     HyperKmerPath* pHKP, vecKmerPath* pKmerPaths ) {
-    //std::cout<< "Constructing "<<BIGK<<"-mer graph..."<<std::endl;
     if (pReadPaths) {
-        //std::cout<< "Clearing read paths..."<<std::endl;
         pReadPaths->clear();
         pReadPaths->resize(reads.size());
     }
     if (pKmerPaths) {
-        //std::cout<< "Clearing kmer paths..."<<std::endl;
         pKmerPaths->clear();
         pKmerPaths->resize(reads.size());
     }
@@ -477,14 +474,8 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
         if (pHKP) pHKP->Clear();
         return;
     }
-    //std::cout<< Date() << " Creating dict..."<<std::endl;
     BigDict<BIGK> bigDict(nKmers / coverage);
     BigKMerizer<BIGK> kmerizer(&bigDict);
-
-    //This is not really parallel, mostly loses time with locks and things.
-    //parallelFor(0ul,reads.size(),
-    //        [kmerizer,&reads]( size_t readId ) mutable
-    //        { kmerizer.kmerize(reads[readId]); });
 
     #pragma omp parallel
     {
@@ -494,7 +485,7 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
             tkmerizer.kmerize(reads[i]);
         }
     }
-    //std::cout<< Date() <<  "Building Edges..."<<std::endl;
+
     vecbvec edges;
     edges.reserve(bigDict.size()/100);
     BigKEdgeBuilder<BIGK>::buildEdges(bigDict,&edges);
@@ -503,20 +494,13 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
     vec<int> revXlat;
     if ( !pReadPaths && !pKmerPaths )
     {
-        //std::cout<< Date() <<  "Building HBV from Edges..."<<std::endl;
         buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
         if ( pHKP ) {
-            //std::cout<< Date() <<  "Building HKPF..."<<std::endl;
             buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
         }
     }
     else
     {
-        //std::cout<< Date() <<  "Updating Dict..."<<std::endl;
-        //parallelForBatch(0ul,edges.size(),100,
-        //                 [&edges,&kmerizer]( size_t edgeId )
-        //                 { kmerizer.updateDict(edges[edgeId]); });
-
         #pragma omp parallel
         {
             BigKMerizer<BIGK> tkmerizer(&bigDict);
@@ -525,21 +509,22 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
                 tkmerizer.updateDict(edges[i]);
             }
         }
-        //std::cout<< Date() <<  "Building HBV from Edges..."<<std::endl;
         buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
         HyperKmerPath hkp;
         if ( pKmerPaths && !pHKP ) {
-            //std::cout<< Date() <<  "Creating new HKP..."<<std::endl;
             pHKP = &hkp;
         }
         if ( pHKP ) {
-            //std::cout<< Date() <<  "Building HKPF..."<<std::endl;
             buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
         }
-        //std::cout<< "Running pather..."<<std::endl;
-        Pather<BIGK> pather(reads,bigDict,edges,fwdXlat,revXlat,
-                                pReadPaths,pHKP,pKmerPaths);
-        parallelForBatch(0ul,reads.size(),10000,pather);
+
+
+        //TODO: change for OMP, it only updates preadPaths and pKmerPaths
+        Pather<BIGK> pather(reads, bigDict, edges, fwdXlat, revXlat,
+                            pReadPaths, pHKP, pKmerPaths);
+        //parallelForBatch(0ul, reads.size(), 10000, pather);
+        for (auto i=0ul;i<reads.size();++i) pather(i);
+
     }
 }
 
