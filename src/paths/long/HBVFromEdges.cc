@@ -106,6 +106,8 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
             rcedge.ReverseComplement();
             pHBV->AddEdge(edge_vertices[i].rc_v1, edge_vertices[i].rc_v2, rcedge);
             (*pRevEdgeXlat)[i] = bwEdgeId;
+        } else {
+            (*pRevEdgeXlat)[i] = fwEdgeId;
         }
     }
 }
