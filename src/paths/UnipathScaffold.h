@@ -11,7 +11,6 @@
 
 #include "Basevector.h"
 #include "CoreTools.h"
-//#include "Superb.h"
 #include "graph/Digraph.h"
 
 class linklet {
@@ -39,47 +38,5 @@ class linklet {
 
 };
 //extern template class digraphE<linklet>;
-
-void UnipathScaffold(
-
-     // input:
-
-     const digraphE<linklet>& G,
-     const vecbasevector& unibases,
-     const int K,
-     const vec<int>& to_rc,
-     const vec<Bool>& exclude,
-     const int min_kmers,
-
-     // logging and debugging:
-
-     const int FORCE_FIRST,
-     const Bool SCAFFOLDING_VERBOSE,
-
-     // output:
-
-     vec<superb>& uscaffolds,
-     vec<Bool>& circled );
-
-void UnipathScaffoldAlt(
-
-     // input:
-
-     const digraphE<linklet>& G,
-     const vecbasevector& unibases,
-     const int K,
-     const vec<int>& to_rc,
-     const vec<Bool>& exclude,
-     const int min_kmers,
-
-     // logging and debugging:
-
-     const int FORCE_FIRST,
-     const Bool SCAFFOLDING_VERBOSE,
-
-     // output:
-
-     vec<superb>& uscaffolds,
-     vec<Bool>& circled );
 
 #endif

@@ -29,7 +29,6 @@
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/PairInfo.h"
 #include "paths/long/ultra/ConsensusScoreModel.h"
-#include "system/ParsedArgs.h"
 #include "system/System.h"
 #include "paths/long/CreateGenome.h"
 
@@ -294,9 +293,6 @@ void TestSampleAndReads( const String& SAMPLE, const String& READS,
 void PrintPerformanceStats( const double clock, const long_logging& logc );
 
 void PrintCorrectedReadStats( const VecEFasta& corrected );
-
-void PrintTail( const parsed_args& command, const String& X, const String& X_actual,
-     const double clock, const long_logging& logc );
 
 void LoadEfastaLong( const String& fn, VecEFasta& x,
      vec<int>& cid, vec<pairing_info>& cpartner, const long_logging& logc );

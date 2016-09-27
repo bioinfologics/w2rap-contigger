@@ -11,7 +11,6 @@
 
 #include "Basevector.h"
 #include "PairsManager.h"
-//#include "Superb.h"
 #include "efasta/EfastaTools.h"
 #include "paths/BigMapTools.h"
 #include "paths/LongReadTools.h"
@@ -33,53 +32,10 @@ void FilterWalksUsingJumps( const int u1, const int u2,
      const vecbasevector& unibases, vec<basevector>& patches,
      vec< vec< std::pair<int,int> > >& walks1 );
 
-void FilterWalksUsingJumps2( const int edge_id, snark& S, const vec<int>& to_left,
-     const vec<int>& to_right, const vecbasevector& jbases,    
-     const PairsManager& jpairs,
-     const vec< vec< triple<int,int,Bool> > >& placements_by_read,
-     const vec< vec< triple<int64_t,int,Bool> > >& placements_by_unipath,
-     const int verbosity );
-
-void FilterWalksByIllegalCN1( const superb& s,
-     vec<basevector>& patches, vec< vec< std::pair<int,int> > >& walks1 );
-
 Bool Follow( const placementy& p1, const placementy& p2, const int K );
 
 void Print( std::ostream& out, const placementy& p, const int len );
 
-void ProcessGap(
 
-     // definition of the gap
-
-     const superb& s, const int u1, const int u2, const int sep, const int dev,
-
-     // heuristics
-     
-     const double max_dev_diff,
-
-     // global structures
-
-     const vecbasevector& unibases, const vec<int>& to_rc,
-     const vec< vec< std::pair<int,int> > >& nextsx, 
-     const vec< vec< std::pair<int,int> > >& nextsy, const int K, const vec<int>& use,
-
-     // jump stuff to filter
-
-     const vec<basevector>& jbases_sorted, const vec<int64_t>& jbases_sorted_id,
-     const PairsManager& jpairs, const vec< triple<int64_t,int,int> >& jaligns,
-     const vec< vec< triple<int,int,Bool> > >& placements_by_read,
-
-     // for evaluation and logging
-
-     std::ostream& out, const int verbosity, const Bool validate, const int LG, 
-     const vecbasevector& genome, const VecIntPairVec& Glocs,
-     Bool& have_lastp, placementy& lastp, int& gapcount, const digraphE<linklet>& G,
-
-     // output
-
-     Bool& found_patch, efasta& epatch, int& lastover,
-     vec<int>& extras    // unibases1 used in every patch
-
-);
 
 #endif

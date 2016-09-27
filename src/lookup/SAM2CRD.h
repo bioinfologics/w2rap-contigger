@@ -24,7 +24,6 @@
 #include "RefLocus.h"
 #include "Vec.h"
 #include "VecString.h"
-#include "lookup/LookAlign.h"
 #include "lookup/SAM.h"
 #include <ostream>
 #include <iterator>

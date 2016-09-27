@@ -11,7 +11,6 @@
 #include "CoreTools.h"
 #include "Fastavector.h"
 #include "FastIfstream.h"
-//#include "Superb.h"
 #include "TokenizeString.h"
 #include "dna/Bases.h"
 #include "efasta/EfastaTools.h"
@@ -518,37 +517,7 @@ int efasta::MaxLength( ) const {
   return count;
 }
 
-void SplitEfastaIntoContigs( const VecEFasta& scaffolds,
-     VecEFasta& contigs, vec<superb>& scaffold_structure )
-{    contigs.clear( ), scaffold_structure.clear( );
-     for ( size_t i = 0; i != scaffolds.size( ); i++ )
-     {    const String& s = scaffolds[i];
-          vec<int> contig_ids, gaps;
-          ForceAssert( s.size( ) > 0 );
-          for ( size_t j = 0; j < s.size( ); j++ )
-          {    if ( s[j] == 'N' )
-               {    size_t j_start = j;
-                    while ( j < s.size( ) && s[j] == 'N' ) j++;
-                    gaps.push_back( j_start - j );    }
-               else
-               {    String c;
-                    while ( j < s.size( ) && s[j] != 'N' ) c.push_back( s[j++] );
-                    contig_ids.push_back( contigs.size( ) );
-                    contigs.push_back(c);    }
-               j--;    }
-          if ( gaps.size( ) >= contig_ids.size( ) )
-          {    std::cout << "SplitEfastaIntoContigs: leading and trailing gaps are not "
-                         << "allowed." << std::endl << "Abort." << std::endl;
-               exit(1);    }
-          superb ss;
-          ss.SetNtigs( contig_ids.size( ) );
-          for ( size_t j = 0; j < contig_ids.size( ); j++ )
-          {    ss.SetTig( j, contig_ids[j] );
-               ss.SetLen( j, contigs[ contig_ids[j] ].Length1( ) );
-               if ( j < contig_ids.size( ) - 1 ) 
-               {    ss.SetGap( j, gaps[j] );
-                    ss.SetDev( j, 0 );    }    }
-          scaffold_structure.push_back(ss);    }    }
+
 
 void efasta::FlattenTo( basevector& b ) const
 {    b.clear( );
@@ -564,19 +533,7 @@ void efasta::FlattenTo( basevector& b ) const
           while ( i < size( ) && (*this)[i] != '}' ) i++;    }    }
 
 
-void efasta::FlattenTo( basevector& b, bitvector& gaps ) const
-{    FlattenTo(b);
-     gaps.resize( b.size( ), False );
-     int count = 0;
-     for ( size_t i = 0; i < size( ); i++ )
-     {    while( i < size( ) && (*this)[i] != '{' ) 
-          {    gaps.Set( count++, (*this)[i] == 'N' );
-               i++;    }
-          i++;
-          while ( i < size( ) && (*this)[i] != ',' )
-          {    gaps.Set( count++, False );
-               i++;    }
-          while ( i < size( ) && (*this)[i] != '}' ) i++;    }    }
+
 
 
 
@@ -1394,48 +1351,6 @@ void efasta::PrintAmbiguities( std::ostream& out, const String& id ) const
   }
 }
 
-
-void WriteScaffoldedEFasta( const String &out_file,
-			    const VecEFasta &fasta,
-			    const vec<superb> &scaffolds,
-			    const Bool ncbi_format)
-{
-  Ofstream( out, out_file );
-  
-  // Loop over all superbs (scaffolds).
-  for ( size_t i = 0; i < scaffolds.size(); i++ ) {
-    const superb& S = scaffolds[i];
-    if (ncbi_format) {	  // one-based, zero padding for lexical order
-      out << ">scaffold";
-      out.width(5);
-      out.fill('0');
-      out << i+1 << "\n";
-    } else {
-      out << ">scaffold_" << i << "\n";
-    }
-    
-    // Find the base sequence of this scaffold, including 'n's for
-    // gaps. WARNING: Negative gaps reset to 1.
-    vec<char> s;
-    for ( int j = 0; j < S.Ntigs( ); j++ ) {
-      const efasta &b = fasta[S.Tig(j)];
-      for ( unsigned int l = 0; l < b.size( ); l++ )
-	s.push_back( b[l] );
-      if ( j < S.Ntigs( ) - 1 )
-	s.push_back_copies( 'N', Max( 1, S.Gap(j) ) );
-    }
-    
-    // Print the bases, adding line breaks where necessary.
-    int printed = 1;
-    for ( unsigned int j = 0; j < s.size( ); j++, printed++ ) {
-      out << s[j];
-      if ( printed % 80 == 0 ) out << "\n";
-    }
-    if ( printed == 1 || printed % 80 != 1 ) out << "\n";
-  }
-  
-  out.close( );
-}  
 
 String ReplaceByLengths( const efasta& e )
 {    String s;

@@ -13,7 +13,6 @@
 #include "Bitvector.h"
 #include "CoreTools.h"
 #include "Fastavector.h"
-//#include "Superb.h"
 #include "feudal/MasterVec.h"
 
 struct Ambiguity
@@ -199,10 +198,6 @@ class efasta : public String {
       // by the scaffolds.  If supplied, rc defines which contigs are
       // reverse-complement.
 
-      friend void WriteScaffoldedEFasta( const String &out_file,
-					const VecEFasta &fasta,
-					const vec<superb> &scaffolds,
-					const Bool ncbi_format = False);
 
       friend void swap( efasta& e1, efasta& e2 )
       { e1.swap(e2); }
@@ -247,15 +242,6 @@ void LoadEfastaIntoStrings( const String& fn, VecEFasta& x,
 
 void LoadEfastaIntoStrings( const String& fn, VecEFasta& x, vec<String>& headers,
      const Bool allow_empty_record = False );
-
-// SplitEfastaIntoContigs.  Given an efasta file that has been loaded into a
-// vector of efastas, split it into contigs, yielding as output a new vector of
-// efastas (one for each contig) and a vec<superb> that describes the scaffold 
-// structure.  Contig lengths are based on the first choice in each bracket.
-// Gap deviations are set to zero.
-
-void SplitEfastaIntoContigs( const VecEFasta& scaffolds,
-     VecEFasta& contigs, vec<superb>& scaffold_structure );
 
 // AllPlus.  Return the concatenation of some lines, including newlines.
 

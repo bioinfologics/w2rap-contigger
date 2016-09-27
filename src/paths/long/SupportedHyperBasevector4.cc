@@ -10,8 +10,6 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include "CoreTools.h"
-#include "lookup/LookAlign.h"
-#include "pairwise_aligners/ClusterAligner.h"
 #include "paths/long/EvalByReads.h"
 #include "paths/long/LargeKDispatcher.h"
 #include "paths/long/MakeKmerStuff.h"
@@ -1320,20 +1318,3 @@ void TraceEdges( const SupportedHyperBasevector& shb, const String& TRACE_EDGES,
           {    for ( int i = 0; i < np; i++ )
                     std::cout << id << "." << i+1 << ": " << places[i] << std::endl;    }    }
      std::cout << "\n";    }
-
-void AnalyzeAssembly( const SupportedHyperBasevector& shb, const vecbasevector& G,
-     const int LG, const VecIntPairVec& Glocs )
-{    std::cout << "\nAlignment of assembly to reference:\n\n";
-     for ( int e = 0; e < shb.EdgeObjectCount( ); e++ )
-     {    vec<look_align> aligns;
-          ClusterAligner( shb.EdgeObject(e), G, LG, Glocs, aligns );
-          for ( int j = 0; j < aligns.isize( ); j++ )
-          {    look_align& la = aligns[j];
-               la.query_id = e;
-               int g = la.target_id;
-               la.PrintReadableBrief( std::cout, "edge_" + ToString(e), ToString(g) );
-               basevector query = shb.EdgeObject(e);
-               la.PrintVisual( std::cout, query, G[g] );    
-               if (la.rc1) query.ReverseComplement( );
-               la.a.PrintMutations( query, G[g], std::cout );    
-               std::cout << "\n";    }    }    }

@@ -23,7 +23,6 @@
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "IntPairVec.h"
-#include "lookup/LookAlign.h"
 
 void ClusterAligner( basevector q, const vecbasevector& G, const int K, 
      const VecIntPairVec& Glocs, vec<look_align>& aligns,

@@ -43,7 +43,6 @@ include_directories("/usr/include/malloc")
 add_library(base_libs OBJECT
         src/Alignment.cc
         src/Basevector.cc
-        src/BlockAlign.cc
         src/Charvector.cc
         src/Equiv.cc
         src/FastIfstream.cc
@@ -62,7 +61,6 @@ add_library(base_libs OBJECT
         src/PrintAlignment.cc
         src/Qualvector.cc
         src/ScoreAlignment.cc
-        src/Superb.cc
         src/TokenizeString.cc
         src/Vec.cc
         src/VecAlignmentPlus.cc
@@ -91,16 +89,13 @@ add_library(base_libs OBJECT
         src/kmers/KmerRecord.cc
         src/kmers/LongReadPather.cc
         src/kmers/ReadPather.cc
-        src/lookup/LookAlign.cc
         src/lookup/SAM.cc
-        src/lookup/SAM2CRD.cc
         src/math/Combinatorics.cc
         src/math/Functions.cc
         src/math/HoInterval.cc
         src/math/Matrix.cc
         src/math/Permutation.cc
         src/math/PowerOf2.cc
-        src/pairwise_aligners/ClusterAligner.cc
         src/pairwise_aligners/SmithWatBandedA.cc
         src/pairwise_aligners/SmithWatFree.cc
         src/paths/BigMapTools.cc
@@ -111,7 +106,6 @@ add_library(base_libs OBJECT
         src/paths/KmerPath.cc
         src/paths/KmerPathInterval.cc
         src/paths/LongReadTools.cc
-        src/paths/MergeReadSetsCore.cc
         src/paths/ProcessGap.cc
         src/paths/Sepdev.cc
         src/paths/UnipathScaffold.cc
@@ -150,14 +144,12 @@ add_library(base_libs OBJECT
         src/system/ErrNo.cc
         src/system/Exit.cc
         src/system/HostName.cc
-        src/system/ParsedArgs.cc
         src/system/ProcBuf.cc
         src/system/SysConf.cc
         src/system/System.cc
         src/system/Thread.cc
         src/system/ThreadsafeIO.cc
         src/system/TraceVal.cc
-        src/system/UseGDB.cc
         src/system/WorklistUtils.cc
         src/system/file/File.cc
         src/system/file/FileReader.cc
@@ -211,7 +203,6 @@ add_library(base_libs OBJECT
 
 add_library(hb_base_libs OBJECT
         src/Alignment.cc
-        src/BlockAlign.cc
         src/Charvector.cc
         src/Equiv.cc
         src/FastIfstream.cc
@@ -229,7 +220,6 @@ add_library(hb_base_libs OBJECT
         src/PrintAlignment.cc
         src/Qualvector.cc
         src/ScoreAlignment.cc
-        src/Superb.cc
         src/TokenizeString.cc
         src/Vec.cc
         src/VecAlignmentPlus.cc
@@ -255,15 +245,12 @@ add_library(hb_base_libs OBJECT
         src/kmers/KMerContext.cc
         src/kmers/KmerRecord.cc
         src/kmers/ReadPather.cc
-        src/lookup/LookAlign.cc
         src/lookup/SAM.cc
-        src/lookup/SAM2CRD.cc
         src/math/Functions.cc
         src/math/HoInterval.cc
         src/math/Matrix.cc
         src/math/Permutation.cc
         src/math/PowerOf2.cc
-        src/pairwise_aligners/ClusterAligner.cc
         src/pairwise_aligners/SmithWatBandedA.cc
         src/pairwise_aligners/SmithWatFree.cc
         src/paths/BigMapTools.cc
@@ -274,7 +261,6 @@ add_library(hb_base_libs OBJECT
         src/paths/KmerPath.cc
         src/paths/KmerPathInterval.cc
         src/paths/LongReadTools.cc
-        src/paths/MergeReadSetsCore.cc
         src/paths/ProcessGap.cc
         src/paths/Sepdev.cc
         src/paths/UnipathScaffold.cc
@@ -310,7 +296,6 @@ add_library(hb_base_libs OBJECT
         src/system/Thread.cc
         src/system/ThreadsafeIO.cc
         src/system/TraceVal.cc
-        src/system/UseGDB.cc
         src/system/WorklistUtils.cc
         src/system/file/File.cc
         src/system/file/FileReader.cc
@@ -360,7 +345,6 @@ add_library(hb_base_libs OBJECT
         src/GFADump.cc)
 
 add_library(specific_w2rap-contigger OBJECT
-        src/AnnotatedContig.cc
         src/BasevectorTools.cc
         src/CompressedSequence.cc
         src/FastaConverter.cc
@@ -392,9 +376,6 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/MakeGaps.cc
         src/paths/long/large/Simplify.cc
         src/paths/long/large/ImprovePath.cc
-        src/paths/long/large/tools/NhoodInfoCore.cc
-        src/paths/long/large/tools/NhoodInfoState.cc
-        src/paths/long/large/tools/NhoodInfoStuff.cc
         src/GFADump.cc
         src/paths/PathFinder.cc
         src/paths/PathFinder.h)

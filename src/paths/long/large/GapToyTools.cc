@@ -22,7 +22,6 @@
 #include "feudal/HashSet.h"
 #include "graph/DigraphTemplate.h"
 #include "kmers/KMerHasher.h"
-#include "lookup/LookAlign.h"
 #include "paths/HyperBasevector.h"
 #include "paths/ReadsToPathsCoreX.h"
 #include "paths/RemodelGapTools.h"

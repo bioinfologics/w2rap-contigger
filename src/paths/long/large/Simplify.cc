@@ -18,31 +18,6 @@
 #include "paths/long/large/ImprovePath.h"
 #include "paths/long/large/PullAparter.h"
 #include "paths/long/large/Simplify.h"
-#include "paths/long/large/tools/NhoodInfoCore.h"
-
-void Trace(const String &TRACE_SEQ, const HyperBasevector &hb,
-           const String &fin_dir, const int tid) {
-    vec<int> hits;
-#pragma omp parallel for
-    for (int e = 0; e < (int) hb.E(); e++) {
-        String s = hb.EdgeObject(e).ToString();
-        if (s.Contains(TRACE_SEQ)) {
-#pragma omp critical
-            { hits.push_back(e); }
-        }
-    }
-    Sort(hits);
-    Mkdir777(fin_dir + "/trace");
-    HyperBasevectorX hbx(hb);
-    BinaryWriter::writeFile(fin_dir + "/trace/a.hbx", hbx);
-    String command = "DIR=" + fin_dir + "/trace OX=" + fin_dir + "/trace/"
-                     + ToString(tid) + " NH=True DEPTH=5 SEEDS=";
-    for (int j = 0; j < hits.isize(); j++) {
-        if (j > 0) command += ",";
-        command += ToString(hits[j]);
-    }
-    NhoodInfoCore(command);
-}
 
 void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,

@@ -15,7 +15,6 @@
 #include "Bitvector.h"
 #include "Charvector.h"
 #include "dvString.h"
-#include "Superb.h"
 #include "Vec.h"
 #include "dna/Bases.h"
 #include "graph/Digraph.h"
@@ -313,21 +312,7 @@ public:
 	     fastavector& fv
 	     );
 
-     // Write a fasta-format file which contains the bases in the
-     // input fasta scaffolded together (with gaps, etc.) as defined
-     // by the scaffolds.  If supplied, rc defines which contigs are
-     // reverse-complement. Gaps < min_gap will be reset at min_gap.
-     friend void WriteScaffoldedFasta( const String &out_file,
-				       const vec<fastavector> &fasta,
-				       const vec<superb> &scaffolds,
-				       const vec<Bool> &rc = vec<Bool>( ),
-				       const int min_gap = 1, 
-				       const char gap_char = 'N',
-				       const Bool ncbi_format = False);
 
-     // Remove contigs that don't appear in a scaffold.  
-
-     friend void RenumberAndMinimize( vec<fastavector>& f, vec<superb>& s );
   
 };
 

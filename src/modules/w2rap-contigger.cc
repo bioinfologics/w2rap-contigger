@@ -12,7 +12,6 @@
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
 #include "feudal/PQVec.h"
-#include "lookup/LookAlign.h"
 #include "paths/HyperBasevector.h"
 #include "paths/RemodelGapTools.h"
 #include "paths/long/BuildReadQGraph.h"

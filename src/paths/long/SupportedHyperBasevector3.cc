@@ -11,9 +11,7 @@
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
-#include "lookup/LookAlign.h"
 #include "math/Functions.h"
-#include "pairwise_aligners/ClusterAligner.h"
 #include "pairwise_aligners/SmithWatFree.h"
 #include "paths/long/CreateGenome.h"
 #include "paths/long/EvalByReads.h"

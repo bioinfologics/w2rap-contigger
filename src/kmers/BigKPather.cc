@@ -118,11 +118,14 @@ public:
     static void buildEdges( BigKDict const& dict, vecbvec* pEdges )
     {
         BigKEdgeBuilder eb(dict,pEdges);
+
         dict.parallelForEachHHS(
                 [eb]( typename BigKDict::HHS const& hhs ) mutable
                 { for ( BigKmer const& entry : hhs )
                     if ( entry.isUnassigned() )
                       eb.buildEdge(entry); });
+
+
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();
@@ -477,14 +480,14 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
     BigDict<BIGK> bigDict(nKmers / coverage);
 
 
-    //#pragma omp parallel
-    //{
+    #pragma omp parallel
+    {
         BigKMerizer<BIGK> tkmerizer(&bigDict);
-     //   #pragma omp for (dynamic, 1)
+        #pragma omp for schedule (dynamic, 1)
         for (auto i = 0; i < reads.size(); i++) {
             tkmerizer.kmerize(reads[i]);
         }
-    //}
+    }
 
     vecbvec edges;
     edges.reserve(bigDict.size()/100);

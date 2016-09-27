@@ -24,7 +24,6 @@
 #include "system/ParsedArgs.h"
 #include "system/System.h"
 #include "system/HostName.h"
-#include "system/UseGDB.h"
 
 #ifndef FatalErr
      #define FatalErr(message) { std::cout << message << std::endl << std::endl; exit(-1); }

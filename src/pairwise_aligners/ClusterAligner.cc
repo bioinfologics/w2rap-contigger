@@ -9,7 +9,6 @@
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "PackAlign.h"
-#include "lookup/LookAlign.h"
 #include "pairwise_aligners/ClusterAligner.h"
 #include "pairwise_aligners/SmithWatBandedA.h"
 #include "paths/LongReadTools.h"

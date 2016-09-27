@@ -162,16 +162,6 @@ void PrintCorrectedReadStats( const VecEFasta& corrected )
           << PERCENT_RATIO( 3, n_reads_amb, (long)corrected.size( ) )
           << " of corrected reads contain ambiguities" << std::endl;    }
 
-void PrintTail( const parsed_args& command, const String& X, const String& X_actual,
-     const double clock, const long_logging& logc )
-{    if (logc.STATUS_LOGGING)
-     {    String tc;
-          SlashFold( command.TheCommand( ), tc );
-          std::cout << "\n" << tc;    }
-     if ( X.Contains( "random" ) ) std::cout << "using X=" << X_actual << std::endl;
-     PrintPerformanceStats( clock, logc );
-     std::cout << "\n================================================================="
-          << "===================\n" << std::endl;    }
 
 void LoadEfastaLong( const String& fn, VecEFasta& corrected,
      vec<int>& cid, vec<pairing_info>& cpartner, const long_logging& logc )

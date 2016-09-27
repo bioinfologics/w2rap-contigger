@@ -12,7 +12,6 @@
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "PairsManager.h"
-#include "Superb.h"
 #include "kmers/KmerRecord.h"
 
 // GapComp
@@ -50,15 +49,7 @@ template<int K> void MakeKmerLookup( const vecbasevector& tigs,
 template<int K> void MakeKmerLookup0( const vecbasevector& tigs,
      vec< triple<kmer<K>,int,int> >& kmers_plus );
 
-void FindTrueGaps(  
-     // inputs:
-     const vecbasevector& genome,
-     const vecbasevector& tigs,  
-     const vec<superb>& scaffolds,
-     // control:
-     const vec<int>& tigs_to_process, const Bool TIME_STAMPS,
-     // outputs:
-     vec<int>& true_gap, vec<Bool>& true_gap_computed );
+
 
 void PrintSideBySide( const String& z1, const String& z2, const int N );
 

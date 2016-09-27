@@ -36,7 +36,6 @@
 #include "CoreTools.h"
 #include "PairsManager.h"
 #include "graph/Digraph.h"
-#include "Superb.h"
 #include "efasta/EfastaTools.h"
 #include "paths/Sepdev.h"
 
@@ -288,8 +287,7 @@ class snark {
 
      // Compute scaffolds
 
-     void ComputeScaffolds( vec<superb>& superbs, VecEFasta& econtigs,
-          digraphE<sepdev>& SG ) const;
+
 
      // AssignVertexColors.  Let 0 = black, 1 = blue, 2 = red.  Initially all
      // vertices are black.  Try to color fw/rc pairs of vertices as blue/red,
