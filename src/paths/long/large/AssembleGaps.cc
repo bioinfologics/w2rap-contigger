@@ -297,7 +297,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
 
-    #pragma omp parallel for schedule(dynamic, 10)
+    #pragma omp parallel for schedule(dynamic, 5)
     for (int bl = lrc-1; bl >= 0; --bl) {
 
         TIMELOG_DECLARE_LOCAL(AG2_FindPids,Loop);

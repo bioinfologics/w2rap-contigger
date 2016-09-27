@@ -475,16 +475,16 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
         return;
     }
     BigDict<BIGK> bigDict(nKmers / coverage);
-    BigKMerizer<BIGK> kmerizer(&bigDict);
 
-    #pragma omp parallel
-    {
+
+    //#pragma omp parallel
+    //{
         BigKMerizer<BIGK> tkmerizer(&bigDict);
-        #pragma omp for
+     //   #pragma omp for (dynamic, 1)
         for (auto i = 0; i < reads.size(); i++) {
             tkmerizer.kmerize(reads[i]);
         }
-    }
+    //}
 
     vecbvec edges;
     edges.reserve(bigDict.size()/100);
