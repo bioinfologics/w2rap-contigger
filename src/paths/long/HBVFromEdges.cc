@@ -118,6 +118,13 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
             (*pRevEdgeXlat)[i] = fwEdgeId;
         }
     }
+    for (auto i=0;i<pFwdEdgeXlat->size();++i) {
+        if ((*pFwdEdgeXlat)[i]==-1) std::cout<<"Forward translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
+    }
+    for (auto i=0;i<pRevEdgeXlat->size();++i) {
+        if ((*pRevEdgeXlat)[i]==-1) std::cout<<"Reverse translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
+    }
+
 }
 
 
