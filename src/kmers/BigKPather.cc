@@ -312,7 +312,7 @@ public:
     typedef BigDict<BIGK> BigKDict;
 
     Pather( vecbvec const& reads, BigKDict const& dict, vecbvec const& edges,
-                vec<int> const& fwdXlat, vec<int> const& revXlat,
+                std::vector<int> const& fwdXlat, std::vector<int> const& revXlat,
                 ReadPathVec* pReadPaths,
                 HyperKmerPath const* pHKP, vecKmerPath* pKmerPaths )
     : mReads(reads), mDict(dict), mEdges(edges),
@@ -391,8 +391,8 @@ private:
     vecbvec const &mReads;
     BigKDict const &mDict;
     vecbvec const &mEdges;
-    vec<int> const &mFwdXlat;
-    vec<int> const &mRevXlat;
+    std::vector<int> const &mFwdXlat;
+    std::vector<int> const &mRevXlat;
     ReadPathVec *mpReadPaths;
     HyperKmerPath const *mpHKP;
     vecKmerPath *mpKmerPaths;

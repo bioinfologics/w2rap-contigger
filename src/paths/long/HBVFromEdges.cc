@@ -144,7 +144,7 @@ void buildHKPFromHBV( HyperBasevector const& hbv,
     long nextPalindrome = first_palindrome;
     long nextKmerId = 1;
     auto oItr = pHKP->EdgesMutable().begin();
-    vec<bvec> const edges = hbv.Edges();
+    vec<bvec> const edges = hbv.Edges();//TODO: if the graph is any large, this is going to kill the machine
     for ( auto itr=edges.begin(),end=edges.end(); itr != end; ++itr,++oItr )
     {
         size_t len = itr->size();
