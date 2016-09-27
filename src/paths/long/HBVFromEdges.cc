@@ -94,6 +94,7 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
 
     pFwdEdgeXlat.resize(edges.size(),-1);
     pRevEdgeXlat.resize(edges.size(),-1);
+    //TODO: Stupidly enough, we need to sort the edges???
 
     //Now add the edges, and their rcs to the graph, this probably shouldn't be parallel neither (data corruption)
     for (uint64_t i=0;i<edges.size();++i){
@@ -104,18 +105,20 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
         }
         pHBV->AddEdge(edge_vertices[i].fw_v1,edge_vertices[i].fw_v2,edges[i]);
         pFwdEdgeXlat[i]=fwEdgeId;
-        if ( edges[i].getCanonicalForm() != CanonicalForm::PALINDROME ) {
+        if ( edges[i].getCanonicalForm() == CanonicalForm::PALINDROME ) {
+            pRevEdgeXlat[i] = fwEdgeId;
+        }
+        else {
             auto bwEdgeId = pHBV->EdgeObjectCount();
-            auto rcedge=edges[i];
+            auto rcedge = edges[i];
             rcedge.ReverseComplement();
-            if (edge_vertices[i].rc_v1==-1 or edge_vertices[i].rc_v2==-1) {
-                std::cout<<"Edge "<<i<<" has rc_v1="<<edge_vertices[i].rc_v1<<" and rc_v2="<<edge_vertices[i].rc_v2<<"!!!"<<std::endl;
+            if (edge_vertices[i].rc_v1 == -1 or edge_vertices[i].rc_v2 == -1) {
+                std::cout << "Edge " << i << " has rc_v1=" << edge_vertices[i].rc_v1 << " and rc_v2="
+                          << edge_vertices[i].rc_v2 << "!!!" << std::endl;
                 FatalErr("Vertex not set!");
             }
             pHBV->AddEdge(edge_vertices[i].rc_v1, edge_vertices[i].rc_v2, rcedge);
             pRevEdgeXlat[i] = bwEdgeId;
-        } else {
-            pRevEdgeXlat[i] = fwEdgeId;
         }
     }
     for (auto i=0;i<pFwdEdgeXlat.size();++i) {
@@ -178,7 +181,10 @@ void buildHKPFromHBV( HyperBasevector const& hbv,
             edge = pHKP->EdgeObject(*itr);
             edge.ReverseNoConcatenate();
         }
-        else
-            ForceAssertEq(*itr,*rItr);
+        else if (*itr != *rItr) {
+            int eid=itr-fwdEdgeXlat.begin();
+            std::cout<<"Edge translation for old edge "<<eid<<" is "<<*itr<<" / "<<*rItr<<" and both kmer translations were already populated"<<std::endl;
+            ForceAssertEq(*itr, *rItr);
+        }
     }
 }
