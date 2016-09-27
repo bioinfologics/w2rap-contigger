@@ -1272,7 +1272,7 @@ namespace
     void pathReads( vecbvec const& reads, VecPQVec const& quals,
                     BRQ_Dict const& dict, vecbvec const& edges,
                     HyperBasevector const& hbv,
-                    vec<int> const& fwdEdgeXlat, vec<int> const& revEdgeXlat,
+                    std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
                     ReadPathVec* pPaths, Bool const NEW_ALIGNER = False,
                     Bool const VERBOSE = False )
     {
@@ -1331,18 +1331,18 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": aligning to reference." << std::endl;
         pathRef(refFasta, *pDict, edges);
     }
-    vec<int> fwdEdgeXlat;
-    vec<int> revEdgeXlat;
+    std::vector<int> fwdEdgeXlat;
+    std::vector<int> revEdgeXlat;
     if ( !pPaths )
     {
         delete pDict;
         std::cout << Date() << ": building HBV." << std::endl;
-        buildHBVFromEdges(edges,_K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
+        buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
     }
     else
     {
         std::cout << Date() << ": building HBV." << std::endl;
-        buildHBVFromEdges(edges,K,pHBV,&fwdEdgeXlat,&revEdgeXlat);
+        buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": creating Read Paths." << std::endl;
         pathReads(reads,quals,*pDict,edges,*pHBV,
                   fwdEdgeXlat,revEdgeXlat,pPaths,useNewAligner,VERBOSE);
@@ -1371,9 +1371,9 @@ void rePath( HyperBasevector const& hbv,
     edges.reserve(hbv.EdgeObjectCount()/2);
     buildEdges(dict,&edges);
 
-    vec<int> fwdEdgeXlat;
-    vec<int> revEdgeXlat;
-    buildHBVFromEdges(edges,K,pNewHBV,&fwdEdgeXlat,&revEdgeXlat);
+    std::vector<int> fwdEdgeXlat;
+    std::vector<int> revEdgeXlat;
+    buildHBVFromEdges(edges,K,pNewHBV,fwdEdgeXlat,revEdgeXlat);
 
     pathReads(reads,quals,dict,edges,*pNewHBV,fwdEdgeXlat,revEdgeXlat,pPaths,
               useNewAligner, verbose);

@@ -490,11 +490,11 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
     edges.reserve(bigDict.size()/100);
     BigKEdgeBuilder<BIGK>::buildEdges(bigDict,&edges);
     AssertEq(edges.getKmerCount(BIGK),bigDict.size());
-    vec<int> fwdXlat;
-    vec<int> revXlat;
+    std::vector<int> fwdXlat;
+    std::vector<int> revXlat;
     if ( !pReadPaths && !pKmerPaths )
     {
-        buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
+        buildHBVFromEdges(edges,BIGK,pHBV,fwdXlat,revXlat);
         if ( pHKP ) {
             buildHKPFromHBV(*pHBV, fwdXlat, revXlat, pHKP);
         }
@@ -509,7 +509,7 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
                 tkmerizer.updateDict(edges[i]);
             }
         }
-        buildHBVFromEdges(edges,BIGK,pHBV,&fwdXlat,&revXlat);
+        buildHBVFromEdges(edges,BIGK,pHBV,fwdXlat,revXlat);
         HyperKmerPath hkp;
         if ( pKmerPaths && !pHKP ) {
             pHKP = &hkp;

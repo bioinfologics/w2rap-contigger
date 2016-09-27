@@ -25,11 +25,11 @@
 // The two optional vec<int> args give you the translation from the original
 // edge index to the HBV edge object index for the fwd and RC cases.
 void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
-                             vec<int>* pFwdEdgeXlat, vec<int>* pRevEdgeXlat );
+                             std::vector<int> &pFwdEdgeXlat, std::vector<int> &pRevEdgeXlat );
 
 void buildHKPFromHBV( HyperBasevector const& hbv,
-                        vec<int> const& fwdEdgeXlat,
-                        vec<int> const& revEdgeXlat,
+                        std::vector<int> const& fwdEdgeXlat,
+                        std::vector<int> const& revEdgeXlat,
                         HyperKmerPath* pHKP );
 
 #endif /* PATHS_LONG_HBVFROMEDGES_H_ */

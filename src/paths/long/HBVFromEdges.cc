@@ -48,11 +48,11 @@ typedef struct {
 
 
 void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
-                            vec<int>* pFwdEdgeXlat, vec<int>* pRevEdgeXlat )
+                            std::vector<int> &pFwdEdgeXlat, std::vector<int> &pRevEdgeXlat )
 {
     pHBV->Clear();
-    pFwdEdgeXlat->clear();
-    pRevEdgeXlat->clear();
+    pFwdEdgeXlat.clear();
+    pRevEdgeXlat.clear();
     if ( edges.empty() )
     {
         return;
@@ -92,8 +92,8 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
     pHBV->AddVertices(vID);
     pHBV->EdgesMutable().reserve(2*edges.size());
 
-    pFwdEdgeXlat->resize(edges.size(),-1);
-    pRevEdgeXlat->resize(edges.size(),-1);
+    pFwdEdgeXlat.resize(edges.size(),-1);
+    pRevEdgeXlat.resize(edges.size(),-1);
 
     //Now add the edges, and their rcs to the graph, this probably shouldn't be parallel neither (data corruption)
     for (uint64_t i=0;i<edges.size();++i){
@@ -103,7 +103,7 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
             FatalErr("Vertex not set!");
         }
         pHBV->AddEdge(edge_vertices[i].fw_v1,edge_vertices[i].fw_v2,edges[i]);
-        (*pFwdEdgeXlat)[i]=fwEdgeId;
+        pFwdEdgeXlat[i]=fwEdgeId;
         if ( edges[i].getCanonicalForm() != CanonicalForm::PALINDROME ) {
             auto bwEdgeId = pHBV->EdgeObjectCount();
             auto rcedge=edges[i];
@@ -113,24 +113,24 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
                 FatalErr("Vertex not set!");
             }
             pHBV->AddEdge(edge_vertices[i].rc_v1, edge_vertices[i].rc_v2, rcedge);
-            (*pRevEdgeXlat)[i] = bwEdgeId;
+            pRevEdgeXlat[i] = bwEdgeId;
         } else {
-            (*pRevEdgeXlat)[i] = fwEdgeId;
+            pRevEdgeXlat[i] = fwEdgeId;
         }
     }
-    for (auto i=0;i<pFwdEdgeXlat->size();++i) {
-        if ((*pFwdEdgeXlat)[i]==-1) std::cout<<"Forward translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
+    for (auto i=0;i<pFwdEdgeXlat.size();++i) {
+        if (pFwdEdgeXlat[i]==-1) std::cout<<"Forward translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
     }
-    for (auto i=0;i<pRevEdgeXlat->size();++i) {
-        if ((*pRevEdgeXlat)[i]==-1) std::cout<<"Reverse translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
+    for (auto i=0;i<pRevEdgeXlat.size();++i) {
+        if (pRevEdgeXlat[i]==-1) std::cout<<"Reverse translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
     }
 
 }
 
 
 void buildHKPFromHBV( HyperBasevector const& hbv,
-                        vec<int> const& fwdEdgeXlat,
-                        vec<int> const& revEdgeXlat,
+                        std::vector<int> const& fwdEdgeXlat,
+                        std::vector<int> const& revEdgeXlat,
                         HyperKmerPath* pHKP )
 {
     unsigned K = hbv.K();
