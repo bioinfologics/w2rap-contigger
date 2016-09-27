@@ -30,7 +30,7 @@ public:
         distal=_distal;
         rc=_rc;
         auto b=bvseq;
-        if (rc) seq=b.ReverseComplement().ToString();
+        if (rc) b.ReverseComplement();
         seq=b.ToString();
         if (_distal)
             seq=seq.substr(seq.length()-K+1,seq.length());
@@ -43,7 +43,7 @@ public:
 };
 
 typedef struct {
-    uint64_t fw_v1,fw_v2,rc_v1,rc_v2;
+    int64_t fw_v1,fw_v2,rc_v1,rc_v2;
 } edge_vertex_list;
 
 
@@ -73,7 +73,7 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
 
     //number the vertices and fill a list of vertex numbers for the edges
     std::vector<edge_vertex_list> edge_vertices;
-    edge_vertices.resize(edges.size());
+    edge_vertices.resize(edges.size(),{-1,-1,-1,-1});
     uint64_t vID=0;
     //Can't be parallel, because vID depends on previous iteration
     for (auto i=0; i<ends.size(); ++i){
@@ -98,12 +98,20 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
     //Now add the edges, and their rcs to the graph, this probably shouldn't be parallel neither (data corruption)
     for (uint64_t i=0;i<edges.size();++i){
         auto fwEdgeId = pHBV->EdgeObjectCount();
+        if (edge_vertices[i].fw_v1==-1 or edge_vertices[i].fw_v2==-1) {
+            std::cout<<"Edge "<<i<<" has fw_v1="<<edge_vertices[i].fw_v1<<" and fw_v2="<<edge_vertices[i].fw_v2<<"!!!"<<std::endl;
+            FatalErr("Vertex not set!");
+        }
         pHBV->AddEdge(edge_vertices[i].fw_v1,edge_vertices[i].fw_v2,edges[i]);
         (*pFwdEdgeXlat)[i]=fwEdgeId;
         if ( edges[i].getCanonicalForm() != CanonicalForm::PALINDROME ) {
             auto bwEdgeId = pHBV->EdgeObjectCount();
             auto rcedge=edges[i];
             rcedge.ReverseComplement();
+            if (edge_vertices[i].rc_v1==-1 or edge_vertices[i].rc_v2==-1) {
+                std::cout<<"Edge "<<i<<" has rc_v1="<<edge_vertices[i].rc_v1<<" and rc_v2="<<edge_vertices[i].rc_v2<<"!!!"<<std::endl;
+                FatalErr("Vertex not set!");
+            }
             pHBV->AddEdge(edge_vertices[i].rc_v1, edge_vertices[i].rc_v2, rcedge);
             (*pRevEdgeXlat)[i] = bwEdgeId;
         } else {
