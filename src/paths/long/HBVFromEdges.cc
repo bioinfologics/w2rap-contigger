@@ -13,10 +13,7 @@
  */
 
 #include "paths/long/HBVFromEdges.h"
-#include "dna/CanonicalForm.h"
-#include "paths/KmerPathInterval.h"
-#include "system/ID.h"
-#include <list>
+
 
 
 
@@ -99,10 +96,6 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
     //Now add the edges, and their rcs to the graph, this probably shouldn't be parallel neither (data corruption)
     for (uint64_t i=0;i<edges.size();++i){
         auto fwEdgeId = pHBV->EdgeObjectCount();
-        if (edge_vertices[i].fw_v1==-1 or edge_vertices[i].fw_v2==-1) {
-            std::cout<<"Edge "<<i<<" has fw_v1="<<edge_vertices[i].fw_v1<<" and fw_v2="<<edge_vertices[i].fw_v2<<"!!!"<<std::endl;
-            FatalErr("Vertex not set!");
-        }
         pHBV->AddEdge(edge_vertices[i].fw_v1,edge_vertices[i].fw_v2,edges[i]);
         pFwdEdgeXlat[i]=fwEdgeId;
         if ( edges[i].getCanonicalForm() == CanonicalForm::PALINDROME ) {
@@ -112,20 +105,9 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
             auto bwEdgeId = pHBV->EdgeObjectCount();
             auto rcedge = edges[i];
             rcedge.ReverseComplement();
-            if (edge_vertices[i].rc_v1 == -1 or edge_vertices[i].rc_v2 == -1) {
-                std::cout << "Edge " << i << " has rc_v1=" << edge_vertices[i].rc_v1 << " and rc_v2="
-                          << edge_vertices[i].rc_v2 << "!!!" << std::endl;
-                FatalErr("Vertex not set!");
-            }
             pHBV->AddEdge(edge_vertices[i].rc_v1, edge_vertices[i].rc_v2, rcedge);
             pRevEdgeXlat[i] = bwEdgeId;
         }
-    }
-    for (auto i=0;i<pFwdEdgeXlat.size();++i) {
-        if (pFwdEdgeXlat[i]==-1) std::cout<<"Forward translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
-    }
-    for (auto i=0;i<pRevEdgeXlat.size();++i) {
-        if (pRevEdgeXlat[i]==-1) std::cout<<"Reverse translation not set for edge "<<i<<" with canonical form "<<edges[i].getCanonicalForm()<<std::endl;
     }
 
 }
