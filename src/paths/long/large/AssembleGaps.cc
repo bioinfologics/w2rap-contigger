@@ -204,7 +204,7 @@ void FindPidsST(vec<int64_t> & pids, const vec<int> &lefts, const vec<int> &righ
 
 void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                    VecULongVec &paths2_index, const vecbasevector &bases, VecPQVec const &quals,
-                   const String &work_dir, int K2_FLOOR,
+                   const String &work_dir, std::vector<int> k2floor_sequence,
                    vecbvec &new_stuff, const Bool CYCLIC_SAVE,
                    const int A2V, const int GAP_CAP, const int MAX_PROX_LEFT,
                    const int MAX_PROX_RIGHT, const int MAX_BPATHS, const int pair_sample) {
@@ -313,7 +313,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
         vec<int64_t> pids;
         const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
-        int K2_FLOOR_LOCAL = K2_FLOOR;
+
 
         //PART1-------------------------------
         TIMELOG_START_LOCAL(AG2_FindPids,Loop);
@@ -369,91 +369,72 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
         uint NUM_THREADS = 1;
         long_heuristics heur( "" ); //TODO: this is allocated in stack and wastes both time and space!
-        heur.K2_FLOOR = K2_FLOOR_LOCAL;
+        heur.K2_FLOOR = k2floor_sequence[0];
         CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", False);
 
 
 
         TIMELOG_STOP_LOCAL(AG2_CorrectionSuite,Loop);
         //PART3-----------------------------------------------------
+        HyperBasevector xshb;
 
+        for (auto K2_FLOOR_LOCAL: k2floor_sequence) {
+            TIMELOG_START_LOCAL(AG2_LocalAssembly2, Loop);
+            MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
+            TIMELOG_STOP_LOCAL(AG2_LocalAssembly2, Loop);
 
-        retry:
-        TIMELOG_START_LOCAL(AG2_LocalAssembly2,Loop);
-        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
-        TIMELOG_STOP_LOCAL(AG2_LocalAssembly2,Loop);
-        TIMELOG_START_LOCAL(AG2_LocalAssemblyEval,Loop);
-        if (shb.K() == 0) {    // TODO: no more dots in advances...
-            /*mreport[bl] = mout.str( );
-            Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );*/
+            if (shb.K() == 0) continue;
+
+            TIMELOG_START_LOCAL(AG2_LocalAssemblyEval, Loop);
+
+            // Find edges "starts" and "stops" overlapping root edges.
+            vec<int> starts, stops;
+            vecbasevector bell;
+            for (int e = 0; e < shb.EdgeObjectCount(); e++)
+                bell.push_back(shb.EdgeObject(e));
+            for (int l = 0; l < lefts.isize(); l++)
+                bell.push_back(hb.EdgeObject(lefts[l]));
+            for (int r = 0; r < rights.isize(); r++)
+                bell.push_back(hb.EdgeObject(rights[r]));
+
+            BigK::dispatch<MakeStartStopFunctor>( shb.K(), bell, hb, shb, lefts, rights, starts, stops);
+
+            UniqueSort(starts), UniqueSort(stops);
+
+            // Reduce shb to those edges between starts and stops.
+
+            vec<int> yto_left, yto_right;
+            shb.ToLeft(yto_left), shb.ToRight(yto_right);
+            vec<int> keep = Intersection(starts, stops);
+            keep.append(starts);
+            keep.append(stops);
+            for (int j1 = 0; j1 < starts.isize(); j1++)
+                for (int j2 = 0; j2 < stops.isize(); j2++) {
+                    int v = yto_right[starts[j1]], w = yto_left[stops[j2]];
+                    vec<int> b = shb.EdgesSomewhereBetween(v, w);
+                    keep.append(b);
+                }
+            UniqueSort(keep);
+            vec<int> ydels;
+            for (int e = 0; e < shb.EdgeObjectCount(); e++)
+                if (!BinMember(keep, e)) ydels.push_back(e);
+            xshb=shb;
+            xshb.DeleteEdges(ydels);
+            xshb.RemoveUnneededVertices();
+            xshb.RemoveDeadEdgeObjects();
+            //mout << TimeSince(sclock) << " used contracting" << std::endl;
+
             TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
-            continue;
-        }
 
+            if (!CYCLIC_SAVE || xshb.Acyclic() ) break;
 
-        // Find edges "starts" and "stops" overlapping root edges.
+        };
 
-
-        vec<int> starts, stops;
-        vecbasevector bell;
-        for (int e = 0; e < shb.EdgeObjectCount(); e++)
-            bell.push_back(shb.EdgeObject(e));
-        for (int l = 0; l < lefts.isize(); l++)
-            bell.push_back(hb.EdgeObject(lefts[l]));
-        for (int r = 0; r < rights.isize(); r++)
-            bell.push_back(hb.EdgeObject(rights[r]));
-        BigK::dispatch<MakeStartStopFunctor>(
-                shb.K(), bell, hb, shb, lefts, rights, starts, stops);
-        UniqueSort(starts), UniqueSort(stops);
-
-        // Reduce shb to those edges between starts and stops.
-
-        vec<int> yto_left, yto_right;
-        shb.ToLeft(yto_left), shb.ToRight(yto_right);
-        vec<int> keep = Intersection(starts, stops);
-        keep.append(starts);
-        keep.append(stops);
-        for (int j1 = 0; j1 < starts.isize(); j1++)
-            for (int j2 = 0; j2 < stops.isize(); j2++) {
-                int v = yto_right[starts[j1]], w = yto_left[stops[j2]];
-                vec<int> b = shb.EdgesSomewhereBetween(v, w);
-                keep.append(b);
-            }
-        UniqueSort(keep);
-        vec<int> ydels;
-        for (int e = 0; e < shb.EdgeObjectCount(); e++)
-            if (!BinMember(keep, e)) ydels.push_back(e);
-        HyperBasevector xshb(shb);
-        xshb.DeleteEdges(ydels);
-        xshb.RemoveUnneededVertices();
-        xshb.RemoveDeadEdgeObjects();
-        //mout << TimeSince(sclock) << " used contracting" << std::endl;
-
-
-        // Attempt to recover assemblies with cycles by raising K.
-
-        if (CYCLIC_SAVE && !xshb.Acyclic()) {
-            vec<int> K2s = {100, 128, 144, 172, 200};
-            int j;
-            for (j = 0; j < K2s.isize(); j++)
-                if (xshb.K() < K2s[j]) break;
-            if (j < K2s.isize()) {
-                K2_FLOOR_LOCAL = K2s[j];
-                //PRINT_TO( mout, K2_FLOOR_LOCAL );
-                TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
-                goto retry;
-            }
-        }
-        TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
         //PART4-----------------------------------------------------
-
-        if (!xshb.Acyclic() ||
-            xshb.N() == 0) {    //if ( !xshb.Acyclic( ) ) mout << "has cycle, not using" << std::endl;
-            //if ( xshb.N( ) == 0 ) mout << "local assembly empty" << std::endl;
-            //mreport[bl] += mout.str( );
-            //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
+        if (!xshb.Acyclic() || xshb.N() == 0) {
             continue;
         }
+
         //mout << "local assembly has " << xshb.NComponents( )
         //     << " components" << "\n";
 

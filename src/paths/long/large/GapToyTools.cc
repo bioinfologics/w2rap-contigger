@@ -1002,7 +1002,7 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
 void MakeLocalAssembly2(VecEFasta &corrected,
                         const vec<int> &lefts, const vec<int> &rights,
                         SupportedHyperBasevector &shb, const int K2_FLOOR,
-                        vecbasevector &creads/*, LongProtoTmpDirManager &tmp_mgr*/, vec<int> &cid,
+                        vecbasevector &creads, vec<int> &cid,
                         vec<pairing_info> &cpartner) {
     long_logging logc("", "");
     logc.STATUS_LOGGING = False;
@@ -1018,7 +1018,7 @@ void MakeLocalAssembly2(VecEFasta &corrected,
     if (count == 0) {
         //mout << "No reads were corrected." << std::endl;
     } else {
-        if (!LongHyper("", corrected, cpartner, shb, heur, log_control, logc, /*tmp_mgr,*/ False)) {
+        if (!LongHyper(corrected, cpartner, shb, heur, log_control, logc, False)) {
             //mout << "No paths were found." << std::endl;
             SupportedHyperBasevector shb0;
             shb = shb0;

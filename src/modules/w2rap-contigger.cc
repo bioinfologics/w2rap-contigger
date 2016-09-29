@@ -413,16 +413,15 @@ int main(const int argc, const char * argv[]) {
 
         vecbvec new_stuff;
 
-
-        int K2_FLOOR = 0;
         bool CYCLIC_SAVE = True;
         int A2V = 5;
         int GAP_CAP = -1;
         int MAX_PROX_LEFT = 400;
         int MAX_PROX_RIGHT = 400;
         int MAX_BPATHS = 100000;
+        std::vector<int> k2floor_sequence={0, 100, 128, 144, 172, 200};
 
-        AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, K2_FLOOR,
+        AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, k2floor_sequence,
                       new_stuff, CYCLIC_SAVE, A2V, GAP_CAP, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
         if (dump_perf) perf_file << checkpoint_perf_time("AssembleGaps2") << std::endl;
         int MIN_GAIN = 5;

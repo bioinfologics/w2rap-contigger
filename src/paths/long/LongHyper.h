@@ -17,10 +17,8 @@
 #include "paths/long/PairInfo.h"
 #include "paths/long/SupportedHyperBasevector.h"
 
-Bool LongHyper( const String& READS, const VecEFasta& correctede, 
-     const vec<pairing_info>& cpartner, SupportedHyperBasevector& shb,
-     const long_heuristics& heur,
-     const long_logging_control& log_control, const long_logging& logc, 
-     /*const LongProtoTmpDirManager& tmp_mgr,*/ bool useOldLRPMethod );
+Bool LongHyper(const VecEFasta &correctede, const vec<pairing_info> &cpartner, SupportedHyperBasevector &shb,
+               const long_heuristics &heur, const long_logging_control &log_control, const long_logging &logc,
+               bool useOldLRPMethod);
 
 #endif
