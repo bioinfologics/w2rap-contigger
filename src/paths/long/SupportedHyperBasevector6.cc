@@ -21,7 +21,7 @@
 #include "ParallelVecUtilities.h"
 #include "Qualvector.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/EvalByReads.h"
+//#include "paths/long/EvalByReads.h"
 #include "paths/long/KmerCount.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "random/Bernoulli.h"

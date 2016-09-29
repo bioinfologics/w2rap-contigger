@@ -547,42 +547,45 @@ void ExtraPaths( const HyperBasevector& hb, const vecbasevector& bases,
      std::cout << Date( ) << ": placed partners for " << count << " pairs, "
           << PERCENT_RATIO( 3, count, npids ) << " of total" << std::endl;    }
 
-void LayoutReads( const HyperBasevector& hb, const vec<int>& inv,
-     const vecbasevector& bases, const ReadPathVec& paths,
-     vec<vec<int>>& layout_pos, vec<vec<int64_t>>& layout_id,
-     vec<vec<Bool>>& layout_or )
-{
-     int nedges = hb.EdgeObjectCount( );
+void LayoutReads(const HyperBasevector &hb, const vec<int> &inv,
+                 const vecbasevector &bases, const ReadPathVec &paths,
+                 vec<vec<int>> &layout_pos, vec<vec<int64_t>> &layout_id,
+                 vec<vec<Bool>> &layout_or) {
+     int nedges = hb.EdgeObjectCount();
      layout_pos.resize(nedges), layout_id.resize(nedges), layout_or.resize(nedges);
-     for ( int64_t i = 0; i < (int64_t) paths.size( ); ++i )
-     {    vec<int> x;
-          for ( int64_t j = 0; j < (int64_t) paths[i].size( ); ++j )
-               x.push_back( paths[i][j] );
-          if ( x.empty( ) ) continue;
-          int pos = paths[i].getOffset( );
-          for ( int j = 0; j < x.isize( ); j++ )
-          {    if ( j > 0 && j < x.isize( ) - 1 ) continue;
-               layout_pos[ x[j] ].push_back(pos);
-               layout_id[ x[j] ].push_back(i);
-               layout_or[ x[j] ].push_back(True);
-               pos -= hb.EdgeLengthKmers( x[j] );    }
-          x.ReverseMe( );
-          for ( int j = 0; j < x.isize( ); j++ )
-               x[j] = inv[ x[j] ];
-          pos = paths[i].getOffset( ) + bases[i].isize( );
-          int len = hb.EdgeLength( x[0] );
-          for ( int j = 1; j < x.isize( ); j++ )
-               len += hb.EdgeLengthKmers( x[j] );
+     for (int64_t i = 0; i < (int64_t) paths.size(); ++i) {
+          vec<int> x;
+          for (int64_t j = 0; j < (int64_t) paths[i].size(); ++j)
+               x.push_back(paths[i][j]);
+          if (x.empty()) continue;
+          int pos = paths[i].getOffset();
+          for (int j = 0; j < x.isize(); j++) {
+               if (j > 0 && j < x.isize() - 1) continue;
+               layout_pos[x[j]].push_back(pos);
+               layout_id[x[j]].push_back(i);
+               layout_or[x[j]].push_back(True);
+               pos -= hb.EdgeLengthKmers(x[j]);
+          }
+          x.ReverseMe();
+          for (int j = 0; j < x.isize(); j++)
+               x[j] = inv[x[j]];
+          pos = paths[i].getOffset() + bases[i].isize();
+          int len = hb.EdgeLength(x[0]);
+          for (int j = 1; j < x.isize(); j++)
+               len += hb.EdgeLengthKmers(x[j]);
           pos = len - pos;
-          for ( int j = 0; j < x.isize( ); j++ )
-          {    if ( j > 0 && j < x.isize( ) - 1 ) continue;
-               layout_pos[ x[j] ].push_back(pos);
-               layout_id[ x[j] ].push_back(i);
-               layout_or[ x[j] ].push_back(False);
-               pos -= hb.EdgeLengthKmers( x[j] );    }    }
+          for (int j = 0; j < x.isize(); j++) {
+               if (j > 0 && j < x.isize() - 1) continue;
+               layout_pos[x[j]].push_back(pos);
+               layout_id[x[j]].push_back(i);
+               layout_or[x[j]].push_back(False);
+               pos -= hb.EdgeLengthKmers(x[j]);
+          }
+     }
      #pragma omp parallel for
-     for ( int e = 0; e < nedges; e++ )
-          SortSync( layout_pos[e], layout_or[e], layout_id[e] );    }
+     for (int e = 0; e < nedges; e++)
+          SortSync(layout_pos[e], layout_or[e], layout_id[e]);
+}
 
 void SortBlobs( const HyperBasevector& hb,
      const vec< triple< std::pair<int,int>, triple<int,vec<int>,vec<int>>, vec<int> > >&

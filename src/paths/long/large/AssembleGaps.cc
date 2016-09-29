@@ -65,7 +65,7 @@ struct MakeStartStopFunctor {
 
 void FindPidsST(vec<int64_t> & pids, const vec<int> &lefts, const vec<int> &rights,
                 const vec<vec<int>> &layout_pos, const vec<vec<int64_t>> &layout_id, const vec<vec<Bool>> & layout_or,
-                const int MAX_PROX_LEFT, const int MAX_PROX_RIGHT){
+                const int MAX_PROX_LEFT, const int MAX_PROX_RIGHT, const int pair_sample){
 
     // Get ready.
 
@@ -74,7 +74,6 @@ void FindPidsST(vec<int64_t> & pids, const vec<int> &lefts, const vec<int> &righ
     {
         // Heuristics.
 
-        const int pair_sample = 200;
 
         // First find the pairs that bridge from left to right, and mark
         // their endpoints.  Inefficient.
@@ -208,26 +207,30 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                    const String &work_dir, int K2_FLOOR,
                    vecbvec &new_stuff, const Bool CYCLIC_SAVE,
                    const int A2V, const int GAP_CAP, const int MAX_PROX_LEFT,
-                   const int MAX_PROX_RIGHT, const int MAX_BPATHS) {
+                   const int MAX_PROX_RIGHT, const int MAX_BPATHS, const int pair_sample) {
     // Find clusters of unsatisfied links.
 
     vec<vec<std::pair<int, int> > > xs;
     Unsat(hb, inv2, paths2, xs, work_dir, A2V);
 
+    //Should print some stats about Unsats here.
+
     // Condense to lists of lefts and rights.
 
     vec<std::pair<vec<int>, vec<int>>> LR(xs.size());
     #pragma omp parallel for
-    for (int i = 0; i < xs.isize(); i++) {
+    for (auto i = 0; i < xs.size(); i++) {
         vec<int> lefts, rights;
-        for (int j = 0; j < xs[i].isize(); j++) {
+        for (int j = 0; j < xs[i].size(); j++) {
             lefts.push_back(xs[i][j].first);
             rights.push_back(xs[i][j].second);
         }
         UniqueSort(lefts), UniqueSort(rights);
         LR[i] = make_pair(lefts, rights);
     }
-    sortInPlaceParallel(LR.begin(), LR.end());
+
+    //sortInPlaceParallel(LR.begin(), LR.end());
+    __gnu_parallel::sort(LR.begin(),LR.end());
 
     // Remove inverted copies.  Should force symmetry first.
 
@@ -316,7 +319,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         //PART1-------------------------------
         TIMELOG_START_LOCAL(AG2_FindPids,Loop);
 
-        FindPidsST(pids,lefts,rights,layout_pos,layout_id,layout_or,MAX_PROX_LEFT,MAX_PROX_RIGHT);
+        FindPidsST(pids,lefts,rights,layout_pos,layout_id,layout_or,MAX_PROX_LEFT,MAX_PROX_RIGHT,pair_sample);
 
         TIMELOG_STOP_LOCAL(AG2_FindPids,Loop);
 

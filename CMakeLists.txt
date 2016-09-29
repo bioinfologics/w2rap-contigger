@@ -172,7 +172,7 @@ add_library(base_libs OBJECT
         src/paths/long/CleanEfasta.cc
         src/paths/long/CreateGenome.cc
         src/paths/long/DigraphFromWords.cc
-        src/paths/long/EvalAssembly.cc
+        #src/paths/long/EvalAssembly.cc
         src/paths/long/EvalByReads.cc
         src/paths/long/KmerCount.cc
         src/paths/long/LongHyper.cc

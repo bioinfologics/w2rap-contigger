@@ -26,7 +26,7 @@
 #include "paths/ReadsToPathsCoreX.h"
 #include "paths/RemodelGapTools.h"
 #include "paths/Unipath.h"
-#include "paths/long/EvalAssembly.h"
+//#include "paths/long/EvalAssembly.h"
 #include "paths/long/Heuristics.h"
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/Logging.h"

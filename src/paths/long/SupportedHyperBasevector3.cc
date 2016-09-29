@@ -14,7 +14,7 @@
 #include "math/Functions.h"
 #include "pairwise_aligners/SmithWatFree.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/EvalByReads.h"
+//#include "paths/long/EvalByReads.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/DiscovarTools.h"
 #include "random/Bernoulli.h"

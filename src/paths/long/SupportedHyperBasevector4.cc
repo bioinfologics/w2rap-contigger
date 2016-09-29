@@ -10,6 +10,7 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include "CoreTools.h"
+
 #include "paths/long/EvalByReads.h"
 #include "paths/long/LargeKDispatcher.h"
 #include "paths/long/MakeKmerStuff.h"

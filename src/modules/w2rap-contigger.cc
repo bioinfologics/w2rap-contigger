@@ -53,7 +53,7 @@ int main(const int argc, const char * argv[]) {
     std::string dev_run;
     unsigned int threads;
     int max_mem;
-    unsigned int small_K, large_K, min_size,from_step,to_step;
+    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample;
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
@@ -95,6 +95,8 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
+        TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
+                                                 "max number of read pairs to use in local assemblies on step 5(default: 200)", false, 200, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
@@ -127,6 +129,7 @@ int main(const int argc, const char * argv[]) {
         to_step=toStep_Arg.getValue();
         dev_run=dev_runArg.getValue();
         dump_pf=dumpPFArg.getValue();
+        pair_sample=pairSampleArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -420,7 +423,7 @@ int main(const int argc, const char * argv[]) {
         int MAX_BPATHS = 100000;
 
         AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, K2_FLOOR,
-                      new_stuff, CYCLIC_SAVE, A2V, GAP_CAP, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS);
+                      new_stuff, CYCLIC_SAVE, A2V, GAP_CAP, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
         if (dump_perf) perf_file << checkpoint_perf_time("AssembleGaps2") << std::endl;
         int MIN_GAIN = 5;
         //const String TRACE_PATHS="{}";
