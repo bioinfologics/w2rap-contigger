@@ -647,56 +647,49 @@ void Insert( VecULongVec& paths2_index, const int e, const int64_t id )
      {    paths2_index[e].push_back(id);
           Sort( paths2_index[e] );    }    }
 
-void Patch( HyperBasevector& hb, const vec< std::pair<int,int> >& blobs,
-     vec<HyperBasevector>& mhbp, const String& work_dir, const vec<String>& mreport, 
-     vecbvec& new_stuff )
-{    
-     double clock = WallClockTime( );
+void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
+           vec<HyperBasevector> &mhbp, const String &work_dir,
+           vecbvec &new_stuff) {
+     double clock = WallClockTime();
      new_stuff.clear();
-     std::cout << Date( ) << ": patch reserving space" << std::endl; // XXXXXXXXXXXXXXXXXXXXXX
-     new_stuff.reserve(std::accumulate(mhbp.begin(),mhbp.end(),0ul,
-                     [](size_t nnn,HyperBasevector const& hbv)
-                     { nnn += hbv.E();
-                       auto end = hbv.To().end();
-                       auto itr2 = hbv.From().begin();
-                       for ( auto itr=hbv.To().begin(); itr!=end; ++itr,++itr2 )
-                           nnn += itr->size()*itr2->size();
-                       return nnn; }));
-     std::cout << Date( ) << ": memory in use = " << MemUsageGBString( ) << std::endl;
+     std::cout << Date() << ": patch reserving space" << std::endl; // XXXXXXXXXXXXXXXXXXXXXX
+     new_stuff.reserve(std::accumulate(mhbp.begin(), mhbp.end(), 0ul,
+                                       [](size_t nnn, HyperBasevector const &hbv) {
+                                           nnn += hbv.E();
+                                           auto end = hbv.To().end();
+                                           auto itr2 = hbv.From().begin();
+                                           for (auto itr = hbv.To().begin(); itr != end; ++itr, ++itr2)
+                                                nnn += itr->size() * itr2->size();
+                                           return nnn;
+                                       }));
+     std::cout << Date() << ": memory in use = " << MemUsageGBString() << std::endl;
 
-     int K = hb.K( );
-     Ofstream( rout, work_dir + "/patch" );
-     for ( int bl = 0; bl < blobs.isize( ); bl++ )
-     {    rout << mreport[bl];
-          PRINT_TO( rout, mhbp[bl].N( ) );
-          if ( mhbp[bl].N( ) > 0 )
-          {    HyperBasevector const& hbp = mhbp[bl];
-               PRINT_TO( rout, hbp.EdgeObjectCount( ) );
+     int K = hb.K();
+     for (int bl = 0; bl < blobs.isize(); bl++) {
 
-               // Delete detritus.
-               //[GONZA] TODO: Check this because it has no sense, where does lenft and right come from!?
-               //PRINT2_TO( rout, left, right );
-
+          if (mhbp[bl].N() > 0) {
+               HyperBasevector const &hbp = mhbp[bl];
                // Insert patch.
 
-               for ( int e = 0; e < hbp.EdgeObjectCount( ); e++ )
-                    new_stuff.push_back( hbp.EdgeObject(e) );
-               for ( int v = 0; v < hbp.N( ); v++ )
-               for ( int i1 = 0; i1 < hbp.To(v).isize( ); i1++ )
-               for ( int i2 = 0; i2 < hbp.From(v).isize( ); i2++ )
-               {    basevector const& e1 = hbp.EdgeObjectByIndexTo( v, i1 );
-                    basevector const& e2 = hbp.EdgeObjectByIndexFrom( v, i2 );
-                    new_stuff.push_back(TrimCat(K,e1,e2));    
-                    // new_stuff.back( ).Print( rout, "patch." + ToString(v) 
-                    //      + "." + ToString(i1) + "." + ToString(i2) );    
+               for (int e = 0; e < hbp.EdgeObjectCount(); e++)
+                    new_stuff.push_back(hbp.EdgeObject(e));
+               for (int v = 0; v < hbp.N(); v++)
+                    for (int i1 = 0; i1 < hbp.To(v).isize(); i1++)
+                         for (int i2 = 0; i2 < hbp.From(v).isize(); i2++) {
+                              basevector const &e1 = hbp.EdgeObjectByIndexTo(v, i1);
+                              basevector const &e2 = hbp.EdgeObjectByIndexFrom(v, i2);
+                              new_stuff.push_back(TrimCat(K, e1, e2));
+                              // new_stuff.back( ).Print( rout, "patch." + ToString(v)
+                              //      + "." + ToString(i1) + "." + ToString(i2) );
                          }
-               rout << "Inserting patch." << std::endl;    }    }
+          }
+     }
 
      std::cout << TimeSince(clock) << " used patching"
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
+               #ifdef __linux
+               << ", peak = " << PeakMemUsageGBString( )
+               #endif
+               << std::endl;
 }
 
 /*void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,

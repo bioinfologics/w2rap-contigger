@@ -273,7 +273,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
-    vec<String> mreport(LR.size());//this is accumulation, generates memory blocks
     vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
     std::cout << Date() << ": now processing " << LR.size() << " blobs" << std::endl;
     std::cout << Date() << ": memory in use = " << MemUsageGBString()
@@ -545,5 +544,5 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     TIMELOG_REPORT(std::cout,CorrectPairs1,CP1_Align,CP1_MakeStacks,CP1_Correct);
     // Do the patching.
     const vec<std::pair<int, int> > blobs(LR.size());
-    Patch(hb, blobs, mhbp, work_dir, mreport, new_stuff);
+    Patch(hb, blobs, mhbp, work_dir, new_stuff);
 }
