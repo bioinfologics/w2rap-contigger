@@ -125,6 +125,7 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
      const ReadPathVec& paths, vec< vec< std::pair<int,int> > >& xs,
      const String& work_dir, const int A2V )
 {
+     std::cout<<Date()<<": Finding unsatisfied path clusters"<<std::endl;
      // Heuristics.
 
      const int max_depth = 15;
@@ -143,7 +144,6 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
 
      // Phase 1.  Find unsatisfied links.
 
-     std::cout << Date( ) << ": finding unsatisfieds" << std::endl;
      vec<vec< std::pair<int,int64_t> >> unsats( hb.EdgeObjectCount( ) );
      vec<Bool> u( paths.size( ) / 2, False );
      #pragma omp parallel for
@@ -187,8 +187,6 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
           Sort( unsats[e] );
 
      // Create link multiplicity std::map.
-
-     std::cout << Date( ) << ": creating multiplicity std::map" << std::endl;
      std::map< std::pair<int,int>, int > mult;
      for ( int e = 0; e < unsats.isize( ); e++ )
      {    UniqueSort( unsats[e] );
@@ -200,8 +198,6 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
                i = j - 1;    }    }
 
      // Delete duplicate links.
-
-     std::cout << Date( ) << ": economizing links" << std::endl;
      #pragma omp parallel for
      for ( int e = 0; e < unsats.isize( ); e++ )
      {    vec<Bool> to_delete( unsats[e].size( ), False );
@@ -211,16 +207,12 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
           EraseIf( unsats[e], to_delete );    }
 
      // Form neighborhoods.
-
-     std::cout << Date( ) << ": forming neighborhoods" << std::endl;
-
      vec<vec<int>> n( hb.EdgeObjectCount( ) );
      for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
           n[e] = Nhood( hb, to_left, to_right, e, radius );
 
      // Form initial clusters.
-     
-     std::cout << Date( ) << ": forming initial clusters" << std::endl;
+
      xs.clear( );
 
      for ( int id1 = 0; id1 < hb.EdgeObjectCount( ); id1++ )
@@ -237,17 +229,16 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
                               x.push( e1, e2 );    }    }
                Sort(x);
                xs.push_back(x);    }     }
-     std::cout << Date( ) << ": start sort" << std::endl; // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
      double clock = WallClockTime( ); // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-     sortInPlaceParallel(xs.begin(),xs.end());
-     std::cout << TimeSince(clock) << " used sorting" << std::endl; // XXXXXXXXXXXXXXXXXXXXXXX
+     __gnu_parallel::sort(xs.begin(),xs.end());
+
      Unique(xs);
 
      // Merge clusters.
 
-     std::cout << Date( ) << ": merging clusters" << std::endl;
+
      double mclock = WallClockTime( );
-     PRINT( xs.size( ) );
+     std::cout<<Date()<<": Merging "<<xs.size( )<<" clusters"<<std::endl;
      for ( int p = 1; p <= merge_passes; p++ )
      {    MergeClusters( xs, xs, n, hb.EdgeObjectCount( ) );
           int n = 0;
@@ -255,7 +246,6 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
                if ( xs[i].size( ) > 1 || mult[ xs[i][0] ] > 1 ) n++;
           // DPRINT2( xs.size( ), n );    
                }
-     std::cout << TimeSince(mclock) << " used merging" << std::endl;
 
      // Remove giant clusters.
 
@@ -281,10 +271,9 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
 
      // Look for cluster merges based on sequence overlaps.
 
-     PRINT( xs.size( ) );
+
      for ( int opass = 1; opass <= 2; opass++ )
      {
-     std::cout << Date( ) << ": start overlap-based merging" << std::endl;
      int N = hb.EdgeObjectCount( );
      vec< vec<int> > ind1(N), ind2(N);
      for ( int i = 0; i < xs.isize( ); i++ )
@@ -392,4 +381,5 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
 
      //BinaryWriter::writeFile( work_dir + "/clusters.bin", xs );
      //PrintClusters( xs, mult, work_dir + "/clusters.txt" );
+     std::cout<<Date()<<": "<<xs.size( )<<" clusters after merging"<<std::endl;
      }

@@ -11,7 +11,6 @@
 
 #include "Basevector.h"
 #include "CoreTools.h"
-//#include "ParallelVecUtilities.h"
 #include "Qualvector.h"
 #include "kmers/BigKPather.h"
 #include "paths/HyperBasevector.h"
@@ -206,7 +205,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                    VecULongVec &paths2_index, const vecbasevector &bases, VecPQVec const &quals,
                    const String &work_dir, std::vector<int> k2floor_sequence,
                    vecbvec &new_stuff, const Bool CYCLIC_SAVE,
-                   const int A2V, const int GAP_CAP, const int MAX_PROX_LEFT,
+                   const int A2V, const int MAX_PROX_LEFT,
                    const int MAX_PROX_RIGHT, const int MAX_BPATHS, const int pair_sample) {
     // Find clusters of unsatisfied links.
 
@@ -229,14 +228,12 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         LR[i] = make_pair(lefts, rights);
     }
 
-    //sortInPlaceParallel(LR.begin(), LR.end());
     __gnu_parallel::sort(LR.begin(),LR.end());
 
     // Remove inverted copies.  Should force symmetry first.
 
     {
         vec<Bool> lrd(LR.size(), False);
-        PRINT(LR.size());
         #pragma omp parallel for
         for (int i = 0; i < LR.isize(); i++) {
             vec<int> lefts, rights;
@@ -250,9 +247,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             lrd[i] = True;
         }
         EraseIf(LR, lrd);
-        PRINT(LR.size());
     }
-
+    std::cout<<Date()<<": "<<LR.size()<<" non-inverted clusters"<<std::endl;
     // Some setup stuff.
 
     int nedges = hb.EdgeObjectCount();
@@ -274,7 +270,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     hb.ToLeft(to_left), hb.ToRight(to_right);
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
     vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
-    std::cout << Date() << ": now processing " << LR.size() << " blobs" << std::endl;
+    std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
     std::cout << Date() << ": memory in use = " << MemUsageGBString()
               #ifdef __linux
               << ", peak = " << PeakMemUsageGBString( )
@@ -282,8 +278,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
               << std::endl;
     double clockp1 = WallClockTime();
     int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
-    int lrc = LR.size();
-    if (GAP_CAP >= 0) lrc = GAP_CAP;
 
 
 
@@ -300,7 +294,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     readstack::init_LUTs();
 
     #pragma omp parallel for schedule(dynamic, 5)
-    for (int bl = lrc-1; bl >= 0; --bl) {
+    for (int bl = nblobs-1; bl >= 0; --bl) {
 
         TIMELOG_DECLARE_LOCAL(AG2_FindPids,Loop);
         TIMELOG_DECLARE_LOCAL(AG2_ReadSetCreation,Loop);
@@ -422,7 +416,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             xshb.DeleteEdges(ydels);
             xshb.RemoveUnneededVertices();
             xshb.RemoveDeadEdgeObjects();
-            //mout << TimeSince(sclock) << " used contracting" << std::endl;
 
             TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
 
