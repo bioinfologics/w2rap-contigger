@@ -60,7 +60,7 @@ template<int K> void MakeKmerLookup2( const vecbasevector& unibases,
 
 // unparallel version
 
-template<int K> void MakeKmerLookup3( const vecbasevector& unibases,
+template<int K> void MakeKmerLookup3( const std::vector<basevector>& unibases,
      vec< triple<kmer<K>,int,int> >& kmers_plus )
 {    vec<int64_t> starts;
      starts.push_back(0);

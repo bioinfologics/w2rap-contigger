@@ -27,7 +27,7 @@
 
 
 template<int M>
-void MakeStartStop(const vecbasevector &bell,
+void MakeStartStop(const std::vector<basevector> &bell,
                    const HyperBasevector &hb, const HyperBasevector &shb, const vec<int> &lefts,
                    const vec<int> &rights, vec<int> &starts, vec<int> &stops) {
     vec<triple<kmer<M>, int, int> > kmers_plus;
@@ -55,7 +55,7 @@ void MakeStartStop(const vecbasevector &bell,
 
 template<int M>
 struct MakeStartStopFunctor {
-    void operator( )(const vecbasevector &bell, const HyperBasevector &hb,
+    void operator( )(const std::vector<basevector>  &bell, const HyperBasevector &hb,
                      const HyperBasevector &shb, const vec<int> &lefts,
                      const vec<int> &rights, vec<int> &starts, vec<int> &stops) {
         MakeStartStop<M>(bell, hb, shb, lefts, rights, starts, stops);
@@ -317,7 +317,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
     #pragma omp parallel
     {
-        #pragma omp for nowait
+        #pragma omp for
         for (int bl = nblobs - 1; bl >=0; --bl){
             //First part: create the gbases and gquals. this is locked by memory accesses and very convoluted
             const vec<int> lefts = LR[bl].first, rights = LR[bl].second; //TODO: how big is this? can we copy it?
@@ -344,18 +344,13 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
             CreateLocalReadSet(gbases, gquals, gpairs,pids,bases,quals);
             HyperBasevector * mhbp_t=&mhbp[bl];
+
             #pragma omp task
             {
                 uint NUM_THREADS = 1;
                 long_heuristics heur("");
                 heur.K2_FLOOR = k2floor_sequence[0];
                 CorrectionSuite(gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", False);
-
-
-
-
-                //PART3-----------------------------------------------------
-
 
                 for (auto K2_FLOOR_LOCAL: k2floor_sequence) {
                     SupportedHyperBasevector shb;
@@ -366,7 +361,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
                     // Find edges "starts" and "stops" overlapping root edges.
                     vec<int> starts, stops;
-                    vecbasevector bell;
+                    std::vector<basevector> bell;
+                    bell.reserve(shb.EdgeObjectCount()+lefts.isize()+rights.isize());
                     for (int e = 0; e < shb.EdgeObjectCount(); e++)
                         bell.push_back(shb.EdgeObject(e));
                     for (int l = 0; l < lefts.isize(); l++)
@@ -405,7 +401,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
                 };
 
-                //PART4-----------------------------------------------------
                 if (xshb.Acyclic() && xshb.N() > 0) {
 
                     // Make bpaths.  These are all source-sink paths through the
@@ -466,7 +461,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                             bpathsx.push_back(bpaths[l]);
                         BasesToGraph(bpathsx, K, *mhbp_t);
                     }
-
                 }
             }//---OMP TASK END---
         }

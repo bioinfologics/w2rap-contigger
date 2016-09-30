@@ -315,7 +315,7 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
 
           const int maxo = 5;
           if ( r.isize( ) > maxo ) continue;
-          vecbasevector all;
+          std::vector<basevector> all;
           all.reserve( s.size( ) + r.size( ) );
           for ( int j = 0; j < s.isize( ); j++ )
                all.push_back( hb.EdgeObject( s[j] ) );

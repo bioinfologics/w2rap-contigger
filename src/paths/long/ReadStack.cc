@@ -1393,7 +1393,7 @@ vec<int> GetOffsets1(const readstack &stack1, const readstack &stack2,
 
     // Look for initial offsets.
 
-    vecbasevector con12;
+    std::vector<basevector> con12;
     con12.push_back(con1);
     con12.push_back(con2);
     vec<triple<kmer<min_stretch>, int, int> > kmers_plus;
