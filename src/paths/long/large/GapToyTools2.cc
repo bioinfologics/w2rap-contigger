@@ -648,7 +648,7 @@ void Insert( VecULongVec& paths2_index, const int e, const int64_t id )
           Sort( paths2_index[e] );    }    }
 
 void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
-           vec<HyperBasevector> &mhbp, const String &work_dir,
+           std::vector<HyperBasevector> &mhbp, const String &work_dir,
            vecbvec &new_stuff) {
      double clock = WallClockTime();
      new_stuff.clear();

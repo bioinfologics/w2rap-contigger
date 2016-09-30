@@ -200,6 +200,36 @@ void FindPidsST(vec<int64_t> & pids, const vec<int> &lefts, const vec<int> &righ
     UniqueSort(pids);
 }
 
+void CreateLocalReadSet(vecbasevector &gbases,vecqualvector &gquals, PairsManager &gpairs, vec<int64_t> & pids,
+                        const vecbasevector &bases, VecPQVec const &quals) {
+
+
+        qvec qv;
+        gbases.reserve(2 * pids.isize());
+        gquals.reserve(2 * pids.isize());
+
+        for (int l = 0; l < pids.isize(); l++) {
+            int64_t pid = pids[l];
+            int64_t id1 = 2 * pid, id2 = 2 * pid + 1;
+            gbases.push_back(bases[id1]);
+            gbases.push_back(bases[id2]);
+            quals[id1].unpack(&qv); //TODO it is probably better to move this to the task!
+            gquals.push_back(qv);
+            quals[id2].unpack(&qv);
+            gquals.push_back(qv);
+        }
+
+        const int SEP = 0;
+        const int STDEV = 100;
+        const String LIB = "woof";
+        const size_t nreads = gbases.size();
+        // PairsManager gpairs(nreads);
+
+        gpairs = PairsManager(nreads);
+        gpairs.addLibrary(SEP, STDEV, LIB);
+        size_t npairs = nreads / 2;
+        for (size_t pi = 0; pi < npairs; pi++) gpairs.addPairToLib(2 * pi, 2 * pi + 1, 0);
+}
 
 void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                    VecULongVec &paths2_index, const vecbasevector &bases, VecPQVec const &quals,
@@ -217,7 +247,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     // Condense to lists of lefts and rights.
 
     vec<std::pair<vec<int>, vec<int>>> LR(xs.size());
-    #pragma omp parallel for
+#pragma omp parallel for
     for (auto i = 0; i < xs.size(); i++) {
         vec<int> lefts, rights;
         for (int j = 0; j < xs[i].size(); j++) {
@@ -228,13 +258,13 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         LR[i] = make_pair(lefts, rights);
     }
 
-    __gnu_parallel::sort(LR.begin(),LR.end());
+    __gnu_parallel::sort(LR.begin(), LR.end());
 
     // Remove inverted copies.  Should force symmetry first.
 
     {
         vec<Bool> lrd(LR.size(), False);
-        #pragma omp parallel for
+#pragma omp parallel for
         for (int i = 0; i < LR.isize(); i++) {
             vec<int> lefts, rights;
             for (int j = 0; j < LR[i].first.isize(); j++)
@@ -248,7 +278,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         }
         EraseIf(LR, lrd);
     }
-    std::cout<<Date()<<": "<<LR.size()<<" non-inverted clusters"<<std::endl;
+    std::cout << Date() << ": " << LR.size() << " non-inverted clusters" << std::endl;
     // Some setup stuff.
 
     int nedges = hb.EdgeObjectCount();
@@ -269,7 +299,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
-    vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
+    std::vector<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
     std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
     std::cout << Date() << ": memory in use = " << MemUsageGBString()
               #ifdef __linux
@@ -280,230 +310,166 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
 
 
-
     std::cout << "And now for the really slow part..." << std::endl;
     //TODO: check local variable usage, should be made minimal!!!
-    TIMELOG_DECLARE_ATOMIC(AG2_FindPids);
-    TIMELOG_DECLARE_ATOMIC(AG2_ReadSetCreation);
-    TIMELOG_DECLARE_ATOMIC(AG2_CorrectionSuite);
-    TIMELOG_DECLARE_ATOMIC(AG2_LocalAssembly2);
-    TIMELOG_DECLARE_ATOMIC(AG2_LocalAssemblyEval);
-    TIMELOG_DECLARE_ATOMIC(AG2_CreateBpaths);
-    TIMELOG_DECLARE_ATOMIC(AG2_PushBpathsToGraph);
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
 
-    #pragma omp parallel for schedule(dynamic, 5)
-    for (int bl = nblobs-1; bl >= 0; --bl) {
+    #pragma omp parallel
+    {
+        #pragma omp for nowait
+        for (int bl = nblobs - 1; bl >=0; --bl){
+            //First part: create the gbases and gquals. this is locked by memory accesses and very convoluted
+            const vec<int> lefts = LR[bl].first, rights = LR[bl].second; //TODO: how big is this? can we copy it?
 
-        TIMELOG_DECLARE_LOCAL(AG2_FindPids,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_ReadSetCreation,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_CorrectionSuite,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_LocalAssembly2,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_LocalAssemblyEval,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_CreateBpaths,Loop);
-        TIMELOG_DECLARE_LOCAL(AG2_PushBpathsToGraph,Loop);
+            //Local readset
+            vec<int64_t> pids;
+            vecbasevector gbases;
+            vecqualvector gquals;
+            PairsManager gpairs;
+
+            //Corrected reads
+            VecEFasta corrected;
+            vecbasevector creads;
+            vec<pairing_info> cpartner;
+            vec<int> cid;
+
+            //Local assembly graph
+            HyperBasevector xshb;
+
+            //PART1-------------------------------
+            FindPidsST(pids, lefts, rights, layout_pos, layout_id, layout_or, MAX_PROX_LEFT, MAX_PROX_RIGHT,
+                       pair_sample);
 
 
-        vec<int64_t> pids;
-        const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
-
-
-        //PART1-------------------------------
-        TIMELOG_START_LOCAL(AG2_FindPids,Loop);
-
-        FindPidsST(pids,lefts,rights,layout_pos,layout_id,layout_or,MAX_PROX_LEFT,MAX_PROX_RIGHT,pair_sample);
-
-        TIMELOG_STOP_LOCAL(AG2_FindPids,Loop);
-
-        //PART2-----------------------------------------------------
-        TIMELOG_START_LOCAL(AG2_ReadSetCreation,Loop);
-
-
-        //Assembly starts
-
-        VecEFasta corrected;
-        vecbasevector creads;
-        vec<pairing_info> cpartner;
-        vec<int> cid;
-        SupportedHyperBasevector shb;
-
-        //Local readset creation and error correction.
-        vecbasevector gbases;
-        vecqualvector gquals;
-        PairsManager gpairs;
-
-        qvec qv;
-        gbases.reserve(2*pids.isize());
-        gquals.reserve(2*pids.isize());
-
-        for ( int l = 0; l < pids.isize( ); l++ )
-        {    int64_t pid = pids[l];
-            int64_t id1 = 2*pid, id2 = 2*pid + 1;
-            gbases.push_back( bases[id1] );
-            gbases.push_back( bases[id2] );
-            quals[id1].unpack(&qv);
-            gquals.push_back( qv );
-            quals[id2].unpack(&qv);
-            gquals.push_back( qv );    }
-
-        const int SEP = 0;
-        const int STDEV = 100;
-        const String LIB = "woof";
-        const size_t nreads = gbases.size( );
-        // PairsManager gpairs(nreads);
-
-        gpairs = PairsManager(nreads);
-        gpairs.addLibrary( SEP, STDEV, LIB );
-        size_t npairs = nreads / 2;
-        for ( size_t pi = 0; pi < npairs; pi++ ) gpairs.addPairToLib( 2 * pi, 2 * pi + 1, 0 );
-        TIMELOG_STOP_LOCAL(AG2_ReadSetCreation,Loop);
-
-        TIMELOG_START_LOCAL(AG2_CorrectionSuite,Loop);
-
-        uint NUM_THREADS = 1;
-        long_heuristics heur( "" ); //TODO: this is allocated in stack and wastes both time and space!
-        heur.K2_FLOOR = k2floor_sequence[0];
-        CorrectionSuite( gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", False);
+            CreateLocalReadSet(gbases, gquals, gpairs,pids,bases,quals);
+            HyperBasevector * mhbp_t=&mhbp[bl];
+            #pragma omp task
+            {
+                uint NUM_THREADS = 1;
+                long_heuristics heur("");
+                heur.K2_FLOOR = k2floor_sequence[0];
+                CorrectionSuite(gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "", False);
 
 
 
-        TIMELOG_STOP_LOCAL(AG2_CorrectionSuite,Loop);
-        //PART3-----------------------------------------------------
-        HyperBasevector xshb;
 
-        for (auto K2_FLOOR_LOCAL: k2floor_sequence) {
-            TIMELOG_START_LOCAL(AG2_LocalAssembly2, Loop);
-            MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
-            TIMELOG_STOP_LOCAL(AG2_LocalAssembly2, Loop);
+                //PART3-----------------------------------------------------
 
-            if (shb.K() == 0) continue;
 
-            TIMELOG_START_LOCAL(AG2_LocalAssemblyEval, Loop);
+                for (auto K2_FLOOR_LOCAL: k2floor_sequence) {
+                    SupportedHyperBasevector shb;
 
-            // Find edges "starts" and "stops" overlapping root edges.
-            vec<int> starts, stops;
-            vecbasevector bell;
-            for (int e = 0; e < shb.EdgeObjectCount(); e++)
-                bell.push_back(shb.EdgeObject(e));
-            for (int l = 0; l < lefts.isize(); l++)
-                bell.push_back(hb.EdgeObject(lefts[l]));
-            for (int r = 0; r < rights.isize(); r++)
-                bell.push_back(hb.EdgeObject(rights[r]));
+                    MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
 
-            BigK::dispatch<MakeStartStopFunctor>( shb.K(), bell, hb, shb, lefts, rights, starts, stops);
+                    if (shb.K() == 0) continue;
 
-            UniqueSort(starts), UniqueSort(stops);
+                    // Find edges "starts" and "stops" overlapping root edges.
+                    vec<int> starts, stops;
+                    vecbasevector bell;
+                    for (int e = 0; e < shb.EdgeObjectCount(); e++)
+                        bell.push_back(shb.EdgeObject(e));
+                    for (int l = 0; l < lefts.isize(); l++)
+                        bell.push_back(hb.EdgeObject(lefts[l]));
+                    for (int r = 0; r < rights.isize(); r++)
+                        bell.push_back(hb.EdgeObject(rights[r]));
 
-            // Reduce shb to those edges between starts and stops.
+                    BigK::dispatch<MakeStartStopFunctor>(shb.K(), bell, hb, shb, lefts, rights, starts, stops);
 
-            vec<int> yto_left, yto_right;
-            shb.ToLeft(yto_left), shb.ToRight(yto_right);
-            vec<int> keep = Intersection(starts, stops);
-            keep.append(starts);
-            keep.append(stops);
-            for (int j1 = 0; j1 < starts.isize(); j1++)
-                for (int j2 = 0; j2 < stops.isize(); j2++) {
-                    int v = yto_right[starts[j1]], w = yto_left[stops[j2]];
-                    vec<int> b = shb.EdgesSomewhereBetween(v, w);
-                    keep.append(b);
-                }
-            UniqueSort(keep);
-            vec<int> ydels;
-            for (int e = 0; e < shb.EdgeObjectCount(); e++)
-                if (!BinMember(keep, e)) ydels.push_back(e);
-            xshb=shb;
-            xshb.DeleteEdges(ydels);
-            xshb.RemoveUnneededVertices();
-            xshb.RemoveDeadEdgeObjects();
+                    UniqueSort(starts), UniqueSort(stops);
 
-            TIMELOG_STOP_LOCAL(AG2_LocalAssemblyEval,Loop);
+                    // Reduce shb to those edges between starts and stops.
 
-            if (!CYCLIC_SAVE || xshb.Acyclic() ) break;
+                    vec<int> yto_left, yto_right;
+                    shb.ToLeft(yto_left), shb.ToRight(yto_right);
+                    vec<int> keep = Intersection(starts, stops);
+                    keep.append(starts);
+                    keep.append(stops);
+                    for (int j1 = 0; j1 < starts.isize(); j1++)
+                        for (int j2 = 0; j2 < stops.isize(); j2++) {
+                            int v = yto_right[starts[j1]], w = yto_left[stops[j2]];
+                            vec<int> b = shb.EdgesSomewhereBetween(v, w);
+                            keep.append(b);
+                        }
+                    UniqueSort(keep);
+                    vec<int> ydels;
+                    for (int e = 0; e < shb.EdgeObjectCount(); e++)
+                        if (!BinMember(keep, e)) ydels.push_back(e);
+                    xshb = shb;
+                    xshb.DeleteEdges(ydels);
+                    xshb.RemoveUnneededVertices();
+                    xshb.RemoveDeadEdgeObjects();
 
-        };
 
-        //PART4-----------------------------------------------------
-        if (!xshb.Acyclic() || xshb.N() == 0) {
-            continue;
-        }
+                    if (!CYCLIC_SAVE || xshb.Acyclic()) break;
 
-        //mout << "local assembly has " << xshb.NComponents( )
-        //     << " components" << "\n";
+                };
 
-        // Make bpaths.  These are all source-sink paths through the
-        // local graph.
-        TIMELOG_START_LOCAL(AG2_CreateBpaths,Loop);
+                //PART4-----------------------------------------------------
+                if (xshb.Acyclic() && xshb.N() > 0) {
 
-        double aclock2 = WallClockTime();
-        vec<basevector> bpaths;
-        vec<int> sources, sinks;
-        xshb.Sources(sources), xshb.Sinks(sinks);
-        vec<int> zto_left, zto_right;
-        xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
-        for (int i1 = 0; i1 < sources.isize(); i1++) {
-            for (int i2 = 0; i2 < sinks.isize(); i2++) {
-                vec<vec<int>> p;
-                xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
-                for (int l = 0; l < p.isize(); l++) {
-                    basevector b = xshb.EdgeObject(p[l][0]);
-                    for (int m = 1; m < p[l].isize(); m++) {
-                        b.resize(b.isize() - (xshb.K() - 1));
-                        b = Cat(b, xshb.EdgeObject(p[l][m]));
+                    // Make bpaths.  These are all source-sink paths through the
+                    // local graph.
+
+                    vec<basevector> bpaths;
+                    vec<int> sources, sinks;
+                    xshb.Sources(sources), xshb.Sinks(sinks);
+                    vec<int> zto_left, zto_right;
+                    xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
+                    for (int i1 = 0; i1 < sources.isize(); i1++) {
+                        for (int i2 = 0; i2 < sinks.isize(); i2++) {
+                            vec<vec<int>> p;
+                            xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
+                            for (int l = 0; l < p.isize(); l++) {
+                                basevector b = xshb.EdgeObject(p[l][0]);
+                                for (int m = 1; m < p[l].isize(); m++) {
+                                    b.resize(b.isize() - (xshb.K() - 1));
+                                    b = Cat(b, xshb.EdgeObject(p[l][m]));
+                                }
+                                bpaths.push_back(b);
+                                if (bpaths.isize() > MAX_BPATHS) break;
+                            }
+                        }
                     }
-                    bpaths.push_back(b);
-                    if (bpaths.isize() > MAX_BPATHS) break;
+
+                    if (bpaths.isize() <= MAX_BPATHS) {
+                        // Make more bpaths.
+                        for (int l = 0; l < lefts.isize(); l++) {
+                            Bool ext = False;
+                            for (int m = 0; m < lefts.isize(); m++) {
+                                if (to_right[lefts[m]] == to_left[lefts[l]]) {
+                                    basevector b = hb.EdgeObject(lefts[m]);
+                                    b.resize(b.isize() - (K - 1));
+                                    b = Cat(b, hb.EdgeObject(lefts[l]));
+                                    bpaths.push_back(b);
+                                    ext = True;
+                                }
+                            }
+                            if (!ext) bpaths.push_back(hb.EdgeObject(lefts[l]));
+                        }
+                        for (int r = 0; r < rights.isize(); r++) {
+                            Bool ext = False;
+                            for (int m = 0; m < rights.isize(); m++) {
+                                if (to_left[rights[m]] == to_right[rights[r]]) {
+                                    basevector b = hb.EdgeObject(rights[r]);
+                                    b.resize(b.size() - (K - 1));
+                                    b = Cat(b, hb.EdgeObject(rights[m]));
+                                    bpaths.push_back(b);
+                                    ext = True;
+                                }
+                            }
+                            if (!ext) bpaths.push_back(hb.EdgeObject(rights[r]));
+                        }
+                        // Make the bpaths into a HyperBasevector.
+                        vecbasevector bpathsx;
+                        for (int l = 0; l < bpaths.isize(); l++)
+                            bpathsx.push_back(bpaths[l]);
+                        BasesToGraph(bpathsx, K, *mhbp_t);
+                    }
+
                 }
-            }
+            }//---OMP TASK END---
         }
-
-        //PRINT_TO( mout, bpaths.size( ) );
-        if (bpaths.isize() > MAX_BPATHS) {    //mout << "Too many bpaths." << std::endl;
-            //mreport[bl] += mout.str( );
-            //Dot( nblobs, nprocessed, dots_printed, ANNOUNCE, bl );
-            TIMELOG_STOP_LOCAL(AG2_CreateBpaths,Loop);
-            continue;
-        }
-
-        // Make more bpaths.
-
-        for (int l = 0; l < lefts.isize(); l++) {
-            Bool ext = False;
-            for (int m = 0; m < lefts.isize(); m++) {
-                if (to_right[lefts[m]] == to_left[lefts[l]]) {
-                    basevector b = hb.EdgeObject(lefts[m]);
-                    b.resize(b.isize() - (K - 1));
-                    b = Cat(b, hb.EdgeObject(lefts[l]));
-                    bpaths.push_back(b);
-                    ext = True;
-                }
-            }
-            if (!ext) bpaths.push_back(hb.EdgeObject(lefts[l]));
-        }
-        for (int r = 0; r < rights.isize(); r++) {
-            Bool ext = False;
-            for (int m = 0; m < rights.isize(); m++) {
-                if (to_left[rights[m]] == to_right[rights[r]]) {
-                    basevector b = hb.EdgeObject(rights[r]);
-                    b.resize(b.size() - (K - 1));
-                    b = Cat(b, hb.EdgeObject(rights[m]));
-                    bpaths.push_back(b);
-                    ext = True;
-                }
-            }
-            if (!ext) bpaths.push_back(hb.EdgeObject(rights[r]));
-        }
-
-        TIMELOG_STOP_LOCAL(AG2_CreateBpaths,Loop);
-        // Make the bpaths into a HyperBasevector.
-
-        TIMELOG_START_LOCAL(AG2_PushBpathsToGraph,Loop);
-        vecbasevector bpathsx;
-        for (int l = 0; l < bpaths.isize(); l++)
-            bpathsx.push_back(bpaths[l]);
-        BasesToGraph(bpathsx, K, mhbp[bl]);
-        TIMELOG_STOP_LOCAL(AG2_PushBpathsToGraph,Loop);
-
     }
     std::cout << " ... finally finished."<< std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "

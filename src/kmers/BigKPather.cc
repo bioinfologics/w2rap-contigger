@@ -507,7 +507,7 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
         #pragma omp parallel
         {
             BigKMerizer<BIGK> tkmerizer(&bigDict);
-            #pragma omp for
+            #pragma omp for schedule (dynamic, 1)
             for (auto i = 0; i < edges.size(); i++) {
                 tkmerizer.updateDict(edges[i]);
             }
