@@ -320,7 +320,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         #pragma omp for
         for (int bl = nblobs - 1; bl >=0; --bl){
             //First part: create the gbases and gquals. this is locked by memory accesses and very convoluted
-            const vec<int> lefts = LR[bl].first, rights = LR[bl].second; //TODO: how big is this? can we copy it?
+            const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
 
             //Local readset
             vec<int64_t> pids;
@@ -345,7 +345,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             CreateLocalReadSet(gbases, gquals, gpairs,pids,bases,quals);
             HyperBasevector * mhbp_t=&mhbp[bl];
 
-            #pragma omp task
+            #pragma omp task shared(lefts,rights)
             {
                 uint NUM_THREADS = 1;
                 long_heuristics heur("");
