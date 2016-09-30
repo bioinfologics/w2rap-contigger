@@ -62,153 +62,156 @@ struct MakeStartStopFunctor {
     }
 };
 
-void FindPidsST(vec<int64_t> & pids, const vec<int> &lefts, const vec<int> &rights,
+void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<int> &rights,
                 const vec<vec<int>> &layout_pos, const vec<vec<int64_t>> &layout_id, const vec<vec<Bool>> & layout_or,
                 const int MAX_PROX_LEFT, const int MAX_PROX_RIGHT, const int pair_sample){
 
-    // Get ready.
 
+    // First find the pairs that bridge from left to right, and mark
+    // their endpoints.  Inefficient.
 
-
+    std::vector<int64_t> pids1;
+    vec<vec<int>> lstarts(lefts.size()), rstarts(rights.size());
     {
-        // Heuristics.
-
-
-        // First find the pairs that bridge from left to right, and mark
-        // their endpoints.  Inefficient.
-
-        vec<int64_t> pids1;
-        vec<vec<int>> lstarts(lefts.size()), rstarts(rights.size());
-        {
-            vec<quad<int64_t, Bool, int, int> > marks;
-            for (int l = 0; l < lefts.isize(); l++)
-                for (int k = 0; k < layout_pos[lefts[l]].isize(); k++) {
-                    if (!layout_or[lefts[l]][k]) continue;
-                    int pos = layout_pos[lefts[l]][k];
-                    int64_t id = layout_id[lefts[l]][k];
-                    marks.push(id / 2, False, pos, l);
-                }
-            for (int l = 0; l < rights.isize(); l++)
-                for (int k = 0; k < layout_pos[rights[l]].isize(); k++) {
-                    if (layout_or[rights[l]][k]) continue;
-                    int pos = layout_pos[rights[l]][k];
-                    int64_t id = layout_id[rights[l]][k];
-                    marks.push(id / 2, True, pos, l);
-                }
-            Sort(marks);
-            for (int l = 0; l < marks.isize(); l++) {
-                int m;
-                for (m = l + 1; m < marks.isize(); m++)
-                    if (marks[m].first != marks[l].first) break;
-                Bool left = False, right = False;
-                for (int j = l; j < m; j++) {
-                    if (!marks[j].second) left = True;
-                    else right = True;
-                }
-                if (left && right) {
-                    pids1.push_back(marks[l].first);
-                    for (int k = l; k < m; k++) {
-                        if (!marks[k].second) {
-                            lstarts[marks[k].fourth].push_back(
-                                    marks[k].third);
-                        } else {
-                            rstarts[marks[k].fourth].push_back(
-                                    marks[k].third);
-                        }
-                    }
-                }
-                l = m - 1;
-            }
-        }
-        UniqueSort(pids1);
-        for (int l = 0; l < lefts.isize(); l++)
-            Sort(lstarts[l]);
-        for (int l = 0; l < rights.isize(); l++)
-            Sort(rstarts[l]);
-
-        // Now find the pairs that start close to one of the bridge pairs.
-
-        vec<int64_t> pids2;
+        vec<quad<int64_t, Bool, int, int> > marks;
         for (int l = 0; l < lefts.isize(); l++)
             for (int k = 0; k < layout_pos[lefts[l]].isize(); k++) {
+                if (!layout_or[lefts[l]][k]) continue;
                 int pos = layout_pos[lefts[l]][k];
                 int64_t id = layout_id[lefts[l]][k];
-                Bool fw = layout_or[lefts[l]][k];
-                if (BinMember(pids1, id / 2)) continue;
-
-                int low = lstarts[l].front(), high = lstarts[l].back();
-                Bool close = False;
-                if (low <= pos && pos <= high) close = True;
-                else {
-                    if (fw) {
-                        if (low > pos && low - pos <= MAX_PROX_LEFT) { close = True; }
-                        else if (high < pos && pos - high <= MAX_PROX_RIGHT) { close = True; }
-                    } else {
-                        if (low > pos && low - pos <= MAX_PROX_RIGHT) { close = True; }
-                        else if (high < pos && pos - high <= MAX_PROX_LEFT) { close = True; }
-                    }
-                }
-                if (close) pids2.push_back(id / 2);
+                marks.push(id / 2, False, pos, l);
             }
-
         for (int l = 0; l < rights.isize(); l++)
             for (int k = 0; k < layout_pos[rights[l]].isize(); k++) {
+                if (layout_or[rights[l]][k]) continue;
                 int pos = layout_pos[rights[l]][k];
                 int64_t id = layout_id[rights[l]][k];
-                Bool fw = layout_or[rights[l]][k];
-                if (BinMember(pids1, id / 2)) continue;
-
-                int low = rstarts[l].front(), high = rstarts[l].back();
-                Bool close = False;
-                if (low <= pos && pos <= high) close = True;
-                else {
-                    if (fw) {
-                        if (low > pos && low - pos <= MAX_PROX_LEFT) { close = True; }
-                        else if (high < pos && pos - high <= MAX_PROX_RIGHT) { close = True; }
+                marks.push(id / 2, True, pos, l);
+            }
+        Sort(marks);
+        for (int l = 0; l < marks.isize(); l++) {
+            int m;
+            for (m = l + 1; m < marks.isize(); m++)
+                if (marks[m].first != marks[l].first) break;
+            Bool left = False, right = False;
+            for (int j = l; j < m; j++) {
+                if (!marks[j].second) left = True;
+                else right = True;
+            }
+            if (left && right) {
+                pids1.push_back(marks[l].first);
+                for (int k = l; k < m; k++) {
+                    if (!marks[k].second) {
+                        lstarts[marks[k].fourth].push_back(
+                                marks[k].third);
                     } else {
-                        if (low > pos && low - pos <= MAX_PROX_RIGHT) { close = True; }
-                        else if (high < pos && pos - high <= MAX_PROX_LEFT) { close = True; }
+                        rstarts[marks[k].fourth].push_back(
+                                marks[k].third);
                     }
                 }
-                if (close) pids2.push_back(id / 2);
             }
-
-        UniqueSort(pids2);
-
-        // Now subsample if needed.
-
-        int keep = pair_sample / 2;
-        if (pids1.isize() + pids2.isize() <= pair_sample)
-            pids.append(pids1);
-        else if (pids1.isize() <= keep) pids1.append(pids1);
-        else {
-            for (int l = 0; l < keep; l++) {
-                int m = (l * pids1.isize()) / keep;
-                pids.push_back(pids1[m]);
-            }
-        }
-        if (pids.isize() + pids2.isize() <= pair_sample)
-            pids.append(pids2);
-        else {
-            keep = pair_sample - pids.isize();
-            for (int l = 0; l < keep; l++) {
-                int m = (l * pids2.isize()) / keep;
-                pids.push_back(pids2[m]);
-            }
+            l = m - 1;
         }
     }
-    UniqueSort(pids);
+    //UniqueSort(pids1);
+    std::sort(pids1.begin(), pids1.end());
+    pids1.erase(std::unique(pids1.begin(), pids1.end()), pids1.end());
+    for (int l = 0; l < lefts.isize(); l++)
+        Sort(lstarts[l]);
+    for (int l = 0; l < rights.isize(); l++)
+        Sort(rstarts[l]);
+
+    // Now find the pairs that start close to one of the bridge pairs.
+
+    std::vector<int64_t> pids2;
+    for (int l = 0; l < lefts.isize(); l++)
+        for (int k = 0; k < layout_pos[lefts[l]].isize(); k++) {
+            int pos = layout_pos[lefts[l]][k];
+            int64_t id = layout_id[lefts[l]][k];
+            Bool fw = layout_or[lefts[l]][k];
+            if (BinMember(pids1, id / 2)) continue;
+
+            int low = lstarts[l].front(), high = lstarts[l].back();
+            Bool close = False;
+            if (low <= pos && pos <= high) close = True;
+            else {
+                if (fw) {
+                    if (low > pos && low - pos <= MAX_PROX_LEFT) { close = True; }
+                    else if (high < pos && pos - high <= MAX_PROX_RIGHT) { close = True; }
+                } else {
+                    if (low > pos && low - pos <= MAX_PROX_RIGHT) { close = True; }
+                    else if (high < pos && pos - high <= MAX_PROX_LEFT) { close = True; }
+                }
+            }
+            if (close) pids2.push_back(id / 2);
+        }
+
+    for (int l = 0; l < rights.isize(); l++)
+        for (int k = 0; k < layout_pos[rights[l]].isize(); k++) {
+            int pos = layout_pos[rights[l]][k];
+            int64_t id = layout_id[rights[l]][k];
+            Bool fw = layout_or[rights[l]][k];
+            if (BinMember(pids1, id / 2)) continue;
+
+            int low = rstarts[l].front(), high = rstarts[l].back();
+            Bool close = False;
+            if (low <= pos && pos <= high) close = True;
+            else {
+                if (fw) {
+                    if (low > pos && low - pos <= MAX_PROX_LEFT) { close = True; }
+                    else if (high < pos && pos - high <= MAX_PROX_RIGHT) { close = True; }
+                } else {
+                    if (low > pos && low - pos <= MAX_PROX_RIGHT) { close = True; }
+                    else if (high < pos && pos - high <= MAX_PROX_LEFT) { close = True; }
+                }
+            }
+            if (close) pids2.push_back(id / 2);
+        }
+
+    //UniqueSort(pids2);
+    std::sort(pids2.begin(), pids2.end());
+    pids2.erase(std::unique(pids2.begin(), pids2.end()), pids2.end());
+
+    // Now subsample if needed.
+
+    int keep = pair_sample / 2;
+    pids.reserve(std::min((int) (pids1.size() + pids2.size()),pair_sample));
+
+    //Pids1
+    if (pids1.size() + pids2.size() <= pair_sample or pids1.size() <= keep)
+        pids.insert(pids.end(), pids1.begin(), pids1.end());
+    else {
+        for (int l = 0; l < keep; l++) {
+            int m = (l * pids1.size()) / keep;
+            pids.push_back(pids1[m]);
+        }
+    }
+
+    //Pids2
+    if (pids.size() + pids2.size() <= pair_sample or pids2.size() <= keep)
+        pids.insert(pids.end(), pids2.begin(), pids2.end());
+    else {
+        for (int l = 0; l < keep; l++) {
+            int m = (l * pids2.size()) / keep;
+            pids.push_back(pids2[m]);
+        }
+    }
+
+    //UniqueSort(pids);
+    std::sort(pids.begin(),pids.end());
+    pids.erase(std::unique(pids.begin(),pids.end()),pids.end());
+
 }
 
-void CreateLocalReadSet(vecbasevector &gbases,vecqualvector &gquals, PairsManager &gpairs, vec<int64_t> & pids,
+void CreateLocalReadSet(vecbasevector &gbases,vecqualvector &gquals, PairsManager &gpairs, std::vector<int64_t> & pids,
                         const vecbasevector &bases, VecPQVec const &quals) {
 
 
         qvec qv;
-        gbases.reserve(2 * pids.isize());
-        gquals.reserve(2 * pids.isize());
+        gbases.reserve(2 * pids.size());
+        gquals.reserve(2 * pids.size());
 
-        for (int l = 0; l < pids.isize(); l++) {
+        for (int l = 0; l < pids.size(); l++) {
             int64_t pid = pids[l];
             int64_t id1 = 2 * pid, id2 = 2 * pid + 1;
             gbases.push_back(bases[id1]);
@@ -310,20 +313,19 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
 
 
-    std::cout << Date() << ": Creating local readsets and tasks." << std::endl;
     //TODO: check local variable usage, should be made minimal!!!
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
 
     #pragma omp parallel
     {
-        #pragma omp for
+        #pragma omp for 
         for (int bl = nblobs - 1; bl >=0; --bl){
             //First part: create the gbases and gquals. this is locked by memory accesses and very convoluted
             const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
 
             //Local readset
-            vec<int64_t> pids;
+            std::vector<int64_t> pids;
             vecbasevector gbases;
             vecqualvector gquals;
             PairsManager gpairs;
