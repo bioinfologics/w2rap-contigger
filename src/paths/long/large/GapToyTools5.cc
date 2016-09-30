@@ -1454,255 +1454,55 @@ private:
 
 }
 
-void PartnersToEnds( const HyperBasevector& hbv, ReadPathVec& paths,
-                        const vecbasevector& reads, const VecPQVec& quals )
-{
-    double clock = WallClockTime();
+void PartnersToEnds(const HyperBasevector &hbv, ReadPathVec &paths,
+                    const vecbasevector &reads, const VecPQVec &quals) {
+     double clock = WallClockTime();
 
-    // find unplaced partners of reads near sinks
+     // find unplaced partners of reads near sinks
 
-    vec<size_t> readIds;
-    std::cout << Date( ) << ": finding interesting reads" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
-    size_t nKmers = findInterestingReadIds(hbv,paths,reads,&readIds);
-    size_t nReads = readIds.size();
-    if ( nReads == 0 ) return;
+     vec<size_t> readIds;
+     std::cout << Date() << ": finding interesting reads" << std::endl;
 
-    // kmerize those reads, and reduce them into a dictionary of KmerLocs
+     size_t nKmers = findInterestingReadIds(hbv, paths, reads, &readIds);
+     size_t nReads = readIds.size();
+     if (nReads == 0) return;
 
-    std::cout << Date( ) << ": building dictionary" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
-    GT_Dict* pDict = new GT_Dict(nKmers);
-    Mempool locsAlloc;
-    size_t const MAX_MULTIPLICITY = 80;
-    std::cout << Date( ) << ": reducing" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
+     // kmerize those reads, and reduce them into a dictionary of KmerLocs
 
-    {   RMRE rmre(MREReadProc(readIds,reads,locsAlloc,MAX_MULTIPLICITY,pDict));
-        rmre.run(nKmers,0ul,nReads,RMRE::VERBOSITY::QUIET);    }
+     std::cout << Date() << ": building dictionary" << std::endl;
+     GT_Dict *pDict = new GT_Dict(nKmers);
 
-    // kmerize edges, setting the multiplicity for existing dictionary entries
+     Mempool locsAlloc;
+     size_t const MAX_MULTIPLICITY = 80;
+     std::cout << Date() << ": reducing" << std::endl;
+     {
+          RMRE rmre(MREReadProc(readIds, reads, locsAlloc, MAX_MULTIPLICITY, pDict));
+          rmre.run(nKmers, 0ul, nReads, RMRE::VERBOSITY::QUIET);
+     }
 
-    std::cout << Date( ) << ": kmerizing" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
-    {   EMRE emre(MREEdgeProc(hbv,pDict));
-        auto const& edges = hbv.Edges();
-        size_t edgeKmers = kmerCount(edges.begin(),edges.end(),KLEN);
-        emre.run(edgeKmers,0ul,size_t(hbv.E()),EMRE::VERBOSITY::QUIET);    }
+     // kmerize edges, setting the multiplicity for existing dictionary entries
 
-    // remove dictionary entries having too great a kmer multiplicity
+     std::cout << Date() << ": kmerizing" << std::endl;
+     {
+          EMRE emre(MREEdgeProc(hbv, pDict));
+          auto const &edges = hbv.Edges();
+          size_t edgeKmers = kmerCount(edges.begin(), edges.end(), KLEN);
+          emre.run(edgeKmers, 0ul, size_t(hbv.E()), EMRE::VERBOSITY::QUIET);
+     }
 
-    std::cout << Date( ) << ": cleaning" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
-    pDict->remove_if([]( KmerLocs const& kLocs )
-                     { return kLocs.getTotalLocs() > MAX_MULTIPLICITY; });
+     // remove dictionary entries having too great a kmer multiplicity
 
-    // find a uniquely aligning edge and path the read on that edge
+     std::cout << Date() << ": cleaning" << std::endl;
+     pDict->remove_if([](KmerLocs const &kLocs) { return kLocs.getTotalLocs() > MAX_MULTIPLICITY; });
 
-    std::cout << Date( ) << ": finding uniquely aligning edges" << std::endl;
-    std::cout << Date( ) << ": memory in use = " << MemUsageGBString( )
-#ifdef __linux
-          << ", peak = " << PeakMemUsageGBString( )
-#endif
-          << std::endl;
-    EdgeProc proc(hbv,*pDict,reads,quals,paths);
-    parallelForBatch(0,hbv.E(),100,proc);
-    proc.cleanAmbiguousPlacements(readIds);
-    delete pDict;
+     // find a uniquely aligning edge and path the read on that edge
+
+     std::cout << Date() << ": finding uniquely aligning edges" << std::endl;
+     EdgeProc proc(hbv, *pDict, reads, quals, paths);
+     parallelForBatch(0, hbv.E(), 100, proc);
+     proc.cleanAmbiguousPlacements(readIds);
+     delete pDict;
 }
-
-void PartnersToEndsOld( const HyperBasevector& hb, ReadPathVec& paths,
-                       const vecbasevector& bases, const VecPQVec& quals )
-{
-     // Set up.
-
-     vec<int> to_left, to_right;
-     hb.ToLeft(to_left), hb.ToRight(to_right);
-     int64_t npids = bases.size( ) / 2;
-
-     // Heuristics.
-
-     const int K = 28;
-     const int64_t max_mult = 80;
-     const int batches = 32;
-     const int qtop = 30;
-     const int min_len = 60;
-     const int max_diffs = 4;
-
-     // Compute distance to end for each vertex.
-
-     const int max_dist = 10000000; // dangerous!
-     vec<int> D;
-     std::cout << Date( ) << ": computing distances to end" << std::endl;
-     int hbk = hb.K();
-     DistancesToEndFunc( hb, [hbk]( bvec const& bv ){ return bv.size()-hbk+1; },
-           max_dist, True, D );
-
-     // Identify incompletely placed pairs, with the placed read landing near an end.
-
-     std::cout << Date( ) << ": identifying unplaced partners" << std::endl;
-     vec<Bool> un( bases.size( ), False );
-     const int min_qual = 1000;
-     const int max_prox = 500;
-     #pragma omp parallel for
-     for ( int64_t pid = 0; pid < npids; pid++ )
-     {    int64_t id1 = 2*pid, id2 = 2*pid+1;
-          const ReadPath &p1 = paths[id1], &p2 = paths[id2];
-          if ( p1.size( ) > 0 && p2.size( ) > 0 ) continue;
-          if ( p1.size( ) == 0 && p2.size( ) == 0 ) continue;
-          if ( p1.size( ) > 0 && D[ to_right[ p1.back( ) ] ] > max_prox ) continue;
-          if ( p2.size( ) > 0 && D[ to_right[ p2.back( ) ] ] > max_prox ) continue;
-          if ( p1.size( ) == 0 ) un[id1] = True;
-          if ( p2.size( ) == 0 ) un[id2] = True;    }
-
-     // Build "trash".
-
-     vecbasevector trashb;
-     trashb.reserve( Sum(un) + hb.E( ) );
-     std::cout << Date( ) << ": building trash" << std::endl;
-     int count = 0;
-     vec<int> ids;
-     for ( int64_t id = 0; id < 2*npids; id++ )
-     {    if ( un[id] )
-          {    ids.push_back(id);
-               trashb.push_back( bases[id] );
-               count++;    }    }
-     PRINT2( count, npids );
-     std::cout << PERCENT_RATIO( 3, count, npids ) << std::endl;
-     for ( int e = 0; e < hb.E( ); e++ )
-          trashb.push_back( hb.EdgeObject(e) );
-
-     // Make kmers.
-
-     std::cout << Date( ) << ": making kmers" << std::endl;
-     vec< triple<kmer<K>,int,int> > kmers_plus;
-     MakeKmerLookup0( trashb, kmers_plus );
-
-     // Find friends.
-
-     std::cout << Date( ) << ": finding friends" << std::endl;
-     vec<int64_t> bstart(batches+1);
-     for ( int64_t i = 0; i <= batches; i++ )
-          bstart[i] = ( (int64_t) kmers_plus.size( ) * i ) / batches;
-     #pragma omp parallel for schedule(dynamic, 1)
-     for ( int64_t i = 1; i < batches; i++ )
-     {    int64_t& s = bstart[i];
-          while( s > 0 && kmers_plus[s].first == kmers_plus[s-1].first )
-          {    s--;    }    }
-     ReportPeakMem( );
-
-     vec< vec< triple<int,int,int> > > places(batches);
-
-     std::cout << Date( ) << ": start loop" << std::endl;
-     #pragma omp parallel for schedule(dynamic, 1)
-     for ( int64_t bi = 0; bi < batches; bi++ )
-     {    for ( int64_t i = bstart[bi]; i < bstart[bi+1]; i++ )
-          {    int64_t j;
-               for ( j = i + 1; j < bstart[bi+1]; j++ )
-                    if ( kmers_plus[j].first != kmers_plus[i].first ) break;
-               if ( j - i >= 2 && j - i <= max_mult )
-               {    for ( int64_t k1 = i; k1 < j; k1++ )
-                    for ( int64_t k2 = i; k2 < j; k2++ )
-                    {    int id1 = kmers_plus[k1].second; // read index
-                         if ( id1 >= ids.isize( ) ) continue;
-                         int id2 = kmers_plus[k2].second; // edge index
-                         if ( id2 < ids.isize( ) ) continue;
-                         id2 -= ids.isize( );
-                         int pos1 = kmers_plus[k1].third; 
-                         int pos2 = kmers_plus[k2].third;
-                         int offset = pos2 - pos1;
-                         places[bi].push( ids[id1], id2, offset );    }    }
-               i = j - 1;    }    
-          UniqueSort( places[bi] );    
-
-          // Kill placements having hq diffs or not having a long-enough near-perfect
-          // stretch.
-
-          vec<Bool> del( places[bi].size( ), False );
-          qvec qv;
-          for ( int j = 0; j < places[bi].isize( ); j++ )
-          {    int id1 = places[bi][j].first, id2 = places[bi][j].second;
-               quals[id1].unpack(&qv);
-               int offset = -places[bi][j].third;
-               const basevector& rd2 = hb.EdgeObject(id2);
-               Bool bad = False, good = False;
-               int mis_count = 0;
-               vec<Bool> mis;
-               for ( int p1 = 0; p1 < bases[id1].isize( ); p1++ )
-               {    int p2 = p1 - offset;
-                    if ( p2 < 0 || p2 >= rd2.isize( ) ) continue;
-                    if ( bases[id1][p1] != rd2[p2] )
-                    {    mis.push_back(True);
-                         mis_count++;
-                         int q = qv[p1];
-                         if ( q >= qtop ) 
-                         {    bad = True;
-                              break;    }    }
-                    else mis.push_back(False);
-                    if ( mis.isize() > min_len && mis[mis.isize()-min_len-1] )
-                         mis_count--;
-                    if ( mis.isize( ) >= min_len && mis_count <= max_diffs )
-                         good = True;    }
-               if ( bad || !good ) del[j] = True;    }
-          EraseIf( places[bi], del );    }
-
-     // std::cout << "destroying" << std::endl;
-     Destroy(kmers_plus), Destroy(trashb);
-
-     // Collate places.
-
-     std::cout << Date( ) << ": pushing" << std::endl;
-     ReportPeakMem( );
-     vec< triple<int,int,int> > PLACES;
-     for ( int bi = 0; bi < places.isize( ); bi++ )
-          PLACES.append( places[bi] );
-     ParallelUniqueSort(PLACES);
-
-     // For now, require unique placement.
-
-     vec<Bool> pdel( PLACES.size( ), False );
-     for ( int64_t i = 0; i < PLACES.jsize( ); i++ )
-     {    int64_t j;
-          for ( j = i + 1; j < PLACES.jsize( ); j++ )
-               if ( PLACES[j].first != PLACES[i].first ) break;
-          if ( j - i > 1 )
-          {    for ( int64_t k = i; k < j; k++ )
-                    pdel[k] = True;    }
-          i = j - 1;    }
-     EraseIf( PLACES, pdel );
-
-     // Report.
-
-     Bool verbose = False;
-     if (verbose)
-     {    for ( int i = 0; i < PLACES.isize( ); i++ )
-          {    std::cout << "read " << PLACES[i].first << " at "
-                    << PLACES[i].second << "." << PLACES[i].third << std::endl;    }    }
-     for ( int i = 0; i < PLACES.isize( ); i++ )
-     {    IntVec x = { PLACES[i].second };
-          (IntVec&) paths[ PLACES[i].first ] = x;
-          paths[ PLACES[i].first ].setOffset( PLACES[i].third );    }
-     std::cout << "\n" << Date( ) << ": done" << std::endl;    }
 
 
 double CNIntegerFraction(const HyperBasevector& hb, const vec<vec<covcount>>& covs,
