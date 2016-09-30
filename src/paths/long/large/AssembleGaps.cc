@@ -299,7 +299,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
-    std::vector<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
+    vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
     std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
     std::cout << Date() << ": memory in use = " << MemUsageGBString()
               #ifdef __linux
@@ -310,7 +310,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
 
 
-    std::cout << "And now for the really slow part..." << std::endl;
+    std::cout << Date() << ": Creating local readsets and tasks." << std::endl;
     //TODO: check local variable usage, should be made minimal!!!
     //Init readstacks, we'll need them!
     readstack::init_LUTs();

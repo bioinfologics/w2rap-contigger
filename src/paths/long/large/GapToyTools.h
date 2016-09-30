@@ -158,7 +158,7 @@ template<class H> void DegloopCore( const int mode, H& hb, vec<int>& inv,
      const vec<int>* ids = NULL );
 
 void Patch( HyperBasevector& hb, const vec< std::pair<int,int> >& blobs, 
-     std::vector<HyperBasevector>& mhbp, const String& work_dir,
+     vec<HyperBasevector>& mhbp, const String& work_dir,
      vecbvec& new_stuff );
 
 void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths );
