@@ -21,30 +21,13 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
 
-inline void dumpHBV( std::ostream& out, const HyperBasevector& h )
-{
-    vec<int> to_left, to_right;
-    h.ToLeft(to_left), h.ToRight(to_right);
-    for ( int e = 0; e < h.EdgeObjectCount(); e++ )
-    {
-        int v = to_left[e], w = to_right[e];
-        h.EdgeObject(e).Print(out,
-                ToString(e)+" [vert_"+ToString(v)+"-->vert_"+ToString(w)+"]");
-    }
-}
-
 void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                         bool doFillGaps, bool doJoinOverlaps,
                         unsigned minQual, unsigned minFreq,
                         double minFreq2Fract, unsigned maxGapSize,
                         String const& refFasta,
-       		        bool useNewAligner, bool repathUnpathed,
-                        HyperBasevector* pHBV, ReadPathVec* pPaths, int _K,
-                        bool const VERBOSE = False );
+                        HyperBasevector* pHBV, ReadPathVec* pPaths, int _K);
 
-void rePath( HyperBasevector const& hbv,
-                vecbvec const& reads, VecPQVec const& quals,
-                bool useNewAligner, bool verbose,
-                HyperBasevector* pNewHBV, ReadPathVec* pPaths );
+
 
 #endif /* PATHS_LONG_BUILDREADQGRAPH_H_ */

@@ -53,8 +53,7 @@ namespace
     typedef KMer<K-1> BRQ_SubKmer;
     typedef KmerDictEntry<K> BRQ_Entry;
     typedef KmerDict<K> BRQ_Dict;
-    //typedef UnipathGraph<K> Graph;
-    //typedef std::vector<std::atomic_size_t> SpectrumBins;
+
 
     class GoodLenTailFinder
     {
@@ -1020,61 +1019,22 @@ namespace
     class HBVPather
     {
     public:
-        typedef enum {ALGORITHM_ONE, ALGORITHM_TWO} Algorithm;
-
         HBVPather( vecbvec const& reads, VecPQVec const& quals,
                    BRQ_Dict const& dict, vecbvec const& edges,
                    HyperBasevector const& hbv,
                    vec<int> const& fwdEdgeXlat, vec<int> const& revEdgeXlat,
-                   Algorithm alg, ReadPathVec* pPaths, Bool const verbose = False )
+                   ReadPathVec* pPaths, Bool const verbose = False )
                 : mReads(reads), mQuals(quals), mHBV(hbv), mFwdEdgeXlat(fwdEdgeXlat),
-                  mRevEdgeXlat(revEdgeXlat), mPather(dict,edges), mAlgorithm(alg),
-                  mPaths(*pPaths), mVerbose(verbose),
-                  mExtender(mHBV,&mToLeft,&mToRight,mVerbose) {
+                  mRevEdgeXlat(revEdgeXlat), mPather(dict,edges),
+                  mPaths(*pPaths),
+                  mExtender(mHBV,&mToLeft,&mToRight) {
             mHBV.ToLeft(mToLeft);
             mHBV.ToRight(mToRight);
         }
 
-
         void operator()( size_t readId )
         {
-            switch (mAlgorithm) {
-                case ALGORITHM_ONE:
-                    this->algorithmOne(readId);
-                    break;
-                case ALGORITHM_TWO:
-                    this->algorithmTwo(readId);
-                    break;
-                default:
-                    FatalErr("BUG: bad algorithm id passed to HBVPather::path()");
-                    break;
-            }
-        }
-
-        size_t startOnRead( std::vector<PathPart> const& parts )
-        {
-            if ( parts.size() > 1 && parts[0].isGap() && parts[0].getLength() > parts[1].getEdgeOffset() )
-                return parts[0].getLength() - parts[1].getEdgeOffset();
-            else
-                return 0;
-        }
-
-
-        void algorithmTwo( size_t readId )
-        {
-            bool const debug = mVerbose;
             std::vector<PathPart> parts = mPather.path(mReads[readId]);     // needs to become a forward_list
-
-            if ( debug )  {
-                std::cout << std::endl;
-                std::cout << readId << " A2: startOnRead=" << startOnRead(parts) << " ";
-                if ( parts[0].isGap() ) std::cout << " gap=" << parts[0].getLength() << std::endl;
-                else std::cout << std::endl;
-                for ( auto const& part : parts ) std::cout << part << std::endl;
-                pathPartsToReadPath(parts, mPath);
-                PRINT(mPath);
-            }
-
 
             // convert any seeds on hanging edges to gaps
             std::vector<PathPart> new_parts;
@@ -1089,9 +1049,6 @@ namespace
                          && part.getEdgeLen() <= 100 ) {
                         // delete a seed on a hanging edge
                         part = PathPart(part.getLength() );
-                        if ( debug )
-                            std::cout << "delete SEED on hanging edge HBV edge_id=" <<
-                            edge_id << ", orig seed=" << part.getEdgeID().val() << std::endl;
                     }
                 }
 
@@ -1153,57 +1110,8 @@ namespace
 
             pathPartsToReadPath(parts, mPath);
 
-            if ( debug ) {
-                std::cout << "PARTS AFTER EDITING: " << std::endl;
-                for ( auto const& part: parts )
-                    std::cout << part << std::endl;
-                PRINT(mPath);
-            }
-
             mQuals[readId].unpack(&mQV);
             mExtender.attemptLeftRightExtension(mPath,mReads[readId],mQV);
-
-            if ( debug )
-                std::cout << "id #" << readId << ": new ReadPath=" << mPath << std::endl;
-            mPaths[readId] = mPath;
-        }
-
-        void algorithmOne( size_t readId )
-        {
-            bool const debug = mVerbose;
-
-            std::vector<PathPart> const& parts = mPather.path(mReads[readId]);
-
-            if ( debug )  {
-                std::cout << std::endl;
-                std::cout << readId << " A1: startOnRead=" << startOnRead(parts) << " ";
-                if ( parts[0].isGap() ) std::cout << " gap=" << parts[0].getLength() << std::endl;
-                else std::cout << std::endl;
-                for ( auto const& part : parts ) std::cout << part << std::endl;
-                pathPartsToReadPath(parts, mPath);
-                PRINT(mPath);
-            }
-
-
-            // for each path part sandwiched between two others
-            // if the part is a captured gap, check that it can be squeezed out
-            // without a lot of drama
-            if ( parts.size() >= 3 )
-            { auto end = parts.end()-1;
-                for ( auto pPart=parts.begin()+1; pPart != end; ++pPart )
-                { if ( !pPart->isGap() ) continue;
-                    if ( !pPart->isConformingCapturedGap(MAX_JITTER) ) return;
-                    if ( !mPather.isJoinable(pPart[-1],pPart[1]) ) return; } }
-            mPath.clear();
-
-            pathPartsToReadPath(parts, mPath);
-
-            if ( debug ) {
-                std::cout << "PARTS AFTER EDITING: " << std::endl;
-                for ( auto const& part: parts )
-                    std::cout << part << std::endl;
-                PRINT(mPath);
-            }
 
             mPaths[readId] = mPath;
         }
@@ -1261,10 +1169,8 @@ namespace
         vec<int> const& mFwdEdgeXlat;
         vec<int> const& mRevEdgeXlat;
         BRQ_Pather mPather;
-        Algorithm mAlgorithm;
         ReadPathVec& mPaths;
         ReadPath mPath;
-        Bool mVerbose;
         ExtendReadPath mExtender;
         qvec mQV;
     };
@@ -1273,26 +1179,14 @@ namespace
                     BRQ_Dict const& dict, vecbvec const& edges,
                     HyperBasevector const& hbv,
                     std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
-                    ReadPathVec* pPaths, Bool const NEW_ALIGNER = False,
-                    Bool const VERBOSE = False )
+                    ReadPathVec* pPaths)
     {
         pPaths->clear().resize(reads.size());
-        auto algorithm = NEW_ALIGNER ? HBVPather::ALGORITHM_TWO : HBVPather::ALGORITHM_ONE;
         HBVPather pather(reads,quals,dict,edges,hbv,fwdEdgeXlat,revEdgeXlat,
-                         algorithm,pPaths,VERBOSE);
-        parallelForBatch(0ul,reads.size(),100000,pather);
-    }
+                         pPaths);
 
-    void repathUnpathedReads(const vecbvec& reads, const VecPQVec& quals,
-                             const HyperBasevector& hbv, ReadPathVec& paths) {
-
-        vec<size_t> ids;
-        for ( size_t i = 0; i < paths.size(); ++i)
-            if (paths[i].empty())
-                ids.push_back(i);
-
-        int num_threads = getConfiguredNumThreads();
-        ShortKmerReadPather::FindPaths(reads, quals, hbv, paths, 24, num_threads, ids , true);
+        //parallelForBatch(0ul,reads.size(),100000,pather);
+        for (auto i=0;i<=reads.size();++i) pather(i);
     }
 
 } // end of anonymous namespace
@@ -1302,9 +1196,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       unsigned minQual, unsigned minFreq,
                       double minFreq2Fract, unsigned maxGapSize,
                       String const& refFasta,
-                      bool useNewAligner, bool repathUnpathed,
-                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K,
-                      bool const VERBOSE )
+                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K)
 {
     std::cout << Date() << ": loading reads." << std::endl;
     BRQ_Dict* pDict = createDict(reads,quals,minQual,minFreq);
@@ -1344,37 +1236,8 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": creating Read Paths." << std::endl;
-        pathReads(reads,quals,*pDict,edges,*pHBV,
-                  fwdEdgeXlat,revEdgeXlat,pPaths,useNewAligner,VERBOSE);
+        pathReads(reads,quals,*pDict,edges,*pHBV,fwdEdgeXlat,revEdgeXlat,pPaths);
         delete pDict;
-        if (repathUnpathed) {
-            std::cout << Date() << ": repathing unpathed reads." << std::endl;
-            repathUnpathedReads(reads, quals, *pHBV, *pPaths);
-        }
     }
     std::cout << Date() << ": graph created." << std::endl;
-}
-
-void rePath( HyperBasevector const& hbv,
-             vecbvec const& reads, VecPQVec const& quals,
-             bool useNewAligner, bool verbose,
-             HyperBasevector* pNewHBV, ReadPathVec* pPaths )
-{
-    BRQ_Dict dict(SizeSum(hbv.Edges())/2);
-    DictionaryKmerEater<K> eater(&dict);
-    parallelFor(0,hbv.EdgeObjectCount(),
-                [&hbv,&eater]( size_t edgeId )
-                { bvec const& bv = hbv.EdgeObject(edgeId);
-                    BRQ_Kmer::kmerizeIntoEater(bv.begin(),bv.end(),eater,edgeId); });
-
-    vecbvec edges;
-    edges.reserve(hbv.EdgeObjectCount()/2);
-    buildEdges(dict,&edges);
-
-    std::vector<int> fwdEdgeXlat;
-    std::vector<int> revEdgeXlat;
-    buildHBVFromEdges(edges,K,pNewHBV,fwdEdgeXlat,revEdgeXlat);
-
-    pathReads(reads,quals,dict,edges,*pNewHBV,fwdEdgeXlat,revEdgeXlat,pPaths,
-              useNewAligner, verbose);
 }
