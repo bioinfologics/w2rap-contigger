@@ -55,31 +55,7 @@ namespace
     typedef KmerDict<K> BRQ_Dict;
 
 
-    class GoodLenTailFinder
-    {
-    public:
-        GoodLenTailFinder( VecPQVec const& quals, unsigned minQual,
-                           std::vector<unsigned>* pGoodLens )
-                : mQuals(quals), mMinQual(minQual), mGoodLens(*pGoodLens) {}
 
-        void operator()( size_t readId )
-        { mQuals[readId].unpack(&mQV);
-            unsigned minQual = mMinQual;
-            auto itr = mQV.end();
-            auto beg = mQV.begin();
-            unsigned good = 0;
-            while ( itr != beg )
-                if ( *--itr < minQual ) good = 0;
-                else if ( ++good == K )
-                { mGoodLens[readId] = (itr-beg)+K; return; }
-            mGoodLens[readId] = 0; }
-
-    private:
-        VecPQVec const& mQuals;
-        unsigned mMinQual;
-        std::vector<unsigned>& mGoodLens;
-        qvec mQV;
-    };
 
     inline void summarizeEntries( BRQ_Entry* e1, BRQ_Entry* e2 )
     {
@@ -96,50 +72,54 @@ namespace
         kDef.setCount(count);
     }
 
-    class Kmerizer
-    {
+    class Kmerizer {
     public:
-        Kmerizer( vecbvec const& reads, std::vector<unsigned> const& goodLengths,
-                  unsigned minFreq, BRQ_Dict* pDict, std::atomic_size_t* pTotKmers )
+        Kmerizer(vecbvec const &reads, std::vector<unsigned> const &goodLengths,
+                 unsigned minFreq, BRQ_Dict *pDict, std::atomic_size_t *pTotKmers)
                 : mReads(reads), mGoodLengths(goodLengths), mMinFreq(minFreq),
-                  mpDict(pDict), mpTotKmers(pTotKmers), mNKmers(0)
-        {}
+                  mpDict(pDict), mpTotKmers(pTotKmers), mNKmers(0) {}
 
-        ~Kmerizer()
-        { if ( mpTotKmers ) *mpTotKmers += mNKmers; }
+        ~Kmerizer() { if (mpTotKmers) *mpTotKmers += mNKmers; }
 
-        template <class OItr>
-        void map( size_t readId, OItr oItr )
-        { unsigned len = mGoodLengths[readId];
-            if ( len < K+1 ) return;
-            auto beg = mReads[readId].begin(), itr=beg+K, last=beg+(len-1);
+        template<class OItr>
+        void map(size_t readId, OItr oItr) {
+            unsigned len = mGoodLengths[readId];
+            if (len < K + 1) return;
+            auto beg = mReads[readId].begin(), itr = beg + K, last = beg + (len - 1);
             BRQ_Kmer kkk(beg);
             KMerContext kc = KMerContext::initialContext(*itr);
-            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc);
-            while ( itr != last )
-            { unsigned char pred = kkk.front();
-                kkk.toSuccessor(*itr); ++itr;
-                kc = KMerContext(pred,*itr);
-                *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc); }
+            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc);
+            while (itr != last) {
+                unsigned char pred = kkk.front();
+                kkk.toSuccessor(*itr);
+                ++itr;
+                kc = KMerContext(pred, *itr);
+                *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc);
+            }
             kc = KMerContext::finalContext(kkk.front());
             kkk.toSuccessor(*last);
-            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc); }
+            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc);
+        }
 
-        void reduce( BRQ_Entry* e1, BRQ_Entry* e2 )
-        { summarizeEntries(e1,e2);
-            if ( e1->getKDef().getCount() >= mMinFreq )
-            { ++mNKmers;
-                if ( mpDict ) mpDict->insertEntry(std::move(*e1)); } }
+        void reduce(BRQ_Entry *e1, BRQ_Entry *e2) {
+            summarizeEntries(e1, e2);
+            if (e1->getKDef().getCount() >= mMinFreq) {
+                ++mNKmers;
+                if (mpDict) mpDict->insertEntry(std::move(*e1));
+            }
+        }
 
-        BRQ_Entry* overflow( BRQ_Entry* e1, BRQ_Entry* e2 )
-        { if ( e2-e1 > 1 ) summarizeEntries(e1,e2); return e1+1; }
+        BRQ_Entry *overflow(BRQ_Entry *e1, BRQ_Entry *e2) {
+            if (e2 - e1 > 1) summarizeEntries(e1, e2);
+            return e1 + 1;
+        }
 
     private:
-        vecbvec const& mReads;
-        std::vector<unsigned> const& mGoodLengths;
+        vecbvec const &mReads;
+        std::vector<unsigned> const &mGoodLengths;
         unsigned mMinFreq;
-        BRQ_Dict* mpDict;
-        std::atomic_size_t* mpTotKmers;
+        BRQ_Dict *mpDict;
+        std::atomic_size_t *mpTotKmers;
         size_t mNKmers;
     };
     typedef MapReduceEngine<Kmerizer,BRQ_Entry,BRQ_Kmer::Hasher> KMRE;
@@ -149,18 +129,49 @@ namespace
     {
         // figure out how much of the read to kmerize by examining quals
         //std::cout << Date() << ": processing quals." << std::endl;
-        std::vector<unsigned> goodLens(reads.size());
-        parallelForBatch(0ul,reads.size(),100000,
-                         GoodLenTailFinder(quals,minQual,&goodLens));
-        //TODO: check if something like quals.unload() is needed;
-        size_t nKmers = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
+        std::vector<unsigned> goodLens(reads.size(),0);
+        //parallelForBatch(0ul,reads.size(),100000,
+        //                 GoodLenTailFinder(quals,minQual,&goodLens));
+        std::atomic_uint nKmers;
+        #pragma omp parallel
+        {
+            qvec uq;
+            auto itr = uq.end();
+            auto beg = uq.begin();
+            unsigned good = 0;
+            #pragma omp for
+            for (auto i = 0; i < reads.size(); ++i) {
+                quals[i].unpack(&uq);
+                itr = uq.end();
+                beg = uq.begin();
+                good = 0;
+                while ( itr != beg ) {
+                    if (*--itr < minQual) good = 0;
+                    else if (++good == K) {
+                        goodLens[i] = (itr - beg) + K;
+                        break;
+                    }
+                }
+                nKmers+=goodLens[i];
 
-        if ( nKmers == 0 )
-        {    std::cout << "\nLooks like your input data have almost no good bases.\n"
-             << "Giving up.\n" << std::endl;
-            Scram(1);    }
+            }
+        }
+
+        //First create a single vector with all the kmers in (using a collapsing approach to keep memory usage reasonable)
+        {
+
+        }
+
+        //now just go through the vector and
+
+
+        //TODO: check if something like quals.unload() is needed;
+        //size_t nKmers = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
+        std::cout << nKmers << " good kmers found"<<std::endl;
 
         size_t dictSize;
+
+        //OK, this is just kmer counting, just to check the dict size
         if ( true )
         { // count uniq kmers that occur at minFreq or more
             std::atomic_size_t nUniqKmers(0);
@@ -845,30 +856,6 @@ namespace
         buildEdges(*pDict,pEdges);
     }
 
-    void pathRef( String const& refFasta, BRQ_Dict const& dict, vecbvec const& edges )
-    {
-        vecbvec ref;
-        FastFetchReads(ref,nullptr,refFasta);
-        BRQ_Pather pather(dict,edges);
-        for ( bvec const& refTig : ref )
-        {
-            pather.path(refTig);
-            std::cout << "Reference path:" << std::endl;
-            std::cout << pather << std::endl;
-        }
-        size_t edgeId = 0;
-        for ( bvec const& edge : edges )
-        {
-            std::cout << edgeId++ << ": ";
-            if ( edge.size() < 2*K )
-                std::cout << edge;
-            else
-                std::cout << bvec(edge.begin(),edge.begin(K)) << "..."
-                << bvec(edge.end()-K,edge.end());
-            std::cout << ' ' << edge.size()-K+1 << std::endl;
-        }
-    }
-
     class BRQ_Join
     {
     public:
@@ -1191,15 +1178,267 @@ namespace
 
 } // end of anonymous namespace
 
+
+inline void combine_Entries( BRQ_Entry & dest, BRQ_Entry & source )
+{
+    KDef& kDef = dest.getKDef();
+    KMerContext kc=dest.getKDef().getContext();
+    kc|=source.getKDef().getContext();
+    kDef.setContext(kc);
+    kDef.setCount(kDef.getCount()+source.getKDef().getCount());
+}
+
+void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers, std::vector<BRQ_Entry> * partial_results,bool last_status[]) {
+    //merge from the bottom
+
+    //count the total number of partial results to process (ease out the looping).
+    uint64_t results_left=0;
+    for (auto i=0;i<workers;i++) if (last_status[i]) results_left+=partial_results[i].size();
+    if (results_left==0) return;
+    //create all iterators and such
+    auto master_read=kmer_list.rbegin();
+
+    kmer_list.resize(kmer_list.size()+results_left);//is this wise?
+
+    auto master_write=kmer_list.rbegin();
+
+    //while any partial results left
+    while (results_left) {
+        //find the max current partial result
+        int max=-1;
+        for (auto i=0;i<workers;i++)
+            if (last_status[i] and partial_results[i].size()>0){
+                if (-1==max or partial_results[i].back()>*master_read)
+                    max=i;
+            }
+        //while the master has larger entries, insert them:
+        while (master_read!=kmer_list.rend() and *master_read>=partial_results[max].back()){
+            ++master_write;
+            *master_write=*master_read;
+            ++master_read;
+        }
+        //is the max > is the minimum = current last insertion?
+        if (partial_results[max].back()==*master_write) {
+            combine_Entries(*master_write,partial_results[max].back());
+            partial_results[max].pop_back();
+        } else {
+            ++master_write;
+            *master_write=partial_results[max].back();
+            partial_results[max].pop_back();
+        }
+        --results_left;
+    }
+    while (master_read!=kmer_list.rend()){//whatever is left from the master
+        ++master_write;
+        *master_write=*master_read;
+        ++master_read;
+    }
+    //move to the top
+    kmer_list.assign(master_write.base()-1,kmer_list.end());
+    kmer_list.resize(master_write.base()-kmer_list.begin());
+}
+
+
+void print_results_status(uint nthreads, bool results[]){
+#pragma omp critical
+    {
+        std::cout<< "Results status: [ ";
+        for (auto i=0;i<nthreads;++i) std::cout<<results[i]<<" ";
+        std::cout<<" ]"<<std::endl;
+    }
+}
+
+BRQ_Dict * createDictOMP(vecbvec const& reads, VecPQVec const& quals, unsigned minQual, unsigned minFreq){
+    //Count kmers per read, probably stupidly overkill
+    std::vector<unsigned> goodLens(reads.size(),0);
+    const uint64_t batch_size=100000;
+    //parallelForBatch(0ul,reads.size(),100000,
+    //                 GoodLenTailFinder(quals,minQual,&goodLens));
+    std::atomic_uint nKmers;
+#pragma omp parallel
+    {
+        qvec uq;
+        auto itr = uq.end();
+        auto beg = uq.begin();
+        unsigned good = 0;
+#pragma omp for
+        for (auto i = 0; i < reads.size(); ++i) {
+            quals[i].unpack(&uq);
+            itr = uq.end();
+            beg = uq.begin();
+            good = 0;
+            while (itr != beg) {
+                if (*--itr < minQual) good = 0;
+                else if (++good == K) {
+                    goodLens[i] = (itr - beg) + K;
+                    break;
+                }
+            }
+            nKmers += goodLens[i];
+
+        }
+    }
+
+    uint64_t nThreads = omp_get_max_threads();
+
+    std::atomic_uint blocks_to_do(0);
+    bool unprocessed_results[nThreads];
+    for (auto i=0;i<nThreads;i++) unprocessed_results[i]=false;
+    print_results_status(nThreads,unprocessed_results);
+    std::vector<BRQ_Entry> partial_results[nThreads];
+    std::vector<BRQ_Entry> kmer_list;
+    auto start = 0;
+    uint64_t task_kmers = 0;
+    std::atomic_bool all_tasks_created(false);
+
+    #pragma omp parallel
+    {
+#pragma omp master
+        {//The master thread, creates tasks first
+#pragma omp critical
+            std::cout << Date() << ": Master entering the main list merging loop with " << blocks_to_do
+                      << " blocks to do " << std::endl;
+            print_results_status(nThreads,unprocessed_results);
+
+            while (blocks_to_do or not all_tasks_created) {
+                //copy the current status of the unprocessed_results so it is STABLE (we fix the groups to process as those in this iteration)
+                bool last_status[nThreads];
+                unsigned results_to_process = 0;//TODO: active wait is ugly
+                for (auto i = 0; i < nThreads; ++i) {
+                    last_status[i] = unprocessed_results[i];
+                    if (last_status[i]) results_to_process++;
+                }
+                //TODO: replace this by a nice in-place merge sort.
+                if (results_to_process) {
+#pragma omp critical
+                    std::cout << Date() << ": Master merging " << results_to_process << " batches into main list"
+                              << std::endl;
+                    merge_kmers_into_master(kmer_list, nThreads, partial_results, last_status);
+#pragma omp critical
+                    std::cout << Date() << ": Master merging done" << std::endl;
+                }
+                //decrease the blocks_to_do counter
+                for (auto i = 0; i < nThreads; ++i) if (last_status[i]) unprocessed_results[i] = false;
+                blocks_to_do -= results_to_process;
+            }
+            std::cout << Date() << ": Master processed all blocks and tasks, creating dict... "<<std::endl;
+            //now do the insertion on the dict, with no locking or anything, just a fast one, only if count>min_freq
+            BRQ_Dict *pDict = new BRQ_Dict(kmer_list.size());
+            for (auto &kent:kmer_list) {
+                if (kent.getKDef().getCount() >= minFreq) {
+                    pDict->insertEntry(kent);
+                }
+            }
+            pDict->recomputeAdjacencies(); //does this mean we should not have saved adjacencies in the first place?
+        }
+
+#pragma omp single
+        {
+            for (auto i = 0; i <= reads.size(); ++i) {
+                if (task_kmers + goodLens[i] > batch_size or i == reads.size()) {
+                    //create the task to count the kmers
+                    auto end = i;
+                    //increase the task counter.
+                    ++blocks_to_do;
+    #pragma omp task shared(goodLens,reads,unprocessed_results,partial_results)
+                    {
+    #pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " started a batch from" << start
+                                  << " to " << end << std::endl;
+                        //create the kmer count in a local vector
+                        std::vector<BRQ_Entry> local_results;
+                        local_results.reserve(task_kmers);
+                        for (auto readId = start; readId < end; ++readId) {
+                            unsigned len = goodLens[readId];
+                            if (len > K) {
+                                auto beg = reads[readId].begin(), itr = beg + K, last = beg + (len - 1);
+                                BRQ_Kmer kkk(beg);
+                                KMerContext kc = KMerContext::initialContext(*itr);
+
+                                do {
+                                    local_results.push_back(
+                                            kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc));
+                                    unsigned char pred = kkk.front();
+                                    kkk.toSuccessor(*itr);
+                                    ++itr;
+                                    kc = KMerContext(pred, *itr);
+
+                                } while (itr <= last);
+
+                            }
+                        }
+    #pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " finished creating kmers"
+                                  << std::endl;
+                        //sort and collapse
+                        std::sort(local_results.begin(), local_results.end());
+    #pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " finished sorting kmers"
+                                  << std::endl;
+                        KMerContext kc;
+                        auto okItr = local_results.begin();
+                        for (auto kItr = local_results.begin(); kItr < local_results.end(); ++kItr) {
+                            kc = kItr->getKDef().getContext();
+                            uint count = 0;
+                            while (kItr < local_results.end() - 1 and *kItr == *(kItr + 1)) {
+                                KDef const &kDef = (kItr + 1)->getKDef();
+                                kc |= kDef.getContext();
+                                count += std::max(kDef.getCount(), 1ul);
+                                ++kItr;
+                            }
+                            okItr = kItr;
+                            KDef &kDef = okItr->getKDef();
+                            kDef.setContext(kc);
+                            kDef.setCount(count);
+                            ++okItr;
+                        }
+                        local_results.resize(okItr - local_results.begin());
+
+                        //wait for the std::atomic_bool "unprocessed results" flag to be false for this particular block
+    #pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " finished a batch" << std::endl;
+                        print_results_status(nThreads,unprocessed_results);
+                        while (unprocessed_results[omp_get_thread_num()]);//TODO: active wait is ugly
+#pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " copying results" << std::endl;
+                        //transfer results
+                        partial_results[omp_get_thread_num()] = local_results;
+
+#pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " copied results" << std::endl;
+                        //set the std::atomic_bool unprocessed results to true
+                        unprocessed_results[omp_get_thread_num()] = true;
+    #pragma omp critical
+                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " sent batch to master" << std::endl;
+
+                    }
+                    //std::cout<<"Task created!!!"<<std::endl;
+                    task_kmers = 0;
+                    start = i;
+                }
+
+                if (i < reads.size()) task_kmers += goodLens[i];
+            }
+            all_tasks_created = true;
+        }
+
+
+
+    }
+
+
+
+
+}
+
 void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minQual, unsigned minFreq,
                       double minFreq2Fract, unsigned maxGapSize,
-                      String const& refFasta,
                       HyperBasevector* pHBV, ReadPathVec* pPaths, int _K)
 {
-    std::cout << Date() << ": loading reads." << std::endl;
-    BRQ_Dict* pDict = createDict(reads,quals,minQual,minFreq);
+    std::cout << Date() << ": loading reads (createdictOMP!!!)." << std::endl;
+    BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
 
     std::cout << Date() << ": finding edge sequences." << std::endl;
     // figure out the complete base sequence of each edge
@@ -1209,20 +1448,16 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
 
-    if ( doFillGaps ) {
+    if ( doFillGaps ) { // Off by default
         std::cout << Date() << ": filling gaps." << std::endl;
         fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
     }
 
-    if ( doJoinOverlaps ) {
+    if ( doJoinOverlaps ) { // Off by default
         std::cout << Date() << ": joining Overlaps." << std::endl;
         joinOverlaps(reads, _K / 2, minFreq2, &edges, pDict);
     }
 
-    if ( !refFasta.empty() ) {
-        std::cout << Date() << ": aligning to reference." << std::endl;
-        pathRef(refFasta, *pDict, edges);
-    }
     std::vector<int> fwdEdgeXlat;
     std::vector<int> revEdgeXlat;
     if ( !pPaths )

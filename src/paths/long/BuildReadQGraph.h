@@ -25,7 +25,6 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                         bool doFillGaps, bool doJoinOverlaps,
                         unsigned minQual, unsigned minFreq,
                         double minFreq2Fract, unsigned maxGapSize,
-                        String const& refFasta,
                         HyperBasevector* pHBV, ReadPathVec* pPaths, int _K);
 
 

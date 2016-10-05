@@ -303,7 +303,7 @@ int main(const int argc, const char * argv[]) {
     }
 
     //== Read QGraph, and repath (k=60, k=200 (and saves in binary format) ======
-    bool FILL_JOIN = False;
+
     if (from_step>1 && from_step<7 and not (from_step==3 and to_step==3)){
         std::cout << "Loading reads in fastb/qualp format..." << std::endl;
         bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
@@ -312,13 +312,13 @@ int main(const int argc, const char * argv[]) {
         if (dump_perf) perf_file << checkpoint_perf_time("LoadReads") << std::endl;
     }
     {//This scope-trick to invalidate old data is dirty
+
         HyperBasevector hbv;
         ReadPathVec paths;
         if (from_step<=2 and to_step>=2) {
+            bool FILL_JOIN = False;
             std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
-            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, 7, 3, .75, 0, "", &hbv,
-                            &paths,
-                            small_K);
+            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, 7, 3, .75, 0, &hbv, &paths, small_K);
             if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
             FixPaths(hbv, paths); //TODO: is this even needed?
             if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
