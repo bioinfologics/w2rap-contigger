@@ -1196,14 +1196,14 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
     for (auto i=0;i<workers;i++) if (last_status[i]) results_left+=partial_results[i].size();
     if (results_left==0) return;
     //create all iterators and such
+#pragma omp critical
+    std::cout << Date() << ": Master merging " << results_left << " results, current master kmer list size "<< kmer_list.size()<< std::endl;
     kmer_list.reserve(kmer_list.size()+results_left);//is this wise?
     auto master_read=kmer_list.rbegin();
 
     kmer_list.resize(kmer_list.size()+results_left);//is this wise?
 
     auto master_write=kmer_list.rbegin();
-#pragma omp critical
-    std::cout << Date() << ": Master merging " << results_left << " results" << std::endl;
     bool first=true;
     //while any partial results left
     while (results_left) {
@@ -1239,8 +1239,10 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
         ++master_read;
     }
     //move to the top
+    int64_t new_size=master_write+1-kmer_list.rbegin();
+    std::cout<<"new master kmer list size:"<<new_size<<std::endl;
     kmer_list.assign(master_write.base()-1,kmer_list.end());
-    kmer_list.resize(master_write.base()-kmer_list.begin());
+    kmer_list.resize(new_size);
 }
 
 
@@ -1295,7 +1297,7 @@ BRQ_Dict * createDictOMP(vecbvec const& reads, VecPQVec const& quals, unsigned m
     auto start = 0;
     uint64_t task_kmers = 0;
     std::atomic_bool all_tasks_created(false);
-
+    BRQ_Dict *pDict;
     #pragma omp parallel
     {
 #pragma omp master
@@ -1329,13 +1331,17 @@ BRQ_Dict * createDictOMP(vecbvec const& reads, VecPQVec const& quals, unsigned m
             }
             std::cout << Date() << ": Master processed all blocks and tasks, creating dict... "<<std::endl;
             //now do the insertion on the dict, with no locking or anything, just a fast one, only if count>min_freq
-            BRQ_Dict *pDict = new BRQ_Dict(kmer_list.size());
+            pDict = new BRQ_Dict(kmer_list.size());
+            uint64_t used=0;
             for (auto &kent:kmer_list) {
                 if (kent.getKDef().getCount() >= minFreq) {
                     pDict->insertEntry(kent);
+                    used++;
                 }
             }
+            std::cout<< Date()<<": "<<used<<" out of "<<kmer_list.size()<<" kmers with Freq >= "<<minFreq<<std::endl;
             pDict->recomputeAdjacencies(); //does this mean we should not have saved adjacencies in the first place?
+
         }
 
 #pragma omp single
@@ -1420,7 +1426,7 @@ BRQ_Dict * createDictOMP(vecbvec const& reads, VecPQVec const& quals, unsigned m
     }
 
 
-
+    return pDict;
 
 }
 
