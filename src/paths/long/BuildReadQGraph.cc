@@ -1211,7 +1211,7 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
         int max=-1;
         for (auto i=0;i<workers;i++)
             if (last_status[i] and partial_results[i].size()>0){
-                if (-1==max or partial_results[i].back()>*master_read)
+                if (-1==max or partial_results[i].back()>partial_results[max].back())
                     max=i;
             }
         //while the master has larger entries, insert them:
