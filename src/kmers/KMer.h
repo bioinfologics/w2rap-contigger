@@ -292,8 +292,13 @@ public:
     friend bool operator<=( KMer const& k1, KMer const& k2 )
     { return compare(k1,k2) <= 0; }
 
-    friend bool operator>( KMer const& k1, KMer const& k2 )
-    { return compare(k1,k2) > 0; }
+    friend bool operator>( KMer const& k1, KMer const& k2 ) {
+        for (unsigned_char_t i=0; i<STORAGE_UNITS_PER_KMER; ++i){
+            if (k1.mVal[i]>k2.mVal[i]) return true;
+            if (k1.mVal[i]<k2.mVal[i]) return false;
+        }
+        return false;
+    }
 
     friend bool operator>=( KMer const& k1, KMer const& k2 )
     { return compare(k1,k2) >= 0; }
@@ -304,13 +309,14 @@ public:
     friend bool operator!=( KMer const& k1, KMer const& k2 )
     { return compare(k1,k2) != 0; }
 
-    friend int compare( KMer const& k1, KMer const& k2 )
+    friend inline int compare( KMer const& k1, KMer const& k2 )
     { int result = 0;
       storage_type const* end(k1.mVal + STORAGE_UNITS_PER_KMER);
       storage_type const* itr2(k2.mVal);
       for ( storage_type const* itr1 = k1.mVal; itr1 != end; ++itr1, ++itr2 )
         if ( (result = compare(*itr1,*itr2)) ) break;
-      return result; }
+      return result;
+    }
 
     friend std::ostream& operator<<( std::ostream& os, KMer const& kmer )
     { for ( iterator itr(kmer.begin()), end(kmer.end()); itr != end; ++itr )

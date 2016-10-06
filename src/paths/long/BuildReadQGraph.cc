@@ -1188,12 +1188,30 @@ inline void combine_Entries( BRQ_Entry & dest, BRQ_Entry & source )
     kDef.setCount(kDef.getCount()+source.getKDef().getCount());
 }
 
+void print_results_status(uint nthreads, bool results[]){
+#pragma omp critical
+    {
+        std::cout<< "Results status: [ ";
+        for (auto i=0;i<nthreads;++i) std::cout<<results[i]<<" ";
+        std::cout<<" ]"<<std::endl;
+    }
+}
+
 void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers, std::vector<BRQ_Entry> * partial_results,bool last_status[]) {
     //merge from the bottom
 
     //count the total number of partial results to process (ease out the looping).
     uint64_t results_left=0;
-    for (auto i=0;i<workers;i++) if (last_status[i]) results_left+=partial_results[i].size();
+    bool active[workers];
+    for (auto i=0;i<workers;i++) {
+        if (last_status[i]) {
+            results_left += partial_results[i].size();
+            active[i] = (partial_results[i].size() > 0);
+        }
+        else active[i]=false;
+    }
+
+
     if (results_left==0) return;
     //create all iterators and such
 #pragma omp critical
@@ -1206,11 +1224,12 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
     auto master_write=kmer_list.rbegin();
     bool first=true;
     //while any partial results left
+
     while (results_left) {
         //find the max current partial result
         int max=-1;
         for (auto i=0;i<workers;i++)
-            if (last_status[i] and partial_results[i].size()>0){
+            if (active[i]){
                 if (-1==max or partial_results[i].back()>partial_results[max].back())
                     max=i;
             }
@@ -1231,8 +1250,10 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
             *master_write=partial_results[max].back();
             partial_results[max].pop_back();
         }
+        if (partial_results[max].size()==0) active[max]=false;
         --results_left;
     }
+
     while (master_read!=kmer_list.rend()){//whatever is left from the master
         ++master_write;
         *master_write=*master_read;
@@ -1246,14 +1267,6 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
 }
 
 
-void print_results_status(uint nthreads, bool results[]){
-#pragma omp critical
-    {
-        std::cout<< "Results status: [ ";
-        for (auto i=0;i<nthreads;++i) std::cout<<results[i]<<" ";
-        std::cout<<" ]"<<std::endl;
-    }
-}
 
 BRQ_Dict * createDictOMP(vecbvec const& reads, VecPQVec const& quals, unsigned minQual, unsigned minFreq){
     //Count kmers per read, probably stupidly overkill
