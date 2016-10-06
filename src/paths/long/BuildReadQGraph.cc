@@ -1203,12 +1203,14 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
     //count the total number of partial results to process (ease out the looping).
     uint64_t results_left=0;
     bool active[workers];
+    BRQ_Entry next_value[workers];
     for (auto i=0;i<workers;i++) {
         if (last_status[i]) {
             results_left += partial_results[i].size();
             active[i] = (partial_results[i].size() > 0);
         }
         else active[i]=false;
+        if (active[i]) next_value[i]=partial_results[i].back();
     }
 
 
@@ -1225,16 +1227,17 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
     bool first=true;
     //while any partial results left
 
+
     while (results_left) {
         //find the max current partial result
         int max=-1;
         for (auto i=0;i<workers;i++)
             if (active[i]){
-                if (-1==max or partial_results[i].back()>partial_results[max].back())
+                if (-1==max or next_value[i]>next_value[max])
                     max=i;
             }
         //while the master has larger entries, insert them:
-        while (master_read!=kmer_list.rend() and *master_read>=partial_results[max].back()){
+        while (master_read!=kmer_list.rend() and *master_read>=next_value[max]){
             if (first) first=false;
             else ++master_write;
             *master_write=*master_read;
@@ -1242,15 +1245,16 @@ void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers,
         }
         //is the max > is the minimum = current last insertion?
         if (!first and partial_results[max].back()==*master_write) {
-            combine_Entries(*master_write,partial_results[max].back());
+            combine_Entries(*master_write,next_value[max]);
             partial_results[max].pop_back();
         } else {
             if (first) first=false;
             else ++master_write;
-            *master_write=partial_results[max].back();
+            *master_write=next_value[max];
             partial_results[max].pop_back();
         }
         if (partial_results[max].size()==0) active[max]=false;
+        else next_value[max]=partial_results[max].back();
         --results_left;
     }
 
