@@ -47,9 +47,11 @@ public:
       { AssertLt(val,4u); return val; } };
 
     KMer()
-    { storage_type* end(mVal + STORAGE_UNITS_PER_KMER);
+    { /*storage_type* end(mVal + STORAGE_UNITS_PER_KMER);
       for ( storage_type* itr = mVal; itr != end; ++itr )
-        *itr = 0; }
+        *itr = 0;*/
+        for (unsigned_char_t i=0;i<STORAGE_UNITS_PER_KMER;++i) mVal[i]=0;
+    }
 
 
     // *Itr is a base code
