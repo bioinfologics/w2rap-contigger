@@ -738,7 +738,7 @@ namespace
         HBVPather( vecbvec const& reads, VecPQVec const& quals,
                    BRQ_Dict const& dict, vecbvec const& edges,
                    HyperBasevector const& hbv,
-                   vec<int> const& fwdEdgeXlat, vec<int> const& revEdgeXlat,
+                   std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
                    ReadPathVec* pPaths, Bool const verbose = False )
                 : mReads(reads), mQuals(quals), mHBV(hbv), mFwdEdgeXlat(fwdEdgeXlat),
                   mRevEdgeXlat(revEdgeXlat), mPather(dict,edges),
@@ -881,8 +881,8 @@ namespace
         VecPQVec const& mQuals;
         HyperBasevector const& mHBV;
         vec<int> mToLeft, mToRight;
-        vec<int> const& mFwdEdgeXlat;
-        vec<int> const& mRevEdgeXlat;
+        std::vector<int> const& mFwdEdgeXlat;
+        std::vector<int> const& mRevEdgeXlat;
         BRQ_Pather mPather;
         ReadPathVec& mPaths;
         ReadPath mPath;
@@ -1173,7 +1173,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     std::cout << Date() << ": finding edge sequences." << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
-    edges.reserve(pDict->size()/100);
+    edges.reserve(pDict->size()/100); //TODO: this is probably WAY too much in most scenarios
     buildEdges(*pDict,&edges);
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
