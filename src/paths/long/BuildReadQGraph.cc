@@ -72,132 +72,6 @@ namespace
         kDef.setCount(count);
     }
 
-    class Kmerizer {
-    public:
-        Kmerizer(vecbvec const &reads, std::vector<unsigned> const &goodLengths,
-                 unsigned minFreq, BRQ_Dict *pDict, std::atomic_size_t *pTotKmers)
-                : mReads(reads), mGoodLengths(goodLengths), mMinFreq(minFreq),
-                  mpDict(pDict), mpTotKmers(pTotKmers), mNKmers(0) {}
-
-        ~Kmerizer() { if (mpTotKmers) *mpTotKmers += mNKmers; }
-
-        template<class OItr>
-        void map(size_t readId, OItr oItr) {
-            unsigned len = mGoodLengths[readId];
-            if (len < K + 1) return;
-            auto beg = mReads[readId].begin(), itr = beg + K, last = beg + (len - 1);
-            BRQ_Kmer kkk(beg);
-            KMerContext kc = KMerContext::initialContext(*itr);
-            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc);
-            while (itr != last) {
-                unsigned char pred = kkk.front();
-                kkk.toSuccessor(*itr);
-                ++itr;
-                kc = KMerContext(pred, *itr);
-                *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc);
-            }
-            kc = KMerContext::finalContext(kkk.front());
-            kkk.toSuccessor(*last);
-            *oItr++ = kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc);
-        }
-
-        void reduce(BRQ_Entry *e1, BRQ_Entry *e2) {
-            summarizeEntries(e1, e2);
-            if (e1->getKDef().getCount() >= mMinFreq) {
-                ++mNKmers;
-                if (mpDict) mpDict->insertEntry(std::move(*e1));
-            }
-        }
-
-        BRQ_Entry *overflow(BRQ_Entry *e1, BRQ_Entry *e2) {
-            if (e2 - e1 > 1) summarizeEntries(e1, e2);
-            return e1 + 1;
-        }
-
-    private:
-        vecbvec const &mReads;
-        std::vector<unsigned> const &mGoodLengths;
-        unsigned mMinFreq;
-        BRQ_Dict *mpDict;
-        std::atomic_size_t *mpTotKmers;
-        size_t mNKmers;
-    };
-    typedef MapReduceEngine<Kmerizer,BRQ_Entry,BRQ_Kmer::Hasher> KMRE;
-
-    BRQ_Dict* createDict( vecbvec const& reads, VecPQVec const& quals,
-                      unsigned minQual, unsigned minFreq )
-    {
-        // figure out how much of the read to kmerize by examining quals
-        //std::cout << Date() << ": processing quals." << std::endl;
-        std::vector<unsigned> goodLens(reads.size(),0);
-        //parallelForBatch(0ul,reads.size(),100000,
-        //                 GoodLenTailFinder(quals,minQual,&goodLens));
-        std::atomic_uint nKmers;
-        #pragma omp parallel
-        {
-            qvec uq;
-            auto itr = uq.end();
-            auto beg = uq.begin();
-            unsigned good = 0;
-            #pragma omp for
-            for (auto i = 0; i < reads.size(); ++i) {
-                quals[i].unpack(&uq);
-                itr = uq.end();
-                beg = uq.begin();
-                good = 0;
-                while ( itr != beg ) {
-                    if (*--itr < minQual) good = 0;
-                    else if (++good == K) {
-                        goodLens[i] = (itr - beg) + K;
-                        break;
-                    }
-                }
-                nKmers+=goodLens[i];
-
-            }
-        }
-
-        //First create a single vector with all the kmers in (using a collapsing approach to keep memory usage reasonable)
-        {
-
-        }
-
-        //now just go through the vector and
-
-
-        //TODO: check if something like quals.unload() is needed;
-        //size_t nKmers = std::accumulate(goodLens.begin(),goodLens.end(),0ul);
-        std::cout << nKmers << " good kmers found"<<std::endl;
-
-        size_t dictSize;
-
-        //OK, this is just kmer counting, just to check the dict size
-        if ( true )
-        { // count uniq kmers that occur at minFreq or more
-            std::atomic_size_t nUniqKmers(0);
-            Kmerizer impl(reads,goodLens,minFreq,nullptr,&nUniqKmers);
-            KMRE mre(impl);
-            if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
-                FatalErr("Failed to count unique kmers.  Out of buffer space.  ");
-            dictSize = nUniqKmers;
-        }
-
-        // kmerize reads into dictionary
-        BRQ_Dict* pDict = new BRQ_Dict(dictSize);
-        Kmerizer impl(reads,goodLens,minFreq,pDict,nullptr);
-        KMRE mre(impl);
-        if ( !mre.run(nKmers,0ul,reads.size(),KMRE::VERBOSITY::QUIET,.9) )
-            FatalErr("Failed to kmerize.  Out of buffer space.  ");
-
-        // some kmers were discarded because they didn't occur often enough to
-        // convince us that they were real -- recompute adjacencies to compensate
-        // for these missing kmers.
-        if ( minFreq > 1 )
-            pDict->recomputeAdjacencies();
-
-        return pDict;
-    }
-
     class EdgeBuilder
     {
     public:
@@ -613,67 +487,6 @@ namespace
                 } }
             return mPathParts; }
 
-        std::vector<PathPart> const& path_careful(bvec const& read) {
-            mPathParts.clear();
-
-            if (read.size() < K) {
-                mPathParts.emplace_back(read.size());
-                return mPathParts;
-            } // EARLY RETURN!
-
-            auto itr = read.begin();
-            auto end = read.end() - K + 1;
-            while (itr != end) {
-                BRQ_Kmer kmer(itr);
-                BRQ_Entry const* pEnt = mDict.findEntry(kmer);
-                if (!pEnt) {
-                    unsigned gapLen = 1u;
-                    auto itr2 = itr + K;
-                    ++itr;
-                    auto end2 = read.end();
-                    while (itr2 != end2) {
-                        kmer.toSuccessor(*itr2);
-                        ++itr2;
-                        if ((pEnt = mDict.findEntry(kmer)))
-                            break;
-                        ++gapLen;
-                        ++itr;
-                    }
-                    if ( mPathParts.size() && mPathParts.back().isGap() )
-                        mPathParts.back().incrLength(gapLen);
-                    else
-                        mPathParts.emplace_back(gapLen);
-                }
-                if (pEnt) {
-                    KDef const& kDef = pEnt->getKDef();
-                    bvec const& edge = mEdges[kDef.getEdgeID().val()];
-                    int offset = kDef.getEdgeOffset();
-                    auto eBeg(edge.begin(offset));
-                    size_t len = 1u;
-                    bool rc = CF<K>::isRC(itr, eBeg);
-                    if (!rc)
-                        len += matchLen(itr + K, read.end(), eBeg + K, edge.end());
-                    else {
-                        offset = edge.size() - offset;
-                        auto eBegRC(edge.rcbegin(offset));
-                        len += matchLen(itr + K, read.end(), eBegRC, edge.rcend());
-                        offset = offset - K;
-                    }
-                    unsigned edgeKmers = edge.size() - K + 1;
-
-                    if ( len >= 5 )
-                        mPathParts.emplace_back(kDef.getEdgeID(), rc, offset, len, edgeKmers);
-                    else if (mPathParts.size() && mPathParts.back().isGap())
-                        mPathParts.back().incrLength(len);
-                    else
-                        mPathParts.emplace_back(len);
-
-                    itr += len;
-                }
-            }
-            return mPathParts;
-        }
-
         bool isJoinable( PathPart const& pp1, PathPart const& pp2 ) const
         { if ( pp1.getEdgeID() == pp2.getEdgeID() ) return true;
             bvec const& e1 = mEdges[pp1.getEdgeID().val()];
@@ -681,90 +494,6 @@ namespace
             BRQ_SubKmer k1 = pp1.isRC() ? BRQ_SubKmer(e1.rcend()-K+1) : BRQ_SubKmer(e1.end()-K+1);
             BRQ_SubKmer k2 = pp2.isRC() ? BRQ_SubKmer(e2.rcend()-K+1) : BRQ_SubKmer(e2.end()-K+1);
             return k1==k2; }
-
-        std::vector<PathPart> const& path_more( bvec const& read, qvec const& qual,
-                                                bool trace = false ) {
-            mPathParts.clear();
-
-            if ( read.size() < K ) {
-                mPathParts.emplace_back(read.size());
-                return mPathParts;                          // EARLY RETURN!
-            }
-
-            auto itr  = read.begin();
-            auto qitr = qual.begin();
-            auto end = read.end()-K+1;
-
-
-            while ( itr != end ) {
-                int qSumRemain = 21;        // reset per edge
-                BRQ_Kmer kmer(itr);
-                BRQ_Entry const* pEnt = mDict.findEntry(kmer);
-                int gapLen = 0;
-                if ( !pEnt ) {
-                    ++gapLen;
-                    auto itr2 = itr+K; ++itr;
-                    auto end2 = read.end();
-                    while ( itr2 != end2 ) {
-                        kmer.toSuccessor(*itr2); ++itr2;
-                        if ( (pEnt = mDict.findEntry(kmer)) )
-                            break;
-                        ++gapLen; ++itr;
-                    }
-                }
-                // if still !pEnt, then we found no good kmers, so register the gap
-                // otherwise we look to extend the match in both directions and possibly
-                // adjust the gap later.
-                if ( !pEnt ) {
-                    mPathParts.emplace_back(gapLen);
-                } else {
-                    KDef const& kDef = pEnt->getKDef();
-                    bvec const& edge = mEdges[kDef.getEdgeID().val()];
-                    int offset = kDef.getEdgeOffset();
-                    auto eBeg(edge.begin(offset));
-                    size_t len = 1u;
-                    size_t backw = 0u;
-                    bool rc = CF<K>::isRC(itr,eBeg);
-                    if ( !rc ) {
-                        len += fuzzyMatchLen(itr+K,read.end(),eBeg+K,edge.end(),
-                                             qitr+K, qual.end(), qSumRemain);
-                        backw = fuzzyMatchLenBi( itr, read.begin(), eBeg,
-                                                 edge.begin(), qitr, qual.begin(), qSumRemain, true );
-                        offset -= backw;
-                        gapLen -= backw;
-                    } else {
-                        offset = edge.size() - offset;
-                        auto eBegRC(edge.rcbegin(offset));
-                        len += fuzzyMatchLen(itr+K,read.end(),eBegRC,edge.rcend(),
-                                             qitr+K,qual.end(),qSumRemain);
-                        offset = offset - K;
-
-                        backw = fuzzyMatchLenBi( itr, read.begin(), eBegRC-K, edge.rcbegin(),
-                                                 qitr, qual.begin(), qSumRemain, true);
-                        offset -= backw;
-                        gapLen -= backw;
-                    }
-                    if ( gapLen > 0 ) mPathParts.emplace_back(gapLen);
-                    else if ( gapLen < 0 )
-                        std::cout << "ARRRRRRGH!   gapLen=" << gapLen << std::endl;
-                    unsigned edgeKmers = edge.size()-K+1;
-                    mPathParts.emplace_back(kDef.getEdgeID(),rc,offset,len+backw,edgeKmers);
-                    itr += len;
-                }
-
-            }
-
-            if ( trace )
-                for ( auto const& part : mPathParts )
-                    std::cout << part << std::endl;
-
-            return mPathParts;
-        }
-
-
-        friend std::ostream& operator<<( std::ostream& os, BRQ_Pather const& pather )
-        { os << rangePrinter(pather.mPathParts.begin(),pather.mPathParts.end()," ");
-            return os; }
 
     private:
         BRQ_Dict const& mDict;
@@ -1113,25 +842,24 @@ namespace
         void pathPartsToReadPath( std::vector<PathPart> const& parts, ReadPath& path )
         {
             path.clear();
-            PathPart const* pLast = 0;
-            for ( PathPart const& part : parts )
-            { if ( part.isGap() ) continue;
-                if ( pLast && pLast->isSameEdge(part) ) continue;
+            PathPart const *pLast = 0;
+            for (PathPart const &part : parts) {
+                if (part.isGap()) continue;
+                if (pLast && pLast->isSameEdge(part)) continue;
 //        if ( part.getEdgeOffset() == 0 && part.getLength() < 5) continue;
                 size_t idx = part.getEdgeID().val();
-                path.push_back(part.isRC()?mRevEdgeXlat[idx]:mFwdEdgeXlat[idx]);
-                pLast = &part; }
-            if ( path.empty() )
-            { path.setOffset(0); /*path.setLastSkip(0);*/ }
-            else
-            { PathPart const& firstPart = parts.front();
-                if ( !firstPart.isGap() )
+                path.push_back(part.isRC() ? mRevEdgeXlat[idx] : mFwdEdgeXlat[idx]);
+                pLast = &part;
+            }
+            if (path.empty()) { path.setOffset(0); /*path.setLastSkip(0);*/ }
+            else {
+                PathPart const &firstPart = parts.front();
+                if (!firstPart.isGap())
                     path.setOffset(firstPart.getEdgeOffset());
-                else
-                {
+                else {
                     int eo1 = parts[1].getEdgeOffset();
                     int eo2 = firstPart.getLength();
-                    path.setOffset(eo1 - eo2 );
+                    path.setOffset(eo1 - eo2);
                 }
                 /*
                 PathPart const& lastPart = parts.back();
@@ -1161,20 +889,6 @@ namespace
         ExtendReadPath mExtender;
         qvec mQV;
     };
-
-    void pathReads( vecbvec const& reads, VecPQVec const& quals,
-                    BRQ_Dict const& dict, vecbvec const& edges,
-                    HyperBasevector const& hbv,
-                    std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
-                    ReadPathVec* pPaths)
-    {
-        pPaths->clear().resize(reads.size());
-        HBVPather pather(reads,quals,dict,edges,hbv,fwdEdgeXlat,revEdgeXlat,
-                         pPaths);
-
-        //parallelForBatch(0ul,reads.size(),100000,pather);
-        for (auto i=0;i<=reads.size();++i) pather(i);
-    }
 
 } // end of anonymous namespace
 
@@ -1486,8 +1200,17 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     {
         std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
+
+        for (auto i=0;i<edges.size();++i) if (fwdEdgeXlat[i]<0 or fwdEdgeXlat[i]>pHBV->EdgeObjectCount()-1 or revEdgeXlat[i]<0 or revEdgeXlat[i]>pHBV->EdgeObjectCount()-1)
+                std::cout<<"Edge "<<i<<" improper translation: "<<fwdEdgeXlat[i]<<" "<<revEdgeXlat[i]<<std::endl;
         std::cout << Date() << ": creating Read Paths." << std::endl;
-        pathReads(reads,quals,*pDict,edges,*pHBV,fwdEdgeXlat,revEdgeXlat,pPaths);
+
+        pPaths->clear().resize(reads.size());
+        HBVPather pather(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
+
+        //parallelForBatch(0ul,reads.size(),100000,pather);
+        for (auto i=0;i<=reads.size();++i) pather(i);
+
         delete pDict;
     }
     std::cout << Date() << ": graph created." << std::endl;

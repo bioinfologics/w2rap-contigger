@@ -14,9 +14,6 @@
 
 #include "paths/long/HBVFromEdges.h"
 
-
-
-
 class EdgeEnd{
 public:
     std::string seq;
@@ -50,6 +47,7 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
     pHBV->Clear();
     pFwdEdgeXlat.clear();
     pRevEdgeXlat.clear();
+
     if ( edges.empty() )
     {
         return;
