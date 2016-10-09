@@ -887,253 +887,127 @@ void print_results_status(uint nthreads, bool results[]){
     }
 }
 
-void merge_kmers_into_master(std::vector<BRQ_Entry> &kmer_list,unsigned workers, std::vector<BRQ_Entry> * partial_results,bool last_status[]) {
-    //merge from the bottom
 
-    //count the total number of partial results to process (ease out the looping).
-    uint64_t results_left=0;
-    bool active[workers];
-    BRQ_Entry next_value[workers];
-    for (auto i=0;i<workers;i++) {
-        if (last_status[i]) {
-            results_left += partial_results[i].size();
-            active[i] = (partial_results[i].size() > 0);
-        }
-        else active[i]=false;
-        if (active[i]) next_value[i]=partial_results[i].back();
-    }
+uint64_t count_good_lengths(std::vector<uint16_t> &good_lenghts, VecPQVec const& quals, uint64_t from, uint64_t to, unsigned _K, unsigned minQual){
+    //Computes the length in _K-mers til hitting minQual on each qual[from-to], returns the total count of goof kmers
+    uint64_t nKmers=0;
+    qvec uq;
+    auto itr = uq.end();
+    auto beg = uq.begin();
+    unsigned good = 0;
 
-
-    if (results_left==0) return;
-    //create all iterators and such
-#pragma omp critical
-    std::cout << Date() << ": Master merging " << results_left << " results, current master kmer list size "<< kmer_list.size()<< std::endl;
-    kmer_list.reserve(kmer_list.size()+results_left);//is this wise?
-    auto master_read=kmer_list.rbegin();
-
-    kmer_list.resize(kmer_list.size()+results_left);//is this wise?
-
-    auto master_write=kmer_list.rbegin();
-    bool first=true;
-    //while any partial results left
-
-
-    while (results_left) {
-        //find the max current partial result
-        int max=-1;
-        for (auto i=0;i<workers;i++)
-            if (active[i]){
-                if (-1==max or next_value[i]>next_value[max])
-                    max=i;
+    for (auto i = from; i < to; ++i) {
+        quals[i].unpack(&uq);
+        itr = uq.end();
+        beg = uq.begin();
+        good = 0;
+        while (itr != beg) {
+            if (*--itr < minQual) good = 0;
+            else if (++good == _K) {
+                good_lenghts[i-from] = (itr - beg) + _K;
+                break;
             }
-        //while the master has larger entries, insert them:
-        while (master_read!=kmer_list.rend() and *master_read>=next_value[max]){
-            if (first) first=false;
-            else ++master_write;
-            *master_write=*master_read;
-            ++master_read;
         }
-        //is the max > is the minimum = current last insertion?
-        if (!first and partial_results[max].back()==*master_write) {
-            combine_Entries(*master_write,next_value[max]);
-            partial_results[max].pop_back();
-        } else {
-            if (first) first=false;
-            else ++master_write;
-            *master_write=next_value[max];
-            partial_results[max].pop_back();
-        }
-        if (partial_results[max].size()==0) active[max]=false;
-        else next_value[max]=partial_results[max].back();
-        --results_left;
-    }
+        nKmers += good_lenghts[i-from];
 
-    while (master_read!=kmer_list.rend()){//whatever is left from the master
-        ++master_write;
-        *master_write=*master_read;
-        ++master_read;
     }
-    //move to the top
-    int64_t new_size=master_write+1-kmer_list.rbegin();
-    std::cout<<"new master kmer list size:"<<new_size<<std::endl;
-    kmer_list.assign(master_write.base()-1,kmer_list.end());
-    kmer_list.resize(new_size);
+    return nKmers;
+
 }
 
-
-
-BRQ_Dict * createDictOMP(vecbvec const& reads, VecPQVec const& quals, unsigned minQual, unsigned minFreq){
-    //Count kmers per read, probably stupidly overkill
-    std::vector<unsigned> goodLens(reads.size(),0);
-    const uint64_t batch_size=100000000;
-    //parallelForBatch(0ul,reads.size(),100000,
-    //                 GoodLenTailFinder(quals,minQual,&goodLens));
-    std::atomic_uint nKmers;
-#pragma omp parallel
-    {
-        qvec uq;
-        auto itr = uq.end();
-        auto beg = uq.begin();
-        unsigned good = 0;
-#pragma omp for
-        for (auto i = 0; i < reads.size(); ++i) {
-            quals[i].unpack(&uq);
-            itr = uq.end();
-            beg = uq.begin();
-            good = 0;
-            while (itr != beg) {
-                if (*--itr < minQual) good = 0;
-                else if (++good == K) {
-                    goodLens[i] = (itr - beg) + K;
-                    break;
-                }
-            }
-            nKmers += goodLens[i];
-
+void collapse_entries(std::vector<BRQ_Entry> &kmer_list){
+    auto okItr = kmer_list.begin();
+    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
+        *okItr = *kItr;
+        ++kItr;
+        while (kItr<kmer_list.end() and *okItr == *kItr) {
+            combine_Entries(*okItr,*kItr);
+            ++kItr;
         }
     }
+    kmer_list.resize(okItr - kmer_list.begin());
+}
 
-    uint64_t nThreads = omp_get_max_threads();
+std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq){
 
-    std::atomic_uint blocks_to_do(0);
-    std::atomic_bool unprocessed_results[nThreads];
-    for (auto i=0;i<nThreads;i++) unprocessed_results[i]=false;
-//    print_results_status(nThreads,unprocessed_results);
-    std::vector<BRQ_Entry> partial_results[nThreads];
     std::vector<BRQ_Entry> kmer_list;
-    auto start = 0;
-    uint64_t task_kmers = 0;
-    std::atomic_bool all_tasks_created(false);
-    BRQ_Dict *pDict;
-    #pragma omp parallel
-    {
-#pragma omp master
-        {//The master thread, creates tasks first
-#pragma omp critical
-            std::cout << Date() << ": Master entering the main list merging loop with " << blocks_to_do
-                      << " blocks to do " << std::endl;
+    //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
+    if (to - from > batch_size) {
+        //#pragma omp critical
+        //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", splitting..." << std::endl;
+        uint64_t mid_point = from + (to - from) / 2;
+        std::vector<BRQ_Entry> entries1, entries2; //TODO: need to not copy but mode the reference.
+        #pragma omp task shared(reads,quals,entries1)
+        { entries1 = createDictOMPRecursive(NULL, reads, quals, from, mid_point, batch_size, minQual,
+                                              minFreq);}
+        #pragma omp task shared(reads,quals,entries2)
+        { entries2 = createDictOMPRecursive(NULL, reads, quals, mid_point, to, batch_size, minQual, minFreq); }
+        //taskyield?
+        //#pragma omp taskyield
 
-            while (blocks_to_do or not all_tasks_created) {
-                //copy the current status of the unprocessed_results so it is STABLE (we fix the groups to process as those in this iteration)
-                bool last_status[nThreads];
-                unsigned results_to_process = 0;//TODO: active wait is ugly
-                for (auto i = 0; i < nThreads; ++i) {
-                    last_status[i] = unprocessed_results[i];
-                    if (last_status[i]) results_to_process++;
-                }
-                //TODO: replace this by a nice in-place merge sort.
-                if (results_to_process) {
-#pragma omp critical
-                    std::cout << Date() << ": Master merging " << results_to_process << " batches into main list"
-                              << std::endl;
-                    merge_kmers_into_master(kmer_list, nThreads, partial_results, last_status);
-#pragma omp critical
-                    std::cout << Date() << ": Master merging done" << std::endl;
+        #pragma omp taskwait
+        kmer_list = entries1;
+        kmer_list.reserve(kmer_list.size() + entries2.size());
+        kmer_list.insert(kmer_list.end(),entries2.begin(),entries2.end());
 
-                    //decrease the blocks_to_do counter
-                    for (auto i = 0; i < nThreads; ++i) if (last_status[i]) unprocessed_results[i] = false;
-                    blocks_to_do -= results_to_process;
-                    std::cout << Date() << ": Master still waiting for " << blocks_to_do << "blocks" << std::endl;
-                }
+    } else { //just do the kmer creation and sort/collapse
+        //#pragma omp critical
+        //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", counting..." << std::endl;
+
+        std::vector<uint16_t> good_lenghts(to - from);
+        uint64_t total_good_lenght = count_good_lengths(good_lenghts, quals, from, to, BRQ_Entry::getK(),
+                                                        minQual);
+        kmer_list.clear();
+        kmer_list.reserve(total_good_lenght);
+        //Populate the kmer list
+        for (auto readId = from; readId < to; ++readId) {
+            unsigned len = good_lenghts[readId - from];
+            if (len > K) {
+                auto beg = reads[readId].begin(), itr = beg + K, last = beg + (len - 1);
+                BRQ_Kmer kkk(beg);
+                KMerContext kc = KMerContext::initialContext(*itr);
+                do {
+                    kmer_list.push_back(kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc));
+                    kmer_list.back().getKDef().setCount(1);
+                    unsigned char pred = kkk.front();
+                    kkk.toSuccessor(*itr);
+                    ++itr;
+                    kc = KMerContext(pred, *itr);
+                } while (itr <= last);
+
             }
-            std::cout << Date() << ": Master processed all blocks and tasks, creating dict... "<<std::endl;
-            //now do the insertion on the dict, with no locking or anything, just a fast one, only if count>min_freq
-            pDict = new BRQ_Dict(kmer_list.size());
-            uint64_t used=0;
-            for (auto &kent:kmer_list) {
-                if (kent.getKDef().getCount() >= minFreq) {
-                    pDict->insertEntry(kent);
-                    used++;
-                }
-            }
-            std::cout<< Date()<<": "<<used<<" out of "<<kmer_list.size()<<" kmers with Freq >= "<<minFreq<<std::endl;
-            pDict->recomputeAdjacencies(); //does this mean we should not have saved adjacencies in the first place?
-
         }
-
-#pragma omp single
-        {
-            for (auto i = 0; i <= reads.size(); ++i) {
-                if (task_kmers + goodLens[i] > batch_size or i == reads.size()) {
-                    //create the task to count the kmers
-                    auto end = i;
-                    //increase the task counter.
-                    ++blocks_to_do;
-    #pragma omp task shared(goodLens,reads,unprocessed_results,partial_results) firstprivate(start,end)
-                    {
-    #pragma omp critical
-                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " started a batch from " << start
-                                  << " to " << end << std::endl;
-                        //create the kmer count in a local vector
-                        std::vector<BRQ_Entry> local_results;
-                        local_results.reserve(task_kmers);
-                        for (auto readId = start; readId < end; ++readId) {
-                            unsigned len = goodLens[readId];
-                            if (len > K) {
-                                auto beg = reads[readId].begin(), itr = beg + K, last = beg + (len - 1);
-                                BRQ_Kmer kkk(beg);
-                                KMerContext kc = KMerContext::initialContext(*itr);
-
-                                do {
-                                    local_results.push_back(
-                                            kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc));
-                                    unsigned char pred = kkk.front();
-                                    kkk.toSuccessor(*itr);
-                                    ++itr;
-                                    kc = KMerContext(pred, *itr);
-
-                                } while (itr <= last);
-
-                            }
-                        }
-                        //sort and collapse
-                        std::sort(local_results.begin(), local_results.end());
-                        KMerContext kc;
-                        auto okItr = local_results.begin();
-                        for (auto kItr = local_results.begin(); kItr < local_results.end(); ++kItr) {
-                            kc = kItr->getKDef().getContext();
-                            uint count = 0;
-                            while (kItr < local_results.end() - 1 and *kItr == *(kItr + 1)) {
-                                KDef const &kDef = (kItr + 1)->getKDef();
-                                kc |= kDef.getContext();
-                                count += std::max(kDef.getCount(), 1ul);
-                                ++kItr;
-                            }
-                            okItr = kItr;
-                            KDef &kDef = okItr->getKDef();
-                            kDef.setContext(kc);
-                            kDef.setCount(count);
-                            ++okItr;
-                        }
-                        local_results.resize(okItr - local_results.begin());
-
-                        //wait for the std::atomic_bool "unprocessed results" flag to be false for this particular block
-#pragma omp critical
-                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " waiting to send..."<< std::endl;
-                        while (unprocessed_results[omp_get_thread_num()]);//TODO: active wait is ugly
-                        //transfer results
-                        partial_results[omp_get_thread_num()] = local_results;
-                        unprocessed_results[omp_get_thread_num()] = true;
-                        #pragma omp critical
-                        std::cout << Date() << ": Thread " << omp_get_thread_num() << " sent batch to master" << std::endl;
-
-                    }
-                    //std::cout<<"Task created!!!"<<std::endl;
-                    task_kmers = 0;
-                    start = i;
-                }
-
-                if (i < reads.size()) task_kmers += goodLens[i];
-            }
-            all_tasks_created = true;
-        }
-
-
-
     }
+    //sort
+    //#pragma omp critical
+    //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", sorting/collapsing "<<kmer_list.size()<<" kmers ..."
+    //          << std::endl;
 
-
-    return pDict;
+    std::sort(kmer_list.begin(), kmer_list.end());
+    collapse_entries(kmer_list);
+    if (NULL != dict) { //merge sort and return that
+        (*dict) = new BRQ_Dict(kmer_list.size());
+        uint64_t used = 0,not_used=0;
+        for (auto &kent:kmer_list) {
+            if (kent.getKDef().getCount() >= minFreq) {
+                //if (!kent.getKDef().isNull()) std::cout<<"kent with not null edgeid detected!!!"<<std::endl;
+                (*dict)->insertEntry(kent);
+                used++;
+            } else {
+                not_used++;
+            }
+        }
+        std::cout << Date() << ": " << used << " out of " << kmer_list.size() << " kmers with Freq >= "
+                  << minFreq << " and "<<not_used<<" filtered."
+                  << std::endl;
+        kmer_list.clear();
+        (*dict)->recomputeAdjacencies();
+    } else {
+        //std::cout << "createDictOMPRecursive (thread " << omp_get_thread_num() << ") from " << from << " to " << to
+        //          << ", FINISHED with " << kmer_list.size() << " kmers."
+        //          << std::endl;
+    }
+    return kmer_list;
 
 }
 
@@ -1144,8 +1018,13 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       HyperBasevector* pHBV, ReadPathVec* pPaths, int _K)
 {
     std::cout << Date() << ": loading reads (createdictOMP!!!)." << std::endl;
-    BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
-
+    //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
+    BRQ_Dict * pDict;
+    #pragma omp parallel shared(pDict,reads,quals)
+    {
+        #pragma omp single
+        createDictOMPRecursive(&pDict, reads, quals, 0, reads.size(), 1000000, minQual, minFreq);
+    }
     std::cout << Date() << ": finding edge sequences." << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
