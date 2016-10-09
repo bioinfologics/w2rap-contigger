@@ -946,7 +946,7 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         //#pragma omp taskyield
 
         #pragma omp taskwait
-        kmer_list = entries1;
+        kmer_list = std::move(entries1);
         kmer_list.reserve(kmer_list.size() + entries2.size());
         kmer_list.insert(kmer_list.end(),entries2.begin(),entries2.end());
 
