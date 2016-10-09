@@ -732,163 +732,139 @@ namespace
     }
 
 
-    class HBVPather
+    inline size_t pathPartToEdgeID( PathPart const& part, std::vector<int> const& mFwdEdgeXlat, std::vector<int> const& mRevEdgeXlat )
     {
-    public:
-        HBVPather( vecbvec const& reads, VecPQVec const& quals,
-                   BRQ_Dict const& dict, vecbvec const& edges,
-                   HyperBasevector const& hbv,
-                   std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
-                   ReadPathVec* pPaths, Bool const verbose = False )
-                : mReads(reads), mQuals(quals), mHBV(hbv), mFwdEdgeXlat(fwdEdgeXlat),
-                  mRevEdgeXlat(revEdgeXlat), mPather(dict,edges),
-                  mPaths(*pPaths),
-                  mExtender(mHBV,&mToLeft,&mToRight) {
-            mHBV.ToLeft(mToLeft);
-            mHBV.ToRight(mToRight);
-        }
+        ForceAssert(!part.isGap());
+        size_t idx = part.getEdgeID().val();
+        return ( part.isRC() ? mRevEdgeXlat[idx] : mFwdEdgeXlat[idx] );
+    }
 
-        void operator()( size_t readId )
-        {
-            std::vector<PathPart> parts = mPather.path(mReads[readId]);     // needs to become a forward_list
-
-            // convert any seeds on hanging edges to gaps
-            std::vector<PathPart> new_parts;
-            for ( auto part : parts ) {
-                if ( !part.isGap() ) {
-                    size_t edge_id = pathPartToEdgeID(part);
-                    size_t vleft  = mToLeft[edge_id];
-                    size_t vright = mToRight[edge_id];
-                    if ( mHBV.ToSize(vleft) == 0
-                         && mHBV.ToSize(vright) > 1
-                         && mHBV.FromSize(vright) > 0
-                         && part.getEdgeLen() <= 100 ) {
-                        // delete a seed on a hanging edge
-                        part = PathPart(part.getLength() );
-                    }
-                }
-
-                // either add to an existing gap or create a new part (gap or not)
-                if ( part.isGap() && new_parts.size() && new_parts.back().isGap() )
-                    new_parts.back().incrLength( part.getLength() );
-                else
-                    new_parts.push_back(part);
-            }
-            std::swap(parts,new_parts);
-
-            // if a gap is captured between two edges and things don't make sense, delete the
-            // seed, if there are more than one, and subsequent seeds.  This hopefully avoids
-            // the loss of sensitivity of just dropping the seeds.
-            if ( parts.size() >= 3 ) {
-                size_t seeds = ( parts.begin()->isGap()) ? 0u : 1u;
-                for ( auto pPart = parts.begin()+1; pPart != parts.end()-1; ++pPart ) {
-                    if ( !pPart->isGap() ) { seeds++; continue; }
-                    if ( !pPart->isConformingCapturedGap(MAX_JITTER) ||
-                         !mPather.isJoinable(pPart[-1],pPart[1]) ) {
-
-
-                        if ( seeds > 1 ) {
-                            PathPart tmpPart(pPart[-1].getLength());
-                            for ( auto pPart2 = pPart; pPart2 != parts.end(); ++ pPart2 )
-                                tmpPart.incrLength( pPart2->getLength() );
-                            parts.erase( pPart-1, parts.end() );
-                            parts.push_back(tmpPart);
-                        } else {
-                            for ( auto pPart2 = pPart+1; pPart2 != parts.end(); ++ pPart2 )
-                                pPart->incrLength( pPart2->getLength() );
-                            parts.erase( pPart+1, parts.end() );
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-
-            // if a seed has only taken us <= 5 kmers onto an edge, we back off
-            // because we probably don't have enough evidence to commit.  Extension
-            // code later will be more careful.
-            if ( parts.back().isGap() && parts.size() > 1 ) {
-                auto const& last2 = parts[parts.size()-2];
-                if ( last2.getEdgeOffset() == 0 && last2.getLength() <= 5 ) {
-                    auto last = parts.back();
-                    last.incrLength(last2.getLength());
-                    parts.pop_back();
-                    parts.pop_back();
-                    parts.push_back(last);
-                }
-            } else if ( !parts.back().isGap() ) {
-                auto& last = parts.back();
-                if ( last.getEdgeOffset()==0 && last.getLength() <= 5 )  {
-                    last = PathPart( last.getLength() );
-                }
-            }
-
-            pathPartsToReadPath(parts, mPath);
-
-            mQuals[readId].unpack(&mQV);
-            mExtender.attemptLeftRightExtension(mPath,mReads[readId],mQV);
-
-            mPaths[readId] = mPath;
-        }
-
-        size_t pathPartToEdgeID( PathPart const& part )
-        {
-            ForceAssert(!part.isGap());
-            size_t idx = part.getEdgeID().val();
-            return ( part.isRC() ? mRevEdgeXlat[idx] : mFwdEdgeXlat[idx] );
-        }
-
-        void pathPartsToReadPath( std::vector<PathPart> const& parts, ReadPath& path )
-        {
-            path.clear();
-            PathPart const *pLast = 0;
-            for (PathPart const &part : parts) {
-                if (part.isGap()) continue;
-                if (pLast && pLast->isSameEdge(part)) continue;
+    inline void pathPartsToReadPath( std::vector<PathPart> const& parts, ReadPath& path, std::vector<int> const& mFwdEdgeXlat, std::vector<int> const& mRevEdgeXlat )
+    {
+        path.clear();
+        PathPart const *pLast = 0;
+        for (PathPart const &part : parts) {
+            if (part.isGap()) continue;
+            if (pLast && pLast->isSameEdge(part)) continue;
 //        if ( part.getEdgeOffset() == 0 && part.getLength() < 5) continue;
-                size_t idx = part.getEdgeID().val();
-                path.push_back(part.isRC() ? mRevEdgeXlat[idx] : mFwdEdgeXlat[idx]);
-                pLast = &part;
-            }
-            if (path.empty()) { path.setOffset(0); /*path.setLastSkip(0);*/ }
+            size_t idx = part.getEdgeID().val();
+            path.push_back(part.isRC() ? mRevEdgeXlat[idx] : mFwdEdgeXlat[idx]);
+            pLast = &part;
+        }
+        if (path.empty()) { path.setOffset(0); /*path.setLastSkip(0);*/ }
+        else {
+            PathPart const &firstPart = parts.front();
+            if (!firstPart.isGap())
+                path.setOffset(firstPart.getEdgeOffset());
             else {
-                PathPart const &firstPart = parts.front();
-                if (!firstPart.isGap())
-                    path.setOffset(firstPart.getEdgeOffset());
-                else {
-                    int eo1 = parts[1].getEdgeOffset();
-                    int eo2 = firstPart.getLength();
-                    path.setOffset(eo1 - eo2);
-                }
-                /*
-                PathPart const& lastPart = parts.back();
+                int eo1 = parts[1].getEdgeOffset();
+                int eo2 = firstPart.getLength();
+                path.setOffset(eo1 - eo2);
+            }
+        }
+    }
 
-                if ( !lastPart.isGap() )
-                  path.setLastSkip(lastPart.getEdgeLen()-lastPart.getEndOffset());
-                else
-                { PathPart const& prevPart = parts[parts.size()-2];
-                  unsigned skip = prevPart.getEdgeLen()-prevPart.getEndOffset();
-                  skip -= std::min(skip,lastPart.getLength());
-                  path.setLastSkip(skip); }
-               */
+    void path_reads_OMP( vecbvec const& reads, VecPQVec const& quals, BRQ_Dict const& dict, vecbvec const& edges,
+            HyperBasevector const& hbv, std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
+                     ReadPathVec* pPaths) {
+        static unsigned const MAX_JITTER = 3;
+        #pragma omp parallel
+        {
+
+            vec<int> toLeft,toRight;
+            hbv.ToLeft(toLeft);
+            hbv.ToLeft(toRight);
+            BRQ_Pather mPather(dict,edges);
+            ReadPath mPath;
+            ExtendReadPath mExtender(hbv,&toLeft,&toRight);
+            qvec mQV;
+
+            #pragma omp for
+            for (auto readId=0;readId<reads.size();++readId){
+                std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
+
+                // convert any seeds on hanging edges to gaps
+                std::vector<PathPart> new_parts;
+                for ( auto part : parts ) {
+                    if ( !part.isGap() ) {
+                        size_t edge_id = pathPartToEdgeID(part,fwdEdgeXlat,revEdgeXlat);
+                        size_t vleft  = toLeft[edge_id];
+                        size_t vright = toRight[edge_id];
+                        if ( hbv.ToSize(vleft) == 0
+                             && hbv.ToSize(vright) > 1
+                             && hbv.FromSize(vright) > 0
+                             && part.getEdgeLen() <= 100 ) {
+                            // delete a seed on a hanging edge
+                            part = PathPart(part.getLength() );
+                        }
+                    }
+
+                    // either add to an existing gap or create a new part (gap or not)
+                    if ( part.isGap() && new_parts.size() && new_parts.back().isGap() )
+                        new_parts.back().incrLength( part.getLength() );
+                    else
+                        new_parts.push_back(part);
+                }
+                std::swap(parts,new_parts);
+
+                // if a gap is captured between two edges and things don't make sense, delete the
+                // seed, if there are more than one, and subsequent seeds.  This hopefully avoids
+                // the loss of sensitivity of just dropping the seeds.
+                if ( parts.size() >= 3 ) {
+                    size_t seeds = ( parts.begin()->isGap()) ? 0u : 1u;
+                    for ( auto pPart = parts.begin()+1; pPart != parts.end()-1; ++pPart ) {
+                        if ( !pPart->isGap() ) { seeds++; continue; }
+                        if ( !pPart->isConformingCapturedGap(MAX_JITTER) ||
+                             !mPather.isJoinable(pPart[-1],pPart[1]) ) {
+
+
+                            if ( seeds > 1 ) {
+                                PathPart tmpPart(pPart[-1].getLength());
+                                for ( auto pPart2 = pPart; pPart2 != parts.end(); ++ pPart2 )
+                                    tmpPart.incrLength( pPart2->getLength() );
+                                parts.erase( pPart-1, parts.end() );
+                                parts.push_back(tmpPart);
+                            } else {
+                                for ( auto pPart2 = pPart+1; pPart2 != parts.end(); ++ pPart2 )
+                                    pPart->incrLength( pPart2->getLength() );
+                                parts.erase( pPart+1, parts.end() );
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+
+                // if a seed has only taken us <= 5 kmers onto an edge, we back off
+                // because we probably don't have enough evidence to commit.  Extension
+                // code later will be more careful.
+                if ( parts.back().isGap() && parts.size() > 1 ) {
+                    auto const& last2 = parts[parts.size()-2];
+                    if ( last2.getEdgeOffset() == 0 && last2.getLength() <= 5 ) {
+                        auto last = parts.back();
+                        last.incrLength(last2.getLength());
+                        parts.pop_back();
+                        parts.pop_back();
+                        parts.push_back(last);
+                    }
+                } else if ( !parts.back().isGap() ) {
+                    auto& last = parts.back();
+                    if ( last.getEdgeOffset()==0 && last.getLength() <= 5 )  {
+                        last = PathPart( last.getLength() );
+                    }
+                }
+
+                pathPartsToReadPath(parts, mPath,fwdEdgeXlat,revEdgeXlat);
+
+                quals[readId].unpack(&mQV);
+                mExtender.attemptLeftRightExtension(mPath,reads[readId],mQV);
+
+                (*pPaths)[readId] = mPath;
             }
         }
 
-    private:
-        static unsigned const MAX_JITTER = 3;
-        vecbvec const& mReads;
-        VecPQVec const& mQuals;
-        HyperBasevector const& mHBV;
-        vec<int> mToLeft, mToRight;
-        std::vector<int> const& mFwdEdgeXlat;
-        std::vector<int> const& mRevEdgeXlat;
-        BRQ_Pather mPather;
-        ReadPathVec& mPaths;
-        ReadPath mPath;
-        ExtendReadPath mExtender;
-        qvec mQV;
-    };
+    }
 
 } // end of anonymous namespace
 
@@ -1206,10 +1182,9 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": creating Read Paths." << std::endl;
 
         pPaths->clear().resize(reads.size());
-        HBVPather pather(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
+        path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
 
         //parallelForBatch(0ul,reads.size(),100000,pather);
-        for (auto i=0;i<=reads.size();++i) pather(i);
 
         delete pDict;
     }
