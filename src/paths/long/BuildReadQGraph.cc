@@ -942,13 +942,13 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
                                               minFreq);}
         #pragma omp task shared(reads,quals,entries2)
         { entries2 = createDictOMPRecursive(NULL, reads, quals, mid_point, to, batch_size, minQual, minFreq); }
-        //taskyield?
-        //#pragma omp taskyield
-
         #pragma omp taskwait
-        kmer_list = std::move(entries1);
-        kmer_list.reserve(kmer_list.size() + entries2.size());
+        kmer_list = entries1;
+        kmer_list.reserve(entries1.size() + entries2.size());
+        entries1.clear();
         kmer_list.insert(kmer_list.end(),entries2.begin(),entries2.end());
+        entries2.clear();
+
 
     } else { //just do the kmer creation and sort/collapse
         //#pragma omp critical
@@ -993,19 +993,14 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         for (auto &kent:kmer_list) {
             ++hist[std::min(100,(int)kent.getKDef().getCount())];
             if (kent.getKDef().getCount() >= minFreq) {
-                //if (!kent.getKDef().isNull()) std::cout<<"kent with not null edgeid detected!!!"<<std::endl;
-                kent.getKDef().setNull();
-                kent.getKDef().setCount(3);//TODO: this is almost superstitious.
-                (*dict)->insertEntry(std::move(kent));
+                (*dict)->insertEntry(kent);
                 used++;
             } else {
                 not_used++;
             }
 
         }
-        std::cout << Date() << ": " << used << " out of " << kmer_list.size() << " kmers with Freq >= "
-                  << minFreq << " and "<<not_used<<" filtered."
-                  << std::endl;
+        std::cout << Date() << ": " << used << " / " << kmer_list.size() << " kmers with Freq >= " << minFreq << std::endl;
         kmer_list.clear();
         if (""!=workdir) {
             std::ofstream kff(workdir + "/small_K.freqs");
@@ -1028,7 +1023,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       double minFreq2Fract, unsigned maxGapSize,
                       HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir)
 {
-    std::cout << Date() << ": loading reads (createdictOMP!!!)." << std::endl;
+    std::cout << Date() << ": creating kmers from reads..." << std::endl;
     //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
     BRQ_Dict * pDict;
     #pragma omp parallel shared(pDict,reads,quals)
@@ -1036,7 +1031,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         #pragma omp single
         createDictOMPRecursive(&pDict, reads, quals, 0, reads.size(), 1000000, minQual, minFreq, workdir);
     }
-    std::cout << Date() << ": finding edge sequences." << std::endl;
+    std::cout << Date() << ": finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
     edges.reserve(pDict->size()/100); //TODO: this is probably WAY too much in most scenarios
@@ -1059,27 +1054,28 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     if ( !pPaths )
     {
         delete pDict;
-        std::cout << Date() << ": building HBV." << std::endl;
+        std::cout << Date() << ": building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
+        std::cout << Date() << ": graph built" << std::endl;
     }
     else
     {
-        std::cout << Date() << ": building HBV." << std::endl;
+        std::cout << Date() << ": building graph..." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
-
+        std::cout << Date() << ": graph built" << std::endl;
         //for (auto i=0;i<edges.size();++i) if (fwdEdgeXlat[i]<0 or fwdEdgeXlat[i]>pHBV->EdgeObjectCount()-1 or revEdgeXlat[i]<0 or revEdgeXlat[i]>pHBV->EdgeObjectCount()-1)
         //        std::cout<<"Edge "<<i<<" improper translation: "<<fwdEdgeXlat[i]<<" "<<revEdgeXlat[i]<<std::endl;
-        std::cout << Date() << ": creating Read Paths." << std::endl;
+        std::cout << Date() << ": pathing reads into graph..." << std::endl;
 
         pPaths->clear().resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         uint64_t pathed=0;
         for (auto &p:*pPaths) if (p.size()>0 ) pathed++;
-        std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed." << std::endl;
+        std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed" << std::endl;
 
         //parallelForBatch(0ul,reads.size(),100000,pather);
 
         delete pDict;
     }
-    std::cout << Date() << ": graph created." << std::endl;
+
 }
