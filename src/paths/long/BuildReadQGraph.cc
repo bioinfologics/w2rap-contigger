@@ -1026,6 +1026,7 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
 
 
     if (NULL != dict) { //merge sort and return that
+        std::cout << Date() << ": " << kmer_list.size() << " kmers counted, filtering..." << minFreq << std::endl;
         (*dict) = new BRQ_Dict(kmer_list.size());
         uint64_t used = 0,not_used=0;
         uint64_t hist[101];
