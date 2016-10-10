@@ -1073,6 +1073,9 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
 
         pPaths->clear().resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
+        uint64_t pathed=0;
+        for (auto &p:*pPaths) if (p.size()>0 ) pathed++;
+        std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed." << std::endl;
 
         //parallelForBatch(0ul,reads.size(),100000,pather);
 

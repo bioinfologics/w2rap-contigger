@@ -358,6 +358,7 @@ int main(const int argc, const char * argv[]) {
             const string run_head = out_dir + "/" + out_prefix;
 
             pathsr.resize(paths.size());
+
             RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
             if (dump_perf) perf_file << checkpoint_perf_time("Repath") << std::endl;
             std::cout << "Repathing to second graph DONE!" << std::endl << std::endl << std::endl;
