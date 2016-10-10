@@ -72,199 +72,222 @@ namespace
         kDef.setCount(count);
     }
 
-    class EdgeBuilder
-    {
+    class EdgeBuilder {
     public:
-        EdgeBuilder( BRQ_Dict const& dict, vecbvec* pEdges )
+        EdgeBuilder(BRQ_Dict const &dict, vecbvec *pEdges)
                 : mDict(dict), mEdges(*pEdges) {}
 
-        void buildEdge( BRQ_Entry const& entry )
-        { if ( isPalindrome(entry) )
+        void buildEdge(BRQ_Entry const &entry) {
+            if (isPalindrome(entry))
                 make1KmerEdge(entry);
-            else if ( upstreamExtensionPossible(entry) )
-            { if ( downstreamExtensionPossible(entry) )
+            else if (upstreamExtensionPossible(entry)) {
+                if (downstreamExtensionPossible(entry))
                     return;
-                extendUpstream(entry); }
-            else if ( downstreamExtensionPossible(entry) )
+                extendUpstream(entry);
+            } else if (downstreamExtensionPossible(entry))
                 extendDownstream(entry);
             else
-                make1KmerEdge(entry); }
+                make1KmerEdge(entry);
+        }
 
         // not thread-safe
-        void simpleCircle( BRQ_Entry const& entry )
-        { BRQ_Entry const* pFirstEntry = &entry;
-            mEdgeSeq.assign(entry.begin(),entry.end());
+        void simpleCircle(BRQ_Entry const &entry) {
+            BRQ_Entry const *pFirstEntry = &entry;
+            mEdgeSeq.assign(entry.begin(), entry.end());
             mEdgeEntries.push_back(pFirstEntry);
             KMerContext context = entry.getKDef().getContext();
             BRQ_Kmer kmer(entry);
-            while ( true )
-            { ForceAssertEq(context.getPredecessorCount(),1u);
-                ForceAssertEq(context.getSuccessorCount(),1u);
+            while (true) {
+                ForceAssertEq(context.getPredecessorCount(), 1u);
+                ForceAssertEq(context.getSuccessorCount(), 1u);
                 unsigned char succCode = context.getSingleSuccessor();
                 kmer.toSuccessor(succCode);
-                BRQ_Entry const* pEntry = lookup(kmer,&context);
-                if ( pEntry == pFirstEntry )
+                BRQ_Entry const *pEntry = lookup(kmer, &context);
+                if (pEntry == pFirstEntry)
                     break;
-                if ( !pEntry->getKDef().isNull() )
-                { std::cout << "Failed to close circle.\n";
-                    for ( auto beg=mEdgeEntries.begin(),end=mEdgeEntries.end();
-                          beg != end; ++beg )
+                if (!pEntry->getKDef().isNull()) {
+                    std::cout << "Failed to close circle.\n";
+                    for (auto beg = mEdgeEntries.begin(), end = mEdgeEntries.end();
+                         beg != end; ++beg)
                         std::cout << *beg << ' ' << **beg << '\n';
                     std::cout << pEntry << ' ' << *pEntry << std::endl;
-                    CRD::exit(1); }
+                    CRD::exit(1);
+                }
                 mEdgeSeq.push_back(succCode);
-                mEdgeEntries.push_back(pEntry); }
+                mEdgeEntries.push_back(pEntry);
+            }
             canonicalizeCircle();
-            addEdge(); }
+            addEdge();
+        }
 
     private:
-        void canonicalizeCircle()
-        { auto itr = std::min_element(mEdgeEntries.begin(),mEdgeEntries.end(),
-                                      []( BRQ_Kmer const* pEnt1, BRQ_Kmer const* pEnt2 )
-                                      { return *pEnt1 < *pEnt2; });
-            BRQ_Kmer const& minKmer = **itr;
+        void canonicalizeCircle() {
+            auto itr = std::min_element(mEdgeEntries.begin(), mEdgeEntries.end(),
+                                        [](BRQ_Kmer const *pEnt1, BRQ_Kmer const *pEnt2) { return *pEnt1 < *pEnt2; });
+            BRQ_Kmer const &minKmer = **itr;
             size_t idx = itr - mEdgeEntries.begin();
-            if ( CF<K>::getForm(mEdgeSeq.begin(idx))==CanonicalForm::REV )
-            { mEdgeSeq.ReverseComplement();
-                std::reverse(mEdgeEntries.begin(),mEdgeEntries.end());
-                idx = mEdgeSeq.size()-idx-K;
-                Assert(std::equal(minKmer.begin(),minKmer.end(),mEdgeSeq.begin(idx))); }
-            if ( !idx )
+            if (CF<K>::getForm(mEdgeSeq.begin(idx)) == CanonicalForm::REV) {
+                mEdgeSeq.ReverseComplement();
+                std::reverse(mEdgeEntries.begin(), mEdgeEntries.end());
+                idx = mEdgeSeq.size() - idx - K;
+                Assert(std::equal(minKmer.begin(), minKmer.end(), mEdgeSeq.begin(idx)));
+            }
+            if (!idx)
                 return;
-            bvec bv; bv.reserve(mEdgeSeq.size());
-            bv.assign(mEdgeSeq.begin(idx),mEdgeSeq.end());
-            bv.append(mEdgeSeq.begin(K-1),mEdgeSeq.begin(K+idx-1));
-            Assert(std::equal(mEdgeSeq.begin(),mEdgeSeq.begin(K-1),
-                              mEdgeSeq.end()-(K-1)));
+            bvec bv;
+            bv.reserve(mEdgeSeq.size());
+            bv.assign(mEdgeSeq.begin(idx), mEdgeSeq.end());
+            bv.append(mEdgeSeq.begin(K - 1), mEdgeSeq.begin(K + idx - 1));
+            Assert(std::equal(mEdgeSeq.begin(), mEdgeSeq.begin(K - 1),
+                              mEdgeSeq.end() - (K - 1)));
             mEdgeSeq = bv;
-            mEdgeEntries.reserve(mEdgeEntries.size()+idx);
-            std::copy(mEdgeEntries.begin(),mEdgeEntries.begin()+idx,
+            mEdgeEntries.reserve(mEdgeEntries.size() + idx);
+            std::copy(mEdgeEntries.begin(), mEdgeEntries.begin() + idx,
                       std::back_inserter(mEdgeEntries));
-            mEdgeEntries.erase(mEdgeEntries.begin(),mEdgeEntries.begin()+idx); }
+            mEdgeEntries.erase(mEdgeEntries.begin(), mEdgeEntries.begin() + idx);
+        }
 
-        bool isPalindrome( BRQ_Kmer const& kmer )
-        { if ( !(K&1) )
+        bool isPalindrome(BRQ_Kmer const &kmer) {
+            if (!(K & 1))
                 return kmer.isPalindrome();
             BRQ_SubKmer subKmer(kmer);
-            if ( subKmer.isPalindrome() )
+            if (subKmer.isPalindrome())
                 return true;
             subKmer.toSuccessor(kmer.back());
-            return subKmer.isPalindrome(); }
+            return subKmer.isPalindrome();
+        }
 
-        bool upstreamExtensionPossible( BRQ_Entry const& entry )
-        { KMerContext context = entry.getKDef().getContext();
-            if ( context.getPredecessorCount() != 1 )
+        bool upstreamExtensionPossible(BRQ_Entry const &entry) {
+            KMerContext context = entry.getKDef().getContext();
+            if (context.getPredecessorCount() != 1)
                 return false;
             BRQ_Kmer pred(entry);
             pred.toPredecessor(context.getSinglePredecessor());
-            if ( isPalindrome(pred) )
+            if (isPalindrome(pred))
                 return false;
-            lookup(pred,&context);
-            return context.getSuccessorCount() == 1; }
+            lookup(pred, &context);
+            return context.getSuccessorCount() == 1;
+        }
 
-        bool downstreamExtensionPossible( BRQ_Entry const& entry )
-        { KMerContext context = entry.getKDef().getContext();
-            if ( context.getSuccessorCount() != 1 )
+        bool downstreamExtensionPossible(BRQ_Entry const &entry) {
+            KMerContext context = entry.getKDef().getContext();
+            if (context.getSuccessorCount() != 1)
                 return false;
             BRQ_Kmer succ(entry);
             succ.toSuccessor(context.getSingleSuccessor());
-            if ( isPalindrome(succ) )
+            if (isPalindrome(succ))
                 return false;
-            lookup(succ,&context);
-            return context.getPredecessorCount() == 1; }
+            lookup(succ, &context);
+            return context.getPredecessorCount() == 1;
+        }
 
-        void make1KmerEdge( BRQ_Entry const& entry )
-        { mEdgeSeq.assign(entry.begin(),entry.end());
+        void make1KmerEdge(BRQ_Entry const &entry) {
+            mEdgeSeq.assign(entry.begin(), entry.end());
             mEdgeEntries.push_back(&entry);
-            addEdge(); }
+            addEdge();
+        }
 
-        void extendUpstream( BRQ_Entry const& entry )
-        { mEdgeSeq.assign(entry.rcbegin(),entry.rcend());
+        void extendUpstream(BRQ_Entry const &entry) {
+            mEdgeSeq.assign(entry.rcbegin(), entry.rcend());
             mEdgeEntries.push_back(&entry);
-            extend(BRQ_Kmer(entry).rc(),entry.getKDef().getContext().rc()); }
+            extend(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
+        }
 
-        void extendDownstream( BRQ_Entry const& entry )
-        { mEdgeSeq.assign(entry.begin(),entry.end());
+        void extendDownstream(BRQ_Entry const &entry) {
+            mEdgeSeq.assign(entry.begin(), entry.end());
             mEdgeEntries.push_back(&entry);
-            extend(entry,entry.getKDef().getContext()); }
+            extend(entry, entry.getKDef().getContext());
+        }
 
-        void extend( BRQ_Kmer const& kmer, KMerContext context )
-        { BRQ_Kmer next(kmer);
-            while ( context.getSuccessorCount() == 1 )
-            { unsigned char succCode = context.getSingleSuccessor();
+        void extend(BRQ_Kmer const &kmer, KMerContext context) {
+            BRQ_Kmer next(kmer);
+            while (context.getSuccessorCount() == 1) {
+                unsigned char succCode = context.getSingleSuccessor();
                 next.toSuccessor(succCode);
-                if ( isPalindrome(next) )
+                if (isPalindrome(next))
                     break;
-                BRQ_Entry const* pEntry = lookup(next,&context);
-                if ( context.getPredecessorCount() != 1 )
+                BRQ_Entry const *pEntry = lookup(next, &context);
+                if (context.getPredecessorCount() != 1)
                     break;
                 mEdgeSeq.push_back(succCode);
-                mEdgeEntries.push_back(pEntry); }
-            switch (mEdgeSeq.getCanonicalForm())
-            {case CanonicalForm::PALINDROME:
-                    ForceAssertEq(mEdgeSeq.size(),K);
+                mEdgeEntries.push_back(pEntry);
+            }
+            switch (mEdgeSeq.getCanonicalForm()) {
+                case CanonicalForm::PALINDROME:
+                    ForceAssertEq(mEdgeSeq.size(), K);
                     // allow flow-through to FWD case
                 case CanonicalForm::FWD:
-                    addEdge(); break;
+                    addEdge();
+                    break;
                 case CanonicalForm::REV:
-                    mEdgeSeq.clear(); mEdgeEntries.clear(); break; } }
-
-        BRQ_Entry const* lookup( BRQ_Kmer const& kmer, KMerContext* pContext )
-        { BRQ_Entry const* result;
-            if ( kmer.isRev() )
-            { result = mDict.findEntryCanonical(BRQ_Kmer(kmer).rc());
-                ForceAssert(result);
-                *pContext = result->getKDef().getContext().rc(); }
-            else
-            { result = mDict.findEntryCanonical(kmer);
-                ForceAssert(result);
-                *pContext = result->getKDef().getContext(); }
-            return result; }
-
-        void addEdge()
-        { static SpinLockedData gLock;
-            EdgeID edgeID;
-            if ( mEdgeSeq.getCanonicalForm() == CanonicalForm::REV )
-            {
-                mEdgeSeq.ReverseComplement();
-                std::reverse(mEdgeEntries.begin(),mEdgeEntries.end());
+                    mEdgeSeq.clear();
+                    mEdgeEntries.clear();
+                    break;
             }
-            if ( true )
-            { SpinLocker lock(gLock);
+        }
+
+        BRQ_Entry const *lookup(BRQ_Kmer const &kmer, KMerContext *pContext) {
+            BRQ_Entry const *result;
+            if (kmer.isRev()) {
+                result = mDict.findEntryCanonical(BRQ_Kmer(kmer).rc());
+                ForceAssert(result);
+                *pContext = result->getKDef().getContext().rc();
+            } else {
+                result = mDict.findEntryCanonical(kmer);
+                ForceAssert(result);
+                *pContext = result->getKDef().getContext();
+            }
+            return result;
+        }
+
+        void addEdge() {
+            static SpinLockedData gLock;
+            EdgeID edgeID;
+            if (mEdgeSeq.getCanonicalForm() == CanonicalForm::REV) {
+                mEdgeSeq.ReverseComplement();
+                std::reverse(mEdgeEntries.begin(), mEdgeEntries.end());
+            }
+            if (true) {
+                SpinLocker lock(gLock);
                 edgeID.setVal(mEdges.size());
-                mEdges.push_back(mEdgeSeq); }
+                mEdges.push_back(mEdgeSeq);
+            }
             unsigned offset = 0;
             bool err = false;
-            for ( BRQ_Entry const* pEnt : mEdgeEntries )
-            { KDef const& kDef = pEnt->getKDef();
-                if ( kDef.isNull() )
-                { Assert(std::equal(pEnt->begin(),pEnt->end(),mEdgeSeq.begin(offset)) ||
-                         std::equal(pEnt->rcbegin(),pEnt->rcend(),mEdgeSeq.begin(offset)));
-                    const_cast<KDef&>(kDef).set(edgeID,offset++); }
-                else
-                { std::cout << edgeID << ':' << offset++ << ' ' << pEnt
-                  << " Already occupied as " << kDef.getEdgeID()
-                  << ':' << kDef.getEdgeOffset() << std::endl;
-                    err = true; } }
-            if ( err )
+            for (BRQ_Entry const *pEnt : mEdgeEntries) {
+                KDef const &kDef = pEnt->getKDef();
+                if (kDef.isNull()) {
+                    Assert(std::equal(pEnt->begin(), pEnt->end(), mEdgeSeq.begin(offset)) ||
+                           std::equal(pEnt->rcbegin(), pEnt->rcend(), mEdgeSeq.begin(offset)));
+                    const_cast<KDef &>(kDef).set(edgeID, offset++);
+                } else {
+                    std::cout << edgeID << ':' << offset++ << ' ' << pEnt
+                              << " Already occupied as " << kDef.getEdgeID()
+                              << ':' << kDef.getEdgeOffset() << std::endl;
+                    err = true;
+                }
+            }
+            if (err)
                 FatalErr("Having trouble with preoccupied kmers.");
             mEdgeSeq.clear();
-            mEdgeEntries.clear(); }
+            mEdgeEntries.clear();
+        }
 
-        BRQ_Dict const& mDict;
-        vecbvec& mEdges;
-        std::vector<BRQ_Entry const*> mEdgeEntries;
+        BRQ_Dict const &mDict;
+        vecbvec &mEdges;
+        std::vector<BRQ_Entry const *> mEdgeEntries;
         bvec mEdgeSeq;
     };
 
     void buildEdges( BRQ_Dict const& dict, vecbvec* pEdges )
     {
         EdgeBuilder eb(dict,pEdges);
-        dict.parallelForEachHHS(
-                [eb]( BRQ_Dict::Set::HHS const& hhs ) mutable
-                { for ( BRQ_Entry const& entry : hhs )
+
+        for (auto const &hhs:dict)
+            for ( BRQ_Entry const& entry : hhs )
                     if ( entry.getKDef().isNull() )
-                        eb.buildEdge(entry); });
+                        eb.buildEdge(entry);
+        
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();
