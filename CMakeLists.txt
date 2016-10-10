@@ -289,7 +289,6 @@ add_library(hb_base_libs OBJECT
         src/system/ErrNo.cc
         src/system/Exit.cc
         src/system/HostName.cc
-        src/system/ParsedArgs.cc
         src/system/ProcBuf.cc
         src/system/SysConf.cc
         src/system/System.cc

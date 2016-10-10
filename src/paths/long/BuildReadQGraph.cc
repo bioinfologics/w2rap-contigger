@@ -268,8 +268,8 @@ namespace
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();
-        //std::cout << "There are " << nRegularEdges
-        //          << " edges of total length " << nTotalLength << '.' << std::endl;
+        std::cout << "There are " << nRegularEdges
+                  << " edges of total length " << nTotalLength << '.' << std::endl;
 
         // if a kmer isn't marked as being on an edge, it must be a part of a smooth
         // circle: add those edges, too.  simpleCircle method isn't thread-safe, so
@@ -279,9 +279,9 @@ namespace
             for ( auto const& entry : hhs )
                 if ( entry.getKDef().isNull() )
                     eb.simpleCircle(entry);
-        //std::cout << "There are " << pEdges->size()-nRegularEdges
-        //          << " circular edges of total length "
-        //          << pEdges->SizeSum()-nTotalLength << '.' << std::endl;
+        std::cout << "There are " << pEdges->size()-nRegularEdges
+                  << " circular edges of total length "
+                  << pEdges->SizeSum()-nTotalLength << '.' << std::endl;
     }
 
     template <class Itr1, class Itr2>
@@ -928,7 +928,7 @@ void collapse_entries(std::vector<BRQ_Entry> &kmer_list){
     kmer_list.resize(okItr - kmer_list.begin());
 }
 
-std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq){
+std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir=""){
 
     std::vector<BRQ_Entry> kmer_list;
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
@@ -988,19 +988,30 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
     if (NULL != dict) { //merge sort and return that
         (*dict) = new BRQ_Dict(kmer_list.size());
         uint64_t used = 0,not_used=0;
+        uint64_t hist[101];
+        for (auto &h:hist) h=0;
         for (auto &kent:kmer_list) {
+            ++hist[std::min(100,(int)kent.getKDef().getCount())];
             if (kent.getKDef().getCount() >= minFreq) {
                 //if (!kent.getKDef().isNull()) std::cout<<"kent with not null edgeid detected!!!"<<std::endl;
-                (*dict)->insertEntry(kent);
+                kent.getKDef().setNull();
+                kent.getKDef().setCount(3);//TODO: this is almost superstitious.
+                (*dict)->insertEntry(std::move(kent));
                 used++;
             } else {
                 not_used++;
             }
+
         }
         std::cout << Date() << ": " << used << " out of " << kmer_list.size() << " kmers with Freq >= "
                   << minFreq << " and "<<not_used<<" filtered."
                   << std::endl;
         kmer_list.clear();
+        if (""!=workdir) {
+            std::ofstream kff(workdir + "/small_K.freqs");
+            for (auto i = 1; i < 101; i++) kff << i << ", " << hist[i] << std::endl;
+            kff.close();
+        }
         (*dict)->recomputeAdjacencies();
     } else {
         //std::cout << "createDictOMPRecursive (thread " << omp_get_thread_num() << ") from " << from << " to " << to
@@ -1015,7 +1026,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minQual, unsigned minFreq,
                       double minFreq2Fract, unsigned maxGapSize,
-                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K)
+                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir)
 {
     std::cout << Date() << ": loading reads (createdictOMP!!!)." << std::endl;
     //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
@@ -1023,7 +1034,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     #pragma omp parallel shared(pDict,reads,quals)
     {
         #pragma omp single
-        createDictOMPRecursive(&pDict, reads, quals, 0, reads.size(), 1000000, minQual, minFreq);
+        createDictOMPRecursive(&pDict, reads, quals, 0, reads.size(), 1000000, minQual, minFreq, workdir);
     }
     std::cout << Date() << ": finding edge sequences." << std::endl;
     // figure out the complete base sequence of each edge
@@ -1056,8 +1067,8 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": building HBV." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
 
-        for (auto i=0;i<edges.size();++i) if (fwdEdgeXlat[i]<0 or fwdEdgeXlat[i]>pHBV->EdgeObjectCount()-1 or revEdgeXlat[i]<0 or revEdgeXlat[i]>pHBV->EdgeObjectCount()-1)
-                std::cout<<"Edge "<<i<<" improper translation: "<<fwdEdgeXlat[i]<<" "<<revEdgeXlat[i]<<std::endl;
+        //for (auto i=0;i<edges.size();++i) if (fwdEdgeXlat[i]<0 or fwdEdgeXlat[i]>pHBV->EdgeObjectCount()-1 or revEdgeXlat[i]<0 or revEdgeXlat[i]>pHBV->EdgeObjectCount()-1)
+        //        std::cout<<"Edge "<<i<<" improper translation: "<<fwdEdgeXlat[i]<<" "<<revEdgeXlat[i]<<std::endl;
         std::cout << Date() << ": creating Read Paths." << std::endl;
 
         pPaths->clear().resize(reads.size());

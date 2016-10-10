@@ -98,7 +98,7 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
-                                                 "minimum frequency for small k-mers on step 2 (default: 3)", false, 3, "int", cmd);
+                                                 "minimum frequency for small k-mers on step 2 (default: 4)", false, 4, "int", cmd);
         TCLAP::ValueArg<unsigned int> minQualArg("", "min_qual",
                                                  "minimum quality for small k-mers on step 2 (default: 7)", false, 7, "int", cmd);
         TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
@@ -326,7 +326,7 @@ int main(const int argc, const char * argv[]) {
         if (from_step<=2 and to_step>=2) {
             bool FILL_JOIN = False;
             std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
-            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K);
+            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir);
             if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
             FixPaths(hbv, paths); //TODO: is this even needed?
             if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
