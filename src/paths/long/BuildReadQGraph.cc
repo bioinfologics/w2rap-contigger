@@ -287,7 +287,7 @@ namespace
             for ( BRQ_Entry const& entry : hhs )
                     if ( entry.getKDef().isNull() )
                         eb.buildEdge(entry);
-        
+
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();
@@ -966,12 +966,28 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         #pragma omp task shared(reads,quals,entries2)
         { entries2 = createDictOMPRecursive(NULL, reads, quals, mid_point, to, batch_size, minQual, minFreq); }
         #pragma omp taskwait
-        kmer_list = entries1;
         kmer_list.reserve(entries1.size() + entries2.size());
-        entries1.clear();
-        kmer_list.insert(kmer_list.end(),entries2.begin(),entries2.end());
-        entries2.clear();
+        auto end1=entries1.end(),end2=entries2.end();
+        auto itr1=entries1.begin(),itr2=entries2.begin();
+        while (itr1<end1 and itr2<end2){
+            if (*itr1==*itr2){
+                kmer_list.push_back(*itr1);
+                combine_Entries(kmer_list.back(),*itr2);
+                ++itr1;
+                ++itr2;
+            } else if (*itr1<*itr2){
+                kmer_list.push_back(*itr1);
+                ++itr1;
+            } else {
+                kmer_list.push_back(*itr2);
+                ++itr2;
+            }
+        }
+        while (itr1<end1) kmer_list.push_back(*itr1++);
+        while (itr2<end2) kmer_list.push_back(*itr2++);
 
+        entries1.clear();
+        entries2.clear();
 
     } else { //just do the kmer creation and sort/collapse
         //#pragma omp critical
@@ -1000,14 +1016,15 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
 
             }
         }
+        std::sort(kmer_list.begin(), kmer_list.end());
+        collapse_entries(kmer_list);
     }
     //sort
     //#pragma omp critical
     //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", sorting/collapsing "<<kmer_list.size()<<" kmers ..."
     //          << std::endl;
 
-    std::sort(kmer_list.begin(), kmer_list.end());
-    collapse_entries(kmer_list);
+
     if (NULL != dict) { //merge sort and return that
         (*dict) = new BRQ_Dict(kmer_list.size());
         uint64_t used = 0,not_used=0;
