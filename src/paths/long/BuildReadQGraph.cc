@@ -1026,7 +1026,7 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
 
 
     if (NULL != dict) { //merge sort and return that
-        std::cout << Date() << ": " << kmer_list.size() << " kmers counted, filtering..." << minFreq << std::endl;
+        std::cout << Date() << ": " << kmer_list.size() << " kmers counted, filtering..." << std::endl;
         (*dict) = new BRQ_Dict(kmer_list.size());
         uint64_t used = 0,not_used=0;
         uint64_t hist[101];
@@ -1034,7 +1034,7 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         for (auto &kent:kmer_list) {
             ++hist[std::min(100,(int)kent.getKDef().getCount())];
             if (kent.getKDef().getCount() >= minFreq) {
-                (*dict)->insertEntry(kent);
+                (*dict)->insertEntryNoLocking(kent);
                 used++;
             } else {
                 not_used++;

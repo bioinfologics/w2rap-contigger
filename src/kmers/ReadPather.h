@@ -230,6 +230,9 @@ public:
     void insertEntry( Entry const& entry )
     { mKSet.insertUniqueValue(entry); }
 
+    void insertEntryNoLocking( Entry const& entry )
+    { mKSet.insertUniqueValueNoLocking(entry); }
+
     class BadKmerCountFunctor
     {
     public:
