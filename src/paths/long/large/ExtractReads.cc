@@ -105,7 +105,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
 
           // Parse paired fastq files.
 
-//          else if (infiles != "" && j < infiles_rn[g].isize() - 1 && infiles_rn[g][j] == infiles_rn[g][j+1]) {
           else if (fn.find(".fastq") != std::string::npos) {
                infiles_pairs.push_back(fn);
                if (infiles_pairs.size() == 2) {
@@ -121,7 +120,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                     String line2;
                     std::int64_t total = 0;
                     std::int64_t taken = 0;
-//                    double frac = infiles_meta[g].frac;
 
                     // Buffer for quality score compression in batches.
 
@@ -155,10 +153,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                               << " or " << fn2 << ".\n" << std::endl;
                               Scram(1);
                          }
-                         for (int i = 0; i < line1.size(); ++i)
-                              if (line1[i] == 'N') line1[i] = 'A';
-                         for (int i = 0; i < line2.size(); ++i)
-                              if (line2[i] == 'N') line2[i] = 'A';
+
                          b1.SetFromString(line1);
                          b2.SetFromString(line2);
 
