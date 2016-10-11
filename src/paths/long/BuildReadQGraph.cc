@@ -1002,17 +1002,22 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         for (auto readId = from; readId < to; ++readId) {
             unsigned len = good_lenghts[readId - from];
             if (len > K) {
-                auto beg = reads[readId].begin(), itr = beg + K, last = beg + (len - 1);
+                auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
                 BRQ_Kmer kkk(beg);
                 KMerContext kc = KMerContext::initialContext(*itr);
-                do {
-                    kmer_list.push_back(kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(), kc.rc()) : BRQ_Entry(kkk, kc));
+                kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
+                kmer_list.back().getKDef().setCount(1);
+                while ( itr != last )
+                { unsigned char pred = kkk.front();
+                    kkk.toSuccessor(*itr); ++itr;
+                    kc = KMerContext(pred,*itr);
+                    kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
                     kmer_list.back().getKDef().setCount(1);
-                    unsigned char pred = kkk.front();
-                    kkk.toSuccessor(*itr);
-                    ++itr;
-                    kc = KMerContext(pred, *itr);
-                } while (itr <= last);
+                }
+                kc = KMerContext::finalContext(kkk.front());
+                kkk.toSuccessor(*last);
+                kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
+                kmer_list.back().getKDef().setCount(1);
 
             }
         }
