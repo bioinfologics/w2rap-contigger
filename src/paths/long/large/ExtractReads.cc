@@ -16,16 +16,11 @@
 #include "PairsManager.h"
 #include "TokenizeString.h"
 #include "bam/ReadBAM.h"
-#include "feudal/PQVec.h"
 #include "math/HoInterval.h"
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
 
-void GetCannedReferenceSequences( const String& sample, const String& species,
-     const String& work_dir );
-
-void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_names,
-     vec<int64_t>& subsam_starts, vecbvec* pReads, VecPQVec* quals )
+void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals )
 {
      double lclock = WallClockTime( );
 
@@ -37,15 +32,12 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
      VecPQVec &xquals = (*quals);
      std::vector<std::string> infiles_pairs;
 
-     std::string line;
-
      auto infiles = tokenize(reads.c_str(), ',');
 
      for (auto a: infiles){
           std::cout << a << std::endl;
      }
 
-     // TODO: Make this 2 steps simpler (type and duplication check)
      // Check that files are OK.
 
      for (auto fn: infiles){
@@ -53,7 +45,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                std::cout << "\nFailed to find file " << fn << ".\n" << std::endl;
                Scram(1);
           }
-          vec<String> suf = {".bam", ".fastq", ".fastq.gz", ".fq", ".fq.gz", ".fastb"};
+          std::vector<std::string> suf = {".bam", ".fastq", ".fastq.gz", ".fq", ".fq.gz", ".fastb"};
           Bool ok = False;
           for (auto s : suf)
                if (fn.find(s) != std::string::npos) ok = True;
@@ -63,7 +55,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                Scram(1);
           }
      }
-     // Chech that no file is included twice (in the original code)
 
      // Read the files.
 
@@ -74,7 +65,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
 
           // Parse bam files.
 
-          if (fn.find(".bam") != std::string::npos) {
+          if (std::string::npos != fn.find(".bam")) {
                bool const UNIQUIFY_NAMES = true;
                vecString *pxnames = 0;
                BAMReader bamReader(False /*USE_PF_ONLY*/,
@@ -94,12 +85,10 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                     vecqualvector q;
                     q.ReadAll(fn2b);
                     convertAppendParallel(q.begin(), q.end(), xquals);
-//                    infiles[g][j] = fn.Before(".fastb") + ".{fastb,qualb}"; //TODO: solucionar esto
                }
                else if (IsRegularFile(fn2p)) {
                     xbases.ReadAll(fn, True);
                     xquals.ReadAll(fn2p, True);
-//                    infiles[g][j] = fn.Before(".fastb") + ".{fastb,qualp}"; //TODO: solucionar esto
                }
           }
 
@@ -118,8 +107,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                     fast_pipe_ifstream in2(command2);
                     String line1;
                     String line2;
-                    std::int64_t total = 0;
-                    std::int64_t taken = 0;
 
                     // Buffer for quality score compression in batches.
 
@@ -144,8 +131,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                               << "different numbers of records.\n" << std::endl;
                               Scram(1);
                          }
-
-                         // Fetch bases.  Turn Ns into As. <------ TODO: TURN Ns into As check impact
 
                          getline(in1, line1), getline(in2, line2);
                          if (in1.fail() || in2.fail()) {
@@ -185,25 +170,60 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                               Scram(1);
                          }
 
+
                          // Save.
 
-
-                         qvec &q1 = qualsbuf[qbcount];
-                         qbcount++;
-                         qvec &q2 = qualsbuf[qbcount];
-                         qbcount++;
+                         qvec &q1 = qualsbuf[qbcount++];
+                         qvec &q2 = qualsbuf[qbcount++];
 
                          //TODO: left as is for the moment but this has to be replaced for a better thing !
                          q1.resize(line1.size()), q2.resize(line2.size());
                          if (qbcount == qbmax) {
-                              convertAppendParallel(qualsbuf.begin(),
-                                                    qualsbuf.begin() + qbcount, xquals);
-                              qbcount = 0;
+//                              convertAppendParallel(qualsbuf.begin(), qualsbuf.begin() + qbcount, xquals);
+
+//######################################################################################################################
+                              size_t nnn = qualsbuf.end()-qualsbuf.begin();
+                              xquals.resize(xquals.size()+nnn);
+                              auto oItr = xquals.end()-nnn;
+                              convertCopy(qualsbuf.begin(), qualsbuf.begin() + qbcount, oItr);
+
+                              unsigned char* buf = nullptr;
+                              size_t remain = 0;
+                              PQVec::allocator_type alloc = oItr->get_allocator();
+                              size_t maxChunkSz = alloc.getMaxEnchunkableSize();
+                              size_t maxUncompressed = (5*maxChunkSz+1)/2;
+                              PQVecEncoder enc;
+                              auto beg = qualsbuf.begin();
+                              auto end = qualsbuf.end();
+//                              while ( beg != end )
+                              for (auto ib = beg; ib != end; ++ib){
+//                                   enc.init(*beg); ++beg;
+                                   enc.init(*ib);
+                                   size_t need = enc.size();
+                                   if ( need > remain )
+                                   { if ( remain ) alloc.deallocate(buf,remain);
+                                        remain = 0;
+//                                        for ( auto itr=beg; itr != end; ++itr )
+                                        for ( auto itr=beg; itr != end; ++itr )
+                                             if ( (remain += itr->size()) > maxUncompressed )
+                                                  break;
+                                        remain = std::accumulate(beg,end,0ul,
+                                                                 []( size_t val, qvec const& qv ){ return val+qv.size(); });
+                                        remain = std::max(need,2*remain/5);
+                                        remain = std::min(remain,maxChunkSz);
+                                        buf = alloc.allocate(remain); }
+                                   oItr->clear().setData(buf); ++oItr;
+                                   buf = enc.encode(buf); remain -= need; }
+                              if ( remain ) alloc.deallocate(buf,remain);
+//######################################################################################################################
+
+                         qbcount = 0;
                          }
                          for (int i = 0; i < line1.size(); i++)
                               q1[i] = line1[i] - 33;
                          for (int i = 0; i < line2.size(); i++)
                               q2[i] = line2[i] - 33;
+
                          xbases.push_back(b1);
                          xbases.push_back(b2);
                     }

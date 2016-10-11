@@ -289,7 +289,7 @@ int main(const int argc, const char * argv[]) {
     if (from_step==1)
     {
         std::cout << "--== Step 1: Reading input files ==--" << std::endl;
-        ExtractReads(read_files, out_dir, subsam_names, subsam_starts, &bases, &quals);
+        ExtractReads(read_files, out_dir, &bases, &quals);
         std::cout << "Reading input files DONE!" << std::endl << std::endl << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("ExtractReads") << std::endl;
         //TODO: add an option to dump the reads
