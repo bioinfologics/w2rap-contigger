@@ -179,42 +179,27 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                          //TODO: left as is for the moment but this has to be replaced for a better thing !
                          q1.resize(line1.size()), q2.resize(line2.size());
                          if (qbcount == qbmax) {
-//                              convertAppendParallel(qualsbuf.begin(), qualsbuf.begin() + qbcount, xquals);
 
 //######################################################################################################################
-                              size_t nnn = qualsbuf.end()-qualsbuf.begin();
-                              xquals.resize(xquals.size()+nnn);
-                              auto oItr = xquals.end()-nnn;
-                              convertCopy(qualsbuf.begin(), qualsbuf.begin() + qbcount, oItr);
-
-                              unsigned char* buf = nullptr;
-                              size_t remain = 0;
-                              PQVec::allocator_type alloc = oItr->get_allocator();
-                              size_t maxChunkSz = alloc.getMaxEnchunkableSize();
-                              size_t maxUncompressed = (5*maxChunkSz+1)/2;
-                              PQVecEncoder enc;
                               auto beg = qualsbuf.begin();
                               auto end = qualsbuf.end();
-//                              while ( beg != end )
-                              for (auto ib = beg; ib != end; ++ib){
-//                                   enc.init(*beg); ++beg;
+
+                              size_t nnn = end-beg;
+                              xquals.resize(xquals.size()+nnn);
+                              auto oItr = xquals.end()-nnn;
+
+                              PQVecEncoder enc;
+                              unsigned char* buf = nullptr;
+                              PQVec::allocator_type alloc = oItr->get_allocator();
+
+                              for (auto ib = beg; ib != end; ++ib) {
                                    enc.init(*ib);
                                    size_t need = enc.size();
-                                   if ( need > remain )
-                                   { if ( remain ) alloc.deallocate(buf,remain);
-                                        remain = 0;
-//                                        for ( auto itr=beg; itr != end; ++itr )
-                                        for ( auto itr=beg; itr != end; ++itr )
-                                             if ( (remain += itr->size()) > maxUncompressed )
-                                                  break;
-                                        remain = std::accumulate(beg,end,0ul,
-                                                                 []( size_t val, qvec const& qv ){ return val+qv.size(); });
-                                        remain = std::max(need,2*remain/5);
-                                        remain = std::min(remain,maxChunkSz);
-                                        buf = alloc.allocate(remain); }
-                                   oItr->clear().setData(buf); ++oItr;
-                                   buf = enc.encode(buf); remain -= need; }
-                              if ( remain ) alloc.deallocate(buf,remain);
+                                   buf = alloc.allocate(need);
+                                   oItr->clear().setData(buf);
+                                   ++oItr;
+                              }
+
 //######################################################################################################################
 
                          qbcount = 0;
