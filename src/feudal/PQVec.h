@@ -239,7 +239,7 @@ void convertAppendParallel( Itr beg, Itr end, VecPQVec& vpqv ) {
   auto oItr = vpqv.end()-nnn;
   size_t nBatches = (nnn+BATCH_SIZE-1)/BATCH_SIZE;
 
-  #pragma omp parallel for num_threads(4)
+  #pragma omp parallel for
   for (auto batchId = 0; batchId<=nBatches; ++batchId){
     size_t off1 = batchId*BATCH_SIZE;
     size_t off2 = std::min(nnn,off1+BATCH_SIZE);
