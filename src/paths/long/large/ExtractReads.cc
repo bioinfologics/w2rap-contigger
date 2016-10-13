@@ -11,9 +11,7 @@
 
 #include "Basevector.h"
 #include "Bitvector.h"
-#include "FastIfstream.h"
 #include "FetchReads.h"
-#include "PairsManager.h"
 #include "TokenizeString.h"
 #include "bam/ReadBAM.h"
 #include "math/HoInterval.h"
@@ -85,7 +83,6 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
 
                     std::ifstream in1(fn1);
                     std::ifstream in2(fn2);
-
 
                     String line1;
                     String line2;
