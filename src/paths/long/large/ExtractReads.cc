@@ -20,8 +20,7 @@
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
 
-void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals )
-{
+void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals ) {
      double lclock = WallClockTime( );
 
 
