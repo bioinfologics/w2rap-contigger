@@ -81,12 +81,12 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                if (infiles_pairs.size() == 2) {
                     const std::string fn1 = infiles_pairs[0];
                     const std::string fn2 = infiles_pairs[1];
-                    std::string command1 = "cat " + fn1;
-                    std::string command2 = "cat " + fn2;
-                    if (fn1.find(".gz") != std::string::npos) command1 = "z" + command1;
-                    if (fn2.find(".gz") != std::string::npos) command2 = "z" + command2;
-                    fast_pipe_ifstream in1(command1);
-                    fast_pipe_ifstream in2(command2);
+                    std::cout << "Filenames: " << fn1 << ":" << fn2 << std::endl;
+
+                    std::ifstream in1(fn1);
+                    std::ifstream in2(fn2);
+
+
                     String line1;
                     String line2;
 
