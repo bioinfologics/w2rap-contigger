@@ -75,23 +75,6 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                bamReader.readBAM(fn, &xbases, &xquals, pxnames);
           }
 
-          // Parse fastb/qualb/qualp files.
-
-          else if (fn.find(".fastb") != std::string::npos) {
-               std::string fn2b = fn.substr(0, fn.find(".fastb")) + ".qualb";
-               std::string fn2p = fn.substr(0, fn.find(".fastb")) + ".qualp";
-               if (IsRegularFile(fn2b)) {
-                    xbases.ReadAll(fn, True);
-                    vecqualvector q;
-                    q.ReadAll(fn2b);
-                    convertAppendParallel(q.begin(), q.end(), xquals);
-               }
-               else if (IsRegularFile(fn2p)) {
-                    xbases.ReadAll(fn, True);
-                    xquals.ReadAll(fn2p, True);
-               }
-          }
-
           // Parse paired fastq files.
 
           else if (fn.find(".fastq") != std::string::npos) {
