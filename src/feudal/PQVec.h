@@ -232,18 +232,45 @@ void convertCopy( Itr beg, Itr end, VecPQVec::iterator oItr )
     if ( remain ) alloc.deallocate(buf,remain); } }
 
 template <class Itr> // Itr is a random-access iterator over const qvec's
-void convertAppendParallel( Itr beg, Itr end, VecPQVec& vpqv )
-{
-    size_t const BATCH_SIZE = 100000ul;
-    size_t nnn = end-beg;
-    vpqv.resize(vpqv.size()+nnn);
-    auto oItr = vpqv.end()-nnn;
-    size_t nBatches = (nnn+BATCH_SIZE-1)/BATCH_SIZE;
-    parallelFor(0ul,nBatches,
-            [beg,BATCH_SIZE,nnn,oItr]( size_t batchId ) mutable
-            { size_t off1 = batchId*BATCH_SIZE;
-              size_t off2 = std::min(nnn,off1+BATCH_SIZE);
-              convertCopy(beg+off1,beg+off2,oItr+off1); });
+void convertAppendParallel( Itr beg, Itr end, VecPQVec& vpqv ) {
+  size_t const BATCH_SIZE = 100000ul;
+  size_t nnn = end-beg;
+  vpqv.resize(vpqv.size()+nnn);
+  auto oItr = vpqv.end()-nnn;
+  size_t nBatches = (nnn+BATCH_SIZE-1)/BATCH_SIZE;
+
+  #pragma omp parallel for num_threads(4)
+  for (auto batchId = 0; batchId<=nBatches; ++batchId){
+    size_t off1 = batchId*BATCH_SIZE;
+    size_t off2 = std::min(nnn,off1+BATCH_SIZE);
+    auto begBatch = beg+off1;
+    auto endBatch = beg+off2;
+    auto oItrBatch = oItr + off1;
+
+    if ( begBatch != endBatch ) {
+      unsigned char* buf = nullptr;
+      size_t remain = 0;
+      PQVec::allocator_type alloc = oItrBatch->get_allocator();
+      size_t maxChunkSz = alloc.getMaxEnchunkableSize();
+      size_t maxUncompressed = (5*maxChunkSz+1)/2;
+      PQVecEncoder enc;
+      while ( begBatch != endBatch )
+      { enc.init(*begBatch); ++begBatch;
+        size_t need = enc.size();
+        if ( need > remain )
+        { if ( remain ) alloc.deallocate(buf,remain);
+          remain = 0;
+          for ( auto itr=begBatch; itr != endBatch; ++itr )
+            if ( (remain += itr->size()) > maxUncompressed )
+              break;
+          remain = std::accumulate(begBatch,endBatch,0ul, []( size_t val, qvec const& qv ){ return val+qv.size(); });
+          remain = std::max(need,2*remain/5);
+          remain = std::min(remain,maxChunkSz);
+          buf = alloc.allocate(remain); }
+        oItrBatch->clear().setData(buf); ++oItrBatch;
+        buf = enc.encode(buf); remain -= need; }
+      if ( remain ) alloc.deallocate(buf,remain); }
+  }
 }
 
 template <class Itr> // Itr is a random-access iterator over const qvec's

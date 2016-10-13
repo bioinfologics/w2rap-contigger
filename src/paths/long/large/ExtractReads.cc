@@ -176,32 +176,10 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                          qvec &q1 = qualsbuf[qbcount++];
                          qvec &q2 = qualsbuf[qbcount++];
 
-                         //TODO: left as is for the moment but this has to be replaced for a better thing !
                          q1.resize(line1.size()), q2.resize(line2.size());
                          if (qbcount == qbmax) {
-
-//######################################################################################################################
-                              auto beg = qualsbuf.begin();
-                              auto end = qualsbuf.end();
-
-                              size_t nnn = end-beg;
-                              xquals.resize(xquals.size()+nnn);
-                              auto oItr = xquals.end()-nnn;
-
-                              PQVecEncoder enc;
-                              unsigned char* buf = nullptr;
-                              PQVec::allocator_type alloc = oItr->get_allocator();
-
-                              for (auto ib = beg; ib != end; ++ib) {
-                                   enc.init(*ib);
-                                   size_t need = enc.size();
-                                   buf = alloc.allocate(need);
-                                   oItr->clear().setData(buf);
-                                   ++oItr;
-                              }
-
-//######################################################################################################################
-
+                              convertAppendParallel(qualsbuf.begin(),
+                                                    qualsbuf.begin() + qbcount, xquals);
                          qbcount = 0;
                          }
                          for (int i = 0; i < line1.size(); i++)
