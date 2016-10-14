@@ -31,12 +31,13 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      // (b) if the inverse of a path is smaller we use it instead;
      // (c) places are unique sorted.
 
-     std::cout << Date( ) << ": constructing places" << std::endl;
+     std::cout << Date( ) << ": beginning repathing "<<edges.size()<<" edges from K="<<K<<" to K2="<<K2<< std::endl;
+     std::cout << Date( ) << ": constructing places from "<<paths.size()<<" paths" << std::endl;
      vec< vec<int> > places;
      places.reserve( paths.size( ) );
 
      const int batch = 10000;
-#pragma omp parallel for
+     #pragma omp parallel for
      for (int64_t m = 0; m < (int64_t) paths.size(); m += batch) {
           vec<vec<int> > placesm;
           placesm.reserve(batch);
@@ -54,14 +55,14 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                     y.push_back(inv[x[j]]);
                placesm.push_back(x < y ? x : y);
           }
-#pragma omp critical
+          #pragma omp critical
           { places.append(placesm); }
      }
-     std::cout << Date() << ": sorting places" << std::endl;
+     std::cout << Date() << ": sorting "<<places.size()<<" places" << std::endl;
      sortInPlaceParallel(places.begin(), places.end());
      Unique(places);
      places.shrink_to_fit();
-
+     std::cout << Date() << ": "<<places.size()<<" unique places" << std::endl;
      // Add extended places.
 
      if (EXTEND_PATHS)

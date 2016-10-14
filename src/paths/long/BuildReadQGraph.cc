@@ -291,7 +291,7 @@ namespace
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();
-        std::cout << "There are " << nRegularEdges
+        std::cout<<Date()<< ": " << nRegularEdges
                   << " edges of total length " << nTotalLength << '.' << std::endl;
 
         // if a kmer isn't marked as being on an edge, it must be a part of a smooth
@@ -302,7 +302,7 @@ namespace
             for ( auto const& entry : hhs )
                 if ( entry.getKDef().isNull() )
                     eb.simpleCircle(entry);
-        std::cout << "There are " << pEdges->size()-nRegularEdges
+        std::cout << Date() << ": " << pEdges->size()-nRegularEdges
                   << " circular edges of total length "
                   << pEdges->SizeSum()-nTotalLength << '.' << std::endl;
     }
@@ -467,48 +467,56 @@ namespace
                 : mDict(dict), mEdges(edges) {}
 
         std::vector<PathPart> const& path( bvec const& read )
-        { mPathParts.clear();
-
-            if ( read.size() < K )
-            { mPathParts.emplace_back(read.size());
-                return mPathParts; } // EARLY RETURN!
+        {
+            mPathParts.clear();
+            if (read.size() < K) {
+                mPathParts.emplace_back(read.size());
+                return mPathParts;
+            } // EARLY RETURN!
 
             auto itr = read.begin();
-            auto end = read.end()-K+1;
-            while ( itr != end )
-            { BRQ_Kmer kmer(itr);
-                BRQ_Entry const* pEnt = mDict.findEntry(kmer);
-                if ( !pEnt )
-                {
+            auto end = read.end() - K + 1;
+            while (itr != end) {
+                BRQ_Kmer kmer(itr);
+                BRQ_Entry const *pEnt = mDict.findEntry(kmer);
+                if (!pEnt) {
                     unsigned gapLen = 1u;
-                    auto itr2 = itr+K; ++itr;
+                    auto itr2 = itr + K;
+                    ++itr;
                     auto end2 = read.end();
-                    while ( itr2 != end2 )
-                    { kmer.toSuccessor(*itr2); ++itr2;
-                        if ( (pEnt = mDict.findEntry(kmer)) )
+                    while (itr2 != end2) {
+                        kmer.toSuccessor(*itr2);
+                        ++itr2;
+                        if ((pEnt = mDict.findEntry(kmer)))
                             break;
-                        ++gapLen; ++itr; }
-                    mPathParts.emplace_back(gapLen); }
-                if ( pEnt )
-                { KDef const& kDef = pEnt->getKDef();
-                    bvec const& edge = mEdges[kDef.getEdgeID().val()];
+                        ++gapLen;
+                        ++itr;
+                    }
+                    mPathParts.emplace_back(gapLen);
+                }
+                if (pEnt) {
+                    KDef const &kDef = pEnt->getKDef();
+                    bvec const &edge = mEdges[kDef.getEdgeID().val()];
                     int offset = kDef.getEdgeOffset();
                     auto eBeg(edge.begin(offset));
                     size_t len = 1u;
-                    bool rc = CF<K>::isRC(itr,eBeg);
-                    if ( !rc )
-                        len += matchLen(itr+K,read.end(),eBeg+K,edge.end());
-                    else
-                    { offset = edge.size() - offset;
+                    bool rc = CF<K>::isRC(itr, eBeg);
+                    if (!rc)
+                        len += matchLen(itr + K, read.end(), eBeg + K, edge.end());
+                    else {
+                        offset = edge.size() - offset;
                         auto eBegRC(edge.rcbegin(offset));
-                        len += matchLen(itr+K,read.end(),eBegRC,edge.rcend());
-                        offset = offset - K; }
-                    unsigned edgeKmers = edge.size()-K+1;
+                        len += matchLen(itr + K, read.end(), eBegRC, edge.rcend());
+                        offset = offset - K;
+                    }
+                    unsigned edgeKmers = edge.size() - K + 1;
 
-                    mPathParts.emplace_back(kDef.getEdgeID(),rc,offset,len,edgeKmers);
+                    mPathParts.emplace_back(kDef.getEdgeID(), rc, offset, len, edgeKmers);
                     itr += len;
-                } }
-            return mPathParts; }
+                }
+            }
+            return mPathParts;
+        }
 
         bool isJoinable( PathPart const& pp1, PathPart const& pp2 ) const
         { if ( pp1.getEdgeID() == pp2.getEdgeID() ) return true;
@@ -1113,8 +1121,12 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         pPaths->clear().resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         uint64_t pathed=0;
-        for (auto &p:*pPaths) if (p.size()>0 ) pathed++;
-        std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed" << std::endl;
+        uint64_t multipathed=0;
+        for (auto &p:*pPaths) {
+            if (p.size()>0 ) pathed++;
+            if (p.size()>2 ) multipathed++;
+        }
+        std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed, "<< multipathed << " spanning junctions"<< std::endl;
         delete pDict;
     }
 
