@@ -267,7 +267,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
         for (auto n:all_next){
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
 
-            uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
+            uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm::REV ? n:inv[n]);
             if (cn<e) continue;
             gfa_raw_out << "L\tedge" << e << "\t+\tedge" << cn << (cn==n ? "\t+" : "\t-") << "\t0M" << std::endl;
         }
@@ -278,7 +278,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
         for (auto p:all_prev){
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
-            uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
+            uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm::REV?p:inv[p]);
             if (cp<e) continue;
             gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t-" : "\t+") << "\t0M" << std::endl;
         }

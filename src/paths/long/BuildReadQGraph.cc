@@ -1109,18 +1109,12 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": building graph..." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": graph built" << std::endl;
-        //for (auto i=0;i<edges.size();++i) if (fwdEdgeXlat[i]<0 or fwdEdgeXlat[i]>pHBV->EdgeObjectCount()-1 or revEdgeXlat[i]<0 or revEdgeXlat[i]>pHBV->EdgeObjectCount()-1)
-        //        std::cout<<"Edge "<<i<<" improper translation: "<<fwdEdgeXlat[i]<<" "<<revEdgeXlat[i]<<std::endl;
         std::cout << Date() << ": pathing reads into graph..." << std::endl;
-
         pPaths->clear().resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         uint64_t pathed=0;
         for (auto &p:*pPaths) if (p.size()>0 ) pathed++;
         std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed" << std::endl;
-
-        //parallelForBatch(0ul,reads.size(),100000,pather);
-
         delete pDict;
     }
 

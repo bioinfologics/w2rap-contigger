@@ -50,6 +50,7 @@ int main(const int argc, const char * argv[]) {
     std::cout << "Reading graph and paths..." << std::endl;
     BinaryReader::readFile(in_prefix + ".hbv", &hbv);
     hbv.Involution(inv);
+    TestInvolution(hbv,inv);
     paths.ReadAll(in_prefix + ".paths");
     std::cout << "   DONE!" << std::endl;
 
