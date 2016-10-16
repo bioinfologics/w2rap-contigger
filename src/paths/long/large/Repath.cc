@@ -33,34 +33,40 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
 
      std::cout << Date( ) << ": beginning repathing "<<edges.size()<<" edges from K="<<K<<" to K2="<<K2<< std::endl;
      std::cout << Date( ) << ": constructing places from "<<paths.size()<<" paths" << std::endl;
-     vec< vec<int> > places;
+     uint64_t pathed=0,multipathed=0;
+     for (auto &p:paths) {
+          if (p.size()>0 ) pathed++;
+          if (p.size()>2 ) multipathed++;
+     }
+     std::cout << Date() << ": " <<pathed<<" / "<<paths.size()<<" reads pathed, "<< multipathed << " spanning junctions"<< std::endl;
+     std::vector< std::vector<int> > places;
      places.reserve( paths.size( ) );
 
      const int batch = 10000;
      #pragma omp parallel for
      for (int64_t m = 0; m < (int64_t) paths.size(); m += batch) {
-          vec<vec<int> > placesm;
+          std::vector<std::vector<int> > placesm;
           placesm.reserve(batch);
-          vec<int> x, y;
+          std::vector<int> x, y;
           int64_t n = Min(m + batch, (int64_t) paths.size());
           for (int64_t i = m; i < n; i++) {
                x.clear(), y.clear();
                for (int64_t j = 0; j < (int64_t) paths[i].size(); j++)
                     x.push_back(paths[i][j]);
                int nkmers = 0;
-               for (int j = 0; j < x.isize(); j++)
-                    nkmers += edges[j].isize() - ((int) K - 1);
+               for (int j = 0; j < x.size(); j++)
+                    nkmers += edges[x[j]].size() - ((int) K - 1);
                if (nkmers + ((int) K - 1) < K2) continue;
-               for (int j = x.isize() - 1; j >= 0; j--)
+               for (int j = x.size() - 1; j >= 0; j--)
                     y.push_back(inv[x[j]]);
                placesm.push_back(x < y ? x : y);
           }
           #pragma omp critical
-          { places.append(placesm); }
+          { places.insert(places.end(),placesm.begin(),placesm.end()); }
      }
      std::cout << Date() << ": sorting "<<places.size()<<" places" << std::endl;
      sortInPlaceParallel(places.begin(), places.end());
-     Unique(places);
+     places.erase(std::unique(places.begin(),places.end()),places.end());
      places.shrink_to_fit();
      std::cout << Date() << ": "<<places.size()<<" unique places" << std::endl;
      // Add extended places.
@@ -69,8 +75,8 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      {    std::cout << Date( ) << ": begin extending paths" << std::endl;
           vec<int> to_left, to_right;
           hb.ToLeft(to_left), hb.ToRight(to_right);
-          vec<vec<int>> eplaces;
-          for ( int i = 0; i < places.isize( ); i++ )
+          std::vector<std::vector<int>> eplaces;
+          for ( auto i = 0; i < places.size( ); i++ )
           {    vec<int> p = places[i];
                int v = to_left[ p.front( ) ], w = to_right[ p.back( ) ];
                while( hb.To(v).solo( ) )
@@ -82,10 +88,11 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                     if ( !Member( p, e ) ) p.push_back(e);
                     else break;    }
                if ( p.size( ) > places[i].size( ) ) eplaces.push_back(p);    }
-          places.append(eplaces);
+          places.insert(places.end(),eplaces.begin(),eplaces.end());
           std::cout << Date( ) << ": resorting" << std::endl;
           sortInPlaceParallel(places.begin(),places.end());
-          Unique(places);
+          places.erase(std::unique(places.begin(),places.end()),places.end());
+          places.shrink_to_fit();
           std::cout << Date( ) << ": done extending paths" << std::endl;    }
 
      // Convert places to bases.  For paths of length > 1, we truncate at the
@@ -106,12 +113,12 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
           if ( e.size( ) > 1 )
           {    int x = e.back( );
                if ( edges[x].isize( ) > K2 )
-               {    b.resize( b.isize( ) - ( edges[x].isize( ) - K2 ) );
+               {    b.resize( b.isize( ) - ( edges[x].size( ) - K2 ) );
                     right_trunc[i] = edges[x].isize( ) - K2;    }
                x = e.front( );
                if ( edges[x].isize( ) > K2 )
-               {    b.SetToSubOf( b, edges[x].isize( ) - K2,
-                                  b.isize( ) - ( edges[x].isize( ) - K2 ) );
+               {    b.SetToSubOf( b, edges[x].size( ) - K2,
+                                  b.isize( ) - ( edges[x].size( ) - K2 ) );
                     left_trunc[i] = edges[x].isize( ) - K2;    }    }
           all[i] = b;    }
 
@@ -217,7 +224,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                     x.push_back( paths[id][j] );
                int nkmers = 0;
                for ( int j = 0; j < x.isize( ); j++ )
-                    nkmers += edges[j].isize( ) - ( (int) K - 1 );
+                    nkmers += edges[x[j]].isize( ) - ( (int) K - 1 );
                if ( nkmers + ( (int) K - 1 ) < K2 ) continue;
                for ( int j = x.isize( ) - 1; j >= 0; j-- )
                     y.push_back( inv[ x[j] ] );
