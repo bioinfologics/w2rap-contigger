@@ -18,7 +18,7 @@
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
 
-std::tuple<std::string, std::string, std::string> InputFileReader::get_record(std::ifstream& in){
+bool InputFileReader::get_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record){
 
      std::string nullstr;
      std::string header;
@@ -26,10 +26,10 @@ std::tuple<std::string, std::string, std::string> InputFileReader::get_record(st
      std::string qual;
 
      getline(in, header);
-//     if (in.fail()) {
+     if (in.fail()) {
 //          std::cout <<" Something wrong with thte record " << std::endl;
-//          Scram(1);
-//     }
+          return false;
+     }
 
      getline(in, seq);
 //     if (in.fail()) {
@@ -56,7 +56,10 @@ std::tuple<std::string, std::string, std::string> InputFileReader::get_record(st
 //          Scram(1);
 //     }
 //     std::cout<<header.size()<< " "<<seq.size()<<" "<<qual.size()<<std::endl;
-     return std::make_tuple(header, seq, qual);
+     std::get<0>(*record) = header;
+     std::get<1>(*record) = seq;
+     std::get<2>(*record) = qual;
+     return true;
 }
 
 InputFileReader::InputFileReader(const std::string pfilename_string) {
@@ -129,23 +132,25 @@ int InputFileReader::read_file(vecbvec *Reads, VecPQVec *Quals){
           // Buffer for quality score compression in batches.
 
           const int qbmax = 10000000;
-          std::vector<qvec> qualsbuf; // TODO: [GONZA] replace this for a standard vector!!!
+          std::vector<qvec> qualsbuf;
           MempoolOwner<char> alloc;
           for (int i = 0; i < qbmax; i++)
                qualsbuf.emplace_back(alloc);
           int qbcount = 0;
 
           // Go through the input files.
+          std::tuple<std::string, std::string, std::string> record1;
+          std::tuple<std::string, std::string, std::string> record2;
 
           basevector b1;
           basevector b2;
-          bool more_records = true;
-          while (more_records) {
+          while (1) {
                // TODO: [GONZA] add the checks
-               auto record1 = this->get_record(in1);
-               auto record2 = this->get_record(in2);
 
-               if (std::get<1>(record1).size() < 10){
+               bool r1_status = this->get_record(in1, &record1);
+               bool r2_status = this->get_record(in2, &record2);
+
+               if (!r1_status || !r2_status){
                     break;
                }
 

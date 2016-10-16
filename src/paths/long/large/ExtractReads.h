@@ -16,7 +16,7 @@
 class InputFileReader{
 public:
     InputFileReader(const std::string reads_filename);
-    std::tuple<std::string, std::string, std::string> get_record(std::ifstream& in);
+    bool get_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record);
     int read_file(vecbvec *Reads, VecPQVec *Quals);
 
 private:
