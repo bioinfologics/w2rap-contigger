@@ -103,17 +103,17 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
     std::vector<edge_vertex_list> edge_vertices;
     edge_vertices.resize(edges.size(),{-1,-1,-1,-1});
     uint64_t vID=0;
-    uint64_t ecount[5]={0,0,0,0,0};
-    uint64_t vcount=0;
+    //uint64_t ecount[5]={0,0,0,0,0};
+    //uint64_t vcount=0;
     //Can't be parallel, because vID depends on previous iteration
     for (auto i=0; i<ends.size(); ++i){
-        if (i>0 and not (ends[i-1]==ends[i])) {
+        /*if (i>0 and not (ends[i-1]==ends[i])) {
             vID++;
             if (vcount>5) vcount=5;
             ++ecount[vcount-1];
             vcount=0;
-        }
-        ++vcount;
+        }*/
+        //++vcount;
         if (!ends[i].rc) {
             if (!ends[i].distal) edge_vertices[ends[i].edge_index].fw_v1=vID;
             else edge_vertices[ends[i].edge_index].fw_v2=vID;
@@ -124,8 +124,8 @@ void buildHBVFromEdges( vecbvec const& edges, unsigned K, HyperBasevector* pHBV,
     }
     ++vID;
 
-    std::cout<<Date()<<": vertices by edge count:  1:"<<ecount[0]<<" 2:"<<ecount[1]
-             <<" 3:"<<ecount[2]<<" 4:"<<ecount[3]<<" 5+:"<<ecount[4]<<std::endl;
+    //std::cout<<Date()<<": vertices by edge count:  1:"<<ecount[0]<<" 2:"<<ecount[1]
+    //         <<" 3:"<<ecount[2]<<" 4:"<<ecount[3]<<" 5+:"<<ecount[4]<<std::endl;
     pHBV->SetK(K);
     pHBV->AddVertices(vID);
     pHBV->EdgesMutable().reserve(2*edges.size());
