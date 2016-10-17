@@ -69,7 +69,7 @@ void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<in
 
     // First find the pairs that bridge from left to right, and mark
     // their endpoints.  Inefficient.
-    pids.clear();
+
     std::vector<int64_t> pids1;
     vec<vec<int>> lstarts(lefts.size()), rstarts(rights.size());
     {
@@ -319,8 +319,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     for (int bstart = 0; bstart < nblobs; bstart += 5000) {
         #pragma omp parallel
         {
-
-
             #pragma omp for
             for (int bl = bstart; bl < bstart + 5000; ++bl) {
                 if (bl >= nblobs) continue;
@@ -332,8 +330,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 vecbasevector gbases;
                 vecqualvector gquals;
                 PairsManager gpairs;
-
-
 
                 //Corrected reads
                 VecEFasta corrected;
@@ -474,7 +470,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 }//---OMP TASK END---
             }
         }
-        if (bstart+5000<nblobs) std::cout << Date() << ": "<< bstart+5000 <<" blobs processed, paths found for " << solved << std::endl;
+        std::cout << Date() << ": "<< bstart+5000 <<" blobs processed, paths found for " << solved << std::endl;
     }
     std::cout << Date() << ": "<< nblobs <<" blobs processed, paths found for " << solved << std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "
