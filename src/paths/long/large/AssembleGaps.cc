@@ -319,15 +319,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     for (int bstart = 0; bstart < nblobs; bstart += 5000) {
         #pragma omp parallel
         {
-            std::vector<int64_t> pids;
-            vecbasevector gbases;
-            vecqualvector gquals;
-            PairsManager gpairs;
 
-            VecEFasta corrected;
-            vecbasevector creads;
-            std::vector<pairing_info> cpartner;
-            std::vector<int> cid;
 
             #pragma omp for
             for (int bl = bstart; bl < bstart + 5000; ++bl) {
@@ -336,16 +328,18 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
 
                 //Local readset
-                pids.clear();
-                gbases.clear();
-                gquals.clear();
-                gpairs.clear();
+                std::vector<int64_t> pids;
+                vecbasevector gbases;
+                vecqualvector gquals;
+                PairsManager gpairs;
+
+
 
                 //Corrected reads
-                corrected.clear();
-                creads.clear();
-                cpartner.clear();
-                cid.clear();
+                VecEFasta corrected;
+                vecbasevector creads;
+                std::vector<pairing_info> cpartner;
+                std::vector<int> cid;
 
                 //Local assembly graph
                 HyperBasevector xshb;
