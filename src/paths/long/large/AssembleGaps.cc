@@ -338,8 +338,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 //Corrected reads
                 VecEFasta corrected;
                 vecbasevector creads;
-                std::vector<pairing_info> cpartner;
-                std::vector<int> cid;
+                vec<pairing_info> cpartner;
+                vec<int> cid;
 
                 //Local assembly graph
                 HyperBasevector xshb;

@@ -26,12 +26,12 @@ void ZeroCorrectedQuals( vecbasevector const& readsFile, vecbvec const& creads,
 
 void CorrectionSuite( vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs,
      const long_heuristics& heur,
-     vecbasevector& creads, VecEFasta& corrected, std::vector<int>& cid,
-     std::vector<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
+     vecbasevector& creads, VecEFasta& corrected, vec<int>& cid,
+     vec<pairing_info>& cpartner, const uint NUM_THREADS, const String& EXIT,
      bool useOldLRPMethod );
 
 void DefinePairingInfo( const PairsManager & gpairs, const vecbasevector& creads,
-     const vec<Bool>& to_delete, std::vector<int>& cid, VecEFasta& corrected,
-     std::vector<pairing_info>& cpartner );
+     const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
+     vec<pairing_info>& cpartner );
 
 #endif
