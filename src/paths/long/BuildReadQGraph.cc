@@ -90,6 +90,14 @@ namespace
                 make1KmerEdge(entry);
         }
 
+        bool isEnd(BRQ_Entry const &entry) {
+            if (isPalindrome(entry))
+                return true;
+            else if (upstreamExtensionPossible(entry) and downstreamExtensionPossible(entry))
+                    return false;
+            return true;
+        }
+
         // not thread-safe
         void simpleCircle(BRQ_Entry const &entry) {
             BRQ_Entry const *pFirstEntry = &entry;
@@ -282,12 +290,11 @@ namespace
     void buildEdges( BRQ_Dict const& dict, vecbvec* pEdges )
     {
         EdgeBuilder eb(dict,pEdges);
-
-        for (auto const &hhs:dict)
-            for ( BRQ_Entry const& entry : hhs )
+        dict.parallelForEachHHS(
+                [eb]( BRQ_Dict::Set::HHS const& hhs ) mutable
+                { for ( BRQ_Entry const& entry : hhs )
                     if ( entry.getKDef().isNull() )
-                        eb.buildEdge(entry);
-
+                        eb.buildEdge(entry); });
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();

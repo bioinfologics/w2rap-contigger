@@ -260,6 +260,9 @@ public:
     OItr begin() { return mKSet.begin(); }
     OItr end() { return mKSet.end(); }
 
+    OItr mbegin() { return mKSet.begin(); }
+    OItr mend() { return mKSet.end(); }
+
     size_t size() const { return mKSet.size(); }
 
     void remove( KMer<K> const& kmer )
