@@ -480,7 +480,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 }//---OMP TASK END---
             }
         }
-        std::cout << Date() << ": "<< bstart+5000 <<" blobs processed, paths found for " << solved << std::endl;
+        if (bstart+5000<nblobs) std::cout << Date() << ": "<< bstart+5000 <<" blobs processed, paths found for " << solved << std::endl;
     }
     std::cout << Date() << ": "<< nblobs <<" blobs processed, paths found for " << solved << std::endl;
     std::cout << TimeSince(clockp1) << " spent in local assemblies, "
