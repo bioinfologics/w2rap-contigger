@@ -1002,8 +1002,8 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
 void MakeLocalAssembly2(VecEFasta &corrected,
                         const vec<int> &lefts, const vec<int> &rights,
                         SupportedHyperBasevector &shb, const int K2_FLOOR,
-                        vecbasevector &creads, vec<int> &cid,
-                        vec<pairing_info> &cpartner) {
+                        vecbasevector &creads, std::vector<int> &cid,
+                        std::vector<pairing_info> &cpartner) {
     long_logging logc("", "");
     logc.STATUS_LOGGING = False;
     logc.MIN_LOGGING = False;

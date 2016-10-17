@@ -110,8 +110,8 @@ void GetRoots( const HyperBasevector& hb, vec<int>& to_left, vec<int>& to_right,
 
 void MakeLocalAssembly2( VecEFasta& corrected, const vec<int>& lefts, const vec<int>& rights,
      SupportedHyperBasevector& shb, const int K2_FLOOR,
-     vecbasevector& creads, /*LongProtoTmpDirManager& tmp_mgr,*/ vec<int>& cid,
-     vec<pairing_info>& cpartner );
+     vecbasevector& creads, std::vector<int>& cid,
+     std::vector<pairing_info>& cpartner );
 
 void PlaceMore( const HyperBasevector& hb, const vecbasevector& bases,
      const VecPQVec& quals, ReadPathVec& paths2, vec<int64_t>& placed,

@@ -69,7 +69,7 @@ void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<in
 
     // First find the pairs that bridge from left to right, and mark
     // their endpoints.  Inefficient.
-
+    pids.clear();
     std::vector<int64_t> pids1;
     vec<vec<int>> lstarts(lefts.size()), rstarts(rights.size());
     {
@@ -319,6 +319,16 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     for (int bstart = 0; bstart < nblobs; bstart += 5000) {
         #pragma omp parallel
         {
+            std::vector<int64_t> pids;
+            vecbasevector gbases;
+            vecqualvector gquals;
+            PairsManager gpairs;
+
+            VecEFasta corrected;
+            vecbasevector creads;
+            std::vector<pairing_info> cpartner;
+            std::vector<int> cid;
+
             #pragma omp for
             for (int bl = bstart; bl < bstart + 5000; ++bl) {
                 if (bl >= nblobs) continue;
@@ -326,16 +336,16 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
 
                 //Local readset
-                std::vector<int64_t> pids;
-                vecbasevector gbases;
-                vecqualvector gquals;
-                PairsManager gpairs;
+                pids.clear();
+                gbases.clear();
+                gquals.clear();
+                gpairs.clear();
 
                 //Corrected reads
-                VecEFasta corrected;
-                vecbasevector creads;
-                vec<pairing_info> cpartner;
-                vec<int> cid;
+                corrected.clear();
+                creads.clear();
+                cpartner.clear();
+                cid.clear();
 
                 //Local assembly graph
                 HyperBasevector xshb;

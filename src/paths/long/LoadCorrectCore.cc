@@ -171,7 +171,7 @@ void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done )
 void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager &gpairs,
                      const long_heuristics &heur,
                      vecbasevector &creads,
-                     VecEFasta &corrected, vec<int> &cid, vec<pairing_info> &cpartner,
+                     VecEFasta &corrected, std::vector<int> &cid, std::vector<pairing_info> &cpartner,
                      const uint NUM_THREADS, const String &EXIT,
                      bool useOldLRPMethod/*,  LongProtoTmpDirManager &tmp_mgr*/) {
 
@@ -439,8 +439,8 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 // Define pairing info.  Note that for now we set all the library ids to 0.
 
 void DefinePairingInfo( const PairsManager & gpairs, const vecbasevector& creads,
-     const vec<Bool>& to_delete, vec<int>& cid, VecEFasta& corrected,
-     vec<pairing_info>& cpartner/*, const long_logging& logc*/ )
+     const vec<Bool>& to_delete, std::vector<int>& cid, VecEFasta& corrected,
+     std::vector<pairing_info>& cpartner/*, const long_logging& logc*/ )
 {
 
      for ( int64_t id = 0; id < (int64_t) creads.size( ); id++ )
