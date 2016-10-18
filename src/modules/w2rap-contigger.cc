@@ -414,7 +414,7 @@ int main(const int argc, const char * argv[]) {
     }
     if (from_step<=5 and to_step>=5) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
-
+        std::cout << Date() <<": inverting paths"<<std::endl;
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
         if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
 

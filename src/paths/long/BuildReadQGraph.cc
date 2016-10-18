@@ -817,7 +817,7 @@ namespace
             ExtendReadPath mExtender(hbv,&toLeft,&toRight);
             qvec mQV;
 
-            #pragma omp for
+            #pragma omp for schedule(static,1)
             for (auto readId=0;readId<reads.size();++readId){
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
