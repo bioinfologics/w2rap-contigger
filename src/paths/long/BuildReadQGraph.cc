@@ -54,6 +54,30 @@ namespace
     typedef KmerDictEntry<K> BRQ_Entry;
     typedef KmerDict<K> BRQ_Dict;
 
+    class KMerNodeFreq: public KMer<K>{
+    public:
+        KMerNodeFreq(){};
+        template <class Itr>
+        explicit KMerNodeFreq( Itr start )
+        { assign(start,NopMapper()); }
+        KMerNodeFreq (const KMerNodeFreq &other){
+            *this=other;
+            count=other.count;
+            kc=other.kc;
+        }
+        KMerNodeFreq (const KMerNodeFreq &other, bool rc){
+            *this=other;
+            count=other.count;
+            kc=other.kc;
+            if (rc){
+                this->rc();
+                kc=kc.rc();
+            }
+        }
+        unsigned char count;
+        KMerContext kc;
+    };
+
 
 
 
@@ -916,6 +940,15 @@ inline void combine_Entries( BRQ_Entry & dest, BRQ_Entry & source )
     kDef.setCount(kDef.getCount()+source.getKDef().getCount());
 }
 
+inline void combine_Entries( KMerNodeFreq & dest, KMerNodeFreq & source )
+{
+    dest.kc|=source.kc;
+    uint16_t c = dest.count;
+    c+=source.count;
+    dest.count= (c<255 ? c:255);
+}
+
+
 void print_results_status(uint nthreads, bool results[]){
 #pragma omp critical
     {
@@ -966,15 +999,28 @@ void collapse_entries(std::vector<BRQ_Entry> &kmer_list){
     kmer_list.resize(okItr - kmer_list.begin());
 }
 
-std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir=""){
+void collapse_entries(std::vector<KMerNodeFreq> &kmer_list){
+    auto okItr = kmer_list.begin();
+    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
+        *okItr = *kItr;
+        ++kItr;
+        while (kItr<kmer_list.end() and *okItr == *kItr) {
+            combine_Entries(*okItr,*kItr);
+            ++kItr;
+        }
+    }
+    kmer_list.resize(okItr - kmer_list.begin());
+}
 
-    std::vector<BRQ_Entry> kmer_list;
+std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir=""){
+
+    std::vector<KMerNodeFreq> kmer_list;
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
     if (to - from > batch_size) {
         //#pragma omp critical
         //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", splitting..." << std::endl;
         uint64_t mid_point = from + (to - from) / 2;
-        std::vector<BRQ_Entry> entries1, entries2; //TODO: need to not copy but mode the reference.
+        std::vector<KMerNodeFreq> entries1, entries2; //TODO: need to not copy but mode the reference.
         #pragma omp task shared(reads,quals,entries1)
         { entries1 = createDictOMPRecursive(NULL, reads, quals, from, mid_point, batch_size, minQual,
                                               minFreq);}
@@ -1018,22 +1064,23 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
             unsigned len = good_lenghts[readId - from];
             if (len > K) {
                 auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
-                BRQ_Kmer kkk(beg);
-                KMerContext kc = KMerContext::initialContext(*itr);
-                kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
-                kmer_list.back().getKDef().setCount(1);
+                //BRQ_Kmer kkk(beg);
+                //KMerContext kc = KMerContext::initialContext(*itr);
+                //kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
+                //kmer_list.back().getKDef().setCount(1);
+                KMerNodeFreq kkk(beg);
+                kkk.kc = KMerContext::initialContext(*itr);
+                kkk.count=1;
+                kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
                 while ( itr != last )
                 { unsigned char pred = kkk.front();
                     kkk.toSuccessor(*itr); ++itr;
-                    kc = KMerContext(pred,*itr);
-                    kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
-                    kmer_list.back().getKDef().setCount(1);
+                    kkk.kc = KMerContext(pred,*itr);
+                    kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
                 }
-                kc = KMerContext::finalContext(kkk.front());
+                kkk.kc = KMerContext::finalContext(kkk.front());
                 kkk.toSuccessor(*last);
-                kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
-                kmer_list.back().getKDef().setCount(1);
-
+                kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
             }
         }
         std::sort(kmer_list.begin(), kmer_list.end());
@@ -1051,10 +1098,10 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         uint64_t used = 0,not_used=0;
         uint64_t hist[101];
         for (auto &h:hist) h=0;
-        for (auto &kent:kmer_list) {
-            ++hist[std::min(100,(int)kent.getKDef().getCount())];
-            if (kent.getKDef().getCount() >= minFreq) {
-                (*dict)->insertEntryNoLocking(kent);
+        for (auto &knf:kmer_list) {
+            ++hist[std::min(100,(int)knf.count)];
+            if (knf.count >= minFreq) {
+                (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
                 used++;
             } else {
                 not_used++;
@@ -1068,7 +1115,9 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
             for (auto i = 1; i < 101; i++) kff << i << ", " << hist[i] << std::endl;
             kff.close();
         }
+        std::cout << Date() << ": updating adjacencies" <<std::endl;
         (*dict)->recomputeAdjacencies();
+        std::cout << Date() << ": dict finished" <<std::endl;
     } else {
         //std::cout << "createDictOMPRecursive (thread " << omp_get_thread_num() << ") from " << from << " to " << to
         //          << ", FINISHED with " << kmer_list.size() << " kmers."
