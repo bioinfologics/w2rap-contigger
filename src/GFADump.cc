@@ -152,8 +152,15 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
     std::cout<<std::endl<<std::endl<<std::endl<<"============GFA DUMP STARTING============"<<std::endl;
     std::cout<<"Graph has "<< hb.EdgeObjectCount() <<" edges"<<std::endl;
 
+    // define the k-1 overlap
     int overlap_length = int(hb.K()) - 1;
-    //std::cout<< "k=" << hb.K() <<std::endl;
+
+    // remove any path from filename
+    int pos = filename.find_last_of("/");
+    std::string prefix = filename;
+    if (pos != std::string::npos){
+    	prefix = filename.substr(pos + 1);
+    }
 
     vec<vec<vec<vec<int>>>> lines;
     vec<int> to_left, to_right;
@@ -196,10 +203,9 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
                                 gfa_out << "S\tedge" << ce << "\t*"
                                 << "\tLN:i:" << eo.isize()
                                 << "\tCL:Z:" << colour_names[current_colour % colour_names.size()]
-                                << "\tUR:Z:" << filename << "_lines.fasta"
+                                << "\tUR:Z:" << prefix << "_lines.fasta"
                                 << std::endl;
 
-                                // old bit
                                 //gfa_out << "S\tedge" << ce << "\t" << hb.EdgeObject(ce) << "\tCL:Z:" <<
                                 //colour_names[current_colour % colour_names.size()] << std::endl;
 
@@ -256,12 +262,11 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
         gfa_raw_out << "S\tedge" << ei << "\t*"
         << "\tLN:i:" << eo.isize()
         << "\tCL:Z:" << (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
-        << "\tUR:Z:" << filename << "_raw.fasta"
+        << "\tUR:Z:" << prefix << "_raw.fasta"
         << std::endl;
 
         // write seq to FASTA
         fasta_raw_out << ">edge" << ei << std::endl << eo << std::endl;
-
     }
 
     std::cout<<"Dumping connections"<<std::endl;
@@ -285,6 +290,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             next_edges[e][i]=hb.EdgeObjectIndexByIndexFrom(next_node,i);
         }
     }
+
     for (uint64_t e=0;e<next_edges.size();e++) {
         //only process the canonical edge
         auto eo=hb.EdgeObject(e);
