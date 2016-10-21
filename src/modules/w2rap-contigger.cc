@@ -51,11 +51,12 @@ int main(const int argc, const char * argv[]) {
     std::string read_files;
     std::string out_dir;
     std::string dev_run;
+    std::string tmp_dir;
     unsigned int threads;
     unsigned int minFreq;
     unsigned int minQual;
     int max_mem;
-    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample;
+    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches;
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
@@ -94,7 +95,10 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> toStep_Arg("", "to_step",
                                                    "Stop after step (default: 7)", false, 7, &steps, cmd);
 
-
+        TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
+                                                 "number of disk batches for step2 (default: 4, 0->in memory)", false, 4, "int", cmd);
+        TCLAP::ValueArg<unsigned int> tmp_dirArg("", "tmp_dir",
+                                                      "tmp dir for step2 disk batches (default: workdir)", false, 4, "int", cmd);
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
@@ -138,6 +142,8 @@ int main(const int argc, const char * argv[]) {
         pair_sample=pairSampleArg.getValue();
         minFreq=minFreqArg.getValue();
         minQual=minQualArg.getValue();
+        disk_batches=disk_batchesArg.getValue();
+        tmp_dir=tmp_dirArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -326,7 +332,7 @@ int main(const int argc, const char * argv[]) {
         if (from_step<=2 and to_step>=2) {
             bool FILL_JOIN = False;
             std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
-            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir);
+            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,tmp_dir,disk_batches);
             if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
             FixPaths(hbv, paths); //TODO: is this even needed?
             if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
