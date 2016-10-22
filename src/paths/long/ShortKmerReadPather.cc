@@ -206,42 +206,21 @@ void ShortKmerReadPather::FindPaths(const vecbasevector& bases,
 	    EraseTheseIndices( aligns, to_delete );
 
 	    int initial_offset = aligns.front().offset;
-	    vec<int> edge_list(aligns.size());
+	    std::vector<int> edge_list(aligns.size());
 	    std::transform(aligns.begin(), aligns.end(), edge_list.begin(), [] (SKRPAlignment i) {return i.edge;});
 		
-	    if (debug) std::cout << "Path=" << initial_offset << ":" << printSeq(edge_list) << std::endl;
 
 	    ReadPath read_path(initial_offset, edge_list);
 
 	    // Validate and if the read path is invalid, pick the highest scoring edge
 	    if (false == ValidateReadPath(hbv, to_left, to_right, initial_offset, edge_list, message)) {
-		
-		if (debug)
-		    std::cout << "INVALID hbv_path= " << initial_offset << ":"<< printSeq( edge_list ) << " : " 
-			 << message << std::endl;
-		continue;
-
-		// if ( edge_list.size() < 5) {
-		//     size_t min_entry = std::min_element(score_list.begin(), score_list.end()) - score_list.begin();
-		//     read_path = ReadPath(offset_list[min_entry], vec<int>(1,edge_list[min_entry]));
-		//     if (debug) std::cout << "Picking edge :" << edge_list[min_entry] << " instead" << std::endl;
-		// } else
-		//     continue;  // To many edges to pick from
+			continue;
 	    }
 
 	    ExtendReadPath::attemptLeftRightExtension( read_path, bases[read_id], qv,
 							   hbv, to_left, to_right, false);
 
-	    if (debug) {
-		vec<int> new_edge_list(read_path.begin(), read_path.end());
-		int new_offset = read_path.getOffset();
-		
-		std::cout << read_id << "  hbv_path= " << new_offset << ":"<< printSeq( new_edge_list ) << std::endl;
-		DisplayReadPath( std::cout, hbv, to_left, to_right,
-				 new_offset, new_edge_list,
-				 bases[read_id], qv);
-		std::cout << std::endl << std::endl;
-	    }
+
 	    
 	    paths[read_id].swap(read_path);
 	    success_count++;

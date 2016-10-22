@@ -15,7 +15,8 @@
 #ifndef READPATH_H_
 #define READPATH_H_
 
-#include "Intvector.h"
+#include <vector>
+#include <fstream>
 
 // A description of a graph traversal by some sequence (a read, let's say).
 // It's just a vector of edge IDs, but it also tells you how many bases at the
@@ -28,7 +29,7 @@ public:
     ReadPath( int offset )
     : mOffset(offset) {}
 
-    ReadPath( int offset, const vec<int>& edge_list )
+    ReadPath( int offset, const std::vector<int>& edge_list )
     : mOffset(offset) {
 	this->assign(edge_list.begin(), edge_list.end());
     }
@@ -43,64 +44,20 @@ public:
     unsigned getFirstSkip() const { return (mOffset < 0 ? 0u : static_cast<unsigned>(mOffset)); }
     void setFirstSkip( unsigned firstSkip ) { mOffset = firstSkip; }
 
-    // stuff to make this class feudal
-//    explicit ReadPath( alloc_type const& a )
-//    : IntVec(a), mOffset(0), mLastSkip(0) {}
-
-    /*void swap( ReadPath& that )
-    { using std::swap;
-      swap(mOffset,that.mOffset);
-      swap(mLastSkip,that.mLastSkip);
-      swap(static_cast<std::vector<unsigned int>&>(*this),static_cast<std::vector<unsigned int>&>(that)); }
-
-    void readFeudal( BinaryReader& reader, unsigned long dataLen, void* fixed )
-    { reader.read(&mOffset); reader.read(&mLastSkip);
-      dataLen -= sizeof(mOffset)+sizeof(mLastSkip);
-      static_cast<IntVec*>(this)->readFeudal(reader,dataLen,fixed); }
-
-    void writeFeudal( BinaryWriter& writer, void const** pFixed ) const
-    { writer.write(mOffset); writer.write(mLastSkip);
-      static_cast<IntVec const*>(this)->writeFeudal(writer,pFixed); }
-
-    void writeBinary( BinaryWriter& writer ) const
-    {  writer.write(mOffset); writer.write(mLastSkip);
-      static_cast<IntVec const*>(this)->writeBinary(writer); }
-
-    void readBinary( BinaryReader& reader )
-    {  reader.read(&mOffset); reader.read(&mLastSkip);
-      static_cast<IntVec*>(this)->readBinary(reader); }*/
     void push_front(int const i){
         this->insert(this->begin(),i);
     }
     bool same_read(ReadPath const& rp){
         return (mOffset==rp.getOffset() and *this==rp);
     }
-    /*static size_t externalSizeof() { return 0ul; }
-
-    friend std::ostream& operator<<( std::ostream& os, ReadPath const& rp )
-    {
-      os << "(" << rp.getOffset() << ") [" << rp.getFirstSkip() << "] ";
-      std::copy( rp.begin(), rp.end(),
-	      std::ostream_iterator<unsigned int>(os, " ") );
-      os << "[NA]";
-      return os;
-    }*/
 
 
 private:
     int mOffset;
-    //unsigned mLastSkip;
 };
-//SELF_SERIALIZABLE(ReadPath);
-
-//typedef MasterVec<ReadPath> ReadPathVec;
 typedef std::vector<ReadPath> ReadPathVec;
 
 void WriteReadPathVec(const ReadPathVec &rpv, const char * filename);
-
-
 void LoadReadPathVec(ReadPathVec &rpv, const char * filename);
-
-//extern template class OuterVec<ReadPath>;
 
 #endif /* READPATH_H_ */
