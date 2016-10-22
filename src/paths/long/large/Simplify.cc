@@ -156,7 +156,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         invert(paths, invPaths, hb.EdgeObjectCount());
         if (dump_pf_files) {
             BinaryWriter::writeFile(fin_dir + "/pf_start.hbv", hb);
-            paths.WriteAll(fin_dir + "/pf_start.paths");
+            //paths.WriteAll(fin_dir + "/pf_start.paths");
         }
 
         std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
@@ -167,7 +167,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
         if (dump_pf_files) {
             BinaryWriter::writeFile(fin_dir + "/pf_unrolled_loops.hbv", hb);
-            paths.WriteAll(fin_dir + "/pf_unrolled_loops.paths");
+            //paths.WriteAll(fin_dir + "/pf_unrolled_loops.paths");
         }
         invPaths.clear();
         invert( paths, invPaths, hb.EdgeObjectCount( ) );
@@ -179,7 +179,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
         if (dump_pf_files) {
             BinaryWriter::writeFile(fin_dir + "/pf_end.hbv", hb);
-            paths.WriteAll(fin_dir + "/pf_end.paths");
+            //paths.WriteAll(fin_dir + "/pf_end.paths");
         }
 
 

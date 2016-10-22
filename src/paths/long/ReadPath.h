@@ -21,7 +21,7 @@
 // It's just a vector of edge IDs, but it also tells you how many bases at the
 // start of the first edge to skip, and how many bases at the end of the last
 // edge to skip.
-class ReadPath : public IntVec
+class ReadPath : public std::vector<int>
 {
 public:
     ReadPath() :  mOffset(0), mLastSkip(0) {}
@@ -44,14 +44,14 @@ public:
     void setFirstSkip( unsigned firstSkip ) { mOffset = firstSkip; }
 
     // stuff to make this class feudal
-    explicit ReadPath( alloc_type const& a )
-    : IntVec(a), mOffset(0), mLastSkip(0) {}
+//    explicit ReadPath( alloc_type const& a )
+//    : IntVec(a), mOffset(0), mLastSkip(0) {}
 
-    void swap( ReadPath& that )
+    /*void swap( ReadPath& that )
     { using std::swap;
       swap(mOffset,that.mOffset);
       swap(mLastSkip,that.mLastSkip);
-      swap(static_cast<IntVec&>(*this),static_cast<IntVec&>(that)); }
+      swap(static_cast<std::vector<unsigned int>&>(*this),static_cast<std::vector<unsigned int>&>(that)); }
 
     void readFeudal( BinaryReader& reader, unsigned long dataLen, void* fixed )
     { reader.read(&mOffset); reader.read(&mLastSkip);
@@ -68,11 +68,14 @@ public:
 
     void readBinary( BinaryReader& reader )
     {  reader.read(&mOffset); reader.read(&mLastSkip);
-      static_cast<IntVec*>(this)->readBinary(reader); }
+      static_cast<IntVec*>(this)->readBinary(reader); }*/
+    void push_front(int const i){
+        this->insert(this->begin(),i);
+    }
     bool same_read(ReadPath const& rp){
         return (mOffset==rp.getOffset() and *this==rp);
     }
-    static size_t externalSizeof() { return 0ul; }
+    /*static size_t externalSizeof() { return 0ul; }
 
     friend std::ostream& operator<<( std::ostream& os, ReadPath const& rp )
     {
@@ -81,16 +84,17 @@ public:
 	      std::ostream_iterator<unsigned int>(os, " ") );
       os << "[NA]";
       return os;
-    }
+    }*/
 
 
 private:
     int mOffset;
     unsigned mLastSkip;
 };
-SELF_SERIALIZABLE(ReadPath);
+//SELF_SERIALIZABLE(ReadPath);
 
-typedef MasterVec<ReadPath> ReadPathVec;
+//typedef MasterVec<ReadPath> ReadPathVec;
+typedef std::vector<ReadPath> ReadPathVec;
 //extern template class OuterVec<ReadPath>;
 
 #endif /* READPATH_H_ */

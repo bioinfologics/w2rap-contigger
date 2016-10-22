@@ -1311,7 +1311,8 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": graph built" << std::endl;
         std::cout << Date() << ": pathing reads into graph..." << std::endl;
-        pPaths->clear().resize(reads.size());
+        pPaths->clear();
+        pPaths->resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         uint64_t pathed=0;
         uint64_t multipathed=0;
