@@ -192,7 +192,7 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": loading HVB and paths" << std::endl;
             if (dev_run=="pathfinder") {
                 BinaryReader::readFile(out_dir + "/pf_start.hbv", &hbvr);
-                //XXXpathsr.ReadAll(out_dir + "/pf_start.paths");
+                LoadReadPathVec(pathsr,(out_dir + "/pf_start.paths").c_str());
                 inv.clear();
                 hbvr.Involution(inv);
                 std::cout << Date() << ": making paths index for PathFinder" << std::endl;
@@ -205,10 +205,10 @@ int main(const int argc, const char * argv[]) {
                 Cleanup(hbvr, inv, pathsr);
                 std::cout << "Dumping" << std::endl;
                 BinaryWriter::writeFile(out_dir + "/pf_after_loops.hbv", hbvr);
-                //XXXpathsr.WriteAll(out_dir + "/pf_after_loops.paths");
+                WriteReadPathVec(pathsr,(out_dir + "/pf_after_loops.paths").c_str());
             } else {
                 BinaryReader::readFile(out_dir + "/pf_after_loops.hbv", &hbvr);
-                //XXXpathsr.ReadAll(out_dir + "/pf_after_loops.paths");
+                LoadReadPathVec(pathsr,(out_dir + "/pf_after_loops.paths").c_str());
                 inv.clear();
                 hbvr.Involution(inv);
             }
@@ -286,7 +286,7 @@ int main(const int argc, const char * argv[]) {
             //TODO: add contig fasta dump.
             std::cout << "Dumping contig graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
-            //XXXpathsr.WriteAll(out_dir + "/" + out_prefix + ".contig.paths");
+            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
             std::cout << "   DONE!" << std::endl;
             GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
 
@@ -340,7 +340,7 @@ int main(const int argc, const char * argv[]) {
             if (dump_all || to_step ==2){
                 std::cout << "Dumping small_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".small_K.hbv", hbv);
-                //XXXpaths.WriteAll(out_dir + "/" + out_prefix + ".small_K.paths");
+                WriteReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
                 std::cout << "   DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("SmallKDump") << std::endl;
             }
@@ -349,7 +349,7 @@ int main(const int argc, const char * argv[]) {
         if (from_step==3){
             std::cout << "Reading small_K graph and paths..." << std::endl;
             BinaryReader::readFile(out_dir + "/" + out_prefix + ".small_K.hbv", &hbv);
-            //XXXpaths.ReadAll(out_dir + "/" + out_prefix + ".small_K.paths");
+            LoadReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
             std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << std::endl << checkpoint_perf_time("SmallKLoad") << std::endl;
         }
@@ -371,7 +371,7 @@ int main(const int argc, const char * argv[]) {
             if (dump_all || to_step ==3){
                 std::cout << "Dumping large_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.hbv", hbvr);
-                //XXXpathsr.WriteAll(out_dir + "/" + out_prefix + ".large_K.paths");
+                WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
                 std::cout << "   DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("LargeKDump") << std::endl;
             }
@@ -383,7 +383,7 @@ int main(const int argc, const char * argv[]) {
     if (from_step==4){
         std::cout << "Reading large_K graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.hbv", &hbvr);
-        //XXXpathsr.ReadAll(out_dir + "/" + out_prefix + ".large_K.paths");
+        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
         std::cout << "   DONE!" << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKLoad") << std::endl;
     }
@@ -399,7 +399,7 @@ int main(const int argc, const char * argv[]) {
         if (dump_all || to_step ==4){
             std::cout << "Dumping large_K clean graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", hbvr);
-            //XXXpathsr.WriteAll(out_dir + "/" + out_prefix + ".large_K.clean.paths");
+            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
             std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("LargeKCleanDump") << std::endl;
         }
@@ -412,7 +412,7 @@ int main(const int argc, const char * argv[]) {
     if (from_step==5){
         std::cout << "Reading large_K clean graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", &hbvr);
-        //XXXpathsr.ReadAll(out_dir + "/" + out_prefix + ".large_K.clean.paths");
+        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
         std::cout << "   DONE!" << std::endl;
@@ -448,7 +448,7 @@ int main(const int argc, const char * argv[]) {
         if (dump_all || to_step ==5){
             std::cout << "Dumping large_K final graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", hbvr);
-            //XXXpathsr.WriteAll(out_dir + "/" + out_prefix + ".large_K.final.paths");
+            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
             std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("LargeKFinalDump") << std::endl;
         }
@@ -460,7 +460,7 @@ int main(const int argc, const char * argv[]) {
     if (from_step==6){
         std::cout << "Reading large_K final graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", &hbvr);
-        //XXXpathsr.ReadAll(out_dir + "/" + out_prefix + ".large_K.final.paths");
+        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
         std::cout << "   DONE!" << std::endl;
@@ -543,7 +543,7 @@ int main(const int argc, const char * argv[]) {
         if (dump_all || to_step == 6){
             std::cout << "Dumping contig graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
-            //XXXpathsr.WriteAll(out_dir + "/" + out_prefix + ".contig.paths");
+            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
             std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("ContigGraphDump") << std::endl;
         }
@@ -556,7 +556,7 @@ int main(const int argc, const char * argv[]) {
     if (from_step==7){
         std::cout << "Reading contig graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".contig.hbv", &hbvr);
-        //XXXpathsr.ReadAll(out_dir + "/" + out_prefix + ".contig.paths");
+        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
         paths_inv.clear();

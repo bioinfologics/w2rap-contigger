@@ -1136,7 +1136,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
 #pragma omp taskwait
         auto end1=entries1.end(),end2=entries2.end();
         auto itr1=entries1.begin(),itr2=entries2.begin();
-        std::ofstream batch_file(tmpdir+"/kmer_count_batch_"+std::to_string((int)batch),std::ios::out | std::ios::ate | std::ios::binary);
+        std::ofstream batch_file(tmpdir+"/kmer_count_batch_"+std::to_string((int)batch),std::ios::out | std::ios::trunc | std::ios::binary);
         KMerNodeFreq knf;
         while (itr1<end1 and itr2<end2){
             if (*itr1==*itr2){

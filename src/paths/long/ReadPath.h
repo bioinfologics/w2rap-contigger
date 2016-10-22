@@ -24,12 +24,12 @@
 class ReadPath : public std::vector<int>
 {
 public:
-    ReadPath() :  mOffset(0), mLastSkip(0) {}
+    ReadPath() :  mOffset(0) {}
     ReadPath( int offset )
-    : mOffset(offset), mLastSkip(0) {}
+    : mOffset(offset) {}
 
     ReadPath( int offset, const vec<int>& edge_list )
-    : mOffset(offset), mLastSkip(0) {
+    : mOffset(offset) {
 	this->assign(edge_list.begin(), edge_list.end());
     }
 
@@ -89,12 +89,18 @@ public:
 
 private:
     int mOffset;
-    unsigned mLastSkip;
+    //unsigned mLastSkip;
 };
 //SELF_SERIALIZABLE(ReadPath);
 
 //typedef MasterVec<ReadPath> ReadPathVec;
 typedef std::vector<ReadPath> ReadPathVec;
+
+void WriteReadPathVec(const ReadPathVec &rpv, const char * filename);
+
+
+void LoadReadPathVec(ReadPathVec &rpv, const char * filename);
+
 //extern template class OuterVec<ReadPath>;
 
 #endif /* READPATH_H_ */
