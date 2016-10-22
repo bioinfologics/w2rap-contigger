@@ -651,8 +651,8 @@ void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
            vec<HyperBasevector> &mhbp, const String &work_dir,
            vecbvec &new_stuff) {
      double clock = WallClockTime();
+     std::cout << Date() << ": patching" << std::endl;
      new_stuff.clear();
-     std::cout << Date() << ": patch reserving space" << std::endl; // XXXXXXXXXXXXXXXXXXXXXX
      new_stuff.reserve(std::accumulate(mhbp.begin(), mhbp.end(), 0ul,
                                        [](size_t nnn, HyperBasevector const &hbv) {
                                            nnn += hbv.E();
@@ -662,8 +662,6 @@ void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
                                                 nnn += itr->size() * itr2->size();
                                            return nnn;
                                        }));
-     std::cout << Date() << ": memory in use = " << MemUsageGBString() << std::endl;
-
      int K = hb.K();
      for (int bl = 0; bl < blobs.isize(); bl++) {
 
@@ -685,11 +683,7 @@ void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
           }
      }
 
-     std::cout << TimeSince(clock) << " used patching"
-               #ifdef __linux
-               << ", peak = " << PeakMemUsageGBString( )
-               #endif
-               << std::endl;
+     std::cout << Date() << ": "<< TimeSince(clock) << " used patching" << std::endl;
 }
 
 /*void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,

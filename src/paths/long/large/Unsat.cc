@@ -379,7 +379,4 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
           
      // Print clusters.
 
-     //BinaryWriter::writeFile( work_dir + "/clusters.bin", xs );
-     //PrintClusters( xs, mult, work_dir + "/clusters.txt" );
-     std::cout<<Date()<<": "<<xs.size( )<<" clusters after merging"<<std::endl;
      }

@@ -304,23 +304,19 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
     vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
     std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
-    std::cout << Date() << ": memory in use = " << MemUsageGBString()
-              #ifdef __linux
-              << ", peak = " << PeakMemUsageGBString( )
-              #endif
-              << std::endl;
     double clockp1 = WallClockTime();
-    int nblobs = LR.size(), dots_printed = 0, nprocessed = 0;
+    int nblobs = LR.size();
     std::atomic_uint_fast64_t solved(0);
 
     //TODO: check local variable usage, should be made minimal!!!
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
-    for (int bstart = 0; bstart < nblobs; bstart += 5000) {
+    const uint64_t BATCH_SIZE=5000;
+    for (int bstart = 0; bstart < nblobs; bstart += BATCH_SIZE) {
         #pragma omp parallel
         {
             #pragma omp for
-            for (int bl = bstart; bl < bstart + 5000; ++bl) {
+            for (int bl = bstart; bl < bstart + BATCH_SIZE; ++bl) {
                 if (bl >= nblobs) continue;
                 //First part: create the gbases and gquals. this is locked by memory accesses and very convoluted
                 const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
@@ -470,15 +466,10 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 }//---OMP TASK END---
             }
         }
-        std::cout << Date() << ": "<< bstart+5000 <<" blobs processed, paths found for " << solved << std::endl;
+
+        std::cout << Date() << ": "<< std::min(bstart+BATCH_SIZE,(uint64_t)nblobs) <<" blobs processed, paths found for " << solved << std::endl;
     }
-    std::cout << Date() << ": "<< nblobs <<" blobs processed, paths found for " << solved << std::endl;
-    std::cout << TimeSince(clockp1) << " spent in local assemblies, "
-              << "memory in use = " << MemUsageGBString()
-              #ifdef __linux
-              << ", peak = " << PeakMemUsageGBString( )
-              #endif
-              << std::endl;
+    std::cout << Date() << TimeSince(clockp1) << " spent in local assemblies." << std::endl;
 
     TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);

@@ -230,6 +230,9 @@ public:
     void insertEntry( Entry const& entry )
     { mKSet.insertUniqueValue(entry); }
 
+    void insertEntryNoLocking( Entry const& entry )
+    { mKSet.insertUniqueValueNoLocking(entry); }
+
     class BadKmerCountFunctor
     {
     public:
@@ -256,6 +259,9 @@ public:
     OCItr cend() { return mKSet.cend(); }
     OItr begin() { return mKSet.begin(); }
     OItr end() { return mKSet.end(); }
+
+    OItr mbegin() { return mKSet.begin(); }
+    OItr mend() { return mKSet.end(); }
 
     size_t size() const { return mKSet.size(); }
 

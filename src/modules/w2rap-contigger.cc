@@ -52,6 +52,8 @@ int main(const int argc, const char * argv[]) {
     std::string out_dir;
     std::string dev_run;
     unsigned int threads;
+    unsigned int minFreq;
+    unsigned int minQual;
     int max_mem;
     unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample;
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
@@ -95,8 +97,12 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
+        TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
+                                                 "minimum frequency for small k-mers on step 2 (default: 4)", false, 4, "int", cmd);
+        TCLAP::ValueArg<unsigned int> minQualArg("", "min_qual",
+                                                 "minimum quality for small k-mers on step 2 (default: 7)", false, 7, "int", cmd);
         TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
-                                                 "max number of read pairs to use in local assemblies on step 5(default: 200)", false, 200, "int", cmd);
+                                                    "max number of read pairs to use in local assemblies on step 5(default: 200)", false, 200, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
@@ -130,6 +136,8 @@ int main(const int argc, const char * argv[]) {
         dev_run=dev_runArg.getValue();
         dump_pf=dumpPFArg.getValue();
         pair_sample=pairSampleArg.getValue();
+        minFreq=minFreqArg.getValue();
+        minQual=minQualArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -321,7 +329,7 @@ int main(const int argc, const char * argv[]) {
         if (from_step<=2 and to_step>=2) {
             bool FILL_JOIN = False;
             std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
-            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, 7, 3, .75, 0, &hbv, &paths, small_K);
+            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir);
             if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
             FixPaths(hbv, paths); //TODO: is this even needed?
             if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
@@ -353,6 +361,7 @@ int main(const int argc, const char * argv[]) {
             const string run_head = out_dir + "/" + out_prefix;
 
             pathsr.resize(paths.size());
+
             RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
             if (dump_perf) perf_file << checkpoint_perf_time("Repath") << std::endl;
             std::cout << "Repathing to second graph DONE!" << std::endl << std::endl << std::endl;
@@ -408,7 +417,7 @@ int main(const int argc, const char * argv[]) {
     }
     if (from_step<=5 and to_step>=5) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
-
+        std::cout << Date() <<": inverting paths"<<std::endl;
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
         if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
 

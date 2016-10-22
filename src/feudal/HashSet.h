@@ -830,11 +830,17 @@ public:
     template <class Proc>
     void parallelForEachHHS( Proc proc,
                              size_t nThreads = getConfiguredNumThreads() ) const
-    { PPHHS ppHHS = mppHHS;
-      parallelFor(size_type(0),size_type(mCapacity),
-            [ppHHS,proc]( size_type idx ) mutable
-            { HHS const* pHHS = ppHHS[idx];
-              if ( pHHS ) proc(*pHHS); },nThreads); }
+    {
+        PPHHS ppHHS = mppHHS;
+        #pragma omp parallel
+        {   Proc p(proc);
+            #pragma omp for
+            for (size_type idx = 0; idx < mCapacity; idx++) {
+                HHS const *pHHS = ppHHS[idx];
+                if (pHHS) p(*pHHS);
+            }
+        }
+    }
 
 private:
     HHS* createHHS()

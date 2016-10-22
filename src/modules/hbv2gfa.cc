@@ -50,6 +50,7 @@ int main(const int argc, const char * argv[]) {
     std::cout << "Reading graph and paths..." << std::endl;
     BinaryReader::readFile(in_prefix + ".hbv", &hbv);
     hbv.Involution(inv);
+    TestInvolution(hbv,inv);
     paths.ReadAll(in_prefix + ".paths");
     std::cout << "   DONE!" << std::endl;
 
@@ -60,7 +61,7 @@ int main(const int argc, const char * argv[]) {
     for (int e=0;e<hbv.EdgeObjectCount();e++){
         auto eo=hbv.EdgeObject(e);
         total_size+=eo.size();
-        if (inv[e]<0 or inv[e]>e){
+        if (eo.getCanonicalForm()==CanonicalForm::FWD or eo.getCanonicalForm()==CanonicalForm::PALINDROME){
             canonical_size+=eo.size();
             e_sizes.push_back(eo.size());
         }

@@ -21,7 +21,7 @@ cmake -D CMAKE_CXX_COMPILER=g++ .
 make -j 4
 ```
 
-If you want to link a particular malloc library (jemalloc gives the best performance right now) set the `MALLOC_LIBRARY` variable during cmake:
+If you want to link a particular malloc library (jemalloc and intel's tbbmalloc have the best performance in our systems, but it is a small gain and varies from system to system, it can even turn into a loss, so beware) set the `MALLOC_LIBRARY` variable during cmake:
 
 ```
 git clone https://github.com/gonzalogacc/w2rap-contigger.git
@@ -30,9 +30,60 @@ cmake -D CMAKE_CXX_COMPILER=g++ -D MALLOC_LIBRARY=<path_to_library.so> .
 make -j 4
 ```
 
+*Note:* for older versions, due to inneficient allocation patterns, jemalloc used to have quite a positive impact in some scenarios, so if you're using any of the "6 binaries" versions, do link with jemalloc.
+
 ## Running w2rap-contigger
 
-You need to create a new directory for the intermediate and output files, then run each of the 6 steps sequentially.
+You need to create a new directory for the intermediate and output files.
+
+The current version of the w2rap contigger runs in 7 steps. By default the contigger will run each of these steps in order, not dumping unnecessary intermediate files. You can use the `--from_step` and `--to_step` options to start from and finish after particular steps. When run this way, the contigger will read the output files from the previous step and dump the necessary files for the next step to run. If you want to dump the output of every step you can use the `--dump_all 1` option.
+
+
+Step # | Description | Outputs
+:---|---|---
+1 | Read loading | binary-formatted reads
+2 | Build small k (k=60) graph from reads | small k graph, read paths
+3 | Build large K graph from small k graph and reads | large K graph, read paths
+4 | Clean large K graph | large K cleaned graph, read paths
+5 | Local assemblies on the large K graph "gaps" | large K completed graph, read paths
+6 | Graph simplification and PathFinder | large K simplified graph, read paths, raw/contig-lines GFA and fasta
+7 | PE-scale scaffolding across gaps in the large K graph | large K simplified graph with jumps, read paths, raw/lines GFA and fasta
+
+
+In most systems (specially most NUMA systems), using thread-local allocation will have a positive impact on performance. We are not aware of cases where it produced a significant negative impact, so we recommend setting the `MALLOC_PER_THREAD=1` variable.
+
+Example run with input bam file, K=260:
+
+```
+mkdir test_k260
+export MALLOC_PER_THREAD=1
+./w2rap_contigger -o test_k260 -p example -r example.bam -K 260
+```
+
+
+Example run with input fastq files, K=260 dumping all intermediate files:
+
+```
+mkdir test_k260
+export MALLOC_PER_THREAD=1
+./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260
+```
+
+Example run with input fastq files, K=260, runing step2 independently (this steps usually has usually the highest memory peak):
+
+```
+mkdir test_k260
+export MALLOC_PER_THREAD=1
+./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --to_step 1
+./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --from_step 2 --to_step 2
+./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --from_step 3
+```
+
+Your assembly will end up in the `a.lines.fasta` file.
+
+## Running **old versions** of w2rap-contigger
+
+Previous versions of the contigger have 6 binaries for the different steps of the assembly. You need to create a new directory for the intermediate and output files, then run each of the 6 steps sequentially.
 
 Each step requires the path to the output directory and a prefix. Step 01 also requires a path to the input reads (either a bam file or 2 fastq files separated by a ','). Step 02 accepts an optional -K parameter to change the K of the last stage DBG. All steps accept a -t flag to set the thread count for parallel sections, although not all sections will use all processors.
 

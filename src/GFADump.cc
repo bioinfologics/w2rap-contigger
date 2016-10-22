@@ -182,8 +182,10 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
                         for (auto edge: path) {
                             if (canonical_included[edge] == -1) {
                                 uint64_t ce = edge;
-                                if (hb.EdgeObject(inv[edge]) < hb.EdgeObject(edge)) {
+                                auto eo=hb.EdgeObject(edge);
+                                if (eo.getCanonicalForm()==CanonicalForm::REV) {
                                     ce = inv[edge];
+                                    eo=hb.EdgeObject(ce);
                                 }
                                 canonical_included[edge] = ce;
                                 canonical_included[inv[edge]] = ce;
@@ -225,8 +227,9 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
     Ofstream(gfa_raw_out,filename+"_raw.gfa");
     std::cout<<"Dumping edges"<<std::endl;
     for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
-        if (ei>inv[ei]) continue;
-        gfa_raw_out << "S\tedge" << ei <<"\t"<< hb.EdgeObject(ei)
+        auto eo=hb.EdgeObject(ei);
+        if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
+        gfa_raw_out << "S\tedge" << ei <<"\t"<< eo
         << "\tCL:z:"<< (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
          << std::endl;
 
@@ -254,7 +257,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
     }
     for (uint64_t e=0;e<next_edges.size();e++) {
         //only process the canonical edge
-        if (e>inv[e]) continue;
+        auto eo=hb.EdgeObject(e);
+        if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
 
         std::set<uint64_t> all_next;
         all_next.insert(next_edges[e].begin(),next_edges[e].end());
@@ -262,7 +266,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
         for (auto n:all_next){
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
-            uint64_t cn=(n<inv[n]?n:inv[n]);
+
+            uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm::REV ? n:inv[n]);
             if (cn<e) continue;
             gfa_raw_out << "L\tedge" << e << "\t+\tedge" << cn << (cn==n ? "\t+" : "\t-") << "\t0M" << std::endl;
         }
@@ -273,7 +278,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
         for (auto p:all_prev){
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
-            uint64_t cp=(p<inv[p]?p:inv[p]);
+            uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm::REV?p:inv[p]);
             if (cp<e) continue;
             gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t-" : "\t+") << "\t0M" << std::endl;
         }
