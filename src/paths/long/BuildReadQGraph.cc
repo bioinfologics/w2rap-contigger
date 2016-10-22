@@ -841,8 +841,9 @@ namespace
             ExtendReadPath mExtender(hbv,&toLeft,&toRight);
             qvec mQV;
 
-            #pragma omp for schedule(static,1)
-            for (auto readId=0;readId<reads.size();++readId){
+            #pragma omp for
+            for (auto batch_start=0;batch_start<reads.size();batch_start+=10000)
+            for (auto readId=batch_start;readId<batch_start+10000 and readId<reads.size();++readId){
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
                 // convert any seeds on hanging edges to gaps
@@ -1110,13 +1111,7 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
             for (auto i = 1; i < 101; i++) kff << i << ", " << hist[i] << std::endl;
             kff.close();
         }
-        std::cout << Date() << ": updating adjacencies" <<std::endl;
-        (*dict)->recomputeAdjacencies();
-        std::cout << Date() << ": dict finished" <<std::endl;
-    } else {
-        //std::cout << "createDictOMPRecursive (thread " << omp_get_thread_num() << ") from " << from << " to " << to
-        //          << ", FINISHED with " << kmer_list.size() << " kmers."
-        //          << std::endl;
+
     }
     return kmer_list;
 
@@ -1205,7 +1200,8 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
     current_kmer.count=0;
     uint64_t used = 0,not_used=0;
     uint64_t hist[256];
-    (*dict)=new BRQ_Dict(total_kmers_in_batches);
+    std::vector<KMerNodeFreq> kmerlist;
+
     while (finished_files<disk_batches) {
         //find minimum of the non-finished files
         uint min=0;
@@ -1217,7 +1213,8 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
         if (next_knf_from_dbf[min] > current_kmer) {
             ++hist[current_kmer.count];
             if (current_kmer.count>=minFreq) {
-                (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) current_kmer, current_kmer.kc));
+                //(*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) current_kmer, current_kmer.kc));
+                kmerlist.push_back(current_kmer);
                 used++;
             }
             else not_used++;
@@ -1234,7 +1231,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
     }
     ++hist[std::min(100,(int)current_kmer.count)];
     if (current_kmer.count>=minFreq) {
-        (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) current_kmer, current_kmer.kc));
+        kmerlist.push_back(current_kmer);
         used++;
     }
     else not_used++;
@@ -1242,15 +1239,14 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
         dbf[i].close();
         std::remove((tmpdir + "/kmer_count_batch_" +std::to_string((int)i)).c_str());
     }
+    (*dict)=new BRQ_Dict(kmerlist.size());
+    for (auto &knf: kmerlist) (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
     std::cout << Date() << ": " << used << " / " << used+not_used << " kmers with Freq >= " << minFreq << std::endl;
     if (""!=workdir) {
         std::ofstream kff(workdir + "/small_K.freqs");
         for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
         kff.close();
     }
-    std::cout << Date() << ": updating adjacencies" <<std::endl;
-    (*dict)->recomputeAdjacencies();
-    std::cout << Date() << ": dict finished" <<std::endl;
 
 }
 
@@ -1279,6 +1275,9 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
             createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, tmpdir, workdir);
         }
     }
+    std::cout << Date() << ": updating adjacencies" <<std::endl;
+    pDict->recomputeAdjacencies();
+    std::cout << Date() << ": dict finished" <<std::endl;
     std::cout << Date() << ": finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
@@ -1305,6 +1304,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": graph built" << std::endl;
+
     }
     else
     {
