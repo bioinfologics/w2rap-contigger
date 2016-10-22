@@ -842,8 +842,7 @@ namespace
             qvec mQV;
 
             #pragma omp for
-            for (auto batch_start=0;batch_start<reads.size();batch_start+=10000)
-            for (auto readId=batch_start;readId<batch_start+10000 and readId<reads.size();++readId){
+            for (auto readId=0;readId<reads.size();++readId){
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
                 // convert any seeds on hanging edges to gaps
