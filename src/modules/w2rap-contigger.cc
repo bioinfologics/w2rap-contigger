@@ -161,6 +161,9 @@ int main(const int argc, const char * argv[]) {
         return 1;
     }
 
+    if (omp_get_proc_bind()==omp_proc_bind_false) std::cout<< "WARNING: you are running the code with omp_proc_bind_false, parallel performance may suffer"<<std::endl;
+    if (omp_get_proc_bind()==omp_proc_bind_master) std::cout<< "WARNING: you are running the code with omp_proc_bind_master, parallel performance may suffer"<<std::endl;
+
     //========== Main Program Begins ======
     vecbvec bases;
     VecPQVec quals;
