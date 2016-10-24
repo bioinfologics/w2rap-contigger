@@ -155,6 +155,7 @@ add_library(base_libs OBJECT
         src/system/file/FileReader.cc
         src/system/file/FileWriter.cc
         src/system/file/TempFile.cc
+        src/system/gzstream/gzstream.C
         src/util/Logger.cc
         src/fastg/FastgGraph.cc
         src/graphics/BasicGraphics.cc

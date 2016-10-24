@@ -12,6 +12,7 @@
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "feudal/PQVec.h"
+#include "system/gzstream/gzstream.h"
 
 class InputFileReader{
 public:
@@ -20,11 +21,12 @@ public:
     vecbvec bases;
     VecPQVec quals;
 
-    bool get_fastq_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record);
-    bool get_bam_record();
+    bool InputFileReader::get_fastq_record(std::basic_istream<char>& in, std::tuple<std::string, std::string, std::string> *record);
+    bool InputFileReader::get_bam_record();
     int InputFileReader::read_binary(std::string workdir, std::string prefix);
     int InputFileReader::write_binary(std::string workdir, std::string prefix);
-
+    bool InputFileReader::FilesExist(std::vector<std::string> infiles);
+    bool InputFileReader::IsGz(std::string filename);
 };
 
 class PeData: public InputFileReader{
@@ -33,9 +35,8 @@ public:
 
 private:
   std::string filename_string;
-  std::vector<std::string> infiles_pairs;
-
-  int read_files(vecbvec *Reads, VecPQVec *Quals);
+  std::vector<std::string> infiles_pair;
+  int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
 
 void ExtractReads( String reads,
