@@ -15,15 +15,27 @@
 
 class InputFileReader{
 public:
-    InputFileReader(const std::string reads_filename);
-    bool get_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record);
-    int read_file(vecbvec *Reads, VecPQVec *Quals);
+    InputFileReader();
+
+    vecbvec bases;
+    VecPQVec quals;
+
+    bool get_fastq_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record);
+    bool get_bam_record();
+    int InputFileReader::read_binary(std::string workdir, std::string prefix);
+    int InputFileReader::write_binary(std::string workdir, std::string prefix);
+
+};
+
+class PeData: public InputFileReader{
+public:
+  PeData(std::string reads_filename);
 
 private:
-    std::string filename_string;
-    std::vector<std::string> infiles_pairs;
-//    vecbasevector& pReads;
-//    VecPQVec& pQuals;
+  std::string filename_string;
+  std::vector<std::string> infiles_pairs;
+
+  int read_files(vecbvec *Reads, VecPQVec *Quals);
 };
 
 void ExtractReads( String reads,

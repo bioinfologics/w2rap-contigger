@@ -18,7 +18,10 @@
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
 
-bool InputFileReader::get_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record){
+InputFileReader::InputFileReader() {
+}
+
+bool InputFileReader::get_fastq_record(std::ifstream& in, std::tuple<std::string, std::string, std::string> *record){
 
      std::string nullstr;
      std::string header;
@@ -27,47 +30,51 @@ bool InputFileReader::get_record(std::ifstream& in, std::tuple<std::string, std:
 
      getline(in, header);
      if (in.fail()) {
-//          std::cout <<" Something wrong with thte record " << std::endl;
           return false;
      }
 
      getline(in, seq);
-//     if (in.fail()) {
-//          std::cout << "\nSee incomplete record in\n" << std::endl;
-//          Scram(1);
-//     }
 
      // Skip line.
      getline(in, nullstr);
-//     if (in.fail()) {
-//          std::cout << "\nSee incomplete record in.\n" << std::endl;
-//          Scram(1);
-//     }
 
      // Fetch quals.
      getline(in, qual);
-//     if (in.fail()) {
-//          std::cout << "\nSee incomplete record in.\n" << std::endl;
-//          Scram(1);
-//     }
-//     if (seq.size() != qual.size()) {
-//          std::cout << "\n1: " << seq.size() << " bases "
-//          << ", " << seq.size() << " quals" << std::endl;
-//          Scram(1);
-//     }
-//     std::cout<<header.size()<< " "<<seq.size()<<" "<<qual.size()<<std::endl;
+
      std::get<0>(*record) = header;
      std::get<1>(*record) = seq;
      std::get<2>(*record) = qual;
      return true;
 }
 
-InputFileReader::InputFileReader(const std::string pfilename_string) {
+bool InputFileReader::get_bam_record(){
+//               bool const UNIQUIFY_NAMES = true;
+//               vecString *pxnames = 0;
+//               BAMReader bamReader(False /*USE_PF_ONLY*/,
+//                                   UNIQUIFY_NAMES,
+//                                   1, //infiles_meta[g].frac, //TODO: check this fraction, i think is the fraction of reads to use
+//                                   long(-1/*READS_TO_USE*/)); //TODO: Check this also, i think this is not necesary, never used
+//               bamReader.readBAM(fn, &xbases, &xquals, pxnames);
+     return true;
+}
 
-     // Parse, check and load files.  This is the main extraction path.
+int InputFileReader::read_binary(std::string out_dir, std::string prefix){
+     // thead the fastb &qualp pair
+     this->bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+     this->quals.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+}
 
-     this->filename_string = pfilename_string;
+int InputFileReader::write_binary(std::string out_dir, std::string prefix){
+     // Write files fast & qualb
+     this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+     this->quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+}
 
+PeData::PeData(std::string preads_filename){
+     //
+     //TODO: check zipped files (byte1 == 0x1f) && (byte2 == 0x8b)
+
+     this->filename_string = preads_filename;
      std::vector<std::string> infiles;
      infiles = tokenize(filename_string.c_str(), ',');
 
@@ -78,16 +85,16 @@ InputFileReader::InputFileReader(const std::string pfilename_string) {
                std::cout << "\nFailed to find file " << fn << ".\n" << std::endl;
                Scram(1);
           }
-          std::vector<std::string> suf = {".bam", ".fastq", ".fastq.gz", ".fq", ".fq.gz", ".fastb"};
+          std::vector<std::string> suf = {".bam", ".fastq", ".fastq.gz", ".fq", ".fq.gz"};
           Bool ok = False;
           for (auto s : suf)
                if (fn.find(s) != std::string::npos) ok = True;
           if (!ok) {
-               std::cout << "\nInput file " << fn << " has unsupported type.\n"
-               << std::endl;
+               std::cout << "\nInput file " << fn << " has unsupported type.\n" << std::endl;
                Scram(1);
           }
      }
+     std::cout << Date() << ": reading " << this->infiles_pairs.size() << " files (which may take a while)" << std::endl;
 
      for (auto a: infiles) {
           // TODO: [GONZA] add check for proper pairing here, headers, numbers and pairs!!!!
@@ -96,31 +103,18 @@ InputFileReader::InputFileReader(const std::string pfilename_string) {
                this->infiles_pairs.push_back(a);
           }
      }
+
+     auto ec = this->read_files(&bases, &quals);
 }
 
-int InputFileReader::read_file(vecbvec *Reads, VecPQVec *Quals){
+int PeData::read_files(vecbvec *Reads, VecPQVec *Quals){
      // Read the files.
      double lclock = WallClockTime();
 
      vecbasevector& pReads = (*Reads);
      VecPQVec& pQuals = (*Quals);
 
-     std::cout << Date() << ": reading " << this->infiles_pairs.size()
-     << " files (which may take a while)" << std::endl;
-
-          // Parse bam files.
-
-//          if (std::string::npos != fn.find(".bam")) {
-//               bool const UNIQUIFY_NAMES = true;
-//               vecString *pxnames = 0;
-//               BAMReader bamReader(False /*USE_PF_ONLY*/,
-//                                   UNIQUIFY_NAMES,
-//                                   1, //infiles_meta[g].frac, //TODO: check this fraction, i think is the fraction of reads to use
-//                                   long(-1/*READS_TO_USE*/)); //TODO: Check this also, i think this is not necesary, never used
-//               bamReader.readBAM(fn, &xbases, &xquals, pxnames);
-//          }
-
-          // Parse paired fastq files.
+     // Parse bam files.
 
      if (this->infiles_pairs.size() == 2) {
           const std::string fn1 = this->infiles_pairs[0];
@@ -147,8 +141,8 @@ int InputFileReader::read_file(vecbvec *Reads, VecPQVec *Quals){
           while (1) {
                // TODO: [GONZA] add the checks
 
-               bool r1_status = this->get_record(in1, &record1);
-               bool r2_status = this->get_record(in2, &record2);
+               bool r1_status = this->get_fastq_record(in1, &record1);
+               bool r2_status = this->get_fastq_record(in2, &record2);
 
                if (!r1_status || !r2_status){
                     break;
@@ -156,7 +150,6 @@ int InputFileReader::read_file(vecbvec *Reads, VecPQVec *Quals){
 
                b1.SetFromString(std::get<1>(record1));
                b2.SetFromString(std::get<1>(record2));
-
 
                pReads.push_back(b1);
                pReads.push_back(b2);
