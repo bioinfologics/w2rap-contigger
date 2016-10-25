@@ -316,7 +316,7 @@ int main(const int argc, const char * argv[]) {
         if (dump_all || to_step<6) {
             std::cout << "Dumping reads in fastb/qualp format..." << std::endl;
 
-            pe_data.write_binary(out_dir, "");
+            pe_data.write_binary(out_dir, "pe_");
 //            bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
 //            quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
 

@@ -15,7 +15,7 @@
 #include "system/gzstream/gzstream.h"
 
 class InputFileReader{
-public:
+  public:
     InputFileReader();
 
     vecbvec bases;
@@ -27,18 +27,31 @@ public:
     int InputFileReader::write_binary(std::string workdir, std::string prefix);
     bool InputFileReader::FilesExist(std::vector<std::string> infiles);
     bool InputFileReader::IsGz(std::string filename);
+    std::string filename_string;
+
 };
 
 class PeData: public InputFileReader{
-public:
-  PeData(std::string reads_filename);
+  public:
+    PeData(std::string reads_filename);
 
-private:
-  std::string filename_string;
-  std::vector<std::string> infiles_pair;
-  int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
+  private:
+    std::vector<std::string> infiles_pair;
+    int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
 
+class TenXData: public InputFileReader{
+  public:
+    TenXData(std::string reads_filename);
+    vecbvec rIndexs;
+    int TenXData::read_binary(std::string out_dir, std::string prefix);
+    int TenXData::write_binary(std::string out_dir, std::string prefix);
+
+  private:
+    std::vector<std::string> infiles_pair;
+    int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals, vecbvec *rIndexs);
+
+};
 void ExtractReads( String reads,
                    const String& work_dir, vecbvec* pReads, VecPQVec* quals );
 
