@@ -119,17 +119,12 @@ bool InputFileReader::IsGz(std::string filename){
      return false;
 }
 
-// -------------- Pe Data -------------
-PeData::PeData(std::string reads_filename){
-     //
+bool InputFileReader::ProduceValidPair(std::string filename_string){
+     // Get the filename string and produce a valid pair of files to process
 
-     this->filename_string = reads_filename;
      std::vector<std::string> infiles;
      infiles = tokenize(filename_string.c_str(), ',');
 
-     std::cout << Date() << ": finding input files" << std::endl;
-
-     // Check that files are OK.
      if (!this->FilesExist(infiles)) Scram(1);
 
      std::cout << Date() << ": reading " << this->infiles_pair.size() << " files (which may take a while)" << std::endl;
@@ -144,6 +139,20 @@ PeData::PeData(std::string reads_filename){
           std::cout << "Error there are " << this->infiles_pair.size() << "files in the list but there should be 2, exiting" << std::endl;
           Scram(1);
      }
+
+     return true;
+}
+
+// -------------- Pe Data -------------
+PeData::PeData(std::string reads_filename){
+     //
+
+     this->filename_string = reads_filename;
+
+
+     std::cout << Date() << ": finding input files" << std::endl;
+
+     if (!ProduceValidPair(this->filename_string)) Scram(1);
 
      const std::string fn1 = this->infiles_pair[0];
      const std::string fn2 = this->infiles_pair[1];
@@ -230,32 +239,104 @@ int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
      return 0;
 }
 
+// -------------- Mp Data -------------
+MpData::MpData(std::string reads_filename){
+
+     this->filename_string = reads_filename;
+     if (!ProduceValidPair(this->filename_string)) Scram(1);
+
+     const std::string fn1 = this->infiles_pair[0];
+     const std::string fn2 = this->infiles_pair[1];
+
+     // check if the file is gzip
+     if (this->IsGz(fn1) && this->IsGz(fn2)){
+          std::cout << "File1 is gzipped changing stream" << std::endl;
+          igzstream in1(fn1.c_str());
+          igzstream in2(fn2.c_str());
+          auto ec = this->read_files(in1, in2, &bases, &quals);
+     } else {
+          std::ifstream in1(fn1);
+          std::ifstream in2(fn2);
+          auto ec = this->read_files(in1, in2, &bases, &quals);
+     }
+
+}
+
+int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals){
+     // Read the files.
+     double lclock = WallClockTime();
+
+     vecbasevector& pReads = (*Reads);
+     VecPQVec& pQuals = (*Quals);
+
+     // Buffer for quality score compression in batches.
+     const int qbmax = 10000000;
+     std::vector<qvec> qualsbuf;
+     MempoolOwner<char> alloc;
+     for (int i = 0; i < qbmax; i++)
+          qualsbuf.emplace_back(alloc);
+     int qbcount = 0;
+
+     // Go through the input files.
+     std::tuple<std::string, std::string, std::string> record1;
+     std::tuple<std::string, std::string, std::string> record2;
+
+     basevector b1;
+     basevector b2;
+     while (1) {
+          // TODO: [GONZA] add the checks
+
+          bool r1_status = this->get_fastq_record(in1, &record1);
+          bool r2_status = this->get_fastq_record(in2, &record2);
+
+          if (!r1_status || !r2_status){
+               break;
+          }
+
+          b1.SetFromString(std::get<1>(record1));
+          b2.SetFromString(std::get<1>(record2));
+
+          pReads.push_back(b1);
+          pReads.push_back(b2);
+
+          // Save.
+          auto qc1 = std::get<2>(record1);
+          auto qc2 = std::get<2>(record2);
+
+          qvec &q1 = qualsbuf[qbcount++];
+          qvec &q2 = qualsbuf[qbcount++];
+
+          q1.resize(qc1.size()), q2.resize(qc2.size());
+          if (qbcount == qbmax) {
+               convertAppendParallel(qualsbuf.begin(),
+                                     qualsbuf.begin() + qbcount, pQuals);
+               qbcount = 0;
+          }
+          for (int i = 0; i < qc1.size(); i++)
+               q1[i] = qc1[i] - 33;
+          for (int i = 0; i < qc2.size(); i++)
+               q2[i] = qc2[i] - 33;
+     }
+     convertAppendParallel(qualsbuf.begin(),
+                           qualsbuf.begin() + qbcount, pQuals);
+
+     // Report stats.
+
+     std::cout << Date() << ": data extraction complete"
+     #ifdef __linux
+     << ", peak = " << PeakMemUsageGBString( )
+     #endif
+     << std::endl;
+     std::cout << TimeSince(lclock) << " used extracting reads" << std::endl;
+     return 0;
+}
+
 // -------------- 10X Data -------------
 TenXData::TenXData(std::string reads_filename){
      //
 
      this->filename_string = reads_filename;
-     std::vector<std::string> infiles;
-     infiles = tokenize(filename_string.c_str(), ',');
-
-     std::cout << Date() << ": finding input files" << std::endl;
-
-     // Check that files are OK.
-     if (!this->FilesExist(infiles)) Scram(1);
-
-     std::cout << Date() << ": reading " << this->infiles_pair.size() << " files (which may take a while)" << std::endl;
-     for (auto a: infiles) {
-          // TODO: [GONZA] add check for proper pairing here, headers, numbers and pairs!!!!
-          if (a.find(".fastq") != std::string::npos) {
-               std::cout << a << std::endl;
-               this->infiles_pair.push_back(a);
-          }
-     }
-
-     if (this->infiles_pair.size() != 2) {
-          std::cout << "Error there are " << this->infiles_pair.size() << "files in the list but there should be 2, exiting" << std::endl;
-          Scram(1);
-     }
+     if (!ProduceValidPair(this->filename_string)) Scram(1);
 
      const std::string fn1 = this->infiles_pair[0];
      const std::string fn2 = this->infiles_pair[1];

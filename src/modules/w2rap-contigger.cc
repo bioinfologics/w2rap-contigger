@@ -49,6 +49,9 @@ int main(const int argc, const char * argv[]) {
 
     std::string out_prefix;
     std::string pe_read_files;
+    std::string mp_read_files;
+    std::string tenx_read_files;
+    std::string pb_read_files;
     std::string out_dir;
     std::string dev_run;
     unsigned int threads;
@@ -74,8 +77,19 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> max_memArg("m", "max_mem",
              "Maximum memory in GB (soft limit, impacts performance, default 10000)", false, 10000, "int", cmd);
 
+        // Read input types
         TCLAP::ValueArg<std::string> pe_read_filesArg("P", "pe_read_files",
-             "Input sequences (reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
+                                                      "Input sequences (pe reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> mp_read_filesArg("M", "mp_read_files",
+                                                      "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> tenx_read_filesArg("X", "tenx_read_files",
+                                                      "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> pb_read_filesArg("B", "pb_read_files",
+                                                      "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
 
         TCLAP::ValueArg<std::string> out_dirArg("o", "out_dir", "Output dir path", true, "", "string", cmd);
         TCLAP::ValueArg<std::string> out_prefixArg("p", "prefix",
@@ -121,7 +135,12 @@ int main(const int argc, const char * argv[]) {
         // Get the value parsed by each arg.
         out_dir = out_dirArg.getValue();
         out_prefix = out_prefixArg.getValue();
+
         pe_read_files = pe_read_filesArg.getValue();
+        mp_read_files = mp_read_filesArg.getValue();
+        tenx_read_files = tenx_read_filesArg.getValue();
+        pb_read_files = pb_read_filesArg.getValue();
+
         threads = threadsArg.getValue();
         max_mem = max_memArg.getValue();
         large_K = large_KArg.getValue();
