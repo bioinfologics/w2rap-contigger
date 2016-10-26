@@ -28,8 +28,11 @@ class InputFileReader{
     bool InputFileReader::FilesExist(std::string infiles);
     bool InputFileReader::FilesExist(std::vector<std::string> infiles);
     bool InputFileReader::IsGz(std::string filename);
-    std::string filename_string;
+    bool InputFileReader::ProduceValidPair(std::string rfilename_string);
 
+    // To hold files
+    std::string filename_string;
+    std::vector<std::string> infiles_pair;
 };
 
 class PeData: public InputFileReader{
@@ -37,8 +40,15 @@ class PeData: public InputFileReader{
     PeData(std::string reads_filename);
 
   private:
-    std::vector<std::string> infiles_pair;
     int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
+};
+
+class MpData: public InputFileReader{
+public:
+    MpData(std::string reads_filename);
+
+private:
+    int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
 
 class TenXData: public InputFileReader{
@@ -49,7 +59,6 @@ class TenXData: public InputFileReader{
     int TenXData::write_binary(std::string out_dir, std::string prefix);
 
   private:
-    std::vector<std::string> infiles_pair;
     int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals, vecbvec *rIndexs);
 
 };
@@ -63,7 +72,14 @@ public:
 private:
     int PacBioData::read_file(std::basic_istream<char>& in1, vecbvec *Reads, VecPQVec *Quals);
 };
+
 void ExtractReads( String reads,
                    const String& work_dir, vecbvec* pReads, VecPQVec* quals );
 
+
+class InputDataMag{
+public:
+    InputDataMag(std::string config_file_path);
+    std::map<std::string, InputFileReader> mag;
+};
 #endif

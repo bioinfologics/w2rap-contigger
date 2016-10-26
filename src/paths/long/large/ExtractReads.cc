@@ -23,6 +23,7 @@ InputFileReader::InputFileReader() {
 }
 
 bool InputFileReader::get_fastq_record(std::basic_istream<char>& in, std::tuple<std::string, std::string, std::string> *record){
+     // Get a record from the fastq file
 
      std::string nullstr;
      std::string header;
@@ -54,6 +55,7 @@ bool InputFileReader::get_fastq_record(std::basic_istream<char>& in, std::tuple<
 }
 
 bool InputFileReader::get_bam_record(){
+     // This is to read bam files (TODO)
 //               bool const UNIQUIFY_NAMES = true;
 //               vecString *pxnames = 0;
 //               BAMReader bamReader(False /*USE_PF_ONLY*/,
@@ -65,19 +67,19 @@ bool InputFileReader::get_bam_record(){
 }
 
 int InputFileReader::read_binary(std::string out_dir, std::string prefix){
-     // thead the fastb &qualp pair
+     // Read the fastb &qualp pair
      this->bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
      this->quals.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
 }
 
 int InputFileReader::write_binary(std::string out_dir, std::string prefix){
-     // Write files fast & qualb
+     // Write files fastb & qualb
      this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
      this->quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
 }
 
 bool InputFileReader::FilesExist(std::string infiles){
-     // Check if files exist and are accesible
+     // Check if single file exist and is accessible
      if (!IsRegularFile(infiles)) {
           std::cout << "\nFailed to find file " << infiles << ".\n" << std::endl;
           return false;
@@ -94,7 +96,7 @@ bool InputFileReader::FilesExist(std::string infiles){
 }
 
 bool InputFileReader::FilesExist(std::vector<std::string> infiles){
-     // Check if files exist and are accesible
+     // Check if file exist, is read type and are accessible
      for (auto fn: infiles) {
           if (!IsRegularFile(fn)) {
                std::cout << "\nFailed to find file " << fn << ".\n" << std::endl;
@@ -113,6 +115,7 @@ bool InputFileReader::FilesExist(std::vector<std::string> infiles){
 }
 
 bool InputFileReader::IsGz(std::string filename){
+     // Return true if the file is .gz
      if(filename.substr( filename.length() - 3 ) == ".gz"){
           return true;
      }
@@ -120,7 +123,7 @@ bool InputFileReader::IsGz(std::string filename){
 }
 
 bool InputFileReader::ProduceValidPair(std::string filename_string){
-     // Get the filename string and produce a valid pair of files to process
+     // Get the filename string from the arguments and produce a valid pair of files to process
 
      std::vector<std::string> infiles;
      infiles = tokenize(filename_string.c_str(), ',');
@@ -526,4 +529,33 @@ int PacBioData::read_binary(std::string out_dir, std::string prefix){
 
 int PacBioData::write_binary(std::string out_dir, std::string prefix){
      this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+}
+
+// -------------- To read the data from the configuration file
+InputDataMag::InputDataMag(std::string config_file_path){
+     // Open and read the configuration file
+     std::ifstream cf(config_file_path);
+
+     std::string line;
+     while(getline(cf, line)){
+          std::cout << line << std::endl;
+          std::vector<std::string> sline = tokenize(line.c_str(), ' ');
+          if (sline[1] == "pe"){
+               std::cout << "Lib: " << sline[0] << " is a pe library in " << sline[2] << std::endl;
+               PeData ped(sline[2]);
+               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+          } else if (sline[1] == "mp") {
+               std::cout << "Lib: " << sline[0] << " is a mp library in " << sline[2] << std::endl;
+               MpData ped(sline[2]);
+               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+          } else if (sline[1] == "10x") {
+               std::cout << "Lib: " << sline[0] << " is a 10x library in " << sline[2] << std::endl;
+               TenXData ped(sline[2]);
+               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+          } else if (sline[1] == "pb") {
+               std::cout << "Lib: " << sline[0] << " is a pb library in " << sline[2] << std::endl;
+               PacBioData ped(sline[2]);
+               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+          }
+     }
 }

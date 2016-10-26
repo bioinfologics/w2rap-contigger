@@ -48,6 +48,7 @@ std::string checkpoint_perf_time(const std::string section_name){
 int main(const int argc, const char * argv[]) {
 
     std::string out_prefix;
+    std::string config_file_path;
     std::string pe_read_files;
     std::string mp_read_files;
     std::string tenx_read_files;
@@ -78,6 +79,9 @@ int main(const int argc, const char * argv[]) {
              "Maximum memory in GB (soft limit, impacts performance, default 10000)", false, 10000, "int", cmd);
 
         // Read input types
+        TCLAP::ValueArg<std::string> config_file_pathArg("C", "config_file_path",
+                                                      "Input sequences (pe reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
+
         TCLAP::ValueArg<std::string> pe_read_filesArg("P", "pe_read_files",
                                                       "Input sequences (pe reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
 
@@ -136,6 +140,7 @@ int main(const int argc, const char * argv[]) {
         out_dir = out_dirArg.getValue();
         out_prefix = out_prefixArg.getValue();
 
+        config_file_path = config_file_pathArg.getValue();
         pe_read_files = pe_read_filesArg.getValue();
         mp_read_files = mp_read_filesArg.getValue();
         tenx_read_files = tenx_read_filesArg.getValue();
@@ -177,7 +182,6 @@ int main(const int argc, const char * argv[]) {
     //========== Main Program Begins ======
     // This has to be according to the input
     PeData pe_data(pe_read_files);
-
 
 
     vec<String> subsam_names = {"C"};
@@ -322,12 +326,8 @@ int main(const int argc, const char * argv[]) {
     {
         std::cout << "--== Step 1: Reading input files ==--" << std::endl;
 
-//        vecbvec* bases = pe_data.bases;
-//        VecPQVec* quals = pe_data.quals;
-
-//        InputFileReader ee (read_files);
-//        ee.read_file(&bases, &quals);
-//        PeFileReader(read_files, &bases, &quals);
+        // Read all data form the configuration file
+        InputDataMag dataMag(config_file_path);
 
         std::cout << "Reading input files DONE!" << std::endl << std::endl << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("ExtractReads") << std::endl;
