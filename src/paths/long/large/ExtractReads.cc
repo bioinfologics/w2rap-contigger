@@ -66,25 +66,25 @@ bool InputFileReader::get_bam_record(){
      return true;
 }
 
-int InputFileReader::read_binary(std::string out_dir, std::string prefix){
+int InputFileReader::read_binary(std::string out_dir, std::string library_name){
      // Read the fastb &qualp pair
-     this->bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
-     this->quals.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+     this->bases.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
+     this->quals.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.qualp");
 }
 
-int InputFileReader::write_binary(std::string out_dir, std::string prefix){
+int InputFileReader::write_binary(std::string out_dir, std::string library_name){
      // Write files fastb & qualb
-     this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
-     this->quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+     this->bases.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
+     this->quals.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.qualp");
 }
 
 bool InputFileReader::FilesExist(std::string infiles){
      // Check if single file exist and is accessible
      if (!IsRegularFile(infiles)) {
-          std::cout << "\nFailed to find file " << infiles << ".\n" << std::endl;
+          std::cout << "\nFailed to find file " << infiles << "\n" << std::endl;
           return false;
      }
-     std::vector<std::string> suf = {".bam", ".fastq", ".fastq.gz", ".fq", ".fq.gz"};
+     std::vector<std::string> suf = {".bam", ".fastb", ".qualp", ".fastq", ".fastq.gz", ".fq", ".fq.gz"};
      Bool ok = False;
      for (auto s : suf)
           if (infiles.find(s) != std::string::npos) ok = True;
@@ -146,8 +146,19 @@ bool InputFileReader::ProduceValidPair(std::string filename_string){
      return true;
 }
 
+bool InputFileReader::ReadBinaryIfExist(std::string out_dir, std::string library_name){
+     // check if
+     if (this->FilesExist(out_dir + "/" + library_name +"_frag_reads_orig.fastb") && this->FilesExist(out_dir + "/" + library_name +"_frag_reads_orig.qualp")){
+          std::cout << "The file " << out_dir + "/" + library_name +"_frag_reads_orig.fastb was already there, using that... " << std::endl;
+          this->read_binary(out_dir, library_name);
+          return true;
+     } else {
+          return false;
+     }
+}
+
 // -------------- Pe Data -------------
-PeData::PeData(std::string reads_filename){
+PeData::PeData(std::string out_dir, std::string library_name, std::string reads_filename){
      //
 
      this->filename_string = reads_filename;
@@ -160,8 +171,10 @@ PeData::PeData(std::string reads_filename){
      const std::string fn1 = this->infiles_pair[0];
      const std::string fn2 = this->infiles_pair[1];
 
-     // check if the file is gzip
-     if (this->IsGz(fn1) && this->IsGz(fn2)){
+     // Check if the file was already there, or gz or plain fq.
+     if (this->ReadBinaryIfExist(out_dir, library_name)){
+          std::cout<< "Files read from fastb..." << std::endl;
+     } else if (this->IsGz(fn1) && this->IsGz(fn2)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
@@ -243,7 +256,7 @@ int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
 }
 
 // -------------- Mp Data -------------
-MpData::MpData(std::string reads_filename){
+MpData::MpData(std::string out_dir, std::string library_name, std::string reads_filename){
 
      this->filename_string = reads_filename;
      if (!ProduceValidPair(this->filename_string)) Scram(1);
@@ -252,7 +265,9 @@ MpData::MpData(std::string reads_filename){
      const std::string fn2 = this->infiles_pair[1];
 
      // check if the file is gzip
-     if (this->IsGz(fn1) && this->IsGz(fn2)){
+     if (this->ReadBinaryIfExist(out_dir, library_name)){
+          std::cout<< "Files read from fastb..." << std::endl;
+     } else if (this->IsGz(fn1) && this->IsGz(fn2)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
@@ -335,7 +350,7 @@ int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
 }
 
 // -------------- 10X Data -------------
-TenXData::TenXData(std::string reads_filename){
+TenXData::TenXData(std::string out_dir, std::string library_name, std::string reads_filename){
      //
 
      this->filename_string = reads_filename;
@@ -345,7 +360,9 @@ TenXData::TenXData(std::string reads_filename){
      const std::string fn2 = this->infiles_pair[1];
 
      // check if the file is gzip
-     if (this->IsGz(fn1) && this->IsGz(fn2)){
+     if (this->ReadBinaryIfExist(out_dir, library_name)){
+          std::cout<< "Files read from fastb..." << std::endl;
+     } else if (this->IsGz(fn1) && this->IsGz(fn2)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
@@ -445,7 +462,7 @@ int TenXData::write_binary(std::string out_dir, std::string prefix){
 }
 
 // -------------- PacBio -------------
-PacBioData::PacBioData(std::string read_filename){
+PacBioData::PacBioData(std::string out_dir, std::string library_name, std::string read_filename){
      //
 
      this->filename_string = read_filename;
@@ -457,7 +474,9 @@ PacBioData::PacBioData(std::string read_filename){
      const std::string fn = read_filename;
 
      // check if the file is gzip
-     if (this->IsGz(fn)){
+     if (this->ReadBinaryIfExist(out_dir, library_name)){
+          std::cout<< "Files read from fastb..." << std::endl;
+     } else if (this->IsGz(fn)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in(fn.c_str());
           auto ec = this->read_file(in, &bases, &quals);
@@ -523,39 +542,36 @@ int PacBioData::read_file(std::basic_istream<char>& in1, vecbvec *Reads, VecPQVe
      return 0;
 }
 
-int PacBioData::read_binary(std::string out_dir, std::string prefix){
-     this->bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+int PacBioData::read_binary(std::string out_dir, std::string library_name){
+     this->bases.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
 }
 
-int PacBioData::write_binary(std::string out_dir, std::string prefix){
-     this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+int PacBioData::write_binary(std::string out_dir, std::string library_name){
+     this->bases.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
 }
 
 // -------------- To read the data from the configuration file
-InputDataMag::InputDataMag(std::string config_file_path){
+InputDataMag::InputDataMag(std::string config_file_path, std::string out_dir){
      // Open and read the configuration file
      std::ifstream cf(config_file_path);
 
      std::string line;
      while(getline(cf, line)){
+          // TODO: check if the processed file is in the directory before reading the original file
           std::cout << line << std::endl;
           std::vector<std::string> sline = tokenize(line.c_str(), ' ');
           if (sline[1] == "pe"){
                std::cout << "Lib: " << sline[0] << " is a pe library in " << sline[2] << std::endl;
-               PeData ped(sline[2]);
-               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+               mag.insert(std::pair<std::string, std::unique_ptr<PeData>>(sline[0],  std::unique_ptr<PeData>(new PeData(out_dir, sline[0], sline[2]))));
           } else if (sline[1] == "mp") {
                std::cout << "Lib: " << sline[0] << " is a mp library in " << sline[2] << std::endl;
-               MpData ped(sline[2]);
-               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+               mag.insert(std::pair<std::string, std::unique_ptr<MpData>>(sline[0],  std::unique_ptr<MpData>(new MpData(out_dir, sline[0], sline[2]))));
           } else if (sline[1] == "10x") {
                std::cout << "Lib: " << sline[0] << " is a 10x library in " << sline[2] << std::endl;
-               TenXData ped(sline[2]);
-               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+               mag.insert(std::pair<std::string, std::unique_ptr<TenXData>>(sline[0],  std::unique_ptr<TenXData>(new TenXData(out_dir, sline[0], sline[2]))));
           } else if (sline[1] == "pb") {
                std::cout << "Lib: " << sline[0] << " is a pb library in " << sline[2] << std::endl;
-               PacBioData ped(sline[2]);
-               mag.insert(std::pair<std::string, InputFileReader>(sline[0], ped));
+               mag.insert(std::pair<std::string, std::unique_ptr<PacBioData>>(sline[0],  std::unique_ptr<PacBioData>(new PacBioData(out_dir, sline[0], sline[2]))));
           }
      }
 }

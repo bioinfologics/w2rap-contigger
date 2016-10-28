@@ -23,12 +23,13 @@ class InputFileReader{
 
     bool InputFileReader::get_fastq_record(std::basic_istream<char>& in, std::tuple<std::string, std::string, std::string> *record);
     bool InputFileReader::get_bam_record();
-    int InputFileReader::read_binary(std::string workdir, std::string prefix);
-    int InputFileReader::write_binary(std::string workdir, std::string prefix);
+    int InputFileReader::read_binary(std::string out_dir, std::string library_name);
+    int InputFileReader::write_binary(std::string out_dir, std::string library_name);
     bool InputFileReader::FilesExist(std::string infiles);
     bool InputFileReader::FilesExist(std::vector<std::string> infiles);
     bool InputFileReader::IsGz(std::string filename);
     bool InputFileReader::ProduceValidPair(std::string rfilename_string);
+    bool InputFileReader::ReadBinaryIfExist(std::string out_dir, std::string library_name);
 
     // To hold files
     std::string filename_string;
@@ -37,7 +38,7 @@ class InputFileReader{
 
 class PeData: public InputFileReader{
   public:
-    PeData(std::string reads_filename);
+    PeData(std::string out_dir, std::string library_name, std::string reads_filename);
 
   private:
     int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
@@ -45,7 +46,7 @@ class PeData: public InputFileReader{
 
 class MpData: public InputFileReader{
 public:
-    MpData(std::string reads_filename);
+    MpData(std::string out_dir, std::string library_name, std::string reads_filename);
 
 private:
     int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
@@ -53,7 +54,7 @@ private:
 
 class TenXData: public InputFileReader{
   public:
-    TenXData(std::string reads_filename);
+    TenXData(std::string out_dir, std::string library_name, std::string reads_filename);
     vecbvec rIndexs;
     int TenXData::read_binary(std::string out_dir, std::string prefix);
     int TenXData::write_binary(std::string out_dir, std::string prefix);
@@ -65,7 +66,7 @@ class TenXData: public InputFileReader{
 
 class PacBioData: public InputFileReader{
 public:
-    PacBioData(std::string read_filename);
+    PacBioData(std::string out_dir, std::string library_name, std::string read_filename);
     int PacBioData::read_binary(std::string out_dir, std::string prefix);
     int PacBioData::write_binary(std::string out_dir, std::string prefix);
 
@@ -79,7 +80,7 @@ void ExtractReads( String reads,
 
 class InputDataMag{
 public:
-    InputDataMag(std::string config_file_path);
-    std::map<std::string, InputFileReader> mag;
+    InputDataMag(std::string config_file_path, std::string out_dir);
+    std::map<std::string, std::unique_ptr<InputFileReader>> mag;
 };
 #endif
