@@ -83,7 +83,7 @@ int main(const int argc, const char * argv[]) {
                                                       "Input sequences (pe reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
 
         TCLAP::ValueArg<std::string> pe_read_filesArg("P", "pe_read_files",
-                                                      "Input sequences (pe reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
+                                                      "Input sequences (pe reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
 
         TCLAP::ValueArg<std::string> mp_read_filesArg("M", "mp_read_files",
                                                       "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);

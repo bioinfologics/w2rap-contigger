@@ -556,22 +556,36 @@ InputDataMag::InputDataMag(std::string config_file_path, std::string out_dir){
      std::ifstream cf(config_file_path);
 
      std::string line;
+     // Dump header
+     getline(cf, line);
+     std::cout << line << std::endl;
      while(getline(cf, line)){
           // TODO: check if the processed file is in the directory before reading the original file
           std::cout << line << std::endl;
           std::vector<std::string> sline = tokenize(line.c_str(), ' ');
-          if (sline[1] == "pe"){
-               std::cout << "Lib: " << sline[0] << " is a pe library in " << sline[2] << std::endl;
-               mag.insert(std::pair<std::string, std::unique_ptr<PeData>>(sline[0],  std::unique_ptr<PeData>(new PeData(out_dir, sline[0], sline[2]))));
-          } else if (sline[1] == "mp") {
-               std::cout << "Lib: " << sline[0] << " is a mp library in " << sline[2] << std::endl;
-               mag.insert(std::pair<std::string, std::unique_ptr<MpData>>(sline[0],  std::unique_ptr<MpData>(new MpData(out_dir, sline[0], sline[2]))));
-          } else if (sline[1] == "10x") {
-               std::cout << "Lib: " << sline[0] << " is a 10x library in " << sline[2] << std::endl;
-               mag.insert(std::pair<std::string, std::unique_ptr<TenXData>>(sline[0],  std::unique_ptr<TenXData>(new TenXData(out_dir, sline[0], sline[2]))));
-          } else if (sline[1] == "pb") {
-               std::cout << "Lib: " << sline[0] << " is a pb library in " << sline[2] << std::endl;
-               mag.insert(std::pair<std::string, std::unique_ptr<PacBioData>>(sline[0],  std::unique_ptr<PacBioData>(new PacBioData(out_dir, sline[0], sline[2]))));
+          std::cout << sline[3] << std::endl;
+          if (sline[3] == "true") {
+               if (sline[1] == "pe") {
+                    std::cout << "Lib: " << sline[0] << " is a pe library in " << sline[2] << std::endl;
+                    mag.insert(std::pair<std::string, std::unique_ptr<PeData>>(sline[0], std::unique_ptr<PeData>(
+                        new PeData(out_dir, sline[0], sline[2]))));
+               } else if (sline[1] == "mp") {
+                    std::cout << "Lib: " << sline[0] << " is a mp library in " << sline[2] << std::endl;
+                    mag.insert(std::pair<std::string, std::unique_ptr<MpData>>(sline[0], std::unique_ptr<MpData>(
+                        new MpData(out_dir, sline[0], sline[2]))));
+               } else if (sline[1] == "10x") {
+                    std::cout << "Lib: " << sline[0] << " is a 10x library in " << sline[2] << std::endl;
+                    mag.insert(std::pair<std::string, std::unique_ptr<TenXData>>(sline[0], std::unique_ptr<TenXData>(
+                        new TenXData(out_dir, sline[0], sline[2]))));
+               } else if (sline[1] == "pb") {
+                    std::cout << "Lib: " << sline[0] << " is a pb library in " << sline[2] << std::endl;
+                    mag.insert(std::pair<std::string, std::unique_ptr<PacBioData>>(sline[0],
+                                                                                   std::unique_ptr<PacBioData>(
+                                                                                       new PacBioData(out_dir, sline[0],
+                                                                                                      sline[2]))));
+               }
+          } else {
+               std::cout << "Library " << sline[0] << " ignored..." << std::endl;
           }
      }
 }
