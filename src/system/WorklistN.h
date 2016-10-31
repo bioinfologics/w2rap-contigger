@@ -176,34 +176,5 @@ void parallelFor( Index start, Index end, Proc const& proc,
     }
 }
 
-template <class Proc, class Index>
-void parallelForBatch( Index start, Index stop, size_t batchSize,
-                        Proc proc, size_t nThreads = getConfiguredNumThreads(),
-                        bool verbose = false )
-{
-    size_t nBatches = ((stop - start) + batchSize - 1) / batchSize;
-    if ( verbose )
-    {
-        Dotter dotter(nBatches);
-        parallelFor( 0ul, nBatches,
-            [start,stop,batchSize,proc,&dotter]( size_t batchNo ) mutable
-            { auto beg=start+batchNo*batchSize;
-              size_t remain = stop-beg;
-              auto end=beg+std::min(remain,batchSize);
-              while ( beg != end )
-              { proc( beg ); ++beg; }
-              dotter.batchDone(); }, nThreads );
-    }
-    else
-    {
-        parallelFor( 0ul, nBatches,
-            [start,stop,batchSize,proc]( size_t batchNo ) mutable
-            { auto beg=start+batchNo*batchSize;
-              size_t remain = stop-beg;
-              auto end=beg+std::min(remain,batchSize);
-              while ( beg != end )
-              { proc( beg ); ++beg; } }, nThreads );
-    }
-}
 
 #endif /* SYSTEM_WORKLISTN_H_ */

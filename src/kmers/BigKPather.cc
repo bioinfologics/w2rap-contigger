@@ -526,7 +526,12 @@ void readsToHBV( vecbvec const& reads, unsigned coverage,
         Pather<BIGK> pather(reads, bigDict, edges, fwdXlat, revXlat,
                             pReadPaths, pHKP, pKmerPaths);
         //parallelForBatch(0ul, reads.size(), 10000, pather);
-        for (auto i=0ul;i<reads.size();++i) pather(i);
+#pragma omp parallel
+        {
+            auto p=pather;
+#pragma omp for
+            for (auto i = 0ul; i < reads.size(); ++i) p(i);
+        }
 
     }
 }

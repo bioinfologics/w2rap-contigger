@@ -842,7 +842,7 @@ namespace
             qvec mQV;
 
             #pragma omp for
-            for (auto readId=0;readId<reads.size();++readId){
+            for (size_t readId=0;readId<reads.size();++readId){
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
                 // convert any seeds on hanging edges to gaps

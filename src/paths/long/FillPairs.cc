@@ -55,7 +55,7 @@ private:
 };
 typedef MapReduceEngine<KHash,FP_Kmer,FP_Kmer::Hasher> MRE;
 
-void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
+/*void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
 {
     unsigned const COVERAGE = 50;
     size_t nKmers = reads.getKmerCount(FP_K);
@@ -69,7 +69,7 @@ void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
 
     // trim each read at end of 1st bad kmer
     trimmed = reads;
-    parallelForBatch(trimmed.begin(),trimmed.end(),10000,
+    //parallelForBatch(trimmed.begin(),trimmed.end(),10000,
         [&dict]( vecbvec::iterator readsItr )
         {
             bvec& bv = *readsItr;
@@ -102,7 +102,7 @@ void TrimReads( vecbvec const& reads, const int minFreq, vecbvec& trimmed )
                 ++itr;
             }
         });
-}
+}*/
 
 template<int FP_K> void TrimReadsOld( const vecbasevector& bases,
                                     const int min_freq,
@@ -177,14 +177,14 @@ void FillPairs( const vecbasevector& bases, const PairsManager& pairs,
 {
      // Build truncated reads.
      vecbasevector basesx;
-//std::cout << Date() << ": FillPairs -- Trim reads." << std::endl; //TODO: remove
+
      if ( newMethod )
-         TrimReads( bases, MIN_FREQ, basesx );
+         //TrimReads( bases, MIN_FREQ, basesx );
+         FatalErr("attempted to use new fill pairs trim code, disabled on w2rap-contigger");
      else
          TrimReadsOld<60>( bases, MIN_FREQ, getConfiguredNumThreads(), basesx );
 
      // Path the trimmed reads.
-//std::cout << Date() << ": FillPairs -- Path reads." << std::endl; //TODO: remove
      unsigned const COVERAGE = 50u;
      int verbosity = 0;
      HyperKmerPath h;
@@ -199,8 +199,6 @@ void FillPairs( const vecbasevector& bases, const PairsManager& pairs,
 
      // Close pairs.  Code copied from LoadAndCorrect.cc, which was copied from 
      // LongHyper.cc.
-
-//std::cout << Date() << ": FillPairs -- Close pairs." << std::endl; //TODO: remove
      filled.resize(0);
      filled.resize( bases.size( ) );
      #pragma omp parallel for
