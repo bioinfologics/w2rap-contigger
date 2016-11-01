@@ -19,7 +19,13 @@
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
-#include <malloc.h>
+
+#ifdef __APPLE__
+  #include <malloc/malloc.h>
+#else
+  #include <malloc.h>
+#endif
+
 #include <omp.h>
 
 namespace
