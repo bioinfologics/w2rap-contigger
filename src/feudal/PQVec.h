@@ -233,7 +233,7 @@ void convertCopy( Itr beg, Itr end, VecPQVec::iterator oItr )
 
 template <class Itr> // Itr is a random-access iterator over const qvec's
 void convertAppendParallel( Itr beg, Itr end, VecPQVec& vpqv ) {
-  size_t const BATCH_SIZE = 100000ul;
+  size_t const BATCH_SIZE = 1000000ul;
   size_t nnn = end-beg;
   vpqv.resize(vpqv.size()+nnn);
   auto oItr = vpqv.end()-nnn;

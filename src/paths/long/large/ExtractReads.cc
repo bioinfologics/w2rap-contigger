@@ -194,7 +194,7 @@ int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
      VecPQVec& pQuals = (*Quals);
 
      // Buffer for quality score compression in batches.
-     const int qbmax = 10000000;
+     const int qbmax = 100000000;
      std::vector<qvec> qualsbuf;
      MempoolOwner<char> alloc;
      for (int i = 0; i < qbmax; i++)
