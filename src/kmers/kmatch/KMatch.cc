@@ -19,7 +19,7 @@ KMatch::KMatch(int kv){
   this->K = kv;
 }
 
-std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq){
+std::vector<std::pair<uint64_t, int>> KMatch::ProduceKmers(std::string seq){
   // get a sequence a produce the set of kmers ()
   std::vector<std::pair<uint64_t, int>> kmer_vector;
 
@@ -101,16 +101,33 @@ void KMatch::Hbv2Map(HyperBasevector* hbv){
   }
 }
 
-//std::vector<std::pair<int, int>> KMatch::lookupRead();
+std::vector<std::pair<uint64_t, int>> KMatch::lookupRead(std::string read){
+  // produce kmers
+  auto rkms = this->ProduceKmers(read);
 
-std::vector<std::pair<int, int>> KMatch::MapReads(vecbvec& seqVector){
+  // look kmers in the dictionary
+  std::vector<std::pair<uint64_t, int>> mapped_edges;
+  for (auto a: rkms){
+    std::map<uint64_t, std::vector<std::pair<int, int>>>::iterator tt = this->edgeMap.find(a.first);
+    if (tt != this->edgeMap.end()){
+      for (auto a: tt->second){
+        mapped_edges.push_back(std::make_pair(a.first, a.second));
+      }
+    }
+  }
+  return mapped_edges;
+}
+
+std::vector<int> KMatch::MapReads(vecbvec seqVector){
   // get the reads and map them to the graph using the dictionary
   // returns a vector of paths
-
-  for (auto &v: seqVector){
-    // Produce read kmers
-    auto rkms = this->ProduceKmers(v.ToString());
-    // find the read kmers in the dictionary
-
+  int cont = 0;
+  for (auto v=0; v<seqVector.size(); ++v){
+    auto g = this->lookupRead(seqVector[v].ToString());
+    if (g.size()>0){
+//      std::cout << "Read: " << cont << " mapped "<< this->lookupRead(seqVector[v].ToString()).size() << " places*kmers"  << std::endl;
+      cont ++;
+    }
   }
+  std::cout << "mapped reads: " << cont << std::endl;
 }

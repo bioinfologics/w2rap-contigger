@@ -29,12 +29,13 @@ class KMatch {
   public:
     KMatch(int K);
     void KMatch::Hbv2Map(HyperBasevector* hbv);
-    std::vector<std::pair<int, int>> KMatch::MapReads(vecbvec& seqVector);
+    std::vector<int> KMatch::MapReads(vecbvec seqVector);
     std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq);
     std::map<uint64_t, std::vector<std::pair<int, int>>> edgeMap;
 
   private:
     uint8_t K;
+    std::vector<std::pair<uint64_t, int>> KMatch::lookupRead(std::string read);
 
 
 };
