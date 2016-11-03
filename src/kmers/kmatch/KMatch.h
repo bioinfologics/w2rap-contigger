@@ -28,11 +28,14 @@ struct {
 class KMatch {
   public:
     KMatch(int K);
-    std::map<uint64_t, std::vector<std::pair<int, int>>> KMatch::Hbv2Map(HyperBasevector* hbv);
-    void KMatch::MapReads(vecbvec& seqVector);
+    void KMatch::Hbv2Map(HyperBasevector* hbv);
+    std::vector<std::pair<int, int>> KMatch::MapReads(vecbvec& seqVector);
     std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq);
+    std::map<uint64_t, std::vector<std::pair<int, int>>> edgeMap;
+
   private:
     uint8_t K;
+
 
 };
 

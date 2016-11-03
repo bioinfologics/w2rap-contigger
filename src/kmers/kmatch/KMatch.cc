@@ -71,7 +71,7 @@ std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq
   return kmer_vector;
 }
 
-std::map<uint64_t, std::vector<std::pair<int, int>>> KMatch::Hbv2Map(HyperBasevector* hbv){
+void KMatch::Hbv2Map(HyperBasevector* hbv){
 //  std::vector<kmer_position_t> karray;
   //read fasta and push_back(kmer,pos) (use pos as chr*CHR_CONST+offset)
   //open file
@@ -87,21 +87,30 @@ std::map<uint64_t, std::vector<std::pair<int, int>>> KMatch::Hbv2Map(HyperBaseve
     auto kv = this->ProduceKmers(seq);
 
     for (auto &a: kv){
-      if (edgeDict.find(a.first) == edgeDict.end()){
+      if (this->edgeMap.find(a.first) == this->edgeMap.end()){
         std::vector<std::pair<int, int>> temp_vector;
         temp_vector.push_back(std::make_pair(seq_index, a.second));
-        edgeDict[a.first] = temp_vector;
+        this->edgeMap[a.first] = temp_vector;
       } else {
-        auto temp_vector = edgeDict[a.first];
+        auto temp_vector = this->edgeMap[a.first];
         temp_vector.push_back(std::make_pair(seq_index, a.second));
-        edgeDict[a.first] = temp_vector;
+        this->edgeMap[a.first] = temp_vector;
       }
     }
     seq_index++;
   }
-  return edgeDict;
 }
 
-void KMatch::MapReads(vecbvec& seqVector){
+//std::vector<std::pair<int, int>> KMatch::lookupRead();
+
+std::vector<std::pair<int, int>> KMatch::MapReads(vecbvec& seqVector){
   // get the reads and map them to the graph using the dictionary
+  // returns a vector of paths
+
+  for (auto &v: seqVector){
+    // Produce read kmers
+    auto rkms = this->ProduceKmers(v.ToString());
+    // find the read kmers in the dictionary
+
+  }
 }
