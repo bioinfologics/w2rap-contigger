@@ -24,10 +24,10 @@ std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq
   std::vector<std::pair<uint64_t, int>> kmer_vector;
 
   uint64_t kmer_index=0;
-  const uint64_t KMER_MASK=( ((uint64_t)1)<<(K*2) )-1;
+  const uint64_t KMER_MASK=( ((uint64_t)1)<<(this->K*2) )-1;
 //  const uint64_t KMER_FIRSTOFFSET=(K-1)*2;
 
-  if (seq.size()>K) {
+  if (seq.size()>this->K) {
 
     const char *s = seq.c_str();
     int64_t last_unknown = -1;
@@ -71,7 +71,7 @@ std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq
   return kmer_vector;
 }
 
-void KMatch::Hbv2Map(HyperBasevector* hbv){
+std::map<uint64_t, std::vector<std::pair<int, int>>> KMatch::Hbv2Map(HyperBasevector* hbv){
 //  std::vector<kmer_position_t> karray;
   //read fasta and push_back(kmer,pos) (use pos as chr*CHR_CONST+offset)
   //open file
@@ -87,10 +87,10 @@ void KMatch::Hbv2Map(HyperBasevector* hbv){
     auto kv = this->ProduceKmers(seq);
 
     for (auto &a: kv){
-      if (edgeDict.find(a) == edgeDict.end()){
-        std::vector temp_vector;
+      if (edgeDict.find(a.first) == edgeDict.end()){
+        std::vector<std::pair<int, int>> temp_vector;
         temp_vector.push_back(std::make_pair(seq_index, a.second));
-        edgeDict[a.first] = temp_vector
+        edgeDict[a.first] = temp_vector;
       } else {
         auto temp_vector = edgeDict[a.first];
         temp_vector.push_back(std::make_pair(seq_index, a.second));
