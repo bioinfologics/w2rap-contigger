@@ -385,7 +385,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                     // Buffer for quality score compression in batches.
 
                     const int qbmax = 10000000;
-                    vec<qvec> qualsbuf;
+                    std::vector<qvec> qualsbuf;
                     MempoolOwner<char> alloc;
                     for (int i = 0; i < qbmax; i++)
                          qualsbuf.emplace_back(alloc);
@@ -477,7 +477,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                                           qualsbuf.begin() + qbcount, xquals);
                     j++;
                }
-
                     // Parse unpaired fastq files.
 
                else if (infiles_rn[g][j] != "") {
