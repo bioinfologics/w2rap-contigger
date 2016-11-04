@@ -20,22 +20,29 @@
 #define KMATCH_POSITION_CHR_CNST 10000000000L
 
 // TODO: include this object to replace the vector of pairs thing
-struct {
-    int edge_idx;
+typedef struct {
+    uint64_t kmer;
     int offset;
-} edge_kmer;
+} pKmer;
+
+typedef struct {
+//    uint64_t kmer;
+    int edge_id;
+    int offset;
+} edgeKmerPosition;
 
 class KMatch {
   public:
     KMatch(int K);
     void KMatch::Hbv2Map(HyperBasevector* hbv);
     std::vector<int> KMatch::MapReads(vecbvec seqVector);
-    std::vector<std::pair<uint_least64_t, int>> KMatch::ProduceKmers(std::string seq);
-    std::map<uint64_t, std::vector<std::pair<int, int>>> edgeMap;
+    std::vector<pKmer> KMatch::ProduceKmers(std::string seq);
+
+    std::map<uint64_t, std::vector<edgeKmerPosition>> edgeMap;
 
   private:
     uint8_t K;
-    std::vector<std::pair<uint64_t, int>> KMatch::lookupRead(std::string read);
+    std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read);
 
 
 };

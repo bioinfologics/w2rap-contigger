@@ -19,11 +19,11 @@ KMatch::KMatch(int kv){
   this->K = kv;
 }
 
-std::vector<std::pair<uint64_t, int>> KMatch::ProduceKmers(std::string seq){
+std::vector<pKmer> KMatch::ProduceKmers(std::string seq){
   // get a sequence a produce the set of kmers ()
-  std::vector<std::pair<uint64_t, int>> kmer_vector;
+  std::vector<pKmer> kmer_vector;
 
-  uint64_t kmer_index=0;
+  uint64_t offset=0;
   const uint64_t KMER_MASK=( ((uint64_t)1)<<(this->K*2) )-1;
 //  const uint64_t KMER_FIRSTOFFSET=(K-1)*2;
 
@@ -59,59 +59,62 @@ std::vector<std::pair<uint64_t, int>> KMatch::ProduceKmers(std::string seq){
       //std::cout<<"c="<<s[p]<<" f="<<fkmer<<" r="<<rkmer<<std::endl;
       //TODO: last unknown passed by?
       if (last_unknown + this->K <= p) {
-        auto pair_temp = std::make_pair(fkmer, kmer_index);
+        pKmer pair_temp;
+        pair_temp.kmer = fkmer;
+        pair_temp.offset = offset;
         kmer_vector.push_back(pair_temp);
-        kmer_index++;
+        offset++;
       }
     }
-  } else {
-    std::cout << "Sequence is too short to get kmers..." << std::endl;
   }
-
   return kmer_vector;
 }
 
 void KMatch::Hbv2Map(HyperBasevector* hbv){
-//  std::vector<kmer_position_t> karray;
-  //read fasta and push_back(kmer,pos) (use pos as chr*CHR_CONST+offset)
-  //open file
+  //  std::vector<kmer_position_t> karray;
 
-  std::map<uint64_t, std::vector<std::pair<int, int>>> edgeDict;
+  std::map<uint64_t, std::vector<edgeKmerPosition>> edgeDict;
   uint32_t seq_index=0;
 
   auto edges = hbv->Edges();
-
 
   for (auto seqN=0; seqN<edges.size(); ++seqN) {
     auto seq = edges[seqN].ToString();
     auto kv = this->ProduceKmers(seq);
 
     for (auto &a: kv){
-      if (this->edgeMap.find(a.first) == this->edgeMap.end()){
-        std::vector<std::pair<int, int>> temp_vector;
-        temp_vector.push_back(std::make_pair(seq_index, a.second));
-        this->edgeMap[a.first] = temp_vector;
+      if (this->edgeMap.find(a.kmer) == this->edgeMap.end()){
+        std::vector<edgeKmerPosition> temp_vector;
+        edgeKmerPosition tmatch;
+        tmatch.edge_id = seq_index;
+        tmatch.offset = a.offset;
+        temp_vector.push_back(tmatch);
+        this->edgeMap[a.kmer] = temp_vector;
+
       } else {
-        auto temp_vector = this->edgeMap[a.first];
-        temp_vector.push_back(std::make_pair(seq_index, a.second));
-        this->edgeMap[a.first] = temp_vector;
+        auto temp_vector = this->edgeMap[a.kmer];
+        edgeKmerPosition tmatch;
+        tmatch.edge_id = seq_index;
+        tmatch.offset = a.offset;
+        temp_vector.push_back(tmatch);
+        this->edgeMap[a.kmer] = temp_vector;
       }
     }
     seq_index++;
   }
 }
 
-std::vector<std::pair<uint64_t, int>> KMatch::lookupRead(std::string read){
+std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
   // produce kmers
   auto rkms = this->ProduceKmers(read);
 
   // look kmers in the dictionary
-  std::vector<std::pair<uint64_t, int>> mapped_edges;
+  std::vector<edgeKmerPosition> mapped_edges;
   for (auto a: rkms){
-    std::map<uint64_t, std::vector<std::pair<int, int>>>::iterator tt = this->edgeMap.find(a.first);
+    std::map<uint64_t, std::vector<edgeKmerPosition>>::iterator tt = this->edgeMap.find(a.kmer);
     if (tt != this->edgeMap.end()){
       for (auto a: tt->second){
-        mapped_edges.push_back(std::make_pair(a.first, a.second));
+        mapped_edges.push_back(a);
       }
     }
   }
@@ -122,12 +125,18 @@ std::vector<int> KMatch::MapReads(vecbvec seqVector){
   // get the reads and map them to the graph using the dictionary
   // returns a vector of paths
   int cont = 0;
-  for (auto v=0; v<seqVector.size(); ++v){
+//  for (auto v=0; v<seqVector.size(); ++v){
+  for (auto v=0; v<20; ++v){
     auto g = this->lookupRead(seqVector[v].ToString());
     if (g.size()>0){
-//      std::cout << "Read: " << cont << " mapped "<< this->lookupRead(seqVector[v].ToString()).size() << " places*kmers"  << std::endl;
+      for (auto a=0; a<g.size(); ++a){
+//        std::cout << "Read: " << cont << " mapped "<< this->lookupRead(seqVector[v].ToString()).size() << " places*kmers"  << std::endl;
+        std::cout << " " << g[a].edge_id << " " << g[a].offset;
+      }
+      std::cout<<std::endl;
       cont ++;
     }
+
   }
   std::cout << "mapped reads: " << cont << std::endl;
 }
