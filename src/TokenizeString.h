@@ -12,6 +12,8 @@
 #ifndef TOKENIZE_STRING_H
 #define TOKENIZE_STRING_H
 
+// [GONZA] lambda tokenize
+auto tokenize = [](const char *str, char c){ std::vector<std::string> result; do { const char *begin = str; while(*str != c && *str){ str++;} result.push_back(std::string(begin, str)); } while (0 != *str++); return result;};
 
 /// Tokenize a string (separators: " ", and "\t").
 int Tokenize( const String &a_string,
@@ -20,7 +22,7 @@ int Tokenize( const String &a_string,
 /// Tokenize a string (use one separator).
 int Tokenize( const String &a_string,
               const char sep,
-	          vec<String> &tokens );
+              vec<String> &tokens );
 
 /// Tokenize a string (use given separators).
 int Tokenize( const String &a_string,

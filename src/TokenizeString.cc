@@ -26,6 +26,8 @@ int Tokenize( const String &a_string,
 /*
  * Tokenize (with one separator).
  */
+
+//TODO: delete this one later and correct all the instances where is used
 int Tokenize( const String &a_string,
               const char sep,
 	          vec<String> &tokens )

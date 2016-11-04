@@ -48,7 +48,11 @@ std::string checkpoint_perf_time(const std::string section_name){
 int main(const int argc, const char * argv[]) {
 
     std::string out_prefix;
-    std::string read_files;
+    std::string config_file_path;
+    std::string pe_read_files;
+    std::string mp_read_files;
+    std::string tenx_read_files;
+    std::string pb_read_files;
     std::string out_dir;
     std::string dev_run;
     std::string tmp_dir;
@@ -75,8 +79,22 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> max_memArg("m", "max_mem",
              "Maximum memory in GB (soft limit, impacts performance, default 10000)", false, 10000, "int", cmd);
 
-        TCLAP::ValueArg<std::string> read_filesArg("r", "read_files",
-             "Input sequences (reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
+        // Read input types
+        TCLAP::ValueArg<std::string> config_file_pathArg("C", "config_file_path",
+                                                      "Input sequences (pe reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> pe_read_filesArg("P", "pe_read_files",
+                                                      "Input sequences (pe reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> mp_read_filesArg("M", "mp_read_files",
+                                                      "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> tenx_read_filesArg("X", "tenx_read_files",
+                                                      "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
+        TCLAP::ValueArg<std::string> pb_read_filesArg("B", "pb_read_files",
+                                                      "Input sequences (reads) files ", false, "", "file1.fastq,file2.fastq", cmd);
+
 
         TCLAP::ValueArg<std::string> out_dirArg("o", "out_dir", "Output dir path", true, "", "string", cmd);
         TCLAP::ValueArg<std::string> out_prefixArg("p", "prefix",
@@ -125,7 +143,13 @@ int main(const int argc, const char * argv[]) {
         // Get the value parsed by each arg.
         out_dir = out_dirArg.getValue();
         out_prefix = out_prefixArg.getValue();
-        read_files = read_filesArg.getValue();
+
+        config_file_path = config_file_pathArg.getValue();
+        pe_read_files = pe_read_filesArg.getValue();
+        mp_read_files = mp_read_filesArg.getValue();
+        tenx_read_files = tenx_read_filesArg.getValue();
+        pb_read_files = pb_read_filesArg.getValue();
+
         threads = threadsArg.getValue();
         max_mem = max_memArg.getValue();
         large_K = large_KArg.getValue();
@@ -165,8 +189,13 @@ int main(const int argc, const char * argv[]) {
     if (omp_get_proc_bind()==omp_proc_bind_master) std::cout<< "WARNING: you are running the code with omp_proc_bind_master, parallel performance may suffer"<<std::endl;
 
     //========== Main Program Begins ======
-    vecbvec bases;
-    VecPQVec quals;
+    // This has to be according to the input
+
+    // Read all data form the configuration file
+    InputDataMag dataMag(config_file_path, out_dir);
+    // [GONZA] this might be copying stuff, check out.
+    auto bases = dataMag.mag["PE1"]->bases;
+    auto quals = dataMag.mag["PE1"]->quals;
 
     vec<String> subsam_names = {"C"};
     vec<int64_t> subsam_starts = {0};
@@ -226,8 +255,10 @@ int main(const int argc, const char * argv[]) {
             Cleanup( hbvr, inv, pathsr );
 
             std::cout << "Loading reads in fastb/qualp format..." << std::endl;
-            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
-            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+//            pe_data.read_binary(out_dir, "");
+//            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
+//            pe_quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+
             std::cout << "   DONE!" << std::endl;
 
             path_improver pimp;
@@ -306,14 +337,20 @@ int main(const int argc, const char * argv[]) {
     if (from_step==1)
     {
         std::cout << "--== Step 1: Reading input files ==--" << std::endl;
-        ExtractReads(read_files, out_dir, subsam_names, subsam_starts, &bases, &quals);
+
+        // Read all data form the configuration file
+
         std::cout << "Reading input files DONE!" << std::endl << std::endl << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("ExtractReads") << std::endl;
         //TODO: add an option to dump the reads
         if (dump_all || to_step<6) {
             std::cout << "Dumping reads in fastb/qualp format..." << std::endl;
-            bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
-            quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
+
+            for (const auto& a: dataMag.mag){
+                std::cout << "Writing to disk: " << a.first << std::endl;
+                a.second->write_binary(out_dir, a.first);
+            }
+
             std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("DumpReads") << std::endl;
         }
@@ -323,8 +360,7 @@ int main(const int argc, const char * argv[]) {
 
     if (from_step>1 && from_step<7 and not (from_step==3 and to_step==3)){
         std::cout << "Loading reads in fastb/qualp format..." << std::endl;
-        bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
-        quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+
         std::cout << "   DONE!" << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("LoadReads") << std::endl;
     }

@@ -239,6 +239,11 @@ public:
     void SetFromString( const String& s )
     { assign(s.begin(),s.end(),CharToBaseMapper()); }
 
+    /// initialize BaseVec with a DNA String
+    // TODO: [GONZA] just for step 1, check SetFromString usages
+    void SetFromString( const std::string& s )
+    { assign(s.begin(),s.end(),CharToBaseMapper()); }
+
     /// Set from a string containing non-ACGTacgt characters.
     /// For any such character a random base from its ambiguity set
     /// will be placed into the basevector.
