@@ -200,7 +200,9 @@ add_library(base_libs OBJECT
         src/paths/long/large/Lines.cc
         src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
-        src/util/TextTable.cc src/util/w2rap_timers.h)
+        src/util/TextTable.cc
+        src/util/w2rap_timers.h
+        src/paths/long/ReadPath.cc)
 
 add_library(hb_base_libs OBJECT
         src/Alignment.cc
@@ -342,7 +344,8 @@ add_library(hb_base_libs OBJECT
         src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
         src/util/TextTable.cc
-        src/GFADump.cc)
+        src/GFADump.cc
+        src/paths/long/ReadPath.cc)
 
 add_library(specific_w2rap-contigger OBJECT
         src/BasevectorTools.cc

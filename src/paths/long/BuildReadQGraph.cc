@@ -54,6 +54,30 @@ namespace
     typedef KmerDictEntry<K> BRQ_Entry;
     typedef KmerDict<K> BRQ_Dict;
 
+    class KMerNodeFreq: public KMer<K>{
+    public:
+        KMerNodeFreq(){};
+        template <class Itr>
+        explicit KMerNodeFreq( Itr start )
+        { assign(start,NopMapper()); }
+        KMerNodeFreq (const KMerNodeFreq &other){
+            *this=other;
+            count=other.count;
+            kc=other.kc;
+        }
+        KMerNodeFreq (const KMerNodeFreq &other, bool rc){
+            *this=other;
+            count=other.count;
+            kc=other.kc;
+            if (rc){
+                this->rc();
+                kc=kc.rc();
+            }
+        }
+        unsigned char count;
+        KMerContext kc;
+    };
+
 
 
 
@@ -817,7 +841,7 @@ namespace
             ExtendReadPath mExtender(hbv,&toLeft,&toRight);
             qvec mQV;
 
-            #pragma omp for schedule(static,1)
+            #pragma omp for
             for (auto readId=0;readId<reads.size();++readId){
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
@@ -916,6 +940,15 @@ inline void combine_Entries( BRQ_Entry & dest, BRQ_Entry & source )
     kDef.setCount(kDef.getCount()+source.getKDef().getCount());
 }
 
+inline void combine_Entries( KMerNodeFreq & dest, KMerNodeFreq & source )
+{
+    dest.kc|=source.kc;
+    uint16_t c = dest.count;
+    c+=source.count;
+    dest.count= (c<255 ? c:255);
+}
+
+
 void print_results_status(uint nthreads, bool results[]){
 #pragma omp critical
     {
@@ -966,15 +999,27 @@ void collapse_entries(std::vector<BRQ_Entry> &kmer_list){
     kmer_list.resize(okItr - kmer_list.begin());
 }
 
-std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir=""){
+void collapse_entries(std::vector<KMerNodeFreq> &kmer_list){
+    auto okItr = kmer_list.begin();
+    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
+        *okItr = *kItr;
+        ++kItr;
+        while (kItr<kmer_list.end() and *okItr == *kItr) {
+            combine_Entries(*okItr,*kItr);
+            ++kItr;
+        }
+    }
+    kmer_list.resize(okItr - kmer_list.begin());
+}
 
-    std::vector<BRQ_Entry> kmer_list;
+std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir=""){
+    std::vector<KMerNodeFreq> kmer_list;
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
     if (to - from > batch_size) {
         //#pragma omp critical
         //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", splitting..." << std::endl;
         uint64_t mid_point = from + (to - from) / 2;
-        std::vector<BRQ_Entry> entries1, entries2; //TODO: need to not copy but mode the reference.
+        std::vector<KMerNodeFreq> entries1, entries2; //TODO: need to not copy but mode the reference.
         #pragma omp task shared(reads,quals,entries1)
         { entries1 = createDictOMPRecursive(NULL, reads, quals, from, mid_point, batch_size, minQual,
                                               minFreq);}
@@ -1018,22 +1063,19 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
             unsigned len = good_lenghts[readId - from];
             if (len > K) {
                 auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
-                BRQ_Kmer kkk(beg);
-                KMerContext kc = KMerContext::initialContext(*itr);
-                kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
-                kmer_list.back().getKDef().setCount(1);
+                KMerNodeFreq kkk(beg);
+                kkk.kc = KMerContext::initialContext(*itr);
+                kkk.count=1;
+                kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
                 while ( itr != last )
                 { unsigned char pred = kkk.front();
                     kkk.toSuccessor(*itr); ++itr;
-                    kc = KMerContext(pred,*itr);
-                    kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
-                    kmer_list.back().getKDef().setCount(1);
+                    kkk.kc = KMerContext(pred,*itr);
+                    kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
                 }
-                kc = KMerContext::finalContext(kkk.front());
+                kkk.kc = KMerContext::finalContext(kkk.front());
                 kkk.toSuccessor(*last);
-                kmer_list.push_back( kkk.isRev() ? BRQ_Entry(BRQ_Kmer(kkk).rc(),kc.rc()) : BRQ_Entry(kkk,kc));
-                kmer_list.back().getKDef().setCount(1);
-
+                kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
             }
         }
         std::sort(kmer_list.begin(), kmer_list.end());
@@ -1051,10 +1093,10 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
         uint64_t used = 0,not_used=0;
         uint64_t hist[101];
         for (auto &h:hist) h=0;
-        for (auto &kent:kmer_list) {
-            ++hist[std::min(100,(int)kent.getKDef().getCount())];
-            if (kent.getKDef().getCount() >= minFreq) {
-                (*dict)->insertEntryNoLocking(kent);
+        for (auto &knf:kmer_list) {
+            ++hist[std::min(100,(int)knf.count)];
+            if (knf.count >= minFreq) {
+                (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
                 used++;
             } else {
                 not_used++;
@@ -1068,30 +1110,173 @@ std::vector<BRQ_Entry> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& r
             for (auto i = 1; i < 101; i++) kff << i << ", " << hist[i] << std::endl;
             kff.close();
         }
-        (*dict)->recomputeAdjacencies();
-    } else {
-        //std::cout << "createDictOMPRecursive (thread " << omp_get_thread_num() << ") from " << from << " to " << to
-        //          << ", FINISHED with " << kmer_list.size() << " kmers."
-        //          << std::endl;
+
     }
     return kmer_list;
 
 }
 
+
+void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, unsigned char disk_batches, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir="", std::string tmpdir=""){
+    //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
+    std::cout<<Date()<<": disk-based kmer counting with "<<(int) disk_batches<<" batches"<<std::endl;
+    uint64_t total_kmers_in_batches=0;
+    for (auto batch=0;batch < disk_batches;batch++) {
+        uint64_t nkmers=0;
+        //#pragma omp critical
+        //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", splitting..." << std::endl;
+        uint64_t to = (batch+1) * reads.size()/disk_batches;
+        uint64_t from= batch * reads.size()/disk_batches;
+        uint64_t mid_point = from + (to - from) / 2;
+        std::vector<KMerNodeFreq> entries1, entries2; //TODO: need to not copy but move the reference.
+#pragma omp task shared(reads,quals,entries1)
+        { entries1 = createDictOMPRecursive(NULL, reads, quals, from, mid_point, batch_size, minQual, minFreq);}
+#pragma omp task shared(reads,quals,entries2)
+        { entries2 = createDictOMPRecursive(NULL, reads, quals, mid_point, to, batch_size, minQual, minFreq); }
+#pragma omp taskwait
+        auto end1=entries1.end(),end2=entries2.end();
+        auto itr1=entries1.begin(),itr2=entries2.begin();
+        std::ofstream batch_file(tmpdir+"/kmer_count_batch_"+std::to_string((int)batch),std::ios::out | std::ios::trunc | std::ios::binary);
+        KMerNodeFreq knf;
+        while (itr1<end1 and itr2<end2){
+            if (*itr1==*itr2){
+                knf=*itr1;
+                combine_Entries(knf,*itr2);
+                batch_file.write((const char *)&knf,sizeof(knf));
+                ++itr1;
+                ++itr2;
+                ++nkmers;
+            } else if (*itr1<*itr2){
+                batch_file.write((const char *)&(*itr1),sizeof(knf));
+                ++itr1;
+                ++nkmers;
+            } else {
+                batch_file.write((const char *)&(*itr2),sizeof(knf));
+                ++itr2;
+                ++nkmers;
+            }
+        }
+        while (itr1<end1) {
+            batch_file.write((const char *)&(*itr1++),sizeof(knf));
+            ++nkmers;
+        }
+        while (itr2<end2) {
+            batch_file.write((const char *)&(*itr2++),sizeof(knf));
+            ++nkmers;
+        }
+        entries1.clear();
+        entries1.shrink_to_fit();
+        entries2.clear();
+        entries2.shrink_to_fit();
+        batch_file.close();
+        std::cout<< Date() <<": batch "<<(int) batch<<" done and dumped with "<<nkmers<< " kmers" <<std::endl;
+        total_kmers_in_batches+=nkmers;
+    }
+
+    //now a multi-merge sort between all batch files into the Dict
+    std::cout<<Date()<<": merging from disk"<<std::endl;
+    //open all batch files
+    std::ifstream dbf[disk_batches];
+    bool dbf_active[disk_batches];
+    KMerNodeFreq next_knf_from_dbf[disk_batches];
+    uint finished_files=0;
+    for (auto i=0;i<disk_batches;i++){
+        dbf[i].open(tmpdir+"/kmer_count_batch_"+std::to_string((int)i),std::ios::in | std::ios::binary);
+        dbf[i].read((char *)&next_knf_from_dbf[i],sizeof(KMerNodeFreq));
+        dbf_active[i]=true;
+    }
+    //set all finished flags to false
+    //TODO: stupid minimum search
+    KMerNodeFreq current_kmer;
+    //while finished_files<batches
+    bool first=true;
+    uint min=0;
+    for (auto i=1;i<disk_batches;++i)
+        if (dbf_active[i]){
+            if (next_knf_from_dbf[i]<next_knf_from_dbf[min]) min=i;
+        }
+    current_kmer=next_knf_from_dbf[min];
+    current_kmer.count=0;
+    uint64_t used = 0,not_used=0;
+    uint64_t hist[256];
+    std::vector<KMerNodeFreq> kmerlist;
+
+    while (finished_files<disk_batches) {
+        //find minimum of the non-finished files
+        uint min=0;
+        for (auto i=1;i<disk_batches;++i)
+            if (dbf_active[i]){
+                if (next_knf_from_dbf[i]<next_knf_from_dbf[min]) min=i;
+            }
+        //larger than current kmer?
+        if (next_knf_from_dbf[min] > current_kmer) {
+            ++hist[current_kmer.count];
+            if (current_kmer.count>=minFreq) {
+                //(*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) current_kmer, current_kmer.kc));
+                kmerlist.push_back(current_kmer);
+                used++;
+            }
+            else not_used++;
+            current_kmer=next_knf_from_dbf[min];
+        } else {
+            combine_Entries(current_kmer,next_knf_from_dbf[min]);
+        }
+        //advance min file
+        dbf[min].read((char *)&next_knf_from_dbf[min],sizeof(KMerNodeFreq));
+        if ( dbf[min].eof() ) {
+            dbf_active[min]=false;
+            ++finished_files;
+        }
+    }
+    ++hist[std::min(100,(int)current_kmer.count)];
+    if (current_kmer.count>=minFreq) {
+        kmerlist.push_back(current_kmer);
+        used++;
+    }
+    else not_used++;
+    for (auto i=0;i<disk_batches;i++) {
+        dbf[i].close();
+        std::remove((tmpdir + "/kmer_count_batch_" +std::to_string((int)i)).c_str());
+    }
+    (*dict)=new BRQ_Dict(kmerlist.size());
+    for (auto &knf: kmerlist) (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
+    std::cout << Date() << ": " << used << " / " << used+not_used << " kmers with Freq >= " << minFreq << std::endl;
+    if (""!=workdir) {
+        std::ofstream kff(workdir + "/small_K.freqs");
+        for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
+        kff.close();
+    }
+
+}
+
+
 void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minQual, unsigned minFreq,
                       double minFreq2Fract, unsigned maxGapSize,
-                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir)
+                      HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir, std::string tmpdir="", unsigned char disk_batches=0)
 {
     std::cout << Date() << ": creating kmers from reads..." << std::endl;
     //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
     BRQ_Dict * pDict;
-    #pragma omp parallel shared(pDict,reads,quals)
-    {
-        #pragma omp single
-        createDictOMPRecursive(&pDict, reads, quals, 0, reads.size(), 1000000, minQual, minFreq, workdir);
+    if (1>=disk_batches) {
+        #pragma omp parallel shared(pDict,reads,quals)
+        {
+            #pragma omp single
+            createDictOMPRecursive(&pDict, reads, quals, 0, reads.size(), 1000000, minQual, minFreq, workdir);
+        }
     }
+    else {
+        if (""==tmpdir) tmpdir=workdir;
+        #pragma omp parallel shared(pDict,reads,quals)
+        {
+            #pragma omp single
+            createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, tmpdir, workdir);
+        }
+    }
+    std::cout << Date() << ": updating adjacencies" <<std::endl;
+    pDict->recomputeAdjacencies();
+    std::cout << Date() << ": dict finished" <<std::endl;
     std::cout << Date() << ": finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
@@ -1118,6 +1303,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         std::cout << Date() << ": building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": graph built" << std::endl;
+
     }
     else
     {
@@ -1125,7 +1311,8 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         std::cout << Date() << ": graph built" << std::endl;
         std::cout << Date() << ": pathing reads into graph..." << std::endl;
-        pPaths->clear().resize(reads.size());
+        pPaths->clear();
+        pPaths->resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         uint64_t pathed=0;
         uint64_t multipathed=0;

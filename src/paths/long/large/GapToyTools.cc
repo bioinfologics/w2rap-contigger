@@ -1067,7 +1067,7 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
      #pragma omp parallel for
      for ( int64_t i = 0; i < (int64_t) paths.size( ); i++ )
      {
-         SerfVec<int>& p = paths[i];
+          std::vector<int>& p = paths[i];
           for ( int j = 0; j < (int) p.size( ); j++ )
           {    int n = to_new_id[ p[j] ];
                if ( n < 0 ) to_delete[i] = True;

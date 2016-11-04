@@ -549,8 +549,8 @@ void ExtraPaths( const HyperBasevector& hb, const vecbasevector& bases,
 
 void LayoutReads(const HyperBasevector &hb, const vec<int> &inv,
                  const vecbasevector &bases, const ReadPathVec &paths,
-                 vec<vec<int>> &layout_pos, vec<vec<int64_t>> &layout_id,
-                 vec<vec<Bool>> &layout_or) {
+                 std::vector<std::vector<int>> &layout_pos, std::vector<std::vector<int64_t>> &layout_id,
+                 std::vector<std::vector<bool>> &layout_or) {
      int nedges = hb.EdgeObjectCount();
      layout_pos.resize(nedges), layout_id.resize(nedges), layout_or.resize(nedges);
      for (int64_t i = 0; i < (int64_t) paths.size(); ++i) {
@@ -563,7 +563,7 @@ void LayoutReads(const HyperBasevector &hb, const vec<int> &inv,
                if (j > 0 && j < x.isize() - 1) continue;
                layout_pos[x[j]].push_back(pos);
                layout_id[x[j]].push_back(i);
-               layout_or[x[j]].push_back(True);
+               layout_or[x[j]].push_back(true);
                pos -= hb.EdgeLengthKmers(x[j]);
           }
           x.ReverseMe();
@@ -578,7 +578,7 @@ void LayoutReads(const HyperBasevector &hb, const vec<int> &inv,
                if (j > 0 && j < x.isize() - 1) continue;
                layout_pos[x[j]].push_back(pos);
                layout_id[x[j]].push_back(i);
-               layout_or[x[j]].push_back(False);
+               layout_or[x[j]].push_back(false);
                pos -= hb.EdgeLengthKmers(x[j]);
           }
      }

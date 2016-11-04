@@ -63,7 +63,7 @@ struct MakeStartStopFunctor {
 };
 
 void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<int> &rights,
-                const vec<vec<int>> &layout_pos, const vec<vec<int64_t>> &layout_id, const vec<vec<Bool>> & layout_or,
+                const std::vector<std::vector<int>> &layout_pos, const std::vector<std::vector<int64_t>> &layout_id, const std::vector<std::vector<bool>> & layout_or,
                 const int MAX_PROX_LEFT, const int MAX_PROX_RIGHT, const int pair_sample){
 
 
@@ -75,14 +75,14 @@ void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<in
     {
         vec<quad<int64_t, Bool, int, int> > marks;
         for (int l = 0; l < lefts.isize(); l++)
-            for (int k = 0; k < layout_pos[lefts[l]].isize(); k++) {
+            for (int k = 0; k < layout_pos[lefts[l]].size(); k++) {
                 if (!layout_or[lefts[l]][k]) continue;
                 int pos = layout_pos[lefts[l]][k];
                 int64_t id = layout_id[lefts[l]][k];
                 marks.push(id / 2, False, pos, l);
             }
         for (int l = 0; l < rights.isize(); l++)
-            for (int k = 0; k < layout_pos[rights[l]].isize(); k++) {
+            for (int k = 0; k < layout_pos[rights[l]].size(); k++) {
                 if (layout_or[rights[l]][k]) continue;
                 int pos = layout_pos[rights[l]][k];
                 int64_t id = layout_id[rights[l]][k];
@@ -125,7 +125,7 @@ void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<in
 
     std::vector<int64_t> pids2;
     for (int l = 0; l < lefts.isize(); l++)
-        for (int k = 0; k < layout_pos[lefts[l]].isize(); k++) {
+        for (int k = 0; k < layout_pos[lefts[l]].size(); k++) {
             int pos = layout_pos[lefts[l]][k];
             int64_t id = layout_id[lefts[l]][k];
             Bool fw = layout_or[lefts[l]][k];
@@ -147,7 +147,7 @@ void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<in
         }
 
     for (int l = 0; l < rights.isize(); l++)
-        for (int k = 0; k < layout_pos[rights[l]].isize(); k++) {
+        for (int k = 0; k < layout_pos[rights[l]].size(); k++) {
             int pos = layout_pos[rights[l]][k];
             int64_t id = layout_id[rights[l]][k];
             Bool fw = layout_or[rights[l]][k];
@@ -289,9 +289,9 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
     // Layout reads.  Expensive, temporary (?).
 
-    vec<vec<int> > layout_pos(nedges);
-    vec<vec<int64_t> > layout_id(nedges);
-    vec<vec<Bool> > layout_or(nedges);
+    std::vector<std::vector<int> > layout_pos(nedges);
+    std::vector<std::vector<int64_t> > layout_id(nedges);
+    std::vector<std::vector<bool>> layout_or(nedges);
     LayoutReads(hb, inv2, bases, paths2, layout_pos, layout_id, layout_or);
 
     // Make gap assemblies.
@@ -311,12 +311,13 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //TODO: check local variable usage, should be made minimal!!!
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
-    const uint64_t BATCH_SIZE=5000;
-    for (int bstart = 0; bstart < nblobs; bstart += BATCH_SIZE) {
-        #pragma omp parallel
+#define BATCH_SIZE 5000
+
+    for (uint64_t bstart = 0; bstart < nblobs; bstart += BATCH_SIZE) {
+        #pragma omp parallel firstprivate(LR, layout_pos, layout_id, layout_or)
         {
-            #pragma omp for
-            for (int bl = bstart; bl < bstart + BATCH_SIZE; ++bl) {
+            #pragma omp for schedule(dynamic,1)
+            for (uint64_t bl = bstart; bl < bstart + BATCH_SIZE; ++bl) {
                 if (bl >= nblobs) continue;
                 //First part: create the gbases and gquals. this is locked by memory accesses and very convoluted
                 const vec<int> &lefts = LR[bl].first, &rights = LR[bl].second; //TODO: how big is this? can we copy it?
@@ -344,126 +345,126 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 CreateLocalReadSet(gbases, gquals, gpairs, pids, bases, quals);
                 HyperBasevector *mhbp_t = &mhbp[bl];
 
-#pragma omp task shared(lefts,rights)
-                {
-                    uint NUM_THREADS = 1;
-                    long_heuristics heur("");
-                    heur.K2_FLOOR = k2floor_sequence[0];
-                    CorrectionSuite(gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "",
-                                    False);
+                //#pragma omp task shared(lefts,rights)
+                //{
+                uint NUM_THREADS = 1;
+                long_heuristics heur("");
+                heur.K2_FLOOR = k2floor_sequence[0];
+                CorrectionSuite(gbases, gquals, gpairs, heur, creads, corrected, cid, cpartner, NUM_THREADS, "",
+                                False);
 
-                    for (auto K2_FLOOR_LOCAL: k2floor_sequence) {
-                        SupportedHyperBasevector shb;
+                for (auto K2_FLOOR_LOCAL: k2floor_sequence) {
+                    SupportedHyperBasevector shb;
 
-                        MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
+                    MakeLocalAssembly2(corrected, lefts, rights, shb, K2_FLOOR_LOCAL, creads, cid, cpartner);
 
-                        if (shb.K() == 0) continue;
+                    if (shb.K() == 0) continue;
 
-                        // Find edges "starts" and "stops" overlapping root edges.
-                        vec<int> starts, stops;
-                        std::vector<basevector> bell;
-                        bell.reserve(shb.EdgeObjectCount() + lefts.isize() + rights.isize());
-                        for (int e = 0; e < shb.EdgeObjectCount(); e++)
-                            bell.push_back(shb.EdgeObject(e));
-                        for (int l = 0; l < lefts.isize(); l++)
-                            bell.push_back(hb.EdgeObject(lefts[l]));
-                        for (int r = 0; r < rights.isize(); r++)
-                            bell.push_back(hb.EdgeObject(rights[r]));
+                    // Find edges "starts" and "stops" overlapping root edges.
+                    vec<int> starts, stops;
+                    std::vector<basevector> bell;
+                    bell.reserve(shb.EdgeObjectCount() + lefts.isize() + rights.isize());
+                    for (int e = 0; e < shb.EdgeObjectCount(); e++)
+                        bell.push_back(shb.EdgeObject(e));
+                    for (int l = 0; l < lefts.isize(); l++)
+                        bell.push_back(hb.EdgeObject(lefts[l]));
+                    for (int r = 0; r < rights.isize(); r++)
+                        bell.push_back(hb.EdgeObject(rights[r]));
 
-                        BigK::dispatch<MakeStartStopFunctor>(shb.K(), bell, hb, shb, lefts, rights, starts, stops);
+                    BigK::dispatch<MakeStartStopFunctor>(shb.K(), bell, hb, shb, lefts, rights, starts, stops);
 
-                        UniqueSort(starts), UniqueSort(stops);
+                    UniqueSort(starts), UniqueSort(stops);
 
-                        // Reduce shb to those edges between starts and stops.
+                    // Reduce shb to those edges between starts and stops.
 
-                        vec<int> yto_left, yto_right;
-                        shb.ToLeft(yto_left), shb.ToRight(yto_right);
-                        vec<int> keep = Intersection(starts, stops);
-                        keep.append(starts);
-                        keep.append(stops);
-                        for (int j1 = 0; j1 < starts.isize(); j1++)
-                            for (int j2 = 0; j2 < stops.isize(); j2++) {
-                                int v = yto_right[starts[j1]], w = yto_left[stops[j2]];
-                                vec<int> b = shb.EdgesSomewhereBetween(v, w);
-                                keep.append(b);
+                    vec<int> yto_left, yto_right;
+                    shb.ToLeft(yto_left), shb.ToRight(yto_right);
+                    vec<int> keep = Intersection(starts, stops);
+                    keep.append(starts);
+                    keep.append(stops);
+                    for (int j1 = 0; j1 < starts.isize(); j1++)
+                        for (int j2 = 0; j2 < stops.isize(); j2++) {
+                            int v = yto_right[starts[j1]], w = yto_left[stops[j2]];
+                            vec<int> b = shb.EdgesSomewhereBetween(v, w);
+                            keep.append(b);
+                        }
+                    UniqueSort(keep);
+                    vec<int> ydels;
+                    for (int e = 0; e < shb.EdgeObjectCount(); e++)
+                        if (!BinMember(keep, e)) ydels.push_back(e);
+                    xshb = shb;
+                    xshb.DeleteEdges(ydels);
+                    xshb.RemoveUnneededVertices();
+                    xshb.RemoveDeadEdgeObjects();
+
+
+                    if (!CYCLIC_SAVE || xshb.Acyclic()) break;
+
+                }
+
+                if (xshb.Acyclic() && xshb.N() > 0) {
+
+                    // Make bpaths.  These are all source-sink paths through the
+                    // local graph.
+
+                    vec<basevector> bpaths;
+                    vec<int> sources, sinks;
+                    xshb.Sources(sources), xshb.Sinks(sinks);
+                    vec<int> zto_left, zto_right;
+                    xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
+                    for (int i1 = 0; i1 < sources.isize(); i1++) {
+                        for (int i2 = 0; i2 < sinks.isize(); i2++) {
+                            vec<vec<int>> p;
+                            xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
+                            for (int l = 0; l < p.isize(); l++) {
+                                basevector b = xshb.EdgeObject(p[l][0]);
+                                for (int m = 1; m < p[l].isize(); m++) {
+                                    b.resize(b.isize() - (xshb.K() - 1));
+                                    b = Cat(b, xshb.EdgeObject(p[l][m]));
+                                }
+                                bpaths.push_back(b);
+                                if (bpaths.isize() > MAX_BPATHS) break;
                             }
-                        UniqueSort(keep);
-                        vec<int> ydels;
-                        for (int e = 0; e < shb.EdgeObjectCount(); e++)
-                            if (!BinMember(keep, e)) ydels.push_back(e);
-                        xshb = shb;
-                        xshb.DeleteEdges(ydels);
-                        xshb.RemoveUnneededVertices();
-                        xshb.RemoveDeadEdgeObjects();
-
-
-                        if (!CYCLIC_SAVE || xshb.Acyclic()) break;
-
+                        }
                     }
 
-                    if (xshb.Acyclic() && xshb.N() > 0) {
-
-                        // Make bpaths.  These are all source-sink paths through the
-                        // local graph.
-
-                        vec<basevector> bpaths;
-                        vec<int> sources, sinks;
-                        xshb.Sources(sources), xshb.Sinks(sinks);
-                        vec<int> zto_left, zto_right;
-                        xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
-                        for (int i1 = 0; i1 < sources.isize(); i1++) {
-                            for (int i2 = 0; i2 < sinks.isize(); i2++) {
-                                vec<vec<int>> p;
-                                xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
-                                for (int l = 0; l < p.isize(); l++) {
-                                    basevector b = xshb.EdgeObject(p[l][0]);
-                                    for (int m = 1; m < p[l].isize(); m++) {
-                                        b.resize(b.isize() - (xshb.K() - 1));
-                                        b = Cat(b, xshb.EdgeObject(p[l][m]));
-                                    }
+                    if (bpaths.isize() <= MAX_BPATHS) {
+                        // Make more bpaths.
+                        for (int l = 0; l < lefts.isize(); l++) {
+                            Bool ext = False;
+                            for (int m = 0; m < lefts.isize(); m++) {
+                                if (to_right[lefts[m]] == to_left[lefts[l]]) {
+                                    basevector b = hb.EdgeObject(lefts[m]);
+                                    b.resize(b.isize() - (K - 1));
+                                    b = Cat(b, hb.EdgeObject(lefts[l]));
                                     bpaths.push_back(b);
-                                    if (bpaths.isize() > MAX_BPATHS) break;
+                                    ext = True;
                                 }
                             }
+                            if (!ext) bpaths.push_back(hb.EdgeObject(lefts[l]));
                         }
-
-                        if (bpaths.isize() <= MAX_BPATHS) {
-                            // Make more bpaths.
-                            for (int l = 0; l < lefts.isize(); l++) {
-                                Bool ext = False;
-                                for (int m = 0; m < lefts.isize(); m++) {
-                                    if (to_right[lefts[m]] == to_left[lefts[l]]) {
-                                        basevector b = hb.EdgeObject(lefts[m]);
-                                        b.resize(b.isize() - (K - 1));
-                                        b = Cat(b, hb.EdgeObject(lefts[l]));
-                                        bpaths.push_back(b);
-                                        ext = True;
-                                    }
+                        for (int r = 0; r < rights.isize(); r++) {
+                            Bool ext = False;
+                            for (int m = 0; m < rights.isize(); m++) {
+                                if (to_left[rights[m]] == to_right[rights[r]]) {
+                                    basevector b = hb.EdgeObject(rights[r]);
+                                    b.resize(b.size() - (K - 1));
+                                    b = Cat(b, hb.EdgeObject(rights[m]));
+                                    bpaths.push_back(b);
+                                    ext = True;
                                 }
-                                if (!ext) bpaths.push_back(hb.EdgeObject(lefts[l]));
                             }
-                            for (int r = 0; r < rights.isize(); r++) {
-                                Bool ext = False;
-                                for (int m = 0; m < rights.isize(); m++) {
-                                    if (to_left[rights[m]] == to_right[rights[r]]) {
-                                        basevector b = hb.EdgeObject(rights[r]);
-                                        b.resize(b.size() - (K - 1));
-                                        b = Cat(b, hb.EdgeObject(rights[m]));
-                                        bpaths.push_back(b);
-                                        ext = True;
-                                    }
-                                }
-                                if (!ext) bpaths.push_back(hb.EdgeObject(rights[r]));
-                            }
-                            // Make the bpaths into a HyperBasevector.
-                            vecbasevector bpathsx;
-                            for (int l = 0; l < bpaths.isize(); l++)
-                                bpathsx.push_back(bpaths[l]);
-                            BasesToGraph(bpathsx, K, *mhbp_t);
-                            ++solved;
+                            if (!ext) bpaths.push_back(hb.EdgeObject(rights[r]));
                         }
+                        // Make the bpaths into a HyperBasevector.
+                        vecbasevector bpathsx;
+                        for (int l = 0; l < bpaths.isize(); l++)
+                            bpathsx.push_back(bpaths[l]);
+                        BasesToGraph(bpathsx, K, *mhbp_t);
+                        ++solved;
                     }
-                }//---OMP TASK END---
+                }
+                //}//---OMP TASK END---
             }
         }
 
