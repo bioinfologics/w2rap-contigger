@@ -231,7 +231,7 @@ hbv_explorer::hbv_explorer(std::string hbv_filename){
   for (auto nr = 0; nr<20; ++nr){
 
     auto read = reads[nr];
-    std::set mapped_edges;
+    std::set<uint64_t > mapped_edges;
 
     KMerHasher<200> hasher;
     auto itr = read.begin();

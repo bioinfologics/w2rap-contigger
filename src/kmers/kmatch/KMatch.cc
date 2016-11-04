@@ -2,14 +2,6 @@
 #include <sys/time.h>
 #include <thread>
 #include <paths/HyperBasevector.h>
-//#include <functional>
-
-void timed_log(std::string s){
-  struct timeval tp;
-  gettimeofday(&tp,NULL);
-  long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-  std::cout<<"TIME_LOG: "<<ms<<" - "<<s<<std::endl;
-};
 
 KMatch::KMatch(int kv){
   if (kv > 31){
@@ -23,12 +15,10 @@ std::vector<pKmer> KMatch::ProduceKmers(std::string seq){
   // get a sequence a produce the set of kmers ()
   std::vector<pKmer> kmer_vector;
 
-  uint64_t offset=0;
+  int offset=0;
   const uint64_t KMER_MASK=( ((uint64_t)1)<<(this->K*2) )-1;
-//  const uint64_t KMER_FIRSTOFFSET=(K-1)*2;
 
   if (seq.size()>this->K) {
-
     const char *s = seq.c_str();
     int64_t last_unknown = -1;
     uint64_t fkmer = 0;
@@ -56,7 +46,6 @@ std::vector<pKmer> KMatch::ProduceKmers(std::string seq){
           last_unknown = p;
           break;
       }
-      //std::cout<<"c="<<s[p]<<" f="<<fkmer<<" r="<<rkmer<<std::endl;
       //TODO: last unknown passed by?
       if (last_unknown + this->K <= p) {
         pKmer pair_temp;
@@ -136,7 +125,6 @@ std::vector<int> KMatch::MapReads(vecbvec seqVector){
       std::cout<<std::endl;
       cont ++;
     }
-
   }
   std::cout << "mapped reads: " << cont << std::endl;
 }
