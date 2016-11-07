@@ -102,29 +102,14 @@ std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
   for (auto a: rkms){
     std::map<uint64_t, std::vector<edgeKmerPosition>>::iterator tt = this->edgeMap.find(a.kmer);
     if (tt != this->edgeMap.end()){
-      for (auto a: tt->second){
-        mapped_edges.push_back(a);
+      for (auto p: tt->second){
+        edgeKmerPosition x;
+        x.edge_id = p.edge_id;
+        x.offset = p.offset;
+        x.kmer = a.kmer;
+        mapped_edges.push_back(x);
       }
     }
   }
   return mapped_edges;
-}
-
-std::vector<int> KMatch::MapReads(vecbvec seqVector){
-  // get the reads and map them to the graph using the dictionary
-  // returns a vector of paths
-  int cont = 0;
-//  for (auto v=0; v<seqVector.size(); ++v){
-  for (auto v=0; v<20; ++v){
-    auto g = this->lookupRead(seqVector[v].ToString());
-    if (g.size()>0){
-      for (auto a=0; a<g.size(); ++a){
-//        std::cout << "Read: " << cont << " mapped "<< this->lookupRead(seqVector[v].ToString()).size() << " places*kmers"  << std::endl;
-        std::cout << " " << g[a].edge_id << " " << g[a].offset;
-      }
-      std::cout<<std::endl;
-      cont ++;
-    }
-  }
-  std::cout << "mapped reads: " << cont << std::endl;
 }

@@ -26,7 +26,7 @@ typedef struct {
 } pKmer;
 
 typedef struct {
-//    uint64_t kmer;
+    uint64_t kmer;
     int edge_id;
     int offset;
 } edgeKmerPosition;
@@ -35,11 +35,12 @@ class KMatch {
   public:
     KMatch(int K);
     void KMatch::Hbv2Map(HyperBasevector* hbv);
-    std::vector<int> KMatch::MapReads(vecbvec seqVector);
+
     std::vector<pKmer> KMatch::ProduceKmers(std::string seq);
 
     std::map<uint64_t, std::vector<edgeKmerPosition>> edgeMap;
 
+//    std::vector<int> KMatch::MapReads(vecbvec seqVector, HyperBasevector *hbv);
   private:
     uint8_t K;
     std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read);
