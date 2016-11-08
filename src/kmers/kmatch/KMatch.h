@@ -41,11 +41,10 @@ class KMatch {
     std::map<uint64_t, std::vector<edgeKmerPosition>> edgeMap;
 
 //    std::vector<int> KMatch::MapReads(vecbvec seqVector, HyperBasevector *hbv);
-  private:
-    uint8_t K;
     std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read);
 
-
+  private:
+    uint8_t K;
 };
 
 #endif //KMATCH_INCLUDED

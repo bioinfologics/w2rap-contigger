@@ -8,10 +8,9 @@
 #include "kmers/kmatch/KMatch.h"
 
 class PacbioPather: public KMatch {
-public:
-    PacbioPather();
-    std::vector<int> PacbioPather::MapReads(vecbvec seqVector, HyperBasevector* hbv);
-
+  public:
+    PacbioPather::PacbioPather();
+    void PacbioPather::mapReads(vecbvec seqVector, HyperBasevector* hbv);
 };
 
 

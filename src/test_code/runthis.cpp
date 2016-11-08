@@ -5,6 +5,7 @@
 #include <iostream>
 #include <kmers/kmatch/KMatch.h>
 #include "paths/long/large/ExtractReads.h"
+#include "test_code/pacbio/pacbio_pather.h"
 
 #include "testcode_hbv.h"
 
@@ -22,9 +23,9 @@ int main(){
   HyperBasevector hbv;
   BinaryReader::readFile(fn, &hbv);
 
-  KMatch kmt(31);
-  kmt.Hbv2Map(&hbv);
-  std::cout << kmt.edgeMap.size() << std::endl;
+//  KMatch kmt(31);
+//  kmt.Hbv2Map(&hbv);
+//  std::cout << kmt.edgeMap.size() << std::endl;
 
 //  auto ed = kmt.edgeMap;
 //  std::vector<uint64_t> v;
@@ -38,6 +39,8 @@ int main(){
 //  }
 //  std::cout << "Numero de keys: " << v.size() << std::endl;
 
-  auto paths = kmt.MapReads(reads, &hbv);
-
+//  auto paths = kmt.MapReads(reads, &hbv);
+  PacbioPather pbp;
+  pbp.Hbv2Map(&hbv);
+  pbp.mapReads(reads, &hbv);
 }
