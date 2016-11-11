@@ -13,22 +13,22 @@ void PacbioPather::mapReads(vecbvec seqVector, HyperBasevector* hbv){
   std::cout<< "Size of the dictionary: " << edgeMap.size() << std::endl;
   std::ofstream fout;
   fout.open("/Users/ggarcia/Documents/test_dataset/test/testlinks.txt");
-  fout << "read edge_id inv_edge_id offset kmer" <<std::endl;
+  fout << "read readlength edge_id inv_edge_id eoffset kmer roffset" <<std::endl;
   auto edges = hbv->Edges();
   vec<int> inv;
   hbv->Involution(inv);
 
   int cont = 0;
   for (auto v=0; v<seqVector.size(); ++v){
-    std::vector<int> s;
+//    std::vector<int> s;
     auto g = this->lookupRead(seqVector[v].ToString());
 
-    if (g.size()>10){
-      for (auto a=0; a<g.size(); ++a){
-        s.push_back(g[a].edge_id);
+    if (g.size()>0){
+      for (size_t a=0; a<g.size(); ++a){
+//        s.push_back(g[a].edge_id);
 //        std::cout << "Read: " << cont << " mapped "<< this->lookupRead(seqVector[v].ToString()).size() << " places*kmers"  << std::endl;
 //        std::cout << cont << " " << g[a].edge_id << " " << inv[g[a].edge_id] << " " << g[a].offset<< " " << g[a].kmer << std::endl;
-        fout << cont << " " << g[a].edge_id << " " << inv[g[a].edge_id] << " " << g[a].offset<< " " << g[a].kmer << std::endl;
+        fout << cont << " " << seqVector[v].size() << " " << g[a].edge_id << " " << inv[g[a].edge_id] << " " << g[a].edge_offset<< " " << g[a].kmer << " " << g[a].read_offset << std::endl;
       }
 //      std::set<int> ss(s.begin(), s.end());
 //      std::cout << "Read mapped: " << seqVector[v] << std::endl;

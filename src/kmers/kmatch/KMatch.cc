@@ -71,22 +71,22 @@ void KMatch::Hbv2Map(HyperBasevector* hbv){
     auto seq = edges[seqN].ToString();
     auto kv = this->ProduceKmers(seq);
 
-    for (auto &a: kv){
-      if (this->edgeMap.find(a.kmer) == this->edgeMap.end()){
+    for (auto a=0; a<kv.size(); ++a){
+      if (this->edgeMap.find(kv[a].kmer) == this->edgeMap.end()){
         std::vector<edgeKmerPosition> temp_vector;
         edgeKmerPosition tmatch;
         tmatch.edge_id = seq_index;
-        tmatch.offset = a.offset;
+        tmatch.edge_offset = kv[a].offset;
         temp_vector.push_back(tmatch);
-        this->edgeMap[a.kmer] = temp_vector;
+        this->edgeMap[kv[a].kmer] = temp_vector;
 
       } else {
-        auto temp_vector = this->edgeMap[a.kmer];
+        auto temp_vector = this->edgeMap[kv[a].kmer];
         edgeKmerPosition tmatch;
         tmatch.edge_id = seq_index;
-        tmatch.offset = a.offset;
+        tmatch.edge_offset = kv[a].offset;
         temp_vector.push_back(tmatch);
-        this->edgeMap[a.kmer] = temp_vector;
+        this->edgeMap[kv[a].kmer] = temp_vector;
       }
     }
     seq_index++;
@@ -99,17 +99,20 @@ std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
 
   // look kmers in the dictionary
   std::vector<edgeKmerPosition> mapped_edges;
+  int cont = 0; // Cont to hold the kmer offset in the read
   for (auto a: rkms){
     std::map<uint64_t, std::vector<edgeKmerPosition>>::iterator tt = this->edgeMap.find(a.kmer);
     if (tt != this->edgeMap.end()){
       for (auto p: tt->second){
         edgeKmerPosition x;
         x.edge_id = p.edge_id;
-        x.offset = p.offset;
+        x.edge_offset = p.edge_offset;
+        x.read_offset = cont;
         x.kmer = a.kmer;
         mapped_edges.push_back(x);
       }
     }
+    cont++;
   }
   return mapped_edges;
 }

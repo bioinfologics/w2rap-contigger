@@ -28,7 +28,8 @@ typedef struct {
 typedef struct {
     uint64_t kmer;
     int edge_id;
-    int offset;
+    int edge_offset;
+    int read_offset;
 } edgeKmerPosition;
 
 class KMatch {
