@@ -7,10 +7,29 @@
 
 #include "kmers/kmatch/KMatch.h"
 
+typedef struct {
+    int read_id;
+    int read_size;
+    int edge_id;
+    int inv_edge_id;
+    int edge_offset;
+    int read_offset;
+    int kmer;
+} linkReg;
+
 class PacbioPather: public KMatch {
-  public:
-    PacbioPather::PacbioPather();
-    void PacbioPather::mapReads(vecbvec seqVector, HyperBasevector* hbv);
+public:
+    PacbioPather::PacbioPather(vecbvec* seqVector, HyperBasevector* hbv);
+    void PacbioPather::mapReads();
+
+private:
+    vecbvec* seqVector;
+    HyperBasevector* hbv;
+
+    std::vector<linkReg> PacbioPather::getReadsLinks(bool output_to_file=true);
+    std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data);
+    std::vector<linkReg> PacbioPather::readLinksFilter(std::vector<linkReg> data, int read_id);
+
 };
 
 

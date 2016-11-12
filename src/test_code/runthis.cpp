@@ -40,7 +40,7 @@ int main(){
 //  std::cout << "Numero de keys: " << v.size() << std::endl;
 
 //  auto paths = kmt.MapReads(reads, &hbv);
-  PacbioPather pbp;
+  PacbioPather pbp(&reads, &hbv);
   pbp.Hbv2Map(&hbv);
-  pbp.mapReads(reads, &hbv);
+  pbp.mapReads();
 }
