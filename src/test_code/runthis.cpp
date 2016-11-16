@@ -42,5 +42,6 @@ int main(){
 //  auto paths = kmt.MapReads(reads, &hbv);
   PacbioPather pbp(&reads, &hbv);
   pbp.Hbv2Map(&hbv);
-  pbp.mapReads();
+  auto pb_paths = pbp.mapReads();
+
 }

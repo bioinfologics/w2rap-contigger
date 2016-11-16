@@ -28,6 +28,8 @@
 #include <paths/long/large/ImprovePath.h>
 #include "GFADump.h"
 
+// [GONZA]
+#include "test_code/pacbio/pacbio_pather.h"
 
 std::string checkpoint_perf_time(const std::string section_name){
     static double wtimer, cputimer;
@@ -452,6 +454,7 @@ int main(const int argc, const char * argv[]) {
         std::cout << "Reading large_K clean graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
+
         inv.clear();
         hbvr.Involution(inv);
         std::cout << "   DONE!" << std::endl;
@@ -460,6 +463,17 @@ int main(const int argc, const char * argv[]) {
     if (from_step<=5 and to_step>=5) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
         std::cout << Date() <<": inverting paths"<<std::endl;
+
+        //////
+        //[GONZA]: append the pacbio paths to this vector as a first test
+        auto bases = dataMag.mag["PE1"]->bases;
+        auto bases2 = dataMag.mag["PB1"]->bases;
+        PacbioPather pbp(&bases2, &hbvr);
+        pbp.Hbv2Map(&hbvr);
+        auto pb_paths = pbp.mapReads();
+        pathsr.insert(pathsr.end(), pb_paths.begin(), pb_paths.end());
+        /////
+
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
         if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
 

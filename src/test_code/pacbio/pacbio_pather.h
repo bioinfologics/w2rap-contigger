@@ -6,6 +6,7 @@
 #define W2RAP_CONTIGGER_PACBIO_PATHER_H
 
 #include "kmers/kmatch/KMatch.h"
+#include "paths/long/ReadPath.h"
 
 typedef struct {
     int read_id;
@@ -17,10 +18,17 @@ typedef struct {
     int kmer;
 } linkReg;
 
+struct linkreg_less_than {
+    inline bool operator() (const linkReg& struct1, const linkReg& struct2)
+    {
+      return (struct1.read_offset < struct2.read_offset);
+    }
+};
+
 class PacbioPather: public KMatch {
 public:
-    PacbioPather::PacbioPather(vecbvec* seqVector, HyperBasevector* hbv);
-    void PacbioPather::mapReads();
+    PacbioPather::PacbioPather(vecbvec* aseqVector, HyperBasevector* ahbv);
+    ReadPathVec PacbioPather::mapReads();
 
 private:
     vecbvec* seqVector;
