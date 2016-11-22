@@ -28,27 +28,27 @@ std::vector<linkReg> PacbioPather::getReadsLinks(bool output_to_file=true){
   hbv->Involution(inv);
 
   std::cout << "processing edges" << std::endl;
-  int cont = 0;
+//  int cont = 0;
   for (auto v=0; v<this->seqVector->size(); ++v){
     std::string read = (*seqVector)[v].ToString();
     auto g = this->lookupRead(read);
     if (g.size()>0){
       for (size_t a=0; a<g.size(); ++a){
         linkReg temp_link;
-        temp_link.read_id = cont;
+        temp_link.read_id = v;
         temp_link.read_size = read.size();
         temp_link.read_offset = g[a].read_offset;
         temp_link.edge_id = g[a].edge_id;
         temp_link.edge_offset = g[a].edge_offset;
         temp_link.inv_edge_id = inv[g[a].edge_id];
         temp_link.kmer = g[a].kmer;
-        fout << cont << " " << read.size() << " " << g[a].edge_id << " " << inv[g[a].edge_id] << " " << g[a].edge_offset<< " " << g[a].kmer << " " << g[a].read_offset << std::endl;
+        fout << temp_link.read_size << " " << read.size() << " " << g[a].edge_id << " " << inv[g[a].edge_id] << " " << g[a].edge_offset<< " " << g[a].kmer << " " << g[a].read_offset << std::endl;
         links.push_back(temp_link);
       }
     }
-    cont ++;
+//    cont ++;
   }
-  std::cout << "mapped reads: " << cont << std::endl;
+//  std::cout << "mapped reads: " << cont << std::endl;
   fout.close();
   return links;
 }
@@ -85,6 +85,37 @@ std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data){
   return links;
 }
 
+std::vector<linkReg> PacbioPather::matchLengthFilter(std::vector<linkReg> data){
+  // Filter matches by length of the match
+
+  std::map<std::string, int> index_map;
+  for (auto l: data){
+    // juntar la lectura y el eje en el mismo string concatenando asi pueod indexar por los dos
+    std::string key = l.read_id + "-" +l.edge_id;
+    index_map[key] += 1;
+  }
+
+  // contar los links por lectura y por edge
+  std::vector<std::string> filtered_links;
+  for (std::map<std::string, int>::iterator k=index_map.begin(); k != index_map.end(); ++k){
+    //
+    if (k->second > 10) {
+      filtered_links.push_back(k->first);
+    }
+  }
+
+  // Filtrar los que no pegan mas del limite
+  std::vector<linkReg> good_links;
+  for (auto l: data){
+    std::string key = l.read_id + "-" +l.edge_id;
+    if (std::find(filtered_links.begin(), filtered_links.end(), key) != filtered_links.end()){
+      good_links.push_back(l);
+    }
+  }
+
+  //devolver la lista de filtrados
+  return good_links;
+}
 
 
 ReadPathVec PacbioPather::mapReads(){
@@ -97,6 +128,9 @@ ReadPathVec PacbioPather::mapReads(){
 
   // To store the paths
   ReadPathVec pb_paths;
+
+  std::ofstream fout;
+  fout.open("/Users/ggarcia/Documents/test_dataset/test/testlinks_final.txt");
 
   // for each read
   for (std::uint32_t r=0; r<this->seqVector->size(); ++r){
@@ -118,22 +152,30 @@ ReadPathVec PacbioPather::mapReads(){
     std::vector<int> presentes;
     std::vector<linkReg> s_edges;
     for (auto a: offset_filter){
-      if (std::find(presentes.begin(), presentes.end(), a.edge_id) == presentes.end() && std::find(presentes.begin(), presentes.end(), a.inv_edge_id) == presentes.end()){
+      if (std::find(presentes.begin(), presentes.end(), a.edge_id) == presentes.end()){
+//      if (std::find(presentes.begin(), presentes.end(), a.edge_id) == presentes.end() && std::find(presentes.begin(), presentes.end(), a.inv_edge_id) == presentes.end()){
         s_edges.push_back(a);
         presentes.push_back(a.edge_id);
       }
     }
 
+
+
     std::vector<int> temp_path;
     if (s_edges.size() >= 2) {
-     std::cout << "-----------------------" << std::endl;
+      std::cout << "-----------------------" << std::endl;
       std::cout << "read: " << r << std::endl;
       std::cout << "-----------------------" << std::endl;
       int poffset=s_edges[0].edge_offset;
+
+      fout << r;
+
       for (auto s: s_edges) {
-        std::cout << s.edge_id << "," << s.inv_edge_id << std::endl;
+        std::cout << s.edge_id << ":" << s.inv_edge_id << std::endl;
+        fout << "|" << s.edge_id << ":" << s.inv_edge_id;
         temp_path.push_back(s.edge_id);
       }
+      fout << std::endl;
       // apend the path to the vector
       ReadPath tp(poffset, temp_path);
       pb_paths.push_back(tp);

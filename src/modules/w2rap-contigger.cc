@@ -466,7 +466,7 @@ int main(const int argc, const char * argv[]) {
 
         //////
         //[GONZA]: append the pacbio paths to this vector as a first test
-        auto bases = dataMag.mag["PE1"]->bases;
+
         auto bases2 = dataMag.mag["PB1"]->bases;
         PacbioPather pbp(&bases2, &hbvr);
         pbp.Hbv2Map(&hbvr);

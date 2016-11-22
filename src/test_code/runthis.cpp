@@ -6,6 +6,7 @@
 #include <kmers/kmatch/KMatch.h>
 #include "paths/long/large/ExtractReads.h"
 #include "test_code/pacbio/pacbio_pather.h"
+#include "paths/PathFinder.h"
 
 #include "testcode_hbv.h"
 
@@ -19,29 +20,32 @@ int main(){
 
   std::cout << "Loading hbv file..." << std::endl;
   std::string fn = "/Users/ggarcia/Documents/ecoli_test/ecolitest/ecoli_k200.contig.hbv";
-//  hbv_explorer hbvE(fn);
+
+  // Load hbv and create inversion
   HyperBasevector hbv;
   BinaryReader::readFile(fn, &hbv);
+  vec<int> inv;
+  inv.clear();
+  hbv.Involution(inv);
 
-//  KMatch kmt(31);
-//  kmt.Hbv2Map(&hbv);
-//  std::cout << kmt.edgeMap.size() << std::endl;
-
-//  auto ed = kmt.edgeMap;
-//  std::vector<uint64_t> v;
-//  for(std::map<uint64_t, std::vector<std::pair<int, int>>>::iterator it = ed.begin(); it != ed.end(); ++it) {
-//    v.push_back(it->first);
-//    std::cout << it->first;
-//    for (auto a: it->second){
-//      std::cout << "\t" << a.first <<"-"<<a.second;
-//    }
-//    std::cout << std::endl;
-//  }
-//  std::cout << "Numero de keys: " << v.size() << std::endl;
-
-//  auto paths = kmt.MapReads(reads, &hbv);
+  // Create the paths and invert them
   PacbioPather pbp(&reads, &hbv);
   pbp.Hbv2Map(&hbv);
-  auto pb_paths = pbp.mapReads();
 
+  ReadPathVec pathsr = pbp.mapReads();
+  VecULongVec invPaths;
+
+
+  invert(pathsr, invPaths, hbv.EdgeObjectCount());
+
+  // pathfinders
+//  PathFinder(hbv, inv, pathsr, invPaths).unroll_loops(800);
+//  PathFinder(hbv,inv,pathsr,invPaths).untangle_pins();
+  PathFinder(hbv,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+
+  RemoveUnneededVertices2(hbv, inv, pathsr);
+  Cleanup(hbv, inv, pathsr);
+
+  BinaryWriter::writeFile("/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.hbv", hbv);
+  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.paths");
 }
