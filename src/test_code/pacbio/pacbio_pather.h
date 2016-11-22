@@ -37,7 +37,7 @@ private:
     std::vector<linkReg> PacbioPather::getReadsLinks(bool output_to_file=true);
     std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data);
     std::vector<linkReg> PacbioPather::readLinksFilter(std::vector<linkReg> data, int read_id);
-
+    std::vector<linkReg> PacbioPather::matchLengthFilter(std::vector<linkReg> data);
 };
 
 
