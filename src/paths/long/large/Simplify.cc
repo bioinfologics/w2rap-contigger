@@ -28,7 +28,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const Bool PULL_APART_VERBOSE, const vec<int> &PULL_APART_TRACE,
               const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
               const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
-              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files) {
+              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files,ReadPathVec &pb_paths) {
     // Improve read placements and delete funky pairs.
     std::cout << "Edge count: " << hb.EdgeObjectCount() << " Path count:" << paths.size() << std::endl;
     std::cout << "Simplify: rerouting paths" << std::endl;
@@ -159,7 +159,6 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             //paths.WriteAll(fin_dir + "/pf_start.paths");
             WriteReadPathVec(paths,(fin_dir + "/pf_start.paths").c_str());
         }
-
         std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
         PathFinder(hb, inv, paths, invPaths).unroll_loops(800);
         std::cout << "Removing Unneded Vertices" << std::endl;
@@ -169,15 +168,24 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         if (dump_pf_files) {
             BinaryWriter::writeFile(fin_dir + "/pf_unrolled_loops.hbv", hb);
             //paths.WriteAll(fin_dir + "/pf_unrolled_loops.paths");
-            WriteReadPathVec(paths,(fin_dir + "/pf_unrolled_loops.paths").c_str());
+            WriteReadPathVec(paths, (fin_dir + "/pf_unrolled_loops.paths").c_str());
         }
-        invPaths.clear();
-        invert( paths, invPaths, hb.EdgeObjectCount( ) );
-        std::cout << Date() << ": PathFinder: analysing single-direction repeats" << std::endl;
-        PathFinder(hb, inv, paths, invPaths).untangle_complex_in_out_choices(700);
-        std::cout << "Removing Unneded Vertices" << std::endl;
-        RemoveUnneededVertices2(hb, inv, paths);
-        Cleanup(hb, inv, paths);
+        for (auto i=800;i < 2000 ; i+=100) {
+            auto totalpaths=paths;
+            totalpaths.insert(totalpaths.end(),pb_paths.begin(),pb_paths.end());
+            VecULongVec invtotalPaths;
+            invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
+
+            std::cout << Date() << ": PathFinder: resolving repeats of size " << i << std::endl;
+
+            invtotalPaths.clear();
+            invert(paths, invtotalPaths, hb.EdgeObjectCount());
+            std::cout << Date() << ": PathFinder: analysing single-direction repeats" << std::endl;
+            PathFinder(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
+            std::cout << "Removing Unneded Vertices" << std::endl;
+            RemoveUnneededVertices2(hb, inv, totalpaths);
+            Cleanup(hb, inv, totalpaths);
+        }
 
         if (dump_pf_files) {
             BinaryWriter::writeFile(fin_dir + "/pf_end.hbv", hb);
