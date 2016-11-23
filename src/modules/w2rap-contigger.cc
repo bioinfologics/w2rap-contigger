@@ -464,15 +464,6 @@ int main(const int argc, const char * argv[]) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
         std::cout << Date() <<": inverting paths"<<std::endl;
 
-        //////
-        //[GONZA]: append the pacbio paths to this vector as a first test
-
-        auto bases2 = dataMag.mag["PB1"]->bases;
-        PacbioPather pbp(&bases2, &hbvr);
-        pbp.Hbv2Map(&hbvr);
-        auto pb_paths = pbp.mapReads();
-        pathsr.insert(pathsr.end(), pb_paths.begin(), pb_paths.end());
-        /////
 
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
         if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
@@ -542,6 +533,17 @@ int main(const int argc, const char * argv[]) {
         bool IMPROVE_PATHS_LARGE = False;
         bool FINAL_TINY = True;
         bool UNWIND3 = True;
+
+
+        //////
+        //[GONZA]: append the pacbio paths to this vector as a first test
+
+        auto bases2 = dataMag.mag["PB1"]->bases;
+        PacbioPather pbp(&bases2, &hbvr);
+        pbp.Hbv2Map(&hbvr);
+        auto pb_paths = pbp.mapReads();
+        pathsr.insert(pathsr.end(), pb_paths.begin(), pb_paths.end());
+        /////
 
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,

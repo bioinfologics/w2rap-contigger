@@ -27,17 +27,17 @@ struct linkreg_less_than {
 
 class PacbioPather: public KMatch {
 public:
-    PacbioPather::PacbioPather(vecbvec* aseqVector, HyperBasevector* ahbv);
-    ReadPathVec PacbioPather::mapReads();
+    PacbioPather(vecbvec* aseqVector, HyperBasevector* ahbv);
+    ReadPathVec mapReads();
 
 private:
     vecbvec* seqVector;
     HyperBasevector* hbv;
 
-    std::vector<linkReg> PacbioPather::getReadsLinks(bool output_to_file=true);
-    std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data);
-    std::vector<linkReg> PacbioPather::readLinksFilter(std::vector<linkReg> data, int read_id);
-    std::vector<linkReg> PacbioPather::matchLengthFilter(std::vector<linkReg> data);
+    std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
+    std::vector<linkReg> readOffsetFilter(std::vector<linkReg> data);
+    std::vector<linkReg> readLinksFilter(std::vector<linkReg> data, int read_id);
+    std::vector<linkReg> matchLengthFilter(std::vector<linkReg> data);
 };
 
 
