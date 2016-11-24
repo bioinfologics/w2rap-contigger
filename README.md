@@ -67,7 +67,7 @@ mkdir test_k260
 #optionally, remember to set MALLOC_PER_THREAD and/or OMP_PROC_BIND
 export OMP_PROC_BIND=spread
 export MALLOC_PER_THREAD=1
-./w2rap_contigger -o test_k260 -p example -r example.bam -K 260
+./w2rap-contigger -o test_k260 -p example -r example.bam -K 260
 ```
 
 
@@ -78,7 +78,7 @@ mkdir test_k260
 #optionally, remember to set MALLOC_PER_THREAD and/or OMP_PROC_BIND
 export OMP_PROC_BIND=spread
 export MALLOC_PER_THREAD=1
-./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260
+./w2rap-contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260
 ```
 
 Example run with input fastq files, K=260, runing step2 independently (this steps usually has usually the highest memory peak):
@@ -88,9 +88,9 @@ mkdir test_k260
 #optionally, remember to set MALLOC_PER_THREAD and/or OMP_PROC_BIND
 export OMP_PROC_BIND=spread
 export MALLOC_PER_THREAD=1
-./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --to_step 1
-./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --from_step 2 --to_step 2
-./w2rap_contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --from_step 3
+./w2rap-contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --to_step 1
+./w2rap-contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --from_step 2 --to_step 2
+./w2rap-contigger -o test_k260 -p example -r example_r1.fastq,example_r2.fastq -K 260 --from_step 3
 ```
 
 Your assembly will end up in the `a.lines.fasta` file.
