@@ -97,8 +97,8 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
                                                  "number of disk batches for step2 (default: 0, 0->in memory)", false, 0, "int", cmd);
-        TCLAP::ValueArg<unsigned int> tmp_dirArg("", "tmp_dir",
-                                                      "tmp dir for step2 disk batches (default: workdir)", false, 4, "int", cmd);
+        TCLAP::ValueArg<std::string> tmp_dirArg("", "tmp_dir",
+                                                      "tmp dir for step2 disk batches (default: workdir)", false, "", "string", cmd);
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
