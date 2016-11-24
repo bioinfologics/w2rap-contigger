@@ -1271,7 +1271,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         #pragma omp parallel shared(pDict,reads,quals)
         {
             #pragma omp single
-            createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, tmpdir, workdir);
+            createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, workdir, tmpdir);
         }
     }
     std::cout << Date() << ": updating adjacencies" <<std::endl;
