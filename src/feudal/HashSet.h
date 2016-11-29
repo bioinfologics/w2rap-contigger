@@ -957,7 +957,7 @@ private:
         deallocArray(*itr,capacity/=2);
       mOldppHHSs.clear();
       if ( 1.*nHHS/(nHHS-mSplitCount) > 1.3 )
-        std::cout << "Warning: HashSet initial size too small." << std::endl;
+        std::cout << Date() << ": Warning: HashSet initial size too small." << std::endl;
     }
 
     std::atomic<PPHHS> mppHHS;        // length == mCapacity

@@ -229,14 +229,14 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
           // add in "new_stuff" to allx
           allx.append(new_stuff.begin(),new_stuff.end());
 
-          std::cout << Date( ) << ": building hb2" << std::endl;
-          std::cout << TimeSince(clock1) << " used in new stuff 1 test" << std::endl;
-          std::cout << "memory in use now = " << MemUsageBytes( )
-               << std::endl;
+          std::cout << Date( ) << ": adding new content to graph" << std::endl;
+          //std::cout << TimeSince(clock1) << " used in new stuff 1 test" << std::endl;
+          //std::cout << "memory in use now = " << MemUsageBytes( )
+          //     << std::endl;
           double clock2 = WallClockTime( );
           const int coverage = 4;
           buildBigKHBVFromReads( K, allx, coverage, &hb3, &allx_paths);
-          std::cout << Date( ) << ": back from buildBigKHBVFromReads" << std::endl;
+          //std::cout << Date( ) << ": back from buildBigKHBVFromReads" << std::endl;
 
           // build to3 and left3 from allx_paths
 
@@ -245,7 +245,7 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
                     to3[i].push_back( p );
                left3[i] = allx_paths[i].getFirstSkip();    }
 
-          std::cout << TimeSince(clock2) << " used in new stuff 2 test" << std::endl;
+          //std::cout << TimeSince(clock2) << " used in new stuff 2 test" << std::endl;
 
           if ( trace_edges.size() ) 
           {    std::cout << "BigKHBV EDGE-PATHS:" << std::endl;
@@ -273,7 +273,8 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
           ExtendPath( paths2[i], i, hb, to_right, bases[i], quals.begin()[i],
                   MIN_GAIN, extend_paths_verbose, EXT_MODE );    }
      Validate( hb, inv2, paths2 );
-     std::cout << TimeSince(clock5) << " used in new stuff 5" << std::endl;    }
+     //std::cout << TimeSince(clock5) << " used in new stuff 5" << std::endl;
+     }
 
 // ExtendPath.
 // - Does not change a path that has a negative start.

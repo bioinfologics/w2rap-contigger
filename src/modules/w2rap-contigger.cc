@@ -66,7 +66,7 @@ int main(const int argc, const char * argv[]) {
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
     std::cout<<std::endl<<std::endl;
-    std::cout << "Welcome to w2rap-contigger" << std::endl;
+    std::cout << "Welcome to w2rap-contigger" << std::endl << std::endl;
 
     try {
         TCLAP::CmdLine cmd("", ' ', "0.1");
@@ -307,25 +307,24 @@ int main(const int argc, const char * argv[]) {
     {
         std::cout << "--== Step 1: Reading input files ==--" << std::endl;
         ExtractReads(read_files, out_dir, subsam_names, subsam_starts, &bases, &quals);
-        std::cout << "Reading input files DONE!" << std::endl << std::endl << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("ExtractReads") << std::endl;
         //TODO: add an option to dump the reads
         if (dump_all || to_step<6) {
-            std::cout << "Dumping reads in fastb/qualp format..." << std::endl;
+            std::cout << Date() << ": Dumping reads in fastb/qualp format..." << std::endl;
             bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
             quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
-            std::cout << "   DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("DumpReads") << std::endl;
         }
+        std::cout << Date() << ": Reading input files DONE!" << std::endl << std::endl << std::endl;
     }
 
     //== Read QGraph, and repath (k=60, k=200 (and saves in binary format) ======
 
     if (from_step>1 && from_step<7 and not (from_step==3 and to_step==3)){
-        std::cout << "Loading reads in fastb/qualp format..." << std::endl;
+        std::cout << Date() << ": Loading reads in fastb/qualp format..." << std::endl;
         bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
         quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
-        std::cout << "   DONE!" << std::endl;
+        std::cout << Date() << ": Loading reads DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << checkpoint_perf_time("LoadReads") << std::endl;
     }
     {//This scope-trick to invalidate old data is dirty
@@ -339,21 +338,21 @@ int main(const int argc, const char * argv[]) {
             if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
             FixPaths(hbv, paths); //TODO: is this even needed?
             if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
-            std::cout << "Building first graph DONE!" << std::endl << std::endl << std::endl;
             if (dump_all || to_step ==2){
-                std::cout << "Dumping small_K graph and paths..." << std::endl;
+                std::cout << Date() << ": Dumping small_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".small_K.hbv", hbv);
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
-                std::cout << "   DONE!" << std::endl;
+                std::cout << Date() << ": Dumping small_K graph and paths DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("SmallKDump") << std::endl;
             }
+            std::cout << Date() << ": Building first graph DONE!" << std::endl << std::endl << std::endl;
         }
 
         if (from_step==3){
-            std::cout << "Reading small_K graph and paths..." << std::endl;
+            std::cout << Date() << ": Reading small_K graph and paths..." << std::endl;
             BinaryReader::readFile(out_dir + "/" + out_prefix + ".small_K.hbv", &hbv);
             LoadReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
-            std::cout << "   DONE!" << std::endl;
+            std::cout << Date() << ": Reading small_K graph and paths DONE!" << std::endl << std::endl;
             if (dump_perf) perf_file << std::endl << checkpoint_perf_time("SmallKLoad") << std::endl;
         }
         if (from_step<=3 and to_step>=3) {
@@ -370,24 +369,25 @@ int main(const int argc, const char * argv[]) {
 
             RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
             if (dump_perf) perf_file << checkpoint_perf_time("Repath") << std::endl;
-            std::cout << "Repathing to second graph DONE!" << std::endl << std::endl << std::endl;
+
             if (dump_all || to_step ==3){
-                std::cout << "Dumping large_K graph and paths..." << std::endl;
+                std::cout << Date() << ": Dumping large_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.hbv", hbvr);
                 WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
-                std::cout << "   DONE!" << std::endl;
+                std::cout << Date() << ": Dumping large_K graph and paths DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("LargeKDump") << std::endl;
             }
+            std::cout << Date() << ": Repathing to second graph DONE!" << std::endl << std::endl;
         }
 
     }
 
     //== Clean ======
     if (from_step==4){
-        std::cout << "Reading large_K graph and paths..." << std::endl;
+        std::cout << Date() << ": Reading large_K graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
-        std::cout << "   DONE!" << std::endl;
+        std::cout << Date() << ": Reading large_K graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKLoad") << std::endl;
     }
     if (from_step<=4 and to_step>=4) {
@@ -398,14 +398,15 @@ int main(const int argc, const char * argv[]) {
         int CLEAN_200V = 3;
         Clean200x(hbvr, inv, pathsr, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_size);
         if (dump_perf) perf_file << checkpoint_perf_time("Clean200x") << std::endl;
-        std::cout << "Cleaning graph DONE!" << std::endl<< std::endl<< std::endl;
+
         if (dump_all || to_step ==4){
-            std::cout << "Dumping large_K clean graph and paths..." << std::endl;
+            std::cout << Date() << ": Dumping large_K clean graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
-            std::cout << "   DONE!" << std::endl;
+            std::cout << Date() << ": Dumping large_K clean graph and paths DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("LargeKCleanDump") << std::endl;
         }
+        std::cout << Date() << ": Cleaning graph DONE!" << std::endl<< std::endl;
     }
 
     //== Patching ======
@@ -413,17 +414,17 @@ int main(const int argc, const char * argv[]) {
     VecULongVec paths_inv;
 
     if (from_step==5){
-        std::cout << "Reading large_K clean graph and paths..." << std::endl;
+        std::cout << Date() << ": Reading large_K clean graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
-        std::cout << "   DONE!" << std::endl;
+        std::cout << Date() << ": Reading large_K clean graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKCleanLoad") << std::endl;
     }
     if (from_step<=5 and to_step>=5) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
-        std::cout << Date() <<": inverting paths"<<std::endl;
+        std::cout << Date() <<": creating edge-to-path index"<<std::endl;
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
         if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
 
@@ -447,26 +448,26 @@ int main(const int argc, const char * argv[]) {
         AddNewStuff(new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, TRACE_PATHS, out_dir, EXT_MODE);
         PartnersToEnds(hbvr, pathsr, bases, quals);
         if (dump_perf) perf_file << checkpoint_perf_time("NewStuff&Partners") << std::endl;
-        std::cout << "Assembling gaps DONE!" << std::endl << std::endl << std::endl;
         if (dump_all || to_step ==5){
-            std::cout << "Dumping large_K final graph and paths..." << std::endl;
+            std::cout << Date() << ": Dumping large_K final graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
-            std::cout << "   DONE!" << std::endl;
+            std::cout << Date() << ": Dumping large_K final graph and paths DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("LargeKFinalDump") << std::endl;
         }
+        std::cout << Date() << ": Assembling gaps DONE!" << std::endl << std::endl ;
 
     }
 
 
 
     if (from_step==6){
-        std::cout << "Reading large_K final graph and paths..." << std::endl;
+        std::cout << Date() << ": Reading large_K final graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
-        std::cout << "   DONE!" << std::endl;
+        std::cout << Date() << ": Reading large_K final graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKFinalLoad") << std::endl;
     }
     if (from_step<=6 and to_step>=6) {
@@ -542,29 +543,29 @@ int main(const int argc, const char * argv[]) {
         FragDist(hbvr, inv, pathsr, out_dir + "/" + out_prefix + ".fin.frags.dist");
         if (dump_perf) perf_file << checkpoint_perf_time("FragDist") << std::endl;
         //TODO: add contig fasta dump.
-        std::cout << "Contigging DONE!" << std::endl << std::endl << std::endl;
         if (dump_all || to_step == 6){
-            std::cout << "Dumping contig graph and paths..." << std::endl;
+            std::cout << Date() << ": Dumping contig graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
-            std::cout << "   DONE!" << std::endl;
+            std::cout << Date() << ": Dumping contig graph and paths DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("ContigGraphDump") << std::endl;
         }
         //vecbasevector G;
         //FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
         GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
         PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
+        std::cout << Date() << ": Contigging DONE!" << std::endl << std::endl;
 
     }
     if (from_step==7){
-        std::cout << "Reading contig graph and paths..." << std::endl;
+        std::cout << Date() << ": Reading contig graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".contig.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
         paths_inv.clear();
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        std::cout << "   DONE!" << std::endl;
+        std::cout << Date() << ": Reading contig graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("ContigGraphLoad") << std::endl;
     }
     if (from_step<=7 and to_step>=7) {
@@ -591,14 +592,14 @@ int main(const int argc, const char * argv[]) {
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);
         if (dump_perf) perf_file << checkpoint_perf_time("MakeGaps") << std::endl;
-        std::cout << "--== PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
+
         // Carry out final analyses and write final assembly files.
 
         vecbasevector G;
         FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
         GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
         if (dump_perf) perf_file << checkpoint_perf_time("FinalFiles") << std::endl;
-
+        std::cout << Date() << ": PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
 
     }
     if (dump_perf) perf_file.close();

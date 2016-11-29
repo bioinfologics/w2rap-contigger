@@ -281,7 +281,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         }
         EraseIf(LR, lrd);
     }
-    std::cout << Date() << ": " << LR.size() << " non-inverted clusters" << std::endl;
+    std::cout << Date() << ": " << LR.size() << " unique clusters to be processed as blobs" << std::endl;
     // Some setup stuff.
 
     int nedges = hb.EdgeObjectCount();
@@ -303,7 +303,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     hb.ToLeft(to_left), hb.ToRight(to_right);
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
     vec<HyperBasevector> mhbp(LR.size());//this is accumulation, generates memory blocks
-    std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
+    //std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
     double clockp1 = WallClockTime();
     int nblobs = LR.size();
     std::atomic_uint_fast64_t solved(0);
@@ -470,7 +470,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
         std::cout << Date() << ": "<< std::min(bstart+BATCH_SIZE,(uint64_t)nblobs) <<" blobs processed, paths found for " << solved << std::endl;
     }
-    std::cout << Date() << TimeSince(clockp1) << " spent in local assemblies." << std::endl;
+    std::cout << Date() << ": "<< TimeSince(clockp1) << " spent in local assemblies." << std::endl;
 
     TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);

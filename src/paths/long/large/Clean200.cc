@@ -17,14 +17,18 @@
 #include "paths/long/large/Clean200.h"
 #include "paths/long/large/GapToyTools.h"
 
-void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
+
+void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
      const int version, const uint min_size )
 {
      // Start.
 
-     double clock = WallClockTime( );
 
+     uint64_t total=0;
+     for (auto i=0; i<hb.EdgeObjectCount(); ++i) total+=hb.EdgeObject(i).size()-hb.K()+1;
+
+     std::cout << Date() << ": cleaning graph with " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges"<< std::endl;
      // Heuristics.
 
      const int max_exts = 10;
@@ -49,188 +53,6 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      //std::cout << Date( ) << ": start walking" << std::endl;
      //std::cout << "memory in use = " << ToStringAddCommas( MemUsageBytes( ) ) << std::endl;
-     const int max_rl = 250;
-     vec<int> to_delete;
-     #pragma omp parallel for
-     for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
-     {    int v = to_right[e];
-          if ( !hb.To(v).solo( ) || hb.From(v).size( ) <= 1 ) continue;
-
-          // Find extensions of e.
-
-          int n = hb.From(v).size( );
-          int depth = max_rl;
-          vec< vec<int> > exts;
-          GetExtensions( hbx, v, max_exts, exts, depth );
-          if ( exts.isize( ) > max_exts ) continue;
-          int N = exts.size( );
-          vec<int> ei(N);
-          for ( int i = 0; i < N; i++ )
-          for ( int j = 0; j < n; j++ )
-               if ( exts[i][0] == hb.IFrom( v, j ) ) ei[i] = j;
-
-          // Convert to basevectors.
-
-          vec<basevector> bexts, rbexts;
-          for ( int i = 0; i < N; i++ )
-          {    const vec<int>& x = exts[i];
-               basevector b = hb.Cat(x);
-               bexts.push_back(b);
-               b.ReverseComplement( );
-               rbexts.push_back(b);    }
-
-          // Score each read path containing e or a successor of it.
-
-          vec<vec<int>> scores(n);
-          vec< std::pair<int64_t,int> > pi; // {(id,start)}
-          for ( int64_t i = 0; i < (int64_t) paths_index[e].size( ); i++ )
-          {    int64_t id = paths_index[e][i];
-               const ReadPath& p = paths[id];
-               for ( int j = 0; j < (int) p.size( ); j++ )
-               {    if ( p[j] == e ) 
-                    {    int start = p.getOffset( );
-                         for ( int l = 0; l <= j; l++ )
-                              start -= hb.Kmers( p[l] );
-                         pi.push( id, start );    }    }    }
-          for ( int m = 0; m < n; m++ )
-          {    int ep = hb.IFrom( v, m );
-               for ( int64_t i = 0; i < (int64_t) paths_index[ep].size( ); i++ )
-               {    int64_t id = paths_index[ep][i];
-                    const ReadPath& p = paths[id];
-                    for ( int j = 0; j < (int) p.size( ); j++ )
-                    {    if ( p[j] == ep ) 
-                         {    if ( j > 0 && p[j-1] == e ) continue;
-                              int start = p.getOffset( );
-                              for ( int l = 0; l < j; l++ )
-                                   start -= hb.Kmers( p[l] );
-                              pi.push( id, start );    }    }    }    }
-          qvec qv;
-          for ( int64_t i = 0; i < pi.isize( ); i++ )
-          {    int64_t id = pi[i].first; 
-               int start = pi[i].second;
-               quals[id].unpack(&qv);
-               const ReadPath& p = paths[id];
-               vec<int> q( N, 0 );
-               for ( int pos = 0; pos < depth + hb.K( ) - 1; pos++ )
-               {    int rpos = pos - start;
-                    if ( rpos < 0 || rpos >= bases[id].isize( ) ) continue;
-                    for ( int l = 0; l < N; l++ )
-                    {    if ( bexts[l][pos] != bases[id][rpos] )
-                              q[l] += qv[rpos];    }    }
-               vec<int> qq( n, 1000000000 );
-               for ( int l = 0; l < N; l++ )
-                    qq[ ei[l] ] = Min( qq[ ei[l] ], q[l] );
-               vec<int> idx( n, vec<int>::IDENTITY );
-               SortSync( qq, idx );
-               if ( qq[0] < qq[1] ) scores[ idx[0] ].push_back( qq[1] - qq[0] );    }
-
-          // Score each read path containing rc of e or its successor.
-
-          vec< std::pair<int64_t,int> > rpi; // {(id, start of read rel edge re)}
-          int re = inv[e];
-          for ( int64_t i = 0; i < (int64_t) paths_index[re].size( ); i++ )
-          {    int64_t id = paths_index[re][i];
-               const ReadPath& p = paths[id];
-               for ( int j = 0; j < (int) p.size( ); j++ )
-               {    if ( p[j] == re ) 
-                    {    int start = p.getOffset( );
-                         for ( int l = 0; l < j; l++ )
-                              start -= hb.Kmers( p[l] );
-                         rpi.push( id, start );    }    }    }
-          for ( int m = 0; m < n; m++ )
-          {    int rep = inv[ hb.IFrom( v, m ) ];
-               for ( int64_t i = 0; i < (int64_t) paths_index[rep].size( ); i++ )
-               {    int64_t id = paths_index[rep][i];
-                    const ReadPath& p = paths[id];
-                    for ( int64_t j = 0; j < (int64_t) p.size( ); j++ )
-                    {    if ( p[j] == rep ) 
-                         {    if ( j < (int) p.size( ) - 1 && p[j+1] == re ) 
-                                   continue;
-                              int start = p.getOffset( );
-                              for ( int l = 0; l <= j; l++ )
-                                   start -= hb.Kmers( p[l] );
-                              rpi.push( id, start );    }    }    }    }
-          for ( int64_t i = 0; i < rpi.isize( ); i++ )
-          {    int64_t id = rpi[i].first; 
-               int start = rpi[i].second;
-               quals[id].unpack(&qv);
-               const ReadPath& p = paths[id];
-               vec<int> q( N, 0 );
-               for ( int pos = 0; pos < depth + hb.K( ) - 1; pos++ )
-               {    int rpos = hb.K( ) - 2 - pos - start;
-                    if ( rpos < 0 || rpos >= bases[id].isize( ) ) continue;
-                    for ( int l = 0; l < N; l++ )
-                    {    int s = bexts[l].size( );
-                         if ( rbexts[l][s-pos-1] != bases[id][rpos] )
-                              q[l] += qv[rpos];    }    }
-               vec<int> qq( n, 1000000000 );
-               for ( int l = 0; l < N; l++ )
-                    qq[ ei[l] ] = Min( qq[ ei[l] ], q[l] );
-               vec<int> idx( n, vec<int>::IDENTITY );
-               SortSync( qq, idx );
-               if ( qq[0] < qq[1] ) scores[ idx[0] ].push_back( qq[1] - qq[0] );    }
-
-          // Analyze scores.
-
-          for ( int j = 0; j < n; j++ )
-               ReverseSort( scores[j] );
-          AnalyzeScores( hbx, inv, v, scores, to_delete, zpass, verbosity,
-               version );    }
-
-     // Remove tiny standalone edges
-
-     if (min_size>0)
-     {    for ( int v = 0; v < hb.N( ); v++ )
-          {    if ( hb.To(v).nonempty( ) ) continue;
-               if ( !hb.From(v).solo( ) ) continue;
-               int w = hb.From(v)[0];
-               if ( v == w ) continue;
-               if ( !hb.To(w).solo( ) ) continue;
-               if ( hb.From(w).nonempty( ) ) continue;
-               int e = hb.IFrom( v, 0 );
-               if ( hb.EdgeLengthKmers(e) > min_size ) continue;
-               to_delete.push_back(e);    }    }
-
-     // Clean up.
-
-     hb.DeleteEdges(to_delete);
-     Cleanup( hb, inv, paths );    }
-     TestInvolution( hb, inv );
-     Validate( hb, inv, paths );    
-     std::cout << TimeSince(clock) << " used cleaning large_k-mer graph" << std::endl;    }
-
-void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
-     const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const uint min_size )
-{
-     // Start.
-
-     double clock = WallClockTime( );
-
-     // Heuristics.
-
-     const int max_exts = 10;
-     const int npasses = 2;
-
-     // Run two passes.
-
-     for ( int zpass = 1; zpass <= npasses; zpass++ )
-     {
-     
-     // ---->
-
-     // Set up.
-
-     vec<int> to_right;
-     hb.ToRight(to_right);
-     HyperBasevectorX hbx(hb);
-     VecULongVec paths_index;
-     invert( paths, paths_index, hb.EdgeObjectCount( ) );
-
-     // Look for weak branches.
-
-     std::cout << Date( ) << ": start walking" << std::endl;
-     std::cout << "memory in use = " << ToStringAddCommas( MemUsageBytes( ) ) << std::endl;
      const int max_rl = 250;
      vec<int> to_delete;
      #pragma omp parallel for
@@ -386,6 +208,9 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      TestInvolution( hb, inv );
      Validate( hb, inv, paths );    
      //std::cout << TimeSince(clock) << " used cleaning large_k-mer graph" << std::endl;
+     total=0;
+     for (auto i=0; i<hb.EdgeObjectCount(); ++i) total+=hb.EdgeObject(i).size()-hb.K()+1;
+     std::cout << Date() << ": graph cleaned to " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges"<< std::endl;
 }
 
 void AnalyzeScores( const HyperBasevectorX& hb, const vec<int>& inv, const int v,

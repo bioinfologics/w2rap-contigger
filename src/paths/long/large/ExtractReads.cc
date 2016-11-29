@@ -37,11 +37,6 @@ class rs_meta { // read set meta info
                << m.lib << ",frac=" << m.frac;    }
 };
 
-void GetAmbInt( const vecbitvector& amb, vec< std::pair<int,ho_interval> >& amb_int );
-
-void GetCannedReferenceSequences( const String& sample, const String& species,
-     const String& work_dir );
-
 void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_names,
      vec<int64_t>& subsam_starts, vecbvec* pReads, VecPQVec* quals )
 {
@@ -49,8 +44,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
 
 
      // Parse, check and load files.  This is the main extraction path.
-
-     std::cout << Date() << ": finding input files" << std::endl;
      reads.GlobalReplaceBy(" ", "");
      vec<vec<String> > infiles;
      vec<vec<String> > infiles_rn;
@@ -301,8 +294,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
      int nfiles = 0;
      for (int g = 0; g < groups.isize(); g++)
           nfiles += infiles[g].size();
-     std::cout << Date() << ": reading " << nfiles
-     << " files (which may take a while)" << std::endl;
+     std::cout << Date() << ": reading " << nfiles << " files" << std::endl;
      for (int g = 0; g < groups.isize(); g++) {
           if (g > 0 && subsam_names[g] != subsam_names[g - 1])
                subsam_starts[g] = xbases.size();
@@ -591,21 +583,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                }
           }
      }
-     std::cout << "\nINPUT FILES:\n";
-     std::ostringstream iout;
-     for (int j = 0; j < f1.isize(); j++)
-          iout << "[" << j + 1 << "," << f1_meta[j] << "]  " << f1[j] << std::endl;
-     for (int j = 0; j < f2.isize(); j++) {
-          iout << "[" << f1.isize() + j + 1 << "a"
-          << "," << f2_meta[j] << "] " << f2[j].first << std::endl;
-          iout << "[" << f1.isize() + j + 1 << "b"
-          << "," << f2_meta[j] << "] " << f2[j].second << std::endl;
-     }
-     {
-          Ofstream(ioutx, work_dir + "/input_files");
-          ioutx << iout.str();
-     }
-     std::cout << iout.str() << "\n";
 
      // Fix subsam.
 
@@ -619,9 +596,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
           }
      }
      subsam_names.resize(scount + 1), subsam_starts.resize(scount + 1);
-     std::cout << Date() << ": found " << subsam_names.size()
-     << " samples" << std::endl;
-     std::cout << Date() << ": starts = " << printSeq(subsam_starts) << std::endl;
      for (int i = 0; i < subsam_starts.isize(); i++) {
           if ((i < subsam_starts.isize() - 1
                && subsam_starts[i] == subsam_starts[i + 1])
@@ -671,7 +645,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
      << ", peak = " << PeakMemUsageGBString( )
      #endif
      << std::endl;
-     std::cout << TimeSince(lclock) << " used extracting reads" << std::endl;
+     std::cout << Date() << ": " << TimeSince(lclock) << " used extracting reads" << std::endl;
 
 
 

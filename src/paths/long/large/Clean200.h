@@ -18,10 +18,6 @@ void AnalyzeScores( const HyperBasevectorX& hb, const vec<int>& inv, const int e
      const vec<vec<int>>& scores, vec<int>& to_delete, const int zpass, 
      const int verbosity, const int version );
 
-void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
-     const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
-     const int version, const uint min_size );
-
 void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const int verbosity,
      const int version, const uint min_size);
