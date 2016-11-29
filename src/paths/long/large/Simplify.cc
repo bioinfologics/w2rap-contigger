@@ -174,12 +174,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             auto totalpaths=paths;
             totalpaths.insert(totalpaths.end(),pb_paths.begin(),pb_paths.end());
             VecULongVec invtotalPaths;
-            invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
+            //invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
 
             std::cout << Date() << ": PathFinder: resolving repeats of size " << i << std::endl;
 
             invtotalPaths.clear();
-            invert(paths, invtotalPaths, hb.EdgeObjectCount());
+            invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
             std::cout << Date() << ": PathFinder: analysing single-direction repeats" << std::endl;
             PathFinder(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
             std::cout << "Removing Unneded Vertices" << std::endl;
