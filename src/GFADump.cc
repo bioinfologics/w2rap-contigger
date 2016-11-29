@@ -151,6 +151,17 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
     };
     std::cout<<std::endl<<std::endl<<std::endl<<"============GFA DUMP STARTING============"<<std::endl;
     std::cout<<"Graph has "<< hb.EdgeObjectCount() <<" edges"<<std::endl;
+
+    // define the k-1 overlap
+    int overlap_length = int(hb.K()) - 1;
+
+    // remove any path from filename
+    int pos = filename.find_last_of("/");
+    std::string prefix = filename;
+    if (pos != std::string::npos){
+    	prefix = filename.substr(pos + 1);
+    }
+
     vec<vec<vec<vec<int>>>> lines;
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
@@ -158,15 +169,14 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
     if (find_lines) {
         Ofstream(gfa_out, filename + "_lines.gfa");
+        Ofstream(fasta_out, filename + "_lines.fasta");
         FindLines(hb, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
         SortLines(lines, hb, inv);
-
 
         gfa_out << "H\tVN:Z:1.0" << std::endl;
         std::vector<int64_t> canonical_included(hb.EdgeObjectCount(), -1);
 
         int64_t current_colour = 1;
-        //TODO: Dump the overlaps correctly
         //First step, mark Edges as used if they appear in a line
         for (auto line : lines) {
             std::vector<std::pair<uint64_t, bool>> prev_segment_end_edges;
@@ -189,10 +199,22 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
                                 }
                                 canonical_included[edge] = ce;
                                 canonical_included[inv[edge]] = ce;
-                                gfa_out << "S\tedge" << ce << "\t" << hb.EdgeObject(ce) << "\tCL:z:" <<
-                                colour_names[current_colour % colour_names.size()] << std::endl;
+
+                                gfa_out << "S\tedge" << ce << "\t*"
+                                << "\tLN:i:" << eo.isize()
+                                << "\tCL:Z:" << colour_names[current_colour % colour_names.size()]
+                                << "\tUR:Z:" << prefix << "_lines.fasta"
+                                << std::endl;
+
+                                //gfa_out << "S\tedge" << ce << "\t" << hb.EdgeObject(ce) << "\tCL:Z:" <<
+                                //colour_names[current_colour % colour_names.size()] << std::endl;
+
                                 colour[ce] = current_colour;
                                 colour[inv[ce]] = current_colour;
+
+                                // write seq to FASTA
+                                fasta_out << ">edge" << ce << std::endl << eo << std::endl;
+
                                 //std::cout<<"edge"<<ce<<": "<<colour_names[current_colour%colour_names.size()]<<std::endl;
                             } //else {
                             //colour[canonical_included[edge]]=0;
@@ -201,7 +223,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
                             if (prev_in_path != -1) {
                                 gfa_out << "L\tedge" << prev_in_path << (prev_in_path_fw ? "\t+\tedge" : "\t-\tedge") <<
                                 canonical_included[edge] << ((canonical_included[edge] == edge) ? "\t+" : "\t-") <<
-                                "\t0M" << std::endl;
+                                "\t" << overlap_length << "M" << std::endl;
                             }
                             prev_in_path = canonical_included[edge];
                             prev_in_path_fw = (canonical_included[edge] == edge);
@@ -212,7 +234,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
                         bool ce_fw = (ce == path[0]);
                         for (auto pe:prev_segment_end_edges) {
                             gfa_out << "L\tedge" << pe.first << (pe.second ? "\t+\tedge" : "\t-\tedge") << ce <<
-                            (ce_fw ? "\t+" : "\t-") << "\t0M" << std::endl;
+                            (ce_fw ? "\t+" : "\t-") << "\t" << overlap_length << "M" << std::endl;
                         }
                         //add last element in the path to the end_elements
                         end_edges.push_back(std::make_pair(prev_in_path, prev_in_path_fw));
@@ -224,16 +246,29 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             ++current_colour;
         }
     }
+
+    // Do the raw dump
     Ofstream(gfa_raw_out,filename+"_raw.gfa");
+    Ofstream(fasta_raw_out,filename+"_raw.fasta");
     std::cout<<"Dumping edges"<<std::endl;
+
+    // header line
+    gfa_raw_out << "H\tVN:Z:1.0" << std::endl;
+
     for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
         auto eo=hb.EdgeObject(ei);
         if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
-        gfa_raw_out << "S\tedge" << ei <<"\t"<< eo
-        << "\tCL:z:"<< (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
-         << std::endl;
 
+        gfa_raw_out << "S\tedge" << ei << "\t*"
+        << "\tLN:i:" << eo.isize()
+        << "\tCL:Z:" << (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
+        << "\tUR:Z:" << prefix << "_raw.fasta"
+        << std::endl;
+
+        // write seq to FASTA
+        fasta_raw_out << ">edge" << ei << std::endl << eo << std::endl;
     }
+
     std::cout<<"Dumping connections"<<std::endl;
     std::vector<std::vector<uint64_t>> next_edges,prev_edges;
     //TODO: this is stupid duplication of the digraph class, but it's so weird!!!
@@ -255,6 +290,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             next_edges[e][i]=hb.EdgeObjectIndexByIndexFrom(next_node,i);
         }
     }
+
     for (uint64_t e=0;e<next_edges.size();e++) {
         //only process the canonical edge
         auto eo=hb.EdgeObject(e);
@@ -267,9 +303,9 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
         for (auto n:all_next){
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
 
-            uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm::REV ? n:inv[n]);
+            uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
             if (cn<e) continue;
-            gfa_raw_out << "L\tedge" << e << "\t+\tedge" << cn << (cn==n ? "\t+" : "\t-") << "\t0M" << std::endl;
+            gfa_raw_out << "L\tedge" << e << "\t+\tedge" << cn << (cn==n ? "\t+" : "\t-") << "\t" << overlap_length << "M" << std::endl;
         }
 
         std::set<uint64_t> all_prev;
@@ -278,9 +314,9 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
         for (auto p:all_prev){
             //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
-            uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm::REV?p:inv[p]);
+            uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
             if (cp<e) continue;
-            gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t-" : "\t+") << "\t0M" << std::endl;
+            gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t-" : "\t+") << "\t" << overlap_length << "M" << std::endl;
         }
     }
 
