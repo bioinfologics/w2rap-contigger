@@ -417,7 +417,9 @@ void RemoveUnneededVerticesGeneralizedLoops( HyperBasevector& hb, vec<int>& inv,
      CleanupCore( hb, inv, paths );    }
 
 void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles )
-{    double clock1 = WallClockTime( );
+{
+     std::cout << Date() << ": removing small Components" << std::endl;
+     double clock1 = WallClockTime( );
      const int max_small_comp = 1000;
      const int min_circle = 200;
      vec<int> e_to_delete;
@@ -486,8 +488,13 @@ void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles
                                    v, t ) );    }    }    }    }    }
      LogTime( clock2, "removing small components 2" );
      double clock3 = WallClockTime( );
+     auto before=hb.EdgeObjectCount();
+     auto delcount=e_to_delete.size();
      hb.DeleteEdges(e_to_delete);
-     LogTime( clock3, "removing small components 3" );    }
+
+     LogTime( clock3, "removing small components 3" );
+     std::cout << Date() <<": " << delcount << " / " <<before<<" edges removed"<<std::endl;
+}
 
 void Empty( const HyperBasevector& hb, const vec< std::pair<vec<int>,vec<int>> >& pairs, 
      const vec<int64_t>& pairs_pid, vec<vec<int>>& left_empty, 

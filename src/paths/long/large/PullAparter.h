@@ -336,7 +336,7 @@ class PullAparter {
 
                  itr[0][1] = p1center;  // update the first path with the new center edge
                }
-               std::cout << TimeSince(clock) << " used separating paths 1" << std::endl;
+
 
 
                //////////////////////////////////////////////////////
@@ -400,8 +400,7 @@ class PullAparter {
                         }
                     }
                }
-               std::cout << TimeSince(clock2) << " used in fixing mToLeft, mToRight, "
-                         << "and mEdgeToPathIds" << std::endl;
+
                // std::cout << mHBV.EdgeObjectCount() <<  "/" << mHBV.N() <<
                //   " edges/vertices after removing unneeded vertices and dead edges"
                //           << std::endl;

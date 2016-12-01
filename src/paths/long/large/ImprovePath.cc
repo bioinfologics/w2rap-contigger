@@ -574,7 +574,7 @@ void ImprovePaths( ReadPathVec& paths, const HyperBasevector& hb,
 {
      // Build indices.
 
-     std::cout << Date( ) << ": improving paths" << std::endl;
+     //std::cout << Date( ) << ": improving paths" << std::endl;
      vec<int> to_left, to_right;
      hb.ToLeft(to_left), hb.ToRight(to_right);
 
@@ -663,4 +663,5 @@ void ImprovePaths( ReadPathVec& paths, const HyperBasevector& hb,
                BuildLookup( kmers_plus, hb );
                ImprovePathsCoreCore( to_left, to_right, kmers_plus, locsx,
                     rstarts, paths, hb, inv, bases, quals, ids, pimp );    }    }
-     std::cout << Date( ) << ": done" << std::endl;    }
+     //std::cout << Date( ) << ": done" << std::endl;
+}

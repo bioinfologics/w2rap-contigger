@@ -553,7 +553,6 @@ int main(const int argc, const char * argv[]) {
         //vecbasevector G;
         //FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
         GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
-        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
         std::cout << Date() << ": Contigging DONE!" << std::endl << std::endl;
 
     }
@@ -577,17 +576,6 @@ int main(const int argc, const char * argv[]) {
         bool SCAFFOLD_VERBOSE = False;
         bool GAP_CLEANUP = True;
 
-        //GFADump(out_dir +"/"+ out_prefix + "_prePF", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
-        //PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
-        //PathFinder(hbvr,inv,pathsr,paths_inv).unroll_loops();
-        //std::cout<<"refreshing all structures as precaution"<<std::endl;
-        //inv.clear();
-        //hbvr.Involution(inv);
-        //paths_inv.clear();
-        //invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        //std::cout<<"all structures refreshed"<<std::endl;
-        //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_pins();
-        //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_complex_in_out_choices();
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);

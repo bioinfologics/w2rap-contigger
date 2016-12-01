@@ -499,11 +499,6 @@ bubble_logger::bubble_logger(const HyperBasevector& hb, const vec<int>& inv)
                             ,edge_bubble_branch_(hb.EdgeObjectCount(),std::make_pair(-1,-1))
                             ,bubble_data_()
 {
-    // impromptu validation of the involution
-    std::cout << Date() << ": checking involution" << std::endl;
-    for ( int i = 0; i < inv.isize(); ++i )
-        if ( i==-1 || i != inv[inv[i]] ) std::cout << "involution of " << i << " is wrong " << std::endl;
-    std::cout << Date() << ": done" << std::endl;
 
     for(int vv=0;vv<hb.N();++vv){
         // only log bubble with edge topology e1->{b1,b2}->e2, e1 and e2 can be the same
@@ -715,7 +710,7 @@ void LogBubbles( bubble_logger& logger, HyperBasevector& hb , const vec<int>& in
          }
      }
      if(nWarnings>0){
-         std::cout << "WARNING: " << nWarnings << " suspicious read-paths." << std::endl;
+         std::cout << Date() << ": WARNING: " << nWarnings << " suspicious read-paths." << std::endl;
      }
 }
 
@@ -808,7 +803,7 @@ void PopBubbles( HyperBasevector& hb , const vec<int>& inv2
                 if(edges.size()==4) to_delete.push_back(edges[2+shift]);
            }
      }
-    std::cout<< to_delete.size() << " edges marked to delete by bubble popper " <<std::endl;
+     std::cout<< Date() << ": "<< to_delete.size() << " edges marked to delete by bubble popper " <<std::endl;
      hb.DeleteEdges(to_delete);
 }
 
@@ -920,12 +915,14 @@ void DeleteFunkyPathPairs( const HyperBasevector& hb, const vec<int>& inv,
           {    std::cout << "[" << pid << "] " << start1 << ":" << printSeq(x1) << ".."
                     << start2 << ":" << printSeq(x2) << std::endl;    }
           invalid[pid] = True;     }
-     if (verbose) std::cout << "\n";
-     PRINT2( Sum(invalid), npids );
+     //if (verbose) std::cout << "\n";
+     //PRINT2( Sum(invalid), npids );
+
      for ( int64_t pid = 0; pid < npids; pid++ )
      {    if ( invalid[pid] )
           {    paths[2*pid].resize(0);
                paths[2*pid+1].resize(0);    }    }
+     //std::cout << Date() << ": "<<Sum(invalid)<< " / "<<npids<<" invalid pairs deleted"<<std::endl;
      LogTime( clock, "finding funky pairs" );    }
 
 void ReduceK( const int newK, HyperBasevector& hb, const vec<int>& inv,

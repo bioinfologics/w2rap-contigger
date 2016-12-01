@@ -569,9 +569,10 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
                          << " --> " << qsum[j].first;
                     std::cout << std::endl;
                     break;    }    }
-          p = ps[0];    }
+          p = ps[0];
+     }
 
-     std::cout << improveds << " paths improved by rerouting" << std::endl;
+     //std::cout << Date() << ": " << improveds << " / " << paths.size( ) << " paths improved by rerouting" << std::endl;
      LogTime( clock, "rerouting paths" );
      // std::cout << "\n" << Date( ) << ": done" << std::endl;
           }
@@ -612,7 +613,7 @@ void Tamp( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      int K = hb.K( );
      vec<int> to_left, to_right;
      hb.ToLeft(to_left), hb.ToRight(to_right);
-
+     auto edges_before=hb.EdgeObjectCount( );
      // Heuristics.
 
      const int min_match = 40;
@@ -766,9 +767,9 @@ void Tamp( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      // Clean up.
 
-     std::cout << count << " edges tamped down" << std::endl;
      LogTime( clock, "tamping" );
      Cleanup( hb, inv, paths );
+     std::cout << Date() << ": "<< count << " / " << edges_before << " edges tamped, " << hb.EdgeObjectCount() << " edges a after tamping" << std::endl;
      //std::cout << "[GapToyTools5.cc] Finished Tamping: " << ctime(&now) << std::endl;
 }
 
