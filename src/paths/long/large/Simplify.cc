@@ -28,7 +28,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const Bool PULL_APART_VERBOSE, const vec<int> &PULL_APART_TRACE,
               const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
               const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
-              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files,ReadPathVec &pb_paths) {
+              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, vecbvec& pb_bases) {
     // Improve read placements and delete funky pairs.
     std::cout << "Edge count: " << hb.EdgeObjectCount() << " Path count:" << paths.size() << std::endl;
     std::cout << "Simplify: rerouting paths" << std::endl;
@@ -170,7 +170,39 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             //paths.WriteAll(fin_dir + "/pf_unrolled_loops.paths");
             WriteReadPathVec(paths, (fin_dir + "/pf_unrolled_loops.paths").c_str());
         }
-        for (auto i=800;i < 2000 ; i+=100) {
+        
+        // Create the paths just before the event
+        PacbioPather pbp(&pb_bases, &hb);
+        pbp.Hbv2Map(&hb);
+        auto pb_paths = pbp.mapReads();
+
+        // Write inmediate before resolving paths to check
+        std::string out_prefix = "graph";
+        BinaryWriter::writeFile(fin_dir + "/" + out_prefix + ".before_pathfinder.hbv", hb);
+        WriteReadPathVec(paths,(fin_dir + "/" + out_prefix + ".before_pathfinder.paths").c_str());
+        
+        // dump paths to file to check the regions manually
+        std::ofstream pb_paths_file;
+        pb_paths_file.open(fin_dir + "/pacbiopaths.txt");
+        uint64_t paht_id = 0;
+
+        auto edges = hb.Edges();
+        std::cout << "edges loaded" << std::endl;
+        vec<int> inversos;
+        hb.Involution(inversos);
+
+        for (auto pbp: pb_paths){
+          pb_paths_file << paht_id;
+          for (auto eid: pbp){
+            pb_paths_file <<"," << eid << "("<<inversos[eid]<<")";
+          }
+          pb_paths_file << std::endl;
+          paht_id++;
+        }
+        pb_paths_file.close();
+
+        for (auto i=100;i < 4000 ; i+=500) {
+            //std::cout << "-------------Parameter for pathfinder: " << i << "-----------" << std::endl
             auto totalpaths=paths;
             totalpaths.insert(totalpaths.end(),pb_paths.begin(),pb_paths.end());
             VecULongVec invtotalPaths;

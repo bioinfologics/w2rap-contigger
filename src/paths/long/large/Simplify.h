@@ -16,6 +16,7 @@
 #include "feudal/PQVec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
+#include "test_code/pacbio/pacbio_pather.h"
 
 void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv, 
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,
@@ -26,6 +27,6 @@ void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
      const Bool PULL_APART_VERBOSE, const vec<int>& PULL_APART_TRACE,
      const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST, 
      const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
-     const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, ReadPathVec& pb_paths );
+     const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, vecbvec& pb_bases );
 
 #endif

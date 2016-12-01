@@ -120,7 +120,7 @@ ReadPathVec PacbioPather::mapReads(){
   // returns a vector of paths
   std::cout << Date()<<": Executing getReadsLines..." << std::endl;
   auto links = getReadsLinks(true);
-  std::cout << Date() << ": Done" << std::endl;
+  std::cout << Date() << ": Done, " << links.size() << " raw links recovered" << std::endl;
 
   // To store the paths
   ReadPath pb_paths_temp[seqVector->size()];
@@ -132,7 +132,7 @@ ReadPathVec PacbioPather::mapReads(){
   //#pragma omp parallel for
   for (std::uint32_t r=0; r<seqVector->size(); ++r){
 
-    // filter the links for this reads
+    // get the links for this reads
     auto read_links = links[r];
 
     // filter the shared roffsets
@@ -142,8 +142,6 @@ ReadPathVec PacbioPather::mapReads(){
 
     // sort the vector
     std::sort(offset_filter.begin(), offset_filter.end(), linkreg_less_than());
-
-    // Filter if the reverse complement (?)
 
     // Create vector of unique edge_ids
     std::vector<int> presentes;
@@ -155,15 +153,15 @@ ReadPathVec PacbioPather::mapReads(){
       }
     }
 
-
-
     std::vector<int> temp_path;
-
     if (s_edges.size() >= 2) {
+      std::cout<<"-------- Sequence: "<<r<<" ---------"<<std::endl;
       int poffset=s_edges[0].edge_offset;
       for (auto s: s_edges) {
+        std::cout << "--> " << s.edge_id << "("<< s.inv_edge_id <<")";
         temp_path.push_back(s.edge_id);
       }
+      std::cout << std::endl;
       pb_paths_temp[ppr++]=ReadPath(poffset, temp_path);
     }
     ++pr;
@@ -172,6 +170,6 @@ ReadPathVec PacbioPather::mapReads(){
   std::cout<<Date()<<": "<<pr<<" reads processed, "<<ppr<<" pathed"<<std::endl;
   pb_paths.reserve(ppr);
   for (auto i=0;i<ppr;++i) pb_paths.push_back(pb_paths_temp[i]);
-
+  
   return pb_paths;
 }

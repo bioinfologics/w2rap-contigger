@@ -538,16 +538,13 @@ int main(const int argc, const char * argv[]) {
         //////
         //[GONZA]: append the pacbio paths to this vector as a first test
 
-        auto bases2 = dataMag.mag["PB1"]->bases;
-        PacbioPather pbp(&bases2, &hbvr);
-        pbp.Hbv2Map(&hbvr);
-        auto pb_paths = pbp.mapReads();
+        auto pb_bases = dataMag.mag["PB1"]->bases;
         /////
 
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pb_paths);
+                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pb_bases);
 
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse
