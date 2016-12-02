@@ -18,6 +18,7 @@
 #include "paths/long/large/ImprovePath.h"
 #include "paths/long/large/PullAparter.h"
 #include "paths/long/large/Simplify.h"
+#include "kmers/kmatch/KMatch.h"
 
 
 void graph_path_pairs_status(const HyperBasevector &hb, const ReadPathVec &paths){
@@ -41,6 +42,21 @@ void update_read_placements(HyperBasevector &hb, vec<int> &inv, ReadPathVec &pat
     ReroutePaths(hb, inv, paths, bases, quals);
     DeleteFunkyPathPairs(hb, inv, bases, paths, False);
 
+}
+
+void update_read_placements_kmatch(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals) {
+    std::cout<<Date()<<": creating kmatch object"<<std::endl;
+    KMatch km(31);
+    km.Hbv2Index(hb);
+    std::cout<<Date()<<": Looking up "<<bases.size()<<" reads"<<std::endl;
+    uint64_t mapped=0,c=0;
+
+    for (auto b:bases){
+        if (km.lookupRead(b.ToString()).size()>0) ++mapped;
+        ++c;
+        if (c%10000==0) std::cout<<Date()<<": "<<mapped<<" / "<<c<<"reads have hits to edges"<<std::endl;
+    }
+    std::cout<<Date()<<": "<<mapped<<" / "<<bases.size()<<"reads have hits to edges"<<std::endl;
 }
 
 void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL){
@@ -125,7 +141,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
 
     graph_path_pairs_status(hb,paths);
-    update_read_placements(hb,inv,paths,bases,quals);
+    update_read_placements_kmatch(hb,inv,paths,bases,quals);
     graph_path_pairs_status(hb,paths);
 
 

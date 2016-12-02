@@ -9,7 +9,8 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <paths/HyperBasevector.h>
-#include "matchresult.h"
+#include <unordered_map>
+//#include "matchresult.h"
 
 #define KMATCH_MAX_FREQ 4
 #define KMATCH_NUC_A 0
@@ -32,15 +33,40 @@ typedef struct {
     int read_offset;
 } edgeKmerPosition;
 
+//Warning: operators are overloaded for search/sort, only comparing the kmer value
+typedef struct ekpst{
+    uint64_t kmer;
+    int edge_id;
+    int edge_offset;
+    bool operator<(const ekpst &rhs)const{return kmer<rhs.kmer;};
+    bool operator==(const ekpst &rhs)const{return kmer==rhs.kmer;};
+    bool operator<(const edgeKmerPosition &rhs)const{return kmer<rhs.kmer;};
+    bool operator==(const edgeKmerPosition &rhs)const{return kmer==rhs.kmer;};
+
+} edgeKmerPositionNR;
+
+
+typedef struct{
+    int edge_id;
+    int edge_offset;
+} edgeKmerPositionV;
+
+typedef std::map<uint64_t, std::vector<edgeKmerPositionV>> KMAP_t;
+
 class KMatch {
 
 public:
     KMatch(int K);
-    void Hbv2Map(HyperBasevector* hbv);
+    void Hbv2Map(HyperBasevector &hbv);
+
+    void Hbv2Index(HyperBasevector &hbv);
 
     std::vector<pKmer> ProduceKmers(std::string seq);
 
-    std::map<uint64_t, std::vector<edgeKmerPosition>> edgeMap;
+    KMAP_t edgeMap;
+
+
+    std::vector<edgeKmerPositionNR> KmerIndex;
 
     std::vector<edgeKmerPosition> lookupRead(std::string read);
 

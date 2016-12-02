@@ -186,6 +186,7 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/GapToyTools4.cc
         src/paths/long/large/GapToyTools5.cc
         src/kmers/MakeLookup.cc
+        src/kmers/kmatch/KMatch.cc
         src/paths/long/ultra/ConsensusScoreModel.cc
         src/paths/long/ultra/FounderAlignment.cc
         src/paths/long/ultra/GetFriendsAndAlignsInitial.cc
