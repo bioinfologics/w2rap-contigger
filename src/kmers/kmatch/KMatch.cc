@@ -11,7 +11,7 @@ KMatch::KMatch(int kv){
     this->K = kv;
 }
 
-std::vector<pKmer> KMatch::ProduceKmers(std::string seq){
+std::vector<pKmer> KMatch::ProduceKmers(const std::string & seq){
     // get a sequence a produce the set of kmers ()
     std::vector<pKmer> kmer_vector;
     kmer_vector.reserve(seq.size()-K+1);
@@ -71,7 +71,7 @@ void KMatch::Hbv2Map(HyperBasevector & hbv){
     edgeKmerPositionV tmatch;
     std::vector<edgeKmerPositionV> nv;
     for (auto seqN=0; seqN<edges.size(); ++seqN) {
-        auto seq = edges[seqN].ToString();
+        const std::string seq = edges[seqN].ToString();
         auto kv = this->ProduceKmers(seq);
 
         for (auto a=0; a<kv.size(); ++a){
@@ -99,7 +99,7 @@ void KMatch::Hbv2Map(HyperBasevector & hbv){
     }
 }
 
-void KMatch::Hbv2Index(HyperBasevector &hbv){
+void KMatch::Hbv2Index(const HyperBasevector &hbv, uint step){
     //  std::vector<kmer_position_t> karray;
 
     KmerIndex.clear();
@@ -114,7 +114,7 @@ void KMatch::Hbv2Index(HyperBasevector &hbv){
         auto seq = edges[seqN].ToString();
         auto kv = this->ProduceKmers(seq);
         edgeKmerPositionNR tmatch;
-        for (auto i=0; i<kv.size(); ++i){
+        for (auto i=0; i<kv.size(); i+=step){
             tmatch.kmer=kv[i].kmer;
             tmatch.edge_id = seqN;
             tmatch.edge_offset = kv[i].offset;
@@ -125,40 +125,95 @@ void KMatch::Hbv2Index(HyperBasevector &hbv){
     std::cout<<Date()<<": sorting"<<std::endl;
     std::sort(KmerIndex.begin(),KmerIndex.end());
 }
-std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
-    // produce kmers
-    auto rkms = this->ProduceKmers(read);
-
+std::vector<edgeKmerPosition> KMatch::lookupRead(const std::string & seq){
     // look kmers in the dictionary
     std::vector<edgeKmerPosition> mapped_edges;
-    int cont = 0; // Cont to hold the kmer offset in the read
-    for (auto a: rkms){
-        //std::cout<<" finding kmer "<<cont<<std::endl;
-        edgeKmerPositionNR xs;
-        xs.kmer = a.kmer;
-        edgeKmerPosition x;
-        x.kmer = a.kmer;
-        auto kis = std::lower_bound(KmerIndex.begin(),KmerIndex.end(),xs);
+    mapped_edges.reserve(10*seq.size());
 
-        while (kis != KmerIndex.end() and kis->kmer==x.kmer){
-            x.edge_id = kis->edge_id;
-            x.edge_offset = kis->edge_offset;
-            x.read_offset = cont;
-            mapped_edges.push_back(x);
-            kis++;
+
+    const uint64_t KMER_MASK=( ((uint64_t)1)<<(this->K*2) )-1;
+
+    if (seq.size()>this->K) {
+        const char *s = seq.c_str();
+        int64_t last_unknown = -1;
+        uint64_t fkmer = 0;
+        for (auto p=0; p < seq.size(); ++p) {
+            //fkmer: grows from the right (LSB)
+            switch (s[p]) {
+                case 'A':
+                case 'a':
+                    fkmer = ((fkmer << 2) + 0) & KMER_MASK;
+                    break;
+                case 'C':
+                case 'c':
+                    fkmer = ((fkmer << 2) + 1) & KMER_MASK;
+                    break;
+                case 'G':
+                case 'g':
+                    fkmer = ((fkmer << 2) + 2) & KMER_MASK;
+                    break;
+                case 'T':
+                case 't':
+                    fkmer = ((fkmer << 2) + 3) & KMER_MASK;
+                    break;
+                default:
+                    fkmer = ((fkmer << 2) + 0) & KMER_MASK;
+                    last_unknown = p;
+                    break;
+            }
+            //TODO: last unknown passed by?
+            if (last_unknown + this->K <= p) {
+                edgeKmerPositionNR xs;
+                xs.kmer = fkmer;
+                edgeKmerPosition x;
+                x.kmer = fkmer;
+                auto kis = std::lower_bound(KmerIndex.begin(),KmerIndex.end(),xs);
+
+                while (kis != KmerIndex.end() and kis->kmer==x.kmer){
+                    x.edge_id = kis->edge_id;
+                    x.edge_offset = kis->edge_offset;
+                    x.read_offset = p;
+                    mapped_edges.push_back(x);
+                    kis++;
+                }
+            }
         }
-
-        cont++;
     }
     return mapped_edges;
 }
+uint64_t KMatch::countReadMatches(const std::string & read){
+    // produce kmers
+    auto rkms = this->ProduceKmers(read);
 
-/*std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
+    // look kmers in the dictionary
+    uint64_t m=0;
+    int cont = 0; // Cont to hold the kmer offset in the read
+    edgeKmerPositionNR xs;
+    //edgeKmerPosition x;
+    for (auto a: rkms){
+        //std::cout<<" finding kmer "<<cont<<std::endl;
+        xs.kmer = a.kmer;
+        //x.kmer = a.kmer;
+        auto kis = std::binary_search(KmerIndex.begin(),KmerIndex.end(),xs);
+        if (kis ) ++m;
+        /*while (kis != KmerIndex.end() and kis->kmer==x.kmer){
+            ++m;
+            kis++;
+        }*/
+
+
+        cont++;
+    }
+    return m;
+}
+
+std::vector<edgeKmerPosition> KMatch::lookupReadInMap(const std::string & read){
     // produce kmers
     auto rkms = this->ProduceKmers(read);
 
     // look kmers in the dictionary
     std::vector<edgeKmerPosition> mapped_edges;
+    mapped_edges.reserve(10*rkms.size());
     int cont = 0; // Cont to hold the kmer offset in the read
     for (auto a: rkms){
         auto tt = this->edgeMap.find(a.kmer);
@@ -175,4 +230,4 @@ std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
         cont++;
     }
     return mapped_edges;
-}*/
+}

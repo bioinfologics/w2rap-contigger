@@ -59,16 +59,18 @@ public:
     KMatch(int K);
     void Hbv2Map(HyperBasevector &hbv);
 
-    void Hbv2Index(HyperBasevector &hbv);
+    void Hbv2Index(const HyperBasevector &hbv, uint step=1);
 
-    std::vector<pKmer> ProduceKmers(std::string seq);
+    std::vector<pKmer> ProduceKmers(const std::string & seq);
 
     KMAP_t edgeMap;
 
 
     std::vector<edgeKmerPositionNR> KmerIndex;
 
-    std::vector<edgeKmerPosition> lookupRead(std::string read);
+    std::vector<edgeKmerPosition> lookupRead(const std::string & read);
+    std::vector<edgeKmerPosition> lookupReadInMap( const std::string & read);
+    uint64_t countReadMatches(const std::string & read);
 
 private:
     uint8_t K;

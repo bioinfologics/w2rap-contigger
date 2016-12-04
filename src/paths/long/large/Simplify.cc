@@ -10,6 +10,7 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include <paths/PathFinder.h>
+#include <kmers/kmatch/KMatch.h>
 #include "CoreTools.h"
 #include "Qualvector.h"
 #include "paths/HyperBasevector.h"
@@ -47,16 +48,57 @@ void update_read_placements(HyperBasevector &hb, vec<int> &inv, ReadPathVec &pat
 void update_read_placements_kmatch(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals) {
     std::cout<<Date()<<": creating kmatch object"<<std::endl;
     KMatch km(31);
-    km.Hbv2Index(hb);
-    std::cout<<Date()<<": Looking up "<<bases.size()<<" reads"<<std::endl;
-    uint64_t mapped=0,c=0;
+    km.Hbv2Index(hb,31);
+    //uint64_t mapped=0,c=0;
+    /*km.Hbv2Map(hb);
+    uint64_t TEST_READ_COUNT=100000;
+    auto wc1=WallClockTime();
+    std::cout<<Date()<<": Counting matches on "<<TEST_READ_COUNT<<" reads"<<std::endl;
 
-    for (auto b:bases){
-        if (km.lookupRead(b.ToString()).size()>0) ++mapped;
-        ++c;
-        if (c%10000==0) std::cout<<Date()<<": "<<mapped<<" / "<<c<<"reads have hits to edges"<<std::endl;
+    for (auto i=0;i<TEST_READ_COUNT;++i){
+        if (km.countReadMatches(bases[i].ToString())>0) ++mapped;
     }
-    std::cout<<Date()<<": "<<mapped<<" / "<<bases.size()<<"reads have hits to edges"<<std::endl;
+    std::cout<<Date()<<": "<<mapped<<" / "<<TEST_READ_COUNT<<" reads have hits to edges, "<<TimeSince(wc1)<<" spent in countReadMatches "<<std::endl;
+    wc1=WallClockTime();
+    std::cout<<Date()<<": Looking up "<<TEST_READ_COUNT<<" reads"<<std::endl;
+    mapped=0;
+    for (auto i=0;i<TEST_READ_COUNT;++i){
+        if (km.lookupRead(bases[i].ToString()).size()>0) ++mapped;
+    }
+    std::cout<<Date()<<": "<<mapped<<" / "<<TEST_READ_COUNT<<" reads have hits to edges, "<<TimeSince(wc1)<<" spent in lookupRead "<<std::endl;
+    wc1=WallClockTime();
+    std::cout<<Date()<<": Looking up "<<TEST_READ_COUNT<<" reads in MAP"<<std::endl;
+    mapped=0;
+    for (auto i=0;i<TEST_READ_COUNT;++i){
+        if (km.lookupReadInMap(bases[i].ToString()).size()>0) ++mapped;
+    }
+    std::cout<<Date()<<": "<<mapped<<" / "<<TEST_READ_COUNT<<" reads have hits to edges, "<<TimeSince(wc1)<<" spent in lookupReadInMap "<<std::endl;
+    */
+    std::atomic_uint_fast64_t mapped(0),mapped50(0),mappedUniquely(0),c(0);
+    #pragma omp parallel for
+    for (auto i=0;i<bases.size();++i){
+        auto hits=km.lookupRead(bases[i].ToString());;
+        if (hits.size()>0) ++mapped;
+        if (hits.size()>(bases[i].size() - 31 + 1)*.5) {
+            ++mapped50;
+            bool unique=true;
+            int64_t e=-1;
+            for (auto & h:hits){
+                if (e==-1) e=h.edge_id;
+                if (e!=h.edge_id) {
+                    unique =false;
+                    break;
+                }
+            }
+            if (unique) ++mappedUniquely;
+        }
+
+        ++c;
+        if (c%100000==0) std::cout<<Date()<<": "<<mapped<<" / "<<c<<" reads have hits to edges"<<std::endl;
+    }
+    std::cout<<Date()<<": "<<mapped<<" / "<<bases.size()<<" reads have hits to edges"<<std::endl;
+    std::cout<<Date()<<": "<<mapped50<<" / "<<bases.size()<<" reads have 50%+ kmers hitting to edges"<<std::endl;
+    std::cout<<Date()<<": "<<mappedUniquely<<" / "<<bases.size()<<" reads have 50%+ kmers hitting same edge and no kmers hitting others"<<std::endl;
 }
 
 void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL){
