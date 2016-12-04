@@ -490,52 +490,62 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                         auto in_e=f[0][in_i];
                         for (auto out_i=0;out_i<f[1].size();++out_i) {
                             auto out_e=f[1][out_i];
-                            auto shared_paths = 0;
+                            std::map<std::string, int> shared_paths;
 
                             for (auto inp:mEdgeToPathIds[in_e])
                                 for (auto outp:mEdgeToPathIds[out_e])
+                                    // Search for shared paths
                                     if (inp == outp) {
+                                        // in a shared path count the amount of edges mapped in that paricular path
+                                        int edges_in_path = 0;
+                                        std::string edge_pair_id = in_e + "-" + out_e;
+                                        auto edges_in_path = mPaths[inp].size();
+                                        shared_paths[edge_pair_id]+= edges_in_path;
 
-                                        shared_paths++;
-                                        if (shared_paths==1){//not the best solution, but should work-ish
-                                            std::vector<uint64_t > pv;
-                                            for (auto e:mPaths[inp]) pv.push_back(e);
-                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
-                                            first_full_paths.push_back({});
-                                            int16_t ei=0;
-                                            while (mPaths[inp][ei]!=in_e) ei++;
-
-                                            while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
-                                            if (ei>=mPaths[inp].size()) {
-                                                std::cout<<"reversed path detected!"<<std::endl;
-                                                reversed=true;
-                                            }
-                                            first_full_paths.back().push_back(out_e);
-                                            //std::cout<<"added!"<<std::endl;
-                                        }
+//                                        shared_paths++;
+//                                        if (shared_paths==1){//not the best solution, but should work-ish
+//                                            std::vector<uint64_t > pv;
+//                                            for (auto e:mPaths[inp]) pv.push_back(e);
+//                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+//                                            first_full_paths.push_back({});
+//                                            int16_t ei=0;
+//                                            while (mPaths[inp][ei]!=in_e) ei++;
+//
+//                                            while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
+//                                            if (ei>=mPaths[inp].size()) {
+//                                                std::cout<<"reversed path detected!"<<std::endl;
+//                                                reversed=true;
+//                                            }
+//                                            first_full_paths.back().push_back(out_e);
+//                                            //std::cout<<"added!"<<std::endl;
+//                                        }
                                     }
                             //check for reverse paths too
                             for (auto inp:mEdgeToPathIds[mInv[out_e]])
                                 for (auto outp:mEdgeToPathIds[mInv[in_e]])
                                     if (inp == outp) {
+                                        int edges_in_path = 0;
+                                        std::string edge_pair_id = in_e + "-" + out_e;
+                                        auto edges_in_path = mPaths[inp].size();
+                                        shared_paths[edge_pair_id]+= edges_in_path;
 
-                                        shared_paths++;
-                                        if (shared_paths==1){//not the best solution, but should work-ish
-                                            std::vector<uint64_t > pv;
-                                            for (auto e=mPaths[inp].rbegin();e!=mPaths[inp].rend();++e) pv.push_back(mInv[*e]);
-                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
-                                            first_full_paths.push_back({});
-                                            int16_t ei=0;
-                                            while (pv[ei]!=in_e) ei++;
-
-                                            while (pv[ei]!=out_e && ei<pv.size()) first_full_paths.back().push_back(pv[ei++]);
-                                            if (ei>=pv.size()) {
-                                                std::cout<<"reversed path detected!"<<std::endl;
-                                                reversed=true;
-                                            }
-                                            first_full_paths.back().push_back(out_e);
-                                            //std::cout<<"added!"<<std::endl;
-                                        }
+//                                        shared_paths++;
+//                                        if (shared_paths==1){//not the best solution, but should work-ish
+//                                            std::vector<uint64_t > pv;
+//                                            for (auto e=mPaths[inp].rbegin();e!=mPaths[inp].rend();++e) pv.push_back(mInv[*e]);
+//                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+//                                            first_full_paths.push_back({});
+//                                            int16_t ei=0;
+//                                            while (pv[ei]!=in_e) ei++;
+//
+//                                            while (pv[ei]!=out_e && ei<pv.size()) first_full_paths.back().push_back(pv[ei++]);
+//                                            if (ei>=pv.size()) {
+//                                                std::cout<<"reversed path detected!"<<std::endl;
+//                                                reversed=true;
+//                                            }
+//                                            first_full_paths.back().push_back(out_e);
+//                                            //std::cout<<"added!"<<std::endl;
+//                                        }
                                     }
                             if (shared_paths) {
                                 out_used[out_i]++;
@@ -545,6 +555,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                             }
                         }
                     }
+                    // This is the single path euristics (region is resolved if there is only one path to each combination)
                     if ((not reversed) and std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
                         std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
