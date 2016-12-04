@@ -139,14 +139,15 @@ ReadPathVec PacbioPather::mapReads(){
     auto offset_filter = readOffsetFilter(read_links);
 
     // filter the min match length TODO: this function
+    auto minmatchFilter = matchLengthFilter(offset_filter);
 
     // sort the vector
-    std::sort(offset_filter.begin(), offset_filter.end(), linkreg_less_than());
+    std::sort(minmatchFilter.begin(), minmatchFilter.end(), linkreg_less_than());
 
     // Create vector of unique edge_ids
     std::vector<int> presentes;
     std::vector<linkReg> s_edges;
-    for (auto a: offset_filter){
+    for (auto a: minmatchFilter){
       if (std::find(presentes.begin(), presentes.end(), a.edge_id) == presentes.end()){
         s_edges.push_back(a);
         presentes.push_back(a.edge_id);
@@ -155,8 +156,11 @@ ReadPathVec PacbioPather::mapReads(){
 
     std::vector<int> temp_path;
     if (s_edges.size() >= 2) {
-      std::cout<<"-------- Sequence: "<<r<<" ---------"<<std::endl;
+
       int poffset=s_edges[0].edge_offset;
+      int read_size=s_edges[0].read_size;
+      std::cout<<"-------- Sequence: "<<r << "(" << read_size << ") ---------"<<std::endl;
+
       for (auto s: s_edges) {
         std::cout << "--> " << s.edge_id << "("<< s.inv_edge_id <<")";
         temp_path.push_back(s.edge_id);
