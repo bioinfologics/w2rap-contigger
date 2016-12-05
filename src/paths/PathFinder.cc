@@ -476,9 +476,11 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
         if (e < mInv[e] && mHBV.EdgeObject(e).size() < large_frontier_size) {
             auto f=get_all_long_frontiers(e, large_frontier_size);
-            if (f[0].size()>1 and f[1].size()>1 and seen_frontiers.count(f)==0){
+            if (f[0].size()>1 and f[1].size()>1 and f[0].size() == f[1].size() and seen_frontiers.count(f)==0){
                 seen_frontiers.insert(f);
+
                 bool single_dir=true;
+                std::map<std::string, int> shared_paths;
                 for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
                 if (single_dir) {
                     std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
@@ -486,120 +488,88 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                     std::vector<int> out_used(f[1].size(),0);
                     std::vector<std::vector<uint64_t>> first_full_paths;
                     bool reversed=false;
+
                     for (auto in_i=0;in_i<f[0].size();++in_i) {
                         auto in_e=f[0][in_i];
                         for (auto out_i=0;out_i<f[1].size();++out_i) {
                             auto out_e=f[1][out_i];
-                            std::map<std::string, int> shared_paths;
+                            int edges_in_path;
+                            std::string pid;
 
-                            for (auto inp:mEdgeToPathIds[in_e])
-                                for (auto outp:mEdgeToPathIds[out_e])
+                            for (auto inp:mEdgeToPathIds[in_e]) {
+                                for (auto outp:mEdgeToPathIds[out_e]) {
                                     // Search for shared paths
                                     if (inp == outp) {
                                         // in a shared path count the amount of edges mapped in that paricular path
-                                        int edges_in_path = 0;
-                                        std::string edge_pair_id = in_e + "-" + out_e;
-                                        auto edges_in_path = mPaths[inp].size();
-                                        shared_paths[edge_pair_id]+= edges_in_path;
-
-//                                        shared_paths++;
-//                                        if (shared_paths==1){//not the best solution, but should work-ish
-//                                            std::vector<uint64_t > pv;
-//                                            for (auto e:mPaths[inp]) pv.push_back(e);
-//                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
-//                                            first_full_paths.push_back({});
-//                                            int16_t ei=0;
-//                                            while (mPaths[inp][ei]!=in_e) ei++;
-//
-//                                            while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
-//                                            if (ei>=mPaths[inp].size()) {
-//                                                std::cout<<"reversed path detected!"<<std::endl;
-//                                                reversed=true;
-//                                            }
-//                                            first_full_paths.back().push_back(out_e);
-//                                            //std::cout<<"added!"<<std::endl;
-//                                        }
+                                        pid = std::to_string(in_e) + "-" + std::to_string(out_e);
+                                        shared_paths[pid] += mPaths[inp].size();
+//                                        std::cout << "voting: " << pid <<" "<<shared_paths[pid]<<std::endl;
+                                        out_used[out_i]++;
+                                        in_used[in_i]++;
                                     }
+                                }
+                            }
+
                             //check for reverse paths too
-                            for (auto inp:mEdgeToPathIds[mInv[out_e]])
-                                for (auto outp:mEdgeToPathIds[mInv[in_e]])
+                            for (auto inp:mEdgeToPathIds[mInv[out_e]]) {
+                                for (auto outp:mEdgeToPathIds[mInv[in_e]]) {
                                     if (inp == outp) {
-                                        int edges_in_path = 0;
-                                        std::string edge_pair_id = in_e + "-" + out_e;
-                                        auto edges_in_path = mPaths[inp].size();
-                                        shared_paths[edge_pair_id]+= edges_in_path;
-
-//                                        shared_paths++;
-//                                        if (shared_paths==1){//not the best solution, but should work-ish
-//                                            std::vector<uint64_t > pv;
-//                                            for (auto e=mPaths[inp].rbegin();e!=mPaths[inp].rend();++e) pv.push_back(mInv[*e]);
-//                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
-//                                            first_full_paths.push_back({});
-//                                            int16_t ei=0;
-//                                            while (pv[ei]!=in_e) ei++;
-//
-//                                            while (pv[ei]!=out_e && ei<pv.size()) first_full_paths.back().push_back(pv[ei++]);
-//                                            if (ei>=pv.size()) {
-//                                                std::cout<<"reversed path detected!"<<std::endl;
-//                                                reversed=true;
-//                                            }
-//                                            first_full_paths.back().push_back(out_e);
-//                                            //std::cout<<"added!"<<std::endl;
-//                                        }
+                                        pid = std::to_string(in_e) + "-" + std::to_string(out_e);
+                                        shared_paths[pid] += mPaths[inp].size();
+//                                        std::cout << "voting: " << pid <<" "<<shared_paths[pid]<<std::endl;
+                                        out_used[out_i]++;
+                                        in_used[in_i]++;
                                     }
-                            if (shared_paths) {
-                                out_used[out_i]++;
-                                in_used[in_i]++;
-                                //std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths << std::endl;
-
+                                }
                             }
                         }
                     }
-                    // This is the single path euristics (region is resolved if there is only one path to each combination)
-                    if ((not reversed) and std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
-                            std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
-                        std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
-                        solved_frontiers.insert(f);
-                        for (auto p:first_full_paths) paths_to_separate.push_back(p);
-                    } /*else if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
-                            std::count(in_used.begin(),in_used.end(),0) == 1 and
-                            std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1 and
-                            std::count(out_used.begin(),out_used.end(),0) == 1){
-                        //std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
-                        //solved_frontiers.insert(f);
-                        qsf++;
-                        qsf_paths+=in_used.size();
-                        unsigned int in_index=0;
-                        while (in_used[in_index]!=0) in_index++;
-                        unsigned int out_index=0;
-                        while (out_used[out_index]!=0) out_index++;
-                        std::cout<<"Trying to solve region by reducing last choice to unique path between "<<f[0][in_index]<< " and "<< f[1][out_index]<<std::endl;
 
-                        auto all_paths=AllPathsFromTo({f[0][in_index]},{f[1][out_index]},10);
-                        if (all_paths.size()==1){
-                            solved_frontiers.insert(f);
-                            for (auto p:first_full_paths) paths_to_separate.push_back(p);
-                            paths_to_separate.push_back(all_paths[0]);
+                    // Here all combinations are counted, now i need to get the best configuration between nodes
+                    auto in_frontiers = f[0];
+                    auto out_frontiers = f[1];
+                    int max_score = -999;
+                    int perm_number = 0;
 
-                            std::cout<<"Solved!!!"<<std::endl;
+                    std::vector<int> max_score_permutation;
+                    do { // se hace la cuenta de esa combinacion en particular y se compara con el maximo, si es el maximo y si todos estan representados se queda
+                        int current_score = 0;
+                        for (auto pi=0; pi<in_frontiers.size(); ++pi){
+                            std::string index = std::to_string(in_frontiers[pi])+"-"+std::to_string(out_frontiers[pi]);
+                            if ( shared_paths.find(index) != shared_paths.end() ){
+                                current_score += shared_paths[index];
+                            }
                         }
-                        else std::cout<<"Not solved, "<<all_paths.size()<<" different paths :("<<std::endl;
+                        if (current_score>max_score){
+                            max_score = current_score;
+                            max_score_permutation.clear();
+//                            std::cout << "Better combination found: ";
+                            for (auto aix: out_frontiers){
+                                max_score_permutation.push_back(aix);
+//                                std::cout << aix << "-->";
+                            }
+//                            std::cout<<std::endl;
+                        }
+                        perm_number++;
+                    } while (std::next_permutation(out_frontiers.begin(), out_frontiers.end()));
 
-                    } else if (std::count(in_used.begin(),in_used.end(),0) == 0 and
-                        std::count(out_used.begin(),out_used.end(),0) == 0){
-                        msf++;
-                        msf_paths+=in_used.size();
-                    }*/
-
+                    // Anunciar la permutacion correcta
+                    std::cout << " Found solution to region: " <<std::endl;
+                    for (auto ri=0; ri<in_frontiers.size(); ++ri){
+                        std::cout << in_frontiers[ri] << " --> " << out_frontiers[ri] << ", Score: "<<  max_score << std::endl;
+                        // [GONZA] todo: this vecto only has te ins and outs not the middle
+                        std::vector<uint64_t> tp = {in_frontiers[ri], out_frontiers[ri]};
+                        paths_to_separate.push_back(tp);
+                    }
+                    std::cout << "--------------------" << std::endl;
                 }
-
             }
         }
     }
-    std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
-    //std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
-    //std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
-
+//    std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
+//    //std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
+//    //std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
+//
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:paths_to_separate){

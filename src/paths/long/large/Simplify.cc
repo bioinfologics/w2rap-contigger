@@ -201,7 +201,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         }
         pb_paths_file.close();
 
-        for (auto i=100;i < 4000 ; i+=500) {
+        for (auto i=1000;i < 5000 ; i+=500) {
             //std::cout << "-------------Parameter for pathfinder: " << i << "-----------" << std::endl
             auto totalpaths=paths;
             totalpaths.insert(totalpaths.end(),pb_paths.begin(),pb_paths.end());
@@ -215,8 +215,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             std::cout << Date() << ": PathFinder: analysing single-direction repeats" << std::endl;
             PathFinder(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
             std::cout << "Removing Unneded Vertices" << std::endl;
-            RemoveUnneededVertices2(hb, inv, totalpaths);
-            Cleanup(hb, inv, totalpaths);
+            RemoveUnneededVertices2(hb, inv, paths);
+            Cleanup(hb, inv, paths);
         }
 
         if (dump_pf_files) {
