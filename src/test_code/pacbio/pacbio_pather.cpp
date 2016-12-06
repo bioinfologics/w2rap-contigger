@@ -159,13 +159,13 @@ ReadPathVec PacbioPather::mapReads(){
 
       int poffset=s_edges[0].edge_offset;
       int read_size=s_edges[0].read_size;
-      std::cout<<"-------- Sequence: "<<r << "(" << read_size << ") ---------"<<std::endl;
+//      std::cout<<"-------- Sequence: "<<r << "(" << read_size << ") ---------"<<std::endl;
 
       for (auto s: s_edges) {
-        std::cout << "--> " << s.edge_id << "("<< s.inv_edge_id <<")";
+//        std::cout << "--> " << s.edge_id << "("<< s.inv_edge_id <<")";
         temp_path.push_back(s.edge_id);
       }
-      std::cout << std::endl;
+//      std::cout << std::endl;
       pb_paths_temp[ppr++]=ReadPath(poffset, temp_path);
     }
     ++pr;

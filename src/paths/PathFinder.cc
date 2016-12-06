@@ -528,40 +528,60 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                     // Here all combinations are counted, now i need to get the best configuration between nodes
                     auto in_frontiers = f[0];
                     auto out_frontiers = f[1];
-                    int max_score = -999;
+                    int max_score = -9999;
                     int perm_number = 0;
 
                     std::vector<int> max_score_permutation;
-                    do { // se hace la cuenta de esa combinacion en particular y se compara con el maximo, si es el maximo y si todos estan representados se queda
+                    do {
+                        // Score
+                        std::vector<int> seen_in(in_frontiers.size(), 0);
+                        std::vector<int> seen_out(in_frontiers.size(), 0);
+
                         int current_score = 0;
                         for (auto pi=0; pi<in_frontiers.size(); ++pi){
                             std::string index = std::to_string(in_frontiers[pi])+"-"+std::to_string(out_frontiers[pi]);
                             if ( shared_paths.find(index) != shared_paths.end() ){
+                                // Mark the pair as seen in this iteration
+                                seen_in[pi]++;
+                                seen_out[pi]++;
                                 current_score += shared_paths[index];
                             }
                         }
-                        if (current_score>max_score){
+                        // check that all boundaries are used in the permutation
+                        bool all_used = true;
+                        for (auto a=0; a<seen_in.size(); ++a){
+                            if (0==seen_in[a] or 0==seen_out[a]){
+                                all_used = false;
+//                                std::cout << "One of the edges was not used in this permutation, discarded!!" << std::endl;
+                            }
+                        }
+
+                        if (current_score>max_score and all_used){
                             max_score = current_score;
                             max_score_permutation.clear();
-//                            std::cout << "Better combination found: ";
                             for (auto aix: out_frontiers){
                                 max_score_permutation.push_back(aix);
-//                                std::cout << aix << "-->";
                             }
-//                            std::cout<<std::endl;
                         }
                         perm_number++;
                     } while (std::next_permutation(out_frontiers.begin(), out_frontiers.end()));
 
-                    // Anunciar la permutacion correcta
-                    std::cout << " Found solution to region: " <<std::endl;
-                    for (auto ri=0; ri<in_frontiers.size(); ++ri){
-                        std::cout << in_frontiers[ri] << " --> " << out_frontiers[ri] << ", Score: "<<  max_score << std::endl;
-                        // [GONZA] todo: this vecto only has te ins and outs not the middle
-                        std::vector<uint64_t> tp = {in_frontiers[ri], out_frontiers[ri]};
-                        paths_to_separate.push_back(tp);
+                    // Get the solution
+                    int score_threshold = 10;
+                    if (max_score>score_threshold){
+                        std::cout << " Found solution to region: " <<std::endl;
+                        for (auto ri=0; ri<in_frontiers.size(); ++ri){
+                            std::cout << in_frontiers[ri] << "(" << mInv[in_frontiers[ri]] << ") --> " << out_frontiers[ri] << "("<< mInv[in_frontiers[ri]] <<"), Score: "<<  max_score << std::endl;
+                            // [GONZA] todo: this vecto only has te ins and outs not the middle
+                            std::vector<uint64_t> tp = {in_frontiers[ri], out_frontiers[ri]};
+                            paths_to_separate.push_back(tp);
+                        }
+                        std::cout << "--------------------" << std::endl;
+
+                    } else {
+                        std::cout << "Region not resolved, not enough links or bad combinations" <<std::endl;
                     }
-                    std::cout << "--------------------" << std::endl;
+
                 }
             }
         }
