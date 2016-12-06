@@ -22,16 +22,26 @@
 #include "kmers/kmatch/KMatch.h"
 
 
-void graph_path_pairs_status(const HyperBasevector &hb, const ReadPathVec &paths){
+void graph_status(const HyperBasevector &hb) {
     uint64_t total=0;
-    for (auto i=0; i<hb.EdgeObjectCount(); ++i) total+=hb.EdgeObject(i).size()-hb.K()+1;
-    std::cout << Date() << ": graph now has " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges"<< std::endl;
+    uint64_t null_sized=0;
+    for (auto i=0; i<hb.EdgeObjectCount(); ++i) {
+        if (hb.EdgeObject(i).size()>0)
+        total+=hb.EdgeObject(i).size()-hb.K()+1;
+        else ++null_sized;
+    }
+    std::cout << Date() << ": GRAPH contains " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges";
+    if (null_sized>0) std::cout << " ("<<null_sized<<" gap edges)";
+    std::cout << std::endl;
+
+}
+void path_status(const ReadPathVec &paths){
     uint64_t pe=0,ps=0,pm=0;
     for (auto &p:paths)
         if (p.size()==0) ++pe;
         else if (p.size()==1) ++ps;
         else ++pm;
-    std::cout << Date() << ": paths -> empty: " << pe << "  single-edge: " << ps <<"  multi-edge: " << pm << std::endl;
+    std::cout << Date() << ": PATHS -> empty: " << pe << "  single-edge: " << ps <<"  multi-edge: " << pm << std::endl;
 
 }
 
@@ -168,7 +178,7 @@ void full_cleanup(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const 
     Cleanup(hb, inv, paths);
 }
 
-void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
+void SimplifyNew(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,
               const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2,
               const int MAX_DEL2,
@@ -182,9 +192,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
 
 
-    graph_path_pairs_status(hb,paths);
+    graph_status(hb);
+    path_status(paths);
     update_read_placements_kmatch(hb,inv,paths,bases,quals);
-    graph_path_pairs_status(hb,paths);
+    graph_status(hb);
+    path_status(paths);
 
 
     // Remove unsupported edges (i.e. no read paths through them!) and small components
@@ -192,40 +204,21 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     std::cout << Date() << ": removing unsupported edges and small components" << std::endl;
 
     remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL);
-    /*RemoveSmallComponents3(hb);
-    Cleanup(hb, inv, paths);
-    update_read_placements(hb,inv,paths,bases,quals);
-    graph_path_pairs_status(hb,paths);
 
-
-
-
-    if (TAMP_EARLY) {
-        std::cout << Date() << ": Tamping" << std::endl;
-        Tamp(hb, inv, paths, 0);
-        graph_path_pairs_status(hb,paths);
-    }
-
-    RemoveHangs(hb, inv, paths, 100);
-    Cleanup(hb, inv, paths);
-    std::cout << Date() <<": " <<hb.EdgeObjectCount()<<" edges after removing hangs"<<std::endl;*/
     full_cleanup(hb,inv,paths,0,100);
     update_read_placements(hb,inv,paths,bases,quals);
-    graph_path_pairs_status(hb,paths);
+    graph_status(hb);
+    path_status(paths);
 
     std::cout << Date() << ": analysing branches" << std::endl;
     vec<int> to_right;
     hb.ToRight(to_right);
 
     AnalyzeBranches(hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2);
-    /*Cleanup(hb, inv, paths);
-    RemoveHangs(hb, inv, paths, MAX_DEL2);
-    Cleanup(hb, inv, paths);
-    RemoveSmallComponents3(hb);
-    Cleanup(hb, inv, paths);*/
     full_cleanup(hb,inv,paths,0,MAX_DEL2);
     update_read_placements(hb,inv,paths,bases,quals);
-    graph_path_pairs_status(hb,paths);
+    graph_status(hb);
+    path_status(paths);
 
     std::cout << Date() << ": popping bubbles" << std::endl;
     PopBubbles(hb, inv, bases, quals, paths);
@@ -233,18 +226,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     full_cleanup(hb,inv,paths,10,700);
     update_read_placements(hb,inv,paths,bases,quals);
     std::cout << Date() <<": " <<hb.EdgeObjectCount()<<" edges after bubble popping and cleanup"<<std::endl;
-    graph_path_pairs_status(hb,paths);
+    graph_status(hb);
+    path_status(paths);
 
-    /*std::cout << Date() << ": Tamping, removing hangs and small components" << std::endl;
 
-    Tamp(hb, inv, paths, 10);
-    RemoveHangs(hb, inv, paths, 700);
-    Cleanup(hb, inv, paths);
-    RemoveSmallComponents3(hb);
-    Cleanup(hb, inv, paths);
-    update_read_placements(hb,inv,paths,bases,quals);
-    std::cout << Date() <<": " <<hb.EdgeObjectCount()<<" edges after tamping, re-removing small components and cleanup"<<std::endl;
-    graph_path_pairs_status(hb,paths);*/
     // Pull apart.
 
     {
@@ -258,7 +243,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         std::cout << Date() << ": there were " << pa.getRemovedReadPaths() << " read paths removed during separation."
                   << std::endl;
         update_read_placements(hb,inv,paths,bases,quals);
-        graph_path_pairs_status(hb,paths);
+        graph_status(hb);
+        path_status(paths);
     }
 
     if (RUN_PATHFINDER) {
@@ -297,7 +283,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             WriteReadPathVec(paths,(fin_dir + "/pf_end.paths").c_str());
         }
         update_read_placements(hb,inv,paths,bases,quals);
-        graph_path_pairs_status(hb,paths);
+        graph_status(hb);
+        path_status(paths);
 
 
     }
@@ -317,7 +304,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             if (p != paths[id]) ext++;
         }
         std::cout << Date() << ": "<< ext << " paths extended" << std::endl;
-        graph_path_pairs_status(hb,paths);
+        graph_status(hb);
+        path_status(paths);
     }
 
     // Degloop.
@@ -330,7 +318,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         Cleanup(hb, inv, paths);
         std::cout << Date() << ": cleanup finished" << std::endl;
         update_read_placements(hb,inv,paths,bases,quals);
-        graph_path_pairs_status(hb,paths);
+        graph_status(hb);
+        path_status(paths);
 
     }
 
@@ -347,6 +336,254 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         CleanupLoops(hb, inv, paths);
         RemoveUnneededVerticesGeneralizedLoops(hb, inv, paths);
         update_read_placements(hb,inv,paths,bases,quals);
-        graph_path_pairs_status(hb,paths);
+        graph_status(hb);
+        path_status(paths);
+    }
+}
+
+void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
+              ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,
+              const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2,
+              const int MAX_DEL2,
+              const Bool ANALYZE_BRANCHES_VERBOSE2, const String &TRACE_SEQ,
+              const Bool DEGLOOP, const Bool EXT_FINAL, const int EXT_FINAL_MODE,
+              const Bool PULL_APART_VERBOSE, const vec<int> &PULL_APART_TRACE,
+              const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
+              const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
+              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files) {
+
+
+    // Improve read placements and delete funky pairs.
+    graph_status(hb);
+    path_status(paths);
+
+    std::cout << Date() << ": rerouting paths and cleaning pairs" << std::endl;
+    ReroutePaths(hb, inv, paths, bases, quals);
+    DeleteFunkyPathPairs(hb, inv, bases, paths, False);
+    if (IMPROVE_PATHS) {
+        std::cout << Date() << ": improving paths" << std::endl;
+
+        path_improver pimp;
+        vec<int64_t> ids;
+        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, IMPROVE_PATHS_LARGE, False);
+    }
+    path_status(paths);
+
+    // Remove unsupported edges in certain situations.
+
+    std::cout << Date() << ": removing unsupported edges" << std::endl;
+    {
+        const int min_mult = 10;
+        vec<int> dels;
+        {
+            vec<int> support(hb.EdgeObjectCount(), 0);
+            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+                    int e = paths[id][j];
+                    if (j >= 1) support[e]++;
+                    if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
+                        support[inv[e]]++;
+                }
+            }
+#pragma omp parallel for
+            for (int v = 0; v < hb.N(); v++) {
+                if (hb.From(v).size() == 2) {
+                    int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
+                    int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
+                    if (support[e1] > support[e2]) std::swap(e1, e2);
+                    int s1 = support[e1], s2 = support[e2];
+                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
+#pragma omp critical
+                        { dels.push_back(e1); }
+                    }
+                }
+            }
+        }
+        {
+            vec<int> support(hb.EdgeObjectCount(), 0);
+            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+                    int e = paths[id][j];
+                    if (j < (int64_t) paths[id].size() - 1) support[e]++;
+                    if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
+                }
+            }
+#pragma omp parallel for
+            for (int v = 0; v < hb.N(); v++) {
+                if (hb.To(v).size() == 2) {
+                    int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
+                    int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
+                    if (support[e1] > support[e2]) std::swap(e1, e2);
+                    int s1 = support[e1], s2 = support[e2];
+                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
+#pragma omp critical
+                        { dels.push_back(e1); }
+                    }
+                }
+            }
+        }
+        auto before=hb.EdgeObjectCount();
+        auto delcount=dels.size();
+        hb.DeleteEdges(dels);
+        Cleanup(hb, inv, paths);
+        std::cout << Date() <<": " << delcount << " / " <<before<<" edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
+        graph_status(hb);
+        path_status(paths);
+    }
+
+
+
+    // Clean up assembly.
+    std::cout << Date() <<": removing small components"<<std::endl;
+    RemoveSmallComponents3(hb);
+    Cleanup(hb, inv, paths);
+
+
+
+    if (TAMP_EARLY) {
+        std::cout << Date() << ": Tamping" << std::endl;
+        Tamp(hb, inv, paths, 0);
+    }
+
+    RemoveHangs(hb, inv, paths, 100);
+    Cleanup(hb, inv, paths);
+    graph_status(hb);
+    path_status(paths);
+
+    std::cout << Date() << ": analysing branches" << std::endl;
+    vec<int> to_right;
+    hb.ToRight(to_right);
+
+    AnalyzeBranches(hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2);
+    Cleanup(hb, inv, paths);
+    RemoveHangs(hb, inv, paths, MAX_DEL2);
+    Cleanup(hb, inv, paths);
+    RemoveSmallComponents3(hb);
+    Cleanup(hb, inv, paths);
+
+    graph_status(hb);
+    path_status(paths);
+
+    std::cout << Date() << ": popping bubbles" << std::endl;
+    PopBubbles(hb, inv, bases, quals, paths);
+
+    Cleanup(hb, inv, paths);
+    DeleteFunkyPathPairs(hb, inv, bases, paths, False);
+    Tamp(hb, inv, paths, 10);
+    RemoveHangs(hb, inv, paths, 700);
+    Cleanup(hb, inv, paths);
+    RemoveSmallComponents3(hb);
+    Cleanup(hb, inv, paths);
+    graph_status(hb);
+    path_status(paths);
+
+    // Pull apart.
+
+    {
+        std::cout << Date() << ": pulling apart canonical repeats" << std::endl;
+        VecULongVec invPaths;
+        invert(paths, invPaths, hb.EdgeObjectCount());
+        PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
+        size_t count = pa.SeparateAll();
+        std::cout << Date() << ": " << count << " repeats separated, " << pa.getRemovedReadPaths()
+                  << " read paths removed" << std::endl;
+        graph_status(hb);
+        path_status(paths);
+    }
+
+    if (RUN_PATHFINDER) {
+        std::cout << Date() << ": running pathfinder" << std::endl;
+        VecULongVec invPaths;
+        invert(paths, invPaths, hb.EdgeObjectCount());
+        if (dump_pf_files) {
+            BinaryWriter::writeFile(fin_dir + "/pf_start.hbv", hb);
+            //paths.WriteAll(fin_dir + "/pf_start.paths");
+            WriteReadPathVec(paths,(fin_dir + "/pf_start.paths").c_str());
+        }
+
+        PathFinder(hb, inv, paths, invPaths).unroll_loops(800);
+        RemoveUnneededVertices2(hb, inv, paths);
+        Cleanup(hb, inv, paths);
+
+        if (dump_pf_files) {
+            BinaryWriter::writeFile(fin_dir + "/pf_unrolled_loops.hbv", hb);
+            //paths.WriteAll(fin_dir + "/pf_unrolled_loops.paths");
+            WriteReadPathVec(paths,(fin_dir + "/pf_unrolled_loops.paths").c_str());
+        }
+        invPaths.clear();
+        invert( paths, invPaths, hb.EdgeObjectCount( ) );
+        PathFinder(hb, inv, paths, invPaths).untangle_complex_in_out_choices(700);
+        RemoveUnneededVertices2(hb, inv, paths);
+        Cleanup(hb, inv, paths);
+        graph_status(hb);
+        path_status(paths);
+
+        if (dump_pf_files) {
+            BinaryWriter::writeFile(fin_dir + "/pf_end.hbv", hb);
+            //paths.WriteAll(fin_dir + "/pf_end.paths");
+            WriteReadPathVec(paths,(fin_dir + "/pf_end.paths").c_str());
+        }
+    }
+    // Improve paths.
+
+    if (IMPROVE_PATHS) {
+        path_improver pimp;
+        vec<int64_t> ids;
+        std::cout << Date() << ": improving paths" << std::endl;
+        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp,
+                     IMPROVE_PATHS_LARGE, False);
+        path_status(paths);
+    }
+
+    // Extend paths.
+
+    if (EXT_FINAL) {
+        std::cout << Date() << ": extending paths" << std::endl;
+        vec<int> to_left;
+        hb.ToLeft(to_left), hb.ToRight(to_right);
+        int ext = 0;
+        auto qvItr = quals.begin();
+        for (int64_t id = 0; id < (int64_t) paths.size(); id++, ++qvItr) {
+            Bool verbose = False;
+            const int min_gain = 20;
+            ReadPath p = paths[id];
+            ExtendPath2(paths[id], id, hb, to_left, to_right, bases[id], *qvItr,
+                        min_gain, verbose, EXT_FINAL_MODE);
+            if (p != paths[id]) ext++;
+        }
+        std::cout << Date() << ": "<< ext << " paths extended" << std::endl;
+        path_status(paths);
+    }
+
+    // Degloop.
+
+    if (DEGLOOP) {
+        std::cout << Date() << ": deglooping" << std::endl;
+        Degloop(DEGLOOP_MODE, hb, inv, paths, bases, quals, DEGLOOP_MIN_DIST);
+        RemoveHangs(hb, inv, paths, 700);
+        Cleanup(hb, inv, paths);
+        graph_status(hb);
+        path_status(paths);
+    }
+
+    // Unwind three-edge plasmids.
+
+    if (UNWIND3) {
+        std::cout << Date() << ": unwinding 3-edge plasmids" << std::endl;
+        UnwindThreeEdgePlasmids(hb, inv, paths);
+        graph_status(hb);
+        path_status(paths);
+    }
+
+    // Remove tiny stuff.
+
+    if (FINAL_TINY) {
+        std::cout << Date() << ": removing small components" << std::endl;
+        RemoveSmallComponents3(hb, True);
+        Cleanup(hb, inv, paths);
+        CleanupLoops(hb, inv, paths);
+        RemoveUnneededVerticesGeneralizedLoops(hb, inv, paths);
+        graph_status(hb);
+        path_status(paths);
     }
 }

@@ -563,14 +563,12 @@ template void DegloopCore( const int mode, HyperBasevectorX& hb, vec<int>& inv,
 void Degloop( const int mode, HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const vecbasevector& bases, const VecPQVec& quals, const double min_dist,
      const int verbosity )
-{    std::cout << Date( ) << ": start degloop" << std::endl;
-     std::cout << Date( ) << ": creating path index" << std::endl;
+{
      VecULongVec paths_index;
      invert( paths, paths_index );
 
      // Main loop.
 
-     std::cout << Date( ) << ": starting loop" << std::endl;
      int K = hb.K( );
      vec<int> EDELS;
      #pragma omp parallel for
@@ -583,4 +581,4 @@ void Degloop( const int mode, HyperBasevector& hb, vec<int>& inv, ReadPathVec& p
           EDELS.push_back( inv[ EDELS[i] ] );
      UniqueSort(EDELS);
      hb.DeleteEdges(EDELS);
-     std::cout << Date( ) << ": degloop complete" << std::endl;    }
+     }

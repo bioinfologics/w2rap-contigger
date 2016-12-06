@@ -16,12 +16,14 @@
 #include "paths/long/large/Lines.h"
 #include "paths/long/large/MakeGaps.h"
 #include "paths/long/large/GapToyTools.h"
+#include "paths/long/large/Simplify.h"
 
 void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      VecULongVec& edgeToPathIds, const int MIN_LINE, const int MIN_LINK_COUNT, 
      const String& work_dir, const String& FIN, const Bool verbose,
      const Bool GAP_CLEANUP )
 {
+     graph_status(hb);
      // Set up data structures.
 
      double clock = WallClockTime( );
@@ -409,7 +411,7 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      UniqueSort(accepted);
      std::cout << Date( ) << ": deleting " << Sum(acdel) << " gaps and adding " 
           << accepted.isize( ) - na << " gaps to force symmetry" << std::endl;
-
+     graph_status(hb);
      // Fix problem with overlinked edges.
 
      vec<int> cleft( hb.E( ), 0 ), cright( hb.E( ), 0 );
@@ -491,6 +493,8 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
           int ri = BinPosition( accepted, std::make_pair( re2, re1 ) );
           ForceAssertGe( ri, 0 );
           inv[ nold + i ] = nold + ri;    }
+
+     graph_status(hb);
 
      // Clean up.
 
