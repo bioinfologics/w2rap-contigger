@@ -33,11 +33,71 @@ void PathFinder::init_prev_next_vectors(){
 
 }
 
+void PathFinder::extend_bridging_paths() {
+    //takes each pair of paths and if they connect consecutive edges it just extend the forward and reverse paths to include the other part
+    if (mVerbose) std::cout<<Date()<<": pathfinder extending concurrent paths"<<std::endl;
+    std::atomic_uint_fast64_t pairs_same(0),pairs_both_unplaced(0),pairs_single(0),pairs_overlap_contained(0),pairs_overlap_extendable(0),pairs_neighbour(0), pairs_complex(0);
+    for (auto i=0;i<mPaths.size(); i+=2){
+        auto r1path=mPaths[i];
+        ReadPath r2rpath;
+        for (int ei=mPaths[i+1].size()-1;ei>=0;--ei) r2rpath.push_back(mInv[mPaths[i+1][ei]]);
+        if (r1path.size()==0 and r2rpath.size()==0){
+            pairs_both_unplaced++;
+        }
+        else if (r1path.size()==0 or r2rpath.size()==0) {
+            pairs_single++;
+        }
+        else if (r1path==r2rpath) {
+            pairs_same++;
+        }
+        else {
+            //first hipothesis:paths overlap
+            auto r1last = r1path[r1path.size() - 1];
+            int overlap=-1;
+            int r2i=0;
+            for (auto &e:r2rpath){
+                if (overlap==-1 and r1last==e){
+                    overlap=r2i;
+                    break;
+                }
+                r2i++;
+            }
+            if (overlap!=-1){
+                //if (overlap+1<r2rpath.size() or overlap<r1path.size()-1) {
+                if (overlap+1<r2rpath.size() and overlap+1<r1path.size()) {
+                    pairs_overlap_extendable++;
+                    /*std::cout << "path overlap: ";
+                    for (auto &e:r1path) std::cout << e << "|" << mInv[e] << "(" << mHBV.EdgeObject(e).size() - mHBV.K() + 1 << ") ";
+                    std::cout << "  -> <-  ";
+                    for (auto &e:r2rpath) std::cout << e << "|" << mInv[e] << "(" << mHBV.EdgeObject(e).size() - mHBV.K() + 1 << ") ";
+                    std::cout << std::endl;*/
+                    for (auto r2ai=overlap; r2ai<r2rpath.size(); ++r2ai) r1path.push_back(r2rpath[r2ai]);
+                    mPaths[i]=r1path;
+                    r2rpath.clear();
+                    for (int ei=r1path.size()-1;ei>=0;--ei) mPaths[i+1].push_back(mInv[r1path[ei]]);
+
+                }
+                else pairs_overlap_contained++;
+                //}
+                //else pairs_complex++;
+            }
+            else if (mToRight[r1last]==r2rpath[0]) pairs_neighbour++; //second hipothesis, r1last and r2rfirst are perfect neighbours
+            else pairs_complex++;
+
+        }
+    }
+    if (mVerbose) std::cout<<Date()<<": patfinder pairs: unplaced: " <<
+                           pairs_both_unplaced << "  single: " << pairs_single << "  same-edge: " << pairs_same <<
+                           "  overlap(cont): " << pairs_overlap_contained << "  overlap(ext): " <<
+                           pairs_overlap_extendable << "  neighbour: " << pairs_neighbour << "  others: " <<
+                           pairs_complex <<std::endl;
+
+}
 std::array<uint64_t,3> PathFinder::transition_votes(uint64_t left_e,uint64_t right_e){
     std::array<uint64_t,3> tv={0,0,0};
-    std::cout<<"Scoring transition from "<<left_e<<"to"<<right_e<<std::endl;
+    if (mVerbose) std::cout<<"Scoring transition from "<<left_e<<"to"<<right_e<<std::endl;
 
-    std::cout<<"Paths on right edge "<<mEdgeToPathIds[right_e].size()<<" inv "<<mEdgeToPathIds[mInv[right_e]].size()<<std::endl;
+    if (mVerbose) std::cout<<"Paths on right edge "<<mEdgeToPathIds[right_e].size()<<" inv "<<mEdgeToPathIds[mInv[right_e]].size()<<std::endl;
     return tv;
 };
 
@@ -47,35 +107,35 @@ std::array<uint64_t,3> PathFinder::path_votes(std::vector<uint64_t> path){
     std::vector<ReadPath> vfor,vpartial,vagainst;
     //TODO: needs to be done in both directions? (votes for only in one direction?)
 
-    //std::cout<<std::endl<<"scoring path!!!!"<<std::endl;
+    //if (mVerbose) std::cout<<std::endl<<"scoring path!!!!"<<std::endl;
     //first detect paths going out of first edge, also add them to open_paths
     std::list<std::pair<ReadPath,uint16_t>> initial_paths, open_paths;
-    //std::cout<<"starting at edge "<<path[0]<<std::endl;
+    //if (mVerbose) std::cout<<"starting at edge "<<path[0]<<std::endl;
     for (auto pi:mEdgeToPathIds[path[0]]){
 
         auto p=mPaths[pi];
-        //std::cout<<p<<std::endl;
+        //if (mVerbose) std::cout<<p<<std::endl;
         if (p.size()>1){
             uint16_t i=0;
             while (p[i]!=path[0]) ++i;
             if (i<p.size()-1) {
                 open_paths.insert(open_paths.end(),std::make_pair(p,i));
-                //std::cout<<" inserting into open paths"<<std::endl;
+                //if (mVerbose) std::cout<<" inserting into open paths"<<std::endl;
             }
         }
     }
     initial_paths.insert(initial_paths.begin(),open_paths.begin(),open_paths.end());
-    //std::cout<<"initial paths generated from edge"<<path[0]<<" "<<initial_paths.size() <<std::endl;
+    //if (mVerbose) std::cout<<"initial paths generated from edge"<<path[0]<<" "<<initial_paths.size() <<std::endl;
     // basically every path in the mEdgeToPathIds[e] is either on the openPaths, starts here o
     for (auto ei=1;ei<path.size();++ei) {
 
         auto e=path[ei];
-        //std::cout<<" going through edge "<<e<<" open list size: "<<open_paths.size()<<" paths on this edge: "<<mEdgeToPathIds[e].size()<<std::endl;
+        //if (mVerbose) std::cout<<" going through edge "<<e<<" open list size: "<<open_paths.size()<<" paths on this edge: "<<mEdgeToPathIds[e].size()<<std::endl;
         //First go through the open list
         for (auto o=open_paths.begin();o!=open_paths.end();) {
             //if goes somewhere else, vote against and remove
             if (o->first[o->second+1]!=e){
-                //std::cout<<"AGAINST: previous path goes to "<<o->first[o->second+1]<<std::endl;
+                //if (mVerbose) std::cout<<"AGAINST: previous path goes to "<<o->first[o->second+1]<<std::endl;
                 vagainst.push_back(o->first);
                 o=open_paths.erase(o);
             } else { //else, advance
@@ -84,7 +144,7 @@ std::array<uint64_t,3> PathFinder::path_votes(std::vector<uint64_t> path){
             }
         }
 
-        //std::cout<<" open list processed, votes" << pv[0]<<":"<<pv[1]<<":"<<pv[2]<<std::endl;
+        //if (mVerbose) std::cout<<" open list processed, votes" << pv[0]<<":"<<pv[1]<<":"<<pv[2]<<std::endl;
 
         std::list<std::pair<ReadPath,uint16_t>> new_paths;
 
@@ -92,13 +152,13 @@ std::array<uint64_t,3> PathFinder::path_votes(std::vector<uint64_t> path){
         for (auto ip:mEdgeToPathIds[e]) {
             //path is of size 1: irrelevant
             auto p=mPaths[ip];
-            //std::cout<<"Considering path "<<ip<<":"<<p<<std::endl;
+            //if (mVerbose) std::cout<<"Considering path "<<ip<<":"<<p<<std::endl;
             if (p.size()==1) continue;
 
             //path starts_here, add to the open list later TODO: no need on the last edge!
             if (p[0]==e) {
                 new_paths.insert(new_paths.end(),std::make_pair(p,0));
-                //std::cout<<"adding new path to the open list"<<std::endl;
+                //if (mVerbose) std::cout<<"adding new path to the open list"<<std::endl;
                 continue;
             }
 
@@ -122,24 +182,24 @@ std::array<uint64_t,3> PathFinder::path_votes(std::vector<uint64_t> path){
                     if (ipp!=initial_paths.end()){
                         //++pv[0];
                         vfor.push_back(p);
-                        //std::cout<<"FOR: last edge and this path was in the initial list"<<std::endl;
+                        //if (mVerbose) std::cout<<"FOR: last edge and this path was in the initial list"<<std::endl;
                     }
                     else{
                         //++pv[1];
                         vpartial.push_back(p);
-                        //std::cout<<"PARTIAL: last edge and this path was NOT in the initial list"<<std::endl;
+                        //if (mVerbose) std::cout<<"PARTIAL: last edge and this path was NOT in the initial list"<<std::endl;
                     }
                 } else if (lp->first.size()-1==lp->second){
                     //++pv[1];
                     vpartial.push_back(p);
                     open_paths.erase(lp);
-                    //std::cout<<"PARTIAL: path finished before the last edge"<<std::endl;
+                    //if (mVerbose) std::cout<<"PARTIAL: path finished before the last edge"<<std::endl;
                 }
             } else {
                 //path comes from somewhere else, vote against
                 //++pv[2];
                 vagainst.push_back(p);
-                //std::cout<<"AGAINST: path comes from somewhere else"<<std::endl;
+                //if (mVerbose) std::cout<<"AGAINST: path comes from somewhere else"<<std::endl;
             }
 
         }
@@ -148,7 +208,7 @@ std::array<uint64_t,3> PathFinder::path_votes(std::vector<uint64_t> path){
     }
 
     //auto tv=transition_votes(path[i],path[i+1])
-    //std::cout<<"Paths on left edge "<<mEdgeToPathIds[left_e].size()<<" inv "<<mEdgeToPathIds[mInv[left_e]].size()<<std::endl;
+    //if (mVerbose) std::cout<<"Paths on left edge "<<mEdgeToPathIds[left_e].size()<<" inv "<<mEdgeToPathIds[mInv[left_e]].size()<<std::endl;
     std::array<uint64_t,3> pv={0,0,0};
     //collect votes:
     //on favour are on favour:
@@ -195,35 +255,35 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
     std::vector<ReadPath> vfor,vpartial,vagainst;
     //TODO: needs to be done in both directions? (votes for only in one direction?)
     for (auto path:paths) {
-        //std::cout<<std::endl<<"scoring path!!!!"<<std::endl;
+        //if (mVerbose) std::cout<<std::endl<<"scoring path!!!!"<<std::endl;
         //first detect paths going out of first edge, also add them to open_paths
         std::list<std::pair<ReadPath, uint16_t>> initial_paths, open_paths;
-        //std::cout<<"starting at edge "<<path[0]<<std::endl;
+        //if (mVerbose) std::cout<<"starting at edge "<<path[0]<<std::endl;
         for (auto pi:mEdgeToPathIds[path[0]]) {
 
             auto p = mPaths[pi];
-            //std::cout<<p<<std::endl;
+            //if (mVerbose) std::cout<<p<<std::endl;
             if (p.size() > 1) {
                 uint16_t i = 0;
                 while (p[i] != path[0]) ++i;
                 if (i < p.size() - 1) {
                     open_paths.insert(open_paths.end(), std::make_pair(p, i));
-                    //std::cout<<" inserting into open paths"<<std::endl;
+                    //if (mVerbose) std::cout<<" inserting into open paths"<<std::endl;
                 }
             }
         }
         initial_paths.insert(initial_paths.begin(), open_paths.begin(), open_paths.end());
-        //std::cout<<"initial paths generated from edge"<<path[0]<<" "<<initial_paths.size() <<std::endl;
+        //if (mVerbose) std::cout<<"initial paths generated from edge"<<path[0]<<" "<<initial_paths.size() <<std::endl;
         // basically every path in the mEdgeToPathIds[e] is either on the openPaths, starts here o
         for (auto ei = 1; ei < path.size(); ++ei) {
 
             auto e = path[ei];
-            //std::cout<<" going through edge "<<e<<" open list size: "<<open_paths.size()<<" paths on this edge: "<<mEdgeToPathIds[e].size()<<std::endl;
+            //if (mVerbose) std::cout<<" going through edge "<<e<<" open list size: "<<open_paths.size()<<" paths on this edge: "<<mEdgeToPathIds[e].size()<<std::endl;
             //First go through the open list
             for (auto o = open_paths.begin(); o != open_paths.end();) {
                 //if goes somewhere else, vote against and remove
                 if (o->first[o->second + 1] != e) {
-                    //std::cout<<"AGAINST: previous path goes to "<<o->first[o->second+1]<<std::endl;
+                    //if (mVerbose) std::cout<<"AGAINST: previous path goes to "<<o->first[o->second+1]<<std::endl;
                     vagainst.push_back(o->first);
                     o = open_paths.erase(o);
                 } else { //else, advance
@@ -232,7 +292,7 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
                 }
             }
 
-            //std::cout<<" open list processed, votes" << pv[0]<<":"<<pv[1]<<":"<<pv[2]<<std::endl;
+            //if (mVerbose) std::cout<<" open list processed, votes" << pv[0]<<":"<<pv[1]<<":"<<pv[2]<<std::endl;
 
             std::list<std::pair<ReadPath, uint16_t>> new_paths;
 
@@ -240,13 +300,13 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
             for (auto ip:mEdgeToPathIds[e]) {
                 //path is of size 1: irrelevant
                 auto p = mPaths[ip];
-                //std::cout<<"Considering path "<<ip<<":"<<p<<std::endl;
+                //if (mVerbose) std::cout<<"Considering path "<<ip<<":"<<p<<std::endl;
                 if (p.size() == 1) continue;
 
                 //path starts_here, add to the open list later TODO: no need on the last edge!
                 if (p[0] == e) {
                     new_paths.insert(new_paths.end(), std::make_pair(p, 0));
-                    //std::cout<<"adding new path to the open list"<<std::endl;
+                    //if (mVerbose) std::cout<<"adding new path to the open list"<<std::endl;
                     continue;
                 }
 
@@ -270,24 +330,24 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
                         if (ipp != initial_paths.end()) {
                             //++pv[0];
                             vfor.push_back(p);
-                            //std::cout<<"FOR: last edge and this path was in the initial list"<<std::endl;
+                            //if (mVerbose) std::cout<<"FOR: last edge and this path was in the initial list"<<std::endl;
                         }
                         else {
                             //++pv[1];
                             vpartial.push_back(p);
-                            //std::cout<<"PARTIAL: last edge and this path was NOT in the initial list"<<std::endl;
+                            //if (mVerbose) std::cout<<"PARTIAL: last edge and this path was NOT in the initial list"<<std::endl;
                         }
                     } else if (lp->first.size() - 1 == lp->second) {
                         //++pv[1];
                         vpartial.push_back(p);
                         open_paths.erase(lp);
-                        //std::cout<<"PARTIAL: path finished before the last edge"<<std::endl;
+                        //if (mVerbose) std::cout<<"PARTIAL: path finished before the last edge"<<std::endl;
                     }
                 } else {
                     //path comes from somewhere else, vote against
                     //++pv[2];
                     vagainst.push_back(p);
-                    //std::cout<<"AGAINST: path comes from somewhere else"<<std::endl;
+                    //if (mVerbose) std::cout<<"AGAINST: path comes from somewhere else"<<std::endl;
                 }
 
             }
@@ -296,7 +356,7 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
         }
     }
     //auto tv=transition_votes(path[i],path[i+1])
-    //std::cout<<"Paths on left edge "<<mEdgeToPathIds[left_e].size()<<" inv "<<mEdgeToPathIds[mInv[left_e]].size()<<std::endl;
+    //if (mVerbose) std::cout<<"Paths on left edge "<<mEdgeToPathIds[left_e].size()<<" inv "<<mEdgeToPathIds[mInv[left_e]].size()<<std::endl;
     std::array<uint64_t,3> pv={0,0,0};
     //collect votes:
     //on favour are on favour:
@@ -332,46 +392,15 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
 
 
 
-void PathFinder::classify_forks(){
-    int64_t nothing_fw=0, line_fw=0,join_fw=0,split_fw=0,join_split_fw=0;
-    uint64_t nothing_fw_size=0, line_fw_size=0,join_fw_size=0,split_fw_size=0,join_split_fw_size=0;
-    for ( int i = 0; i < mHBV.EdgeObjectCount(); ++i ) {
-        //checks for both an edge and its complement, because it only looks forward
-        uint64_t out_node=mToRight[i];
-        if (mHBV.FromSize(out_node)==0) {
-            nothing_fw++;
-            nothing_fw_size+=mHBV.EdgeObject(i).size();
-        } else if (mHBV.FromSize(out_node)==1) {
-            if (mHBV.ToSize(out_node)==1){
-                line_fw++;
-                line_fw_size+=mHBV.EdgeObject(i).size();
-            } else {
-                split_fw++;
-                split_fw_size+=mHBV.EdgeObject(i).size();
-            }
-        } else if (mHBV.ToSize(out_node)==1){
-            join_fw++;
-            join_fw_size+=mHBV.EdgeObject(i).size();
-        } else {
-            join_split_fw++;
-            join_split_fw_size+=mHBV.EdgeObject(i).size();
-        }
-    }
-    std::cout<<"Forward Node Edge Classification: "<<std::endl
-    <<"nothing_fw: "<<nothing_fw<<" ( "<<nothing_fw_size<<" kmers )"<<std::endl
-    <<"line_fw: "<<line_fw<<" ( "<<line_fw_size<<" kmers )"<<std::endl
-    <<"join_fw: "<<join_fw<<" ( "<<join_fw_size<<" kmers )"<<std::endl
-    <<"split_fw: "<<split_fw<<" ( "<<split_fw_size<<" kmers )"<<std::endl
-    <<"join_split_fw: "<<join_split_fw<<" ( "<<join_split_fw_size<<" kmers )"<<std::endl;
 
-}
 
 void PathFinder::unroll_loops(uint64_t min_side_sizes) {
+    extend_bridging_paths();
     //find nodes where in >1 or out>1 and in>0 and out>0
     uint64_t uloop=0,ursize=0;
-    std::cout<<"Starting loop finding"<<std::endl;
+    if (mVerbose) std::cout<<"Starting loop finding"<<std::endl;
     init_prev_next_vectors();
-    std::cout<<"Prev and Next vectors initialised"<<std::endl;
+    if (mVerbose) std::cout<<"Prev and Next vectors initialised"<<std::endl;
     //score all possible transitions, discards all decidible and
 
         // is there any score>0 transition that is not incompatible with any other transitions?
@@ -382,15 +411,15 @@ void PathFinder::unroll_loops(uint64_t min_side_sizes) {
 
             auto iurs=is_unrollable_loop(mInv[e],min_side_sizes);
             if (urs.size()>0 && iurs.size()>0) {
-                //std::cout<<"unrolling loop on edge"<<e<<std::endl;
+                //if (mVerbose) std::cout<<"unrolling loop on edge"<<e<<std::endl;
                 new_paths.push_back(urs[0]);
             }
         }
 
     }
-    //std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
+    //if (mVerbose) std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
 
-    std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
+    if (mVerbose) std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:new_paths){
@@ -406,9 +435,9 @@ void PathFinder::unroll_loops(uint64_t min_side_sizes) {
     if (old_edges_to_new.size()>0) {
         migrate_readpaths(old_edges_to_new);
     }
-    std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
+    if (mVerbose) std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
     init_prev_next_vectors();
-    std::cout<<"Prev and Next vectors initialised"<<std::endl;
+    if (mVerbose) std::cout<<"Prev and Next vectors initialised"<<std::endl;
 }
 /*
 void PathFinder::untangle_complex_in_out_choices() {
@@ -419,11 +448,11 @@ void PathFinder::untangle_complex_in_out_choices() {
             //Ok, so why do we stop?
             //is next edge a join? how long till it splits again? can we choose the split?
             if (next_edges[e].size()==1 and prev_edges[next_edges[e][0]].size()>1){
-                //std::cout<<"next edge from "<<e<<" is a join!"<<std::endl;
+                //if (mVerbose) std::cout<<"next edge from "<<e<<" is a join!"<<std::endl;
                 if (mHBV.EdgeObject(next_edges[e][0]).size()<500 and next_edges[next_edges[e][0]].size()>1){
 
                     if (prev_edges[next_edges[e][0]].size()==prev_edges[next_edges[e][0]].size()){
-                        std::cout<<"next edge from "<<e<<" is a small join! with "<<prev_edges[next_edges[e][0]].size()<<"in-outs"<<std::endl;
+                        if (mVerbose) std::cout<<"next edge from "<<e<<" is a small join! with "<<prev_edges[next_edges[e][0]].size()<<"in-outs"<<std::endl;
                         auto join_edge=next_edges[e][0];
                         std::vector<std::vector<uint64_t>> p0011={
                                 {prev_edges[join_edge][0],join_edge,next_edges[join_edge][0]},
@@ -435,8 +464,8 @@ void PathFinder::untangle_complex_in_out_choices() {
                         };
                         auto v0011=multi_path_votes(p0011);
                         auto v1001=multi_path_votes(p1001);
-                        std::cout<<"votes for: "<<path_str(p0011[0])<<" / "<<path_str(p0011[1])<<":  "<<v0011[0]<<":"<<v0011[1]<<":"<<v0011[2]<<std::endl;
-                        std::cout<<"votes for: "<<path_str(p1001[0])<<" / "<<path_str(p1001[1])<<":  "<<v1001[0]<<":"<<v1001[1]<<":"<<v1001[2]<<std::endl;
+                        if (mVerbose) std::cout<<"votes for: "<<path_str(p0011[0])<<" / "<<path_str(p0011[1])<<":  "<<v0011[0]<<":"<<v0011[1]<<":"<<v0011[2]<<std::endl;
+                        if (mVerbose) std::cout<<"votes for: "<<path_str(p1001[0])<<" / "<<path_str(p1001[1])<<":  "<<v1001[0]<<":"<<v1001[1]<<":"<<v1001[2]<<std::endl;
                     }
                 }
             }
@@ -451,26 +480,27 @@ void PathFinder::untangle_pins() {
     uint64_t pins=0;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
         if (mToLeft[e]==mToLeft[mInv[e]] and next_edges[e].size()==1 ) {
-            std::cout<<" Edge "<<e<<" forms a pinhole!!!"<<std::endl;
+            if (mVerbose) std::cout<<" Edge "<<e<<" forms a pinhole!!!"<<std::endl;
             if (next_edges[next_edges[e][0]].size()==2) {
                 std::vector<uint64_t> pfw = {mInv[next_edges[next_edges[e][0]][0]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][1]};
                 std::vector<uint64_t> pbw = {mInv[next_edges[next_edges[e][0]][1]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][0]};
                 auto vpfw=multi_path_votes({pfw});
                 auto vpbw=multi_path_votes({pbw});
-                std::cout<<"votes FW: "<<vpfw[0]<<":"<<vpfw[1]<<":"<<vpfw[2]<<"     BW: "<<vpbw[0]<<":"<<vpbw[1]<<":"<<vpbw[2]<<std::endl;
+                if (mVerbose) std::cout<<"votes FW: "<<vpfw[0]<<":"<<vpfw[1]<<":"<<vpfw[2]<<"     BW: "<<vpbw[0]<<":"<<vpbw[1]<<":"<<vpbw[2]<<std::endl;
             }
             ++pins;
         }
     }
-    std::cout<<"Total number of pinholes: "<<pins;
+    if (mVerbose) std::cout<<"Total number of pinholes: "<<pins;
 }
 
 void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation) {
+    extend_bridging_paths();
     //find a complex path
     uint64_t qsf=0,qsf_paths=0;
     uint64_t msf=0,msf_paths=0;
     init_prev_next_vectors();
-    std::cout<<"vectors initialised"<<std::endl;
+    if (mVerbose) std::cout<<"vectors initialised"<<std::endl;
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     std::vector<std::vector<uint64_t>> paths_to_separate;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
@@ -481,7 +511,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                 bool single_dir=true;
                 for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
                 if (single_dir) {
-                    std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
+                    if (mVerbose) std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
                     std::vector<int> in_used(f[0].size(),0);
                     std::vector<int> out_used(f[1].size(),0);
                     std::vector<std::vector<uint64_t>> first_full_paths;
@@ -500,18 +530,18 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                                         if (shared_paths==1){//not the best solution, but should work-ish
                                             std::vector<uint64_t > pv;
                                             for (auto e:mPaths[inp]) pv.push_back(e);
-                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+                                            if (mVerbose) std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
                                             first_full_paths.push_back({});
                                             int16_t ei=0;
                                             while (mPaths[inp][ei]!=in_e) ei++;
 
                                             while (mPaths[inp][ei]!=out_e && ei<mPaths[inp].size()) first_full_paths.back().push_back(mPaths[inp][ei++]);
                                             if (ei>=mPaths[inp].size()) {
-                                                std::cout<<"reversed path detected!"<<std::endl;
+                                                if (mVerbose) std::cout<<"reversed path detected!"<<std::endl;
                                                 reversed=true;
                                             }
                                             first_full_paths.back().push_back(out_e);
-                                            //std::cout<<"added!"<<std::endl;
+                                            //if (mVerbose) std::cout<<"added!"<<std::endl;
                                         }
                                     }
                             //check for reverse paths too
@@ -523,38 +553,38 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                                         if (shared_paths==1){//not the best solution, but should work-ish
                                             std::vector<uint64_t > pv;
                                             for (auto e=mPaths[inp].rbegin();e!=mPaths[inp].rend();++e) pv.push_back(mInv[*e]);
-                                            std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
+                                            if (mVerbose) std::cout<<"found first path from "<<in_e<<" to "<< out_e << path_str(pv)<< std::endl;
                                             first_full_paths.push_back({});
                                             int16_t ei=0;
                                             while (pv[ei]!=in_e) ei++;
 
                                             while (pv[ei]!=out_e && ei<pv.size()) first_full_paths.back().push_back(pv[ei++]);
                                             if (ei>=pv.size()) {
-                                                std::cout<<"reversed path detected!"<<std::endl;
+                                                if (mVerbose) std::cout<<"reversed path detected!"<<std::endl;
                                                 reversed=true;
                                             }
                                             first_full_paths.back().push_back(out_e);
-                                            //std::cout<<"added!"<<std::endl;
+                                            //if (mVerbose) std::cout<<"added!"<<std::endl;
                                         }
                                     }
                             if (shared_paths) {
                                 out_used[out_i]++;
                                 in_used[in_i]++;
-                                //std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths << std::endl;
+                                //if (mVerbose) std::cout << "  Shared paths " << in_e << " --> " << out_e << ": " << shared_paths << std::endl;
 
                             }
                         }
                     }
                     if ((not reversed) and std::count(in_used.begin(),in_used.end(),1) == in_used.size() and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()){
-                        std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
+                        if (mVerbose) std::cout<<" REGION COMPLETELY SOLVED BY PATHS!!!"<<std::endl;
                         solved_frontiers.insert(f);
                         for (auto p:first_full_paths) paths_to_separate.push_back(p);
                     } /*else if (std::count(in_used.begin(),in_used.end(),1) == in_used.size()-1 and
                             std::count(in_used.begin(),in_used.end(),0) == 1 and
                             std::count(out_used.begin(),out_used.end(),1) == out_used.size()-1 and
                             std::count(out_used.begin(),out_used.end(),0) == 1){
-                        //std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
+                        //if (mVerbose) std::cout<<" REGION SOLVED BY PATHS and a jump (not acted on!!!)"<<std::endl;
                         //solved_frontiers.insert(f);
                         qsf++;
                         qsf_paths+=in_used.size();
@@ -562,7 +592,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                         while (in_used[in_index]!=0) in_index++;
                         unsigned int out_index=0;
                         while (out_used[out_index]!=0) out_index++;
-                        std::cout<<"Trying to solve region by reducing last choice to unique path between "<<f[0][in_index]<< " and "<< f[1][out_index]<<std::endl;
+                        if (mVerbose) std::cout<<"Trying to solve region by reducing last choice to unique path between "<<f[0][in_index]<< " and "<< f[1][out_index]<<std::endl;
 
                         auto all_paths=AllPathsFromTo({f[0][in_index]},{f[1][out_index]},10);
                         if (all_paths.size()==1){
@@ -570,9 +600,9 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                             for (auto p:first_full_paths) paths_to_separate.push_back(p);
                             paths_to_separate.push_back(all_paths[0]);
 
-                            std::cout<<"Solved!!!"<<std::endl;
+                            if (mVerbose) std::cout<<"Solved!!!"<<std::endl;
                         }
-                        else std::cout<<"Not solved, "<<all_paths.size()<<" different paths :("<<std::endl;
+                        else if (mVerbose) std::cout<<"Not solved, "<<all_paths.size()<<" different paths :("<<std::endl;
 
                     } else if (std::count(in_used.begin(),in_used.end(),0) == 0 and
                         std::count(out_used.begin(),out_used.end(),0) == 0){
@@ -585,16 +615,16 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
             }
         }
     }
-    std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
-    //std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
-    //std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
+    if (mVerbose) std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
+    //if (mVerbose) std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
+    //if (mVerbose) std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
 
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:paths_to_separate){
 
         if (old_edges_to_new.count(p.front()) > 0 or old_edges_to_new.count(p.back()) > 0) {
-            std::cout<<"WARNING: path starts or ends in an already modified edge, skipping"<<std::endl;
+            if (mVerbose) std::cout<<"WARNING: path starts or ends in an already modified edge, skipping"<<std::endl;
             continue;
         }
 
@@ -610,7 +640,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
     if (old_edges_to_new.size()>0) {
         migrate_readpaths(old_edges_to_new);
     }
-    std::cout<<" "<<sep<<" paths separated!"<<std::endl;
+    if (mVerbose) std::cout<<" "<<sep<<" paths separated!"<<std::endl;
 }
 
 std::vector<std::vector<uint64_t>> PathFinder::AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length) {
@@ -750,25 +780,25 @@ std::vector<std::vector<uint64_t>> PathFinder::is_unrollable_loop(uint64_t loop_
     if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
 
 
-    //std::cout<<" LOOP: "<< edge_pstr(prev_e)<<" ---> "<<edge_pstr(repeat_e)<<" -> "<<edge_pstr(loop_e)<<" -> "<<edge_pstr(repeat_e)<<" ---> "<<edge_pstr(next_e)<<std::endl;
+    //if (mVerbose) std::cout<<" LOOP: "<< edge_pstr(prev_e)<<" ---> "<<edge_pstr(repeat_e)<<" -> "<<edge_pstr(loop_e)<<" -> "<<edge_pstr(repeat_e)<<" ---> "<<edge_pstr(next_e)<<std::endl;
     auto pvlin=path_votes({prev_e,repeat_e,loop_e,repeat_e,next_e});
     auto pvloop=path_votes({prev_e,repeat_e,loop_e,repeat_e,loop_e,repeat_e,next_e});
-    //std::cout<<" Votes to p->r->l->r->n: "<<pvlin[0]<<":"<<pvlin[1]<<":"<<pvlin[2]<<std::endl;
-    //std::cout<<" Votes to p->r->l->r->l->r->n: "<<pvloop[0]<<":"<<pvloop[1]<<":"<<pvloop[2]<<std::endl;
+    //if (mVerbose) std::cout<<" Votes to p->r->l->r->n: "<<pvlin[0]<<":"<<pvlin[1]<<":"<<pvlin[2]<<std::endl;
+    //if (mVerbose) std::cout<<" Votes to p->r->l->r->l->r->n: "<<pvloop[0]<<":"<<pvloop[1]<<":"<<pvloop[2]<<std::endl;
 
     auto pvcircleline=multi_path_votes({{loop_e,repeat_e,loop_e},{prev_e,repeat_e,next_e}});
-    //std::cout<<" Multi-votes to circle+line "<<pvcircleline[0]<<":"<<pvcircleline[1]<<":"<<pvcircleline[2]<<std::endl;
+    //if (mVerbose) std::cout<<" Multi-votes to circle+line "<<pvcircleline[0]<<":"<<pvcircleline[1]<<":"<<pvcircleline[2]<<std::endl;
 
     if (pvcircleline[0]>0 or pvloop[2]>0 or (pvcircleline[2]==0 and pvcircleline[1]>pvlin[1] and pvcircleline[1]>pvloop[1])) {
-        //std::cout<<"   CAN'T be reliably unrolled!"<<std::endl;
+        //if (mVerbose) std::cout<<"   CAN'T be reliably unrolled!"<<std::endl;
         return {};
     }
     if (pvloop[3]==0 and pvloop[0]>pvlin[0]){
-        //std::cout<<"   LOOP should be traversed as loop at least once!"<<std::endl;
+        //if (mVerbose) std::cout<<"   LOOP should be traversed as loop at least once!"<<std::endl;
         return {};
     }
     if (pvlin==pvcircleline){
-        //std::cout<<"   UNDECIDABLE as path support problem, looking at coverages"<<std::endl;
+        //if (mVerbose) std::cout<<"   UNDECIDABLE as path support problem, looking at coverages"<<std::endl;
         float prev_cov=paths_per_kbp(prev_e);
         float repeat_cov=paths_per_kbp(repeat_e);
         float loop_cov=paths_per_kbp(loop_e);
@@ -780,12 +810,12 @@ std::vector<std::vector<uint64_t>> PathFinder::is_unrollable_loop(uint64_t loop_
         if (repeat_cov<dc_min or repeat_cov>dc_max or
                 loop_cov<sc_min or loop_cov>sc_max or
                 next_cov<sc_min or next_cov>sc_max ){
-            //std::cout<<"    Coverage FAIL conditions, CAN'T be reliably unrolled!"<<std::endl;
+            //if (mVerbose) std::cout<<"    Coverage FAIL conditions, CAN'T be reliably unrolled!"<<std::endl;
             return {};
         }
-        //std::cout<<"    Coverage OK"<<std::endl;
+        //if (mVerbose) std::cout<<"    Coverage OK"<<std::endl;
     }
-    //std::cout<<"   UNROLLABLE"<<std::endl;
+    //if (mVerbose) std::cout<<"   UNROLLABLE"<<std::endl;
     return {{prev_e,repeat_e,loop_e,repeat_e,next_e}};
     //return mHBV.EdgeObject(prev_e).size()+mHBV.EdgeObject(repeat_e).size()+
             //mHBV.EdgeObject(loop_e).size()+mHBV.EdgeObject(repeat_e).size()+mHBV.EdgeObject(next_e).size()-4*mHBV.K();
@@ -803,23 +833,23 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
     //changes neighbourhood (i.e. creates new vertices and moves the to and from for the implicated edges).
 
     //creates a copy of each node but the first and the last, connects only linearly to the previous copy,
-    //std::cout<<std::endl<<"Separating path"<<std::endl;
+    //if (mVerbose) std::cout<<std::endl<<"Separating path"<<std::endl;
     std::set<uint64_t> edges_fw;
     std::set<uint64_t> edges_rev;
     for (auto e:p){//TODO: this is far too astringent...
         edges_fw.insert(e);
         edges_rev.insert(mInv[e]);
 
-        if (edges_fw.count(mInv[e]) ||edges_rev.count(e) ){ //std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
+        if (edges_fw.count(mInv[e]) ||edges_rev.count(e) ){ //if (mVerbose) std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
             return {};}
     }
     //create two new vertices (for the FW and BW path)
     uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
     mHBV.AddVertices(2);
     //migrate connections (dangerous!!!)
-    if (verbose_separation) std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
+    if (verbose_separation) if (mVerbose) std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
-    if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
+    if (verbose_separation) if (mVerbose) std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
 
@@ -833,14 +863,14 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
 
         //now, duplicate next edge for the FW and reverse path
         auto nef=mHBV.AddEdge(prev_vertex_fw,current_vertex_fw,mHBV.EdgeObject(p[ei]));
-        if (verbose_separation)  std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
+        if (verbose_separation)  if (mVerbose) std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
         mToLeft.push_back(prev_vertex_fw);
         mToRight.push_back(current_vertex_fw);
         if (! old_edges_to_new.count(p[ei]))  old_edges_to_new[p[ei]]={};
         old_edges_to_new[p[ei]].push_back(nef);
 
         auto ner=mHBV.AddEdge(current_vertex_rev,prev_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
-        if (verbose_separation) std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
+        if (verbose_separation) if (mVerbose) std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
         mToLeft.push_back(current_vertex_rev);
         mToRight.push_back(prev_vertex_rev);
         if (! old_edges_to_new.count(mInv[p[ei]]))  old_edges_to_new[mInv[p[ei]]]={};
@@ -850,9 +880,9 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
         mInv.push_back(nef);
         mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
     }
-    if (verbose_separation) std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
+    if (verbose_separation) if (mVerbose) std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
-    if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
+    if (verbose_separation) if (mVerbose) std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
     mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
 
     //TODO: cleanup new isolated elements and leading-nowhere paths.
@@ -901,7 +931,7 @@ void PathFinder::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edge
                     if (possible_paths.size()==0) break;
                 }
                 if (possible_paths.size()==0){
-                    std::cout<<"Warning, a path could not be updated, truncating it to its first element!!!!"<<std::endl;
+                    if (mVerbose) std::cout<<"Warning, a path could not be updated, truncating it to its first element!!!!"<<std::endl;
                     p.resize(1);
                 }
                 else{

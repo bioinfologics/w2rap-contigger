@@ -14,12 +14,13 @@
 
 class PathFinder {
 public:
-    PathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5 ) :
+    PathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5, bool verbose=false ) :
     mHBV(hbv),
     mInv(inv),
     mPaths(paths),
     mEdgeToPathIds(invPaths),
-    mMinReads(min_reads)
+    mMinReads(min_reads),
+    mVerbose(verbose)
     {
         hbv.ToLeft(mToLeft);
         hbv.ToRight(mToRight);
@@ -33,8 +34,6 @@ public:
 
     //ReadPath-related methods
 
-
-    void classify_forks();//how many forks of each type are there?
     std::vector<uint64_t> best_path_fw(uint64_t edge, int distance); //finds the best path forward for an edge
     std::array<uint64_t,3> transition_votes(uint64_t left_e,uint64_t right_e);
     std::array<uint64_t,3> path_votes(std::vector<uint64_t> path);
@@ -53,6 +52,7 @@ public:
     bool join_edges_in_path(std::vector<uint64_t> p);
     std::array<std::vector<uint64_t>,2>  get_all_long_frontiers(uint64_t e,uint64_t large_frontier_size);
     void migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap);
+    void extend_bridging_paths();
 
 
 
@@ -60,11 +60,13 @@ private:
     HyperBasevector& mHBV;
     vec<int>& mInv;
     ReadPathVec& mPaths;
+    ReadPathVec mInfPaths;
     VecULongVec& mEdgeToPathIds;
     vec<int> mToLeft;
     vec<int> mToRight;
     std::vector<std::vector<uint64_t>> next_edges,prev_edges;
     int mMinReads;
+    bool mVerbose;
 
 
 };

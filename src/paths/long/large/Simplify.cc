@@ -350,7 +350,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const Bool PULL_APART_VERBOSE, const vec<int> &PULL_APART_TRACE,
               const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
               const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
-              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files) {
+              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, const bool VERBOSE_PATHFINDER) {
 
 
     // Improve read placements and delete funky pairs.
@@ -479,7 +479,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     // Pull apart.
 
-    {
+
+
+    if (RUN_PATHFINDER) {
+        //TODO: remove pull aparter once the pathfinder solves all repeats
         std::cout << Date() << ": pulling apart canonical repeats" << std::endl;
         VecULongVec invPaths;
         invert(paths, invPaths, hb.EdgeObjectCount());
@@ -489,11 +492,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                   << " read paths removed" << std::endl;
         graph_status(hb);
         path_status(paths);
-    }
 
-    if (RUN_PATHFINDER) {
+
+
         std::cout << Date() << ": running pathfinder" << std::endl;
-        VecULongVec invPaths;
+        //VecULongVec invPaths;
         invert(paths, invPaths, hb.EdgeObjectCount());
         if (dump_pf_files) {
             BinaryWriter::writeFile(fin_dir + "/pf_start.hbv", hb);
@@ -501,7 +504,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             WriteReadPathVec(paths,(fin_dir + "/pf_start.paths").c_str());
         }
 
-        PathFinder(hb, inv, paths, invPaths).unroll_loops(800);
+        PathFinder(hb, inv, paths, invPaths,5,VERBOSE_PATHFINDER).unroll_loops(800);
         RemoveUnneededVertices2(hb, inv, paths);
         Cleanup(hb, inv, paths);
 
@@ -512,9 +515,14 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         }
         invPaths.clear();
         invert( paths, invPaths, hb.EdgeObjectCount( ) );
-        PathFinder(hb, inv, paths, invPaths).untangle_complex_in_out_choices(700);
+        PathFinder(hb, inv, paths, invPaths,5,VERBOSE_PATHFINDER).untangle_complex_in_out_choices(700);
         RemoveUnneededVertices2(hb, inv, paths);
         Cleanup(hb, inv, paths);
+        DeleteFunkyPathPairs(hb, inv, bases, paths, False);
+        Tamp(hb, inv, paths, 10);
+        RemoveHangs(hb, inv, paths, 700);
+        Cleanup(hb, inv, paths);
+        RemoveSmallComponents3(hb);
         graph_status(hb);
         path_status(paths);
 
@@ -523,6 +531,16 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             //paths.WriteAll(fin_dir + "/pf_end.paths");
             WriteReadPathVec(paths,(fin_dir + "/pf_end.paths").c_str());
         }
+    } else {
+        std::cout << Date() << ": pulling apart canonical repeats" << std::endl;
+        VecULongVec invPaths;
+        invert(paths, invPaths, hb.EdgeObjectCount());
+        PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
+        size_t count = pa.SeparateAll();
+        std::cout << Date() << ": " << count << " repeats separated, " << pa.getRemovedReadPaths()
+                  << " read paths removed" << std::endl;
+        graph_status(hb);
+        path_status(paths);
     }
     // Improve paths.
 

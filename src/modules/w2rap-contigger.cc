@@ -61,7 +61,7 @@ int main(const int argc, const char * argv[]) {
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
-    bool extend_paths,run_pathfinder,dump_all,dump_perf,dump_pf;
+    bool extend_paths,run_pathfinder,dump_all,dump_perf,dump_pf,pf_verbose;
 
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
@@ -110,7 +110,9 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
-                                                               "Run PathFinder (experimental)", false,false,"bool",cmd);
+                                                            "Run PathFinder (experimental)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         pathFinderVerboseArg        ("","pf_verbose",
+                                                            "PathFinder verbose (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
                                                                "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
@@ -144,6 +146,7 @@ int main(const int argc, const char * argv[]) {
         minQual=minQualArg.getValue();
         disk_batches=disk_batchesArg.getValue();
         tmp_dir=tmp_dirArg.getValue();
+        pf_verbose=pathFinderVerboseArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -497,7 +500,7 @@ int main(const int argc, const char * argv[]) {
         Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
+                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pf_verbose);
 
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse
@@ -577,8 +580,7 @@ int main(const int argc, const char * argv[]) {
         bool GAP_CLEANUP = True;
 
 
-        MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
-                 GAP_CLEANUP);
+        MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
         if (dump_perf) perf_file << checkpoint_perf_time("MakeGaps") << std::endl;
 
         // Carry out final analyses and write final assembly files.
