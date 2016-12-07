@@ -538,10 +538,12 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                         std::vector<int> seen_out(in_frontiers.size(), 0);
 
                         int current_score = 0;
+                        std::cout << "-----------------------------Testing permutaiton ------------------" << std::endl;
                         for (auto pi=0; pi<in_frontiers.size(); ++pi){
                             std::string index = std::to_string(in_frontiers[pi])+"-"+std::to_string(out_frontiers[pi]);
                             if ( shared_paths.find(index) != shared_paths.end() ){
                                 // Mark the pair as seen in this iteration
+                                std::cout << "Index: " << index << " " << shared_paths[index] << std::endl;
                                 seen_in[pi]++;
                                 seen_out[pi]++;
                                 current_score += shared_paths[index];
@@ -552,7 +554,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                         for (auto a=0; a<seen_in.size(); ++a){
                             if (0==seen_in[a] or 0==seen_out[a]){
                                 all_used = false;
-//                                std::cout << "One of the edges was not used in this permutation, discarded!!" << std::endl;
+                                std::cout << "One of the edges was not used in this permutation, discarded!!" << std::endl;
                             }
                         }
 
@@ -570,10 +572,10 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
                     int score_threshold = 10;
                     if (max_score>score_threshold){
                         std::cout << " Found solution to region: " <<std::endl;
-                        for (auto ri=0; ri<in_frontiers.size(); ++ri){
-                            std::cout << in_frontiers[ri] << "(" << mInv[in_frontiers[ri]] << ") --> " << out_frontiers[ri] << "("<< mInv[in_frontiers[ri]] <<"), Score: "<<  max_score << std::endl;
+                        for (auto ri=0; ri<max_score_permutation.size(); ++ri){
+                            std::cout << in_frontiers[ri] << "(" << mInv[in_frontiers[ri]] << ") --> " << max_score_permutation[ri] << "("<< mInv[max_score_permutation[ri]] <<"), Score: "<<  max_score << std::endl;
                             // [GONZA] todo: this vecto only has te ins and outs not the middle
-                            std::vector<uint64_t> tp = {in_frontiers[ri], out_frontiers[ri]};
+                            std::vector<uint64_t> tp = {in_frontiers[ri], max_score_permutation[ri]};
                             paths_to_separate.push_back(tp);
                         }
                         std::cout << "--------------------" << std::endl;

@@ -201,12 +201,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         }
         pb_paths_file.close();
 
-        for (auto i=1000;i < 1500 ; i+=500) {
+        for (auto i=3000;i < 3100 ; i+=500) {
             //std::cout << "-------------Parameter for pathfinder: " << i << "-----------" << std::endl
-            auto totalpaths=paths;
-            totalpaths.insert(totalpaths.end(),pb_paths.begin(),pb_paths.end());
+//            auto totalpaths=paths;
+//            totalpaths.insert(totalpaths.end(),pb_paths.begin(),pb_paths.end());
             VecULongVec invtotalPaths;
-//            auto totalpaths=pb_paths;
+            auto totalpaths=pb_paths;
             invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
 
             std::cout << Date() << ": PathFinder: resolving repeats of size " << i << std::endl;
