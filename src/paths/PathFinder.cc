@@ -395,7 +395,7 @@ std::array<uint64_t,3> PathFinder::multi_path_votes(std::vector<std::vector<uint
 
 
 void PathFinder::unroll_loops(uint64_t min_side_sizes) {
-    extend_bridging_paths();
+    //extend_bridging_paths();
     //find nodes where in >1 or out>1 and in>0 and out>0
     uint64_t uloop=0,ursize=0;
     if (mVerbose) std::cout<<"Starting loop finding"<<std::endl;
@@ -495,7 +495,7 @@ void PathFinder::untangle_pins() {
 }
 
 void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation) {
-    extend_bridging_paths();
+    //extend_bridging_paths();
     //find a complex path
     uint64_t qsf=0,qsf_paths=0;
     uint64_t msf=0,msf_paths=0;

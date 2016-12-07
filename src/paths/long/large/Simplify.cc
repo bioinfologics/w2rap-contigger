@@ -111,11 +111,11 @@ void update_read_placements_kmatch(HyperBasevector &hb, vec<int> &inv, ReadPathV
     std::cout<<Date()<<": "<<mappedUniquely<<" / "<<bases.size()<<" reads have 50%+ kmers hitting same edge and no kmers hitting others"<<std::endl;
 }
 
-void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL){
-    const int min_mult = 10;
+void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL, const int min_mult){
     vec<int> dels;
     {
         vec<int> support(hb.EdgeObjectCount(), 0);
+        //this is support of the edge as exit from its input vertex.
         for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
             for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
                 int e = paths[id][j];
@@ -131,9 +131,9 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
                 int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
                 if (support[e1] > support[e2]) std::swap(e1, e2);
                 int s1 = support[e1], s2 = support[e2];
-                if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
+                if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * s1 && s2>MAX_SUPP_DEL) {
 #pragma omp critical
-                    { dels.push_back(e1); }
+                    { if (hb.EdgeObject(e1).size()<1000) dels.push_back(e1); }
                 }
             }
         }
@@ -154,9 +154,9 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
                 int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
                 if (support[e1] > support[e2]) std::swap(e1, e2);
                 int s1 = support[e1], s2 = support[e2];
-                if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
+                if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * s1 && s2>MAX_SUPP_DEL) {
 #pragma omp critical
-                    { dels.push_back(e1); }
+                    { if (hb.EdgeObject(e1).size()<1000) dels.push_back(e1); }
                 }
             }
         }
@@ -203,7 +203,7 @@ void SimplifyNew(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     std::cout << Date() << ": removing unsupported edges and small components" << std::endl;
 
-    remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL);
+    remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,5);
 
     full_cleanup(hb,inv,paths,0,100);
     update_read_placements(hb,inv,paths,bases,quals);
@@ -287,10 +287,22 @@ void SimplifyNew(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         path_status(paths);
 
 
+
+    }
+    // Improve paths.
+
+    if (IMPROVE_PATHS) {
+        std::cout << Date() << ": improving paths" << std::endl;
+        path_improver pimp;
+        vec<int64_t> ids;
+        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp,
+                     IMPROVE_PATHS_LARGE, False);
+        path_status(paths);
     }
 
     // Extend paths.
     if (EXT_FINAL) {
+        std::cout << Date() << ": extending paths" << std::endl;
         vec<int> to_left;
         hb.ToLeft(to_left), hb.ToRight(to_right);
         int ext = 0;
@@ -370,66 +382,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     path_status(paths);
 
     // Remove unsupported edges in certain situations.
+    const int min_mult=10;
+    std::cout << Date() << ": removing unsupported edges with coverage<="<<MAX_SUPP_DEL<<" and less s1/s2<="<<min_mult << std::endl;
+    remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
+    graph_status(hb);
+    path_status(paths);
 
-    std::cout << Date() << ": removing unsupported edges" << std::endl;
-    {
-        const int min_mult = 10;
-        vec<int> dels;
-        {
-            vec<int> support(hb.EdgeObjectCount(), 0);
-            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-                    int e = paths[id][j];
-                    if (j >= 1) support[e]++;
-                    if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
-                        support[inv[e]]++;
-                }
-            }
-#pragma omp parallel for
-            for (int v = 0; v < hb.N(); v++) {
-                if (hb.From(v).size() == 2) {
-                    int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
-                    int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
-                    if (support[e1] > support[e2]) std::swap(e1, e2);
-                    int s1 = support[e1], s2 = support[e2];
-                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
-#pragma omp critical
-                        { dels.push_back(e1); }
-                    }
-                }
-            }
-        }
-        {
-            vec<int> support(hb.EdgeObjectCount(), 0);
-            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-                    int e = paths[id][j];
-                    if (j < (int64_t) paths[id].size() - 1) support[e]++;
-                    if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
-                }
-            }
-#pragma omp parallel for
-            for (int v = 0; v < hb.N(); v++) {
-                if (hb.To(v).size() == 2) {
-                    int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
-                    int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
-                    if (support[e1] > support[e2]) std::swap(e1, e2);
-                    int s1 = support[e1], s2 = support[e2];
-                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
-#pragma omp critical
-                        { dels.push_back(e1); }
-                    }
-                }
-            }
-        }
-        auto before=hb.EdgeObjectCount();
-        auto delcount=dels.size();
-        hb.DeleteEdges(dels);
-        Cleanup(hb, inv, paths);
-        std::cout << Date() <<": " << delcount << " / " <<before<<" edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
-        graph_status(hb);
-        path_status(paths);
-    }
 
 
 
@@ -483,8 +441,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     if (RUN_PATHFINDER) {
         //TODO: remove pull aparter once the pathfinder solves all repeats
-        std::cout << Date() << ": pulling apart canonical repeats" << std::endl;
         VecULongVec invPaths;
+        std::cout << Date() << ": pulling apart canonical repeats" << std::endl;
         invert(paths, invPaths, hb.EdgeObjectCount());
         PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
         size_t count = pa.SeparateAll();
@@ -537,8 +495,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         invert(paths, invPaths, hb.EdgeObjectCount());
         PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
         size_t count = pa.SeparateAll();
-        std::cout << Date() << ": " << count << " repeats separated, " << pa.getRemovedReadPaths()
-                  << " read paths removed" << std::endl;
+        std::cout << Date() << ": " << count << " repeats separated, " << pa.getRemovedReadPaths() << " read paths removed" << std::endl;
         graph_status(hb);
         path_status(paths);
     }
@@ -548,8 +505,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         path_improver pimp;
         vec<int64_t> ids;
         std::cout << Date() << ": improving paths" << std::endl;
-        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp,
-                     IMPROVE_PATHS_LARGE, False);
+        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp,IMPROVE_PATHS_LARGE, False);
         path_status(paths);
     }
 
@@ -565,8 +521,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             Bool verbose = False;
             const int min_gain = 20;
             ReadPath p = paths[id];
-            ExtendPath2(paths[id], id, hb, to_left, to_right, bases[id], *qvItr,
-                        min_gain, verbose, EXT_FINAL_MODE);
+            ExtendPath2(paths[id], id, hb, to_left, to_right, bases[id], *qvItr, min_gain, verbose, EXT_FINAL_MODE);
             if (p != paths[id]) ext++;
         }
         std::cout << Date() << ": "<< ext << " paths extended" << std::endl;

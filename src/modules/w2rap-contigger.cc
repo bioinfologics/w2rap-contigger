@@ -478,7 +478,7 @@ int main(const int argc, const char * argv[]) {
 
 
         //==Simplify
-        int MAX_SUPP_DEL = 0;
+        int MAX_SUPP_DEL = 3;//was 0
         bool TAMP_EARLY_MIN = True;
         int MIN_RATIO2 = 8;
         int MAX_DEL2 = 200;
