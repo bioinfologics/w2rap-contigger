@@ -111,62 +111,90 @@ void update_read_placements_kmatch(HyperBasevector &hb, vec<int> &inv, ReadPathV
     std::cout<<Date()<<": "<<mappedUniquely<<" / "<<bases.size()<<" reads have 50%+ kmers hitting same edge and no kmers hitting others"<<std::endl;
 }
 
-void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL, const int min_mult){
-    vec<int> dels;
-    {
-        vec<int> support(hb.EdgeObjectCount(), 0);
-        //this is support of the edge as exit from its input vertex.
-        for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-            for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-                int e = paths[id][j];
-                if (j >= 1) support[e]++;
-                if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
-                    support[inv[e]]++;
-            }
-        }
-#pragma omp parallel for
-        for (int v = 0; v < hb.N(); v++) {
-            if (hb.From(v).size() == 2) {
-                int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
-                int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
-                if (support[e1] > support[e2]) std::swap(e1, e2);
-                int s1 = support[e1], s2 = support[e2];
-                if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * s1 && s2>MAX_SUPP_DEL) {
-#pragma omp critical
-                    { if (hb.EdgeObject(e1).size()<1000) dels.push_back(e1); }
-                }
-            }
-        }
-    }
-    {
-        vec<int> support(hb.EdgeObjectCount(), 0);
-        for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-            for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-                int e = paths[id][j];
-                if (j < (int64_t) paths[id].size() - 1) support[e]++;
-                if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
-            }
-        }
-#pragma omp parallel for
-        for (int v = 0; v < hb.N(); v++) {
-            if (hb.To(v).size() == 2) {
-                int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
-                int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
-                if (support[e1] > support[e2]) std::swap(e1, e2);
-                int s1 = support[e1], s2 = support[e2];
-                if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * s1 && s2>MAX_SUPP_DEL) {
-#pragma omp critical
-                    { if (hb.EdgeObject(e1).size()<1000) dels.push_back(e1); }
-                }
-            }
-        }
-    }
-    auto before=hb.EdgeObjectCount();
-    auto delcount=dels.size();
-    hb.DeleteEdges(dels);
-    Cleanup(hb, inv, paths);
-    std::cout << Date() <<": " << delcount << " / " <<before<<" unsupported edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
+#include <iterator>
 
+template<class ForwardIt, class T>
+ForwardIt binary_find(ForwardIt first, ForwardIt last, const T& value)
+{
+    // Note: BOTH type T and the type after ForwardIt is dereferenced
+    // must be implicitly convertible to BOTH Type1 and Type2, used in Compare.
+    // This is stricter then lower_bound requirement (see above)
+
+    first = std::lower_bound(first, last, value);
+    return (first != last && value == *first) ? first : last;
+}
+
+void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL, const int min_mult){
+    uint64_t delcount=1;
+    while(delcount) {
+        vec<int> dels;
+        {
+            vec<int> support(hb.EdgeObjectCount(), 0);
+            //this is support of the edge as exit from its input vertex.
+            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+                    int e = paths[id][j];
+                    if (j >= 1) support[e]++;
+                    if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
+                        support[inv[e]]++;
+                }
+            }
+#pragma omp parallel for
+            for (int v = 0; v < hb.N(); v++) {
+                if (hb.From(v).size() == 2) {
+                    int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
+                    int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
+                    if (support[e1] > support[e2]) std::swap(e1, e2);
+                    int s1 = support[e1], s2 = support[e2];
+                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * s1 && s2 > MAX_SUPP_DEL) {
+#pragma omp critical
+                        { if (hb.EdgeObject(e1).size() < 1000) dels.push_back(e1); }
+                    }
+                }
+            }
+        }
+        {
+            vec<int> support(hb.EdgeObjectCount(), 0);
+            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+                    int e = paths[id][j];
+                    if (j < (int64_t) paths[id].size() - 1) support[e]++;
+                    if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
+                }
+            }
+#pragma omp parallel for
+            for (int v = 0; v < hb.N(); v++) {
+                if (hb.To(v).size() == 2) {
+                    int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
+                    int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
+                    if (support[e1] > support[e2]) std::swap(e1, e2);
+                    int s1 = support[e1], s2 = support[e2];
+                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * s1 && s2 > MAX_SUPP_DEL) {
+#pragma omp critical
+                        { if (hb.EdgeObject(e1).size() < 1000) dels.push_back(e1); }
+                    }
+                }
+            }
+        }
+        auto before = hb.EdgeObjectCount();
+        delcount = dels.size();
+        std::sort(dels.begin(), dels.end());
+        //Update paths first, just to be sure
+
+        for (int64_t i = 0; i < (int64_t) paths.size(); i++) {
+            for (int64_t j = 0; j < (int64_t) paths[i].size(); j++) {
+                if (binary_find(dels.begin(), dels.end(), paths[i][j]) != dels.end()) {
+                    paths[i].resize(j);
+                    break;
+                }
+            }
+        }
+
+        hb.DeleteEdges(dels);
+        Cleanup(hb, inv, paths);
+        std::cout << Date() << ": " << delcount << " / " << before << " unsupported edges removed, "
+                  << hb.EdgeObjectCount() << " edges after cleanup" << std::endl;
+    }
 }
 
 void full_cleanup(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const int tampsize, const int hangssize){
