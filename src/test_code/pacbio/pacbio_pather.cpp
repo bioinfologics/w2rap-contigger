@@ -11,7 +11,6 @@ PacbioPather::PacbioPather(vecbvec* aseqVector, HyperBasevector* ahbv) : KMatch(
   hbv = ahbv;
 };
 
-//std::vector<linkReg> PacbioPather::getReadsLinks(vecbvec* seqVector, HyperBasevector* hbv, bool output_to_file=true){
 std::vector<std::vector<linkReg>> PacbioPather::getReadsLinks(bool output_to_file=true){
   // Get the reads
   std::vector<std::vector<linkReg>> links;
@@ -48,17 +47,6 @@ std::vector<std::vector<linkReg>> PacbioPather::getReadsLinks(bool output_to_fil
   }
 
   return links;
-}
-
-std::vector<linkReg> PacbioPather::readLinksFilter(std::vector<linkReg> data, int read_id){
-  // filter the links that come from a specific read id
-  std::vector<linkReg> filtered;
-  for (auto l: data){
-      if (l.read_id == read_id){
-        filtered.push_back(l);
-      }
-  }
-  return filtered;
 }
 
 std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data){
@@ -138,7 +126,7 @@ ReadPathVec PacbioPather::mapReads(){
     // filter the shared roffsets
     auto offset_filter = readOffsetFilter(read_links);
 
-    // filter the min match length TODO: this function
+    // filter the min match length
     auto minmatchFilter = matchLengthFilter(offset_filter);
 
     // sort the vector
@@ -159,17 +147,13 @@ ReadPathVec PacbioPather::mapReads(){
 
       int poffset=s_edges[0].edge_offset;
       int read_size=s_edges[0].read_size;
-//      std::cout<<"-------- Sequence: "<<r << "(" << read_size << ") ---------"<<std::endl;
 
       for (auto s: s_edges) {
-//        std::cout << "--> " << s.edge_id << "("<< s.inv_edge_id <<")";
         temp_path.push_back(s.edge_id);
       }
-//      std::cout << std::endl;
       pb_paths_temp[ppr++]=ReadPath(poffset, temp_path);
     }
     ++pr;
-    //if (pr%500==0) std::cout<<Date()<<": "<<pr<<" reads processed, "<<ppr<<" pathed"<<std::endl;
   }
   std::cout<<Date()<<": "<<pr<<" reads processed, "<<ppr<<" pathed"<<std::endl;
   pb_paths.reserve(ppr);

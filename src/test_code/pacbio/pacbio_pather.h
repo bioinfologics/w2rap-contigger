@@ -36,7 +36,6 @@ private:
 
     std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
     std::vector<linkReg> readOffsetFilter(std::vector<linkReg> data);
-    std::vector<linkReg> readLinksFilter(std::vector<linkReg> data, int read_id);
     std::vector<linkReg> matchLengthFilter(std::vector<linkReg> data);
 };
 
