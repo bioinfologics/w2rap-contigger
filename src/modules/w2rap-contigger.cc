@@ -191,117 +191,6 @@ int main(const int argc, const char * argv[]) {
     SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
     //TODO: try to find out max memory on the system to default to.
 
-    //== Handle "special cases" to test on development==
-
-    if (dev_run!=""){
-        std::cout<<"=== w2rap contigger: development test run ==="<<std::endl;
-        if (dev_run=="pathfinder" or dev_run=="pathfinder2"){
-            //Pathfinder test, runs from Pathfinder to the end of step 6
-            VecULongVec invPaths;
-            std::cout << Date() << ": loading HVB and paths" << std::endl;
-            if (dev_run=="pathfinder") {
-                BinaryReader::readFile(out_dir + "/pf_start.hbv", &hbvr);
-                LoadReadPathVec(pathsr,(out_dir + "/pf_start.paths").c_str());
-                inv.clear();
-                hbvr.Involution(inv);
-                std::cout << Date() << ": making paths index for PathFinder" << std::endl;
-
-                invert(pathsr, invPaths, hbvr.EdgeObjectCount());
-                std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
-                PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
-                std::cout << "Removing Unneeded Vertices & Cleanup" << std::endl;
-                RemoveUnneededVertices2(hbvr, inv, pathsr);
-                Cleanup(hbvr, inv, pathsr);
-                std::cout << "Dumping" << std::endl;
-                BinaryWriter::writeFile(out_dir + "/pf_after_loops.hbv", hbvr);
-                WriteReadPathVec(pathsr,(out_dir + "/pf_after_loops.paths").c_str());
-            } else {
-                BinaryReader::readFile(out_dir + "/pf_after_loops.hbv", &hbvr);
-                LoadReadPathVec(pathsr,(out_dir + "/pf_after_loops.paths").c_str());
-                inv.clear();
-                hbvr.Involution(inv);
-            }
-            std::cout << Date() << ": making paths index for PathFinder" << std::endl;
-            invPaths.clear();
-            invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
-
-            std::cout << Date() << ": PathFinder: Separating solved single-flow repeats" << std::endl;
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
-            std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
-            RemoveUnneededVertices2(hbvr,inv,pathsr);
-            Cleanup( hbvr, inv, pathsr );
-
-            std::cout << "Loading reads in fastb/qualp format..." << std::endl;
-            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
-            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
-            std::cout << "   DONE!" << std::endl;
-
-            path_improver pimp;
-                vec<int64_t> ids;
-                ImprovePaths( pathsr, hbvr, inv, bases, quals, ids, pimp,
-                              False, False );
-            vec<int> to_left,to_right;
-            hbvr.ToLeft(to_left), hbvr.ToRight(to_right);
-            int ext = 0;
-            auto qvItr = quals.begin();
-            for ( int64_t id = 0; id < (int64_t) pathsr.size( ); id++,++qvItr )
-                {    Bool verbose = False;
-                    const int min_gain = 20;
-                    ReadPath p = pathsr[id];
-                    ExtendPath2( pathsr[id], id, hbvr, to_left, to_right, bases[id], *qvItr,
-                                 min_gain, verbose, 1 );
-                    if ( p != pathsr[id] ) ext++;    }
-                std::cout << ext << " paths extended" << std::endl;
-
-            // Degloop.
-
-            Degloop( 1, hbvr, inv, pathsr, bases, quals, 2.5 );
-            std::cout << Date( ) << ": removing Hangs" << std::endl;
-            RemoveHangs( hbvr, inv, pathsr, 700 );
-            std::cout << Date( ) << ": cleanup" << std::endl;
-            Cleanup( hbvr, inv, pathsr );
-            std::cout << Date( ) << ": cleanup finished" << std::endl;
-
-
-
-            UnwindThreeEdgePlasmids( hbvr, inv, pathsr );
-
-            // Remove tiny stuff.
-
-            std::cout << Date( ) << ": removing small components" << std::endl;
-            RemoveSmallComponents3( hbvr, True );
-            Cleanup( hbvr, inv, pathsr );
-            CleanupLoops( hbvr, inv, pathsr );
-            RemoveUnneededVerticesGeneralizedLoops( hbvr, inv, pathsr );
-
-            vec<vec<vec<vec<int>>>> lines;
-
-            FindLines(hbvr, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-            if (dump_perf) perf_file << checkpoint_perf_time("FindLines") << std::endl;
-            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-            // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-            {
-                vec<int> llens, npairs;
-                GetLineLengths(hbvr, lines, llens);
-                GetLineNpairs(hbvr, inv, pathsr, lines, npairs);
-                BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-                vec<vec<covcount>> covs;
-                ComputeCoverage(hbvr, inv, pathsr, lines, subsam_starts, covs);
-
-            }
-
-            //TODO: add contig fasta dump.
-            std::cout << "Dumping contig graph and paths..." << std::endl;
-            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
-            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
-            std::cout << "   DONE!" << std::endl;
-            GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
-
-        }
-    }
-
     //== Load reads (and saves in binary format) ======
 
     if (dump_perf) {
@@ -348,6 +237,9 @@ int main(const int argc, const char * argv[]) {
                 std::cout << Date() << ": Dumping small_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".small_K.hbv", hbv);
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
+                std::cout<<Date()<<": "<<(check_from_to(hbv)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+                graph_status(hbv);
+                path_status(paths);
                 std::cout << Date() << ": Dumping small_K graph and paths DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("SmallKDump") << std::endl;
             }
@@ -358,6 +250,9 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Reading small_K graph and paths..." << std::endl;
             BinaryReader::readFile(out_dir + "/" + out_prefix + ".small_K.hbv", &hbv);
             LoadReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
+            std::cout<<Date()<<": "<<(check_from_to(hbv)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+            graph_status(hbv);
+            path_status(paths);
             std::cout << Date() << ": Reading small_K graph and paths DONE!" << std::endl << std::endl;
             if (dump_perf) perf_file << std::endl << checkpoint_perf_time("SmallKLoad") << std::endl;
         }
@@ -380,6 +275,9 @@ int main(const int argc, const char * argv[]) {
                 std::cout << Date() << ": Dumping large_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.hbv", hbvr);
                 WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
+                std::cout<<Date()<<": "<<(check_from_to(hbv)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+                graph_status(hbv);
+                path_status(paths);
                 std::cout << Date() << ": Dumping large_K graph and paths DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("LargeKDump") << std::endl;
             }
@@ -393,6 +291,9 @@ int main(const int argc, const char * argv[]) {
         std::cout << Date() << ": Reading large_K graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
+        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+        graph_status(hbvr);
+        path_status(pathsr);
         std::cout << Date() << ": Reading large_K graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKLoad") << std::endl;
     }
@@ -409,6 +310,9 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Dumping large_K clean graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
+            std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+            graph_status(hbvr);
+            path_status(pathsr);
             std::cout << Date() << ": Dumping large_K clean graph and paths DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("LargeKCleanDump") << std::endl;
         }
@@ -425,6 +329,9 @@ int main(const int argc, const char * argv[]) {
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
+        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+        graph_status(hbvr);
+        path_status(pathsr);
         std::cout << Date() << ": Reading large_K clean graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKCleanLoad") << std::endl;
     }
@@ -458,6 +365,9 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Dumping large_K final graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
+            std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+            graph_status(hbvr);
+            path_status(pathsr);
             std::cout << Date() << ": Dumping large_K final graph and paths DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("LargeKFinalDump") << std::endl;
         }
@@ -473,6 +383,9 @@ int main(const int argc, const char * argv[]) {
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
+        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+        graph_status(hbvr);
+        path_status(pathsr);
         std::cout << Date() << ": Reading large_K final graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKFinalLoad") << std::endl;
     }
@@ -552,6 +465,9 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Dumping contig graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
+            std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+            graph_status(hbvr);
+            path_status(pathsr);
             std::cout << Date() << ": Dumping contig graph and paths DONE!" << std::endl;
             if (dump_perf) perf_file << checkpoint_perf_time("ContigGraphDump") << std::endl;
         }
@@ -569,6 +485,9 @@ int main(const int argc, const char * argv[]) {
         hbvr.Involution(inv);
         paths_inv.clear();
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
+        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+        graph_status(hbvr);
+        path_status(pathsr);
         std::cout << Date() << ": Reading contig graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("ContigGraphLoad") << std::endl;
     }
@@ -589,6 +508,9 @@ int main(const int argc, const char * argv[]) {
 
         vecbasevector G;
         FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
+        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+        graph_status(hbvr);
+        path_status(pathsr);
         GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
         if (dump_perf) perf_file << checkpoint_perf_time("FinalFiles") << std::endl;
         std::cout << Date() << ": PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;

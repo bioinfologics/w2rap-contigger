@@ -327,3 +327,237 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
     std::cout<<"============GFA DUMP ENDED============"<<std::endl<<std::endl<<std::endl<<std::endl;
 
 }
+
+
+void GFADumpDetail (std::string filename, const HyperBasevector &hb, const vec<int> &inv, const std::vector<int> & marked_edges, const std::vector<int> & marked_vertices){
+    std::vector<std::string> colour_names={
+            "aliceblue",
+            "antiquewhite",
+            "aqua",
+            "aquamarine",
+            "azure",
+            "beige",
+            "bisque",
+            "blanchedalmond",
+            "blue",
+            "blueviolet",
+            "brown",
+            "burlywood",
+            "cadetblue",
+            "chartreuse",
+            "chocolate",
+            "coral",
+            "cornflowerblue",
+            "cornsilk",
+            "crimson",
+            "cyan",
+            "darkblue",
+            "darkcyan",
+            "darkgoldenrod",
+            "darkgreen",
+            "darkgrey",
+            "darkkhaki",
+            "darkmagenta",
+            "darkolivegreen",
+            "darkorange",
+            "darkorchid",
+            "darkred",
+            "darksalmon",
+            "darkseagreen",
+            "darkslateblue",
+            "darkslategrey",
+            "darkturquoise",
+            "darkviolet",
+            "deeppink",
+            "deepskyblue",
+            "dimgrey",
+            "dodgerblue",
+            "firebrick",
+            "floralwhite",
+            "forestgreen",
+            "fuchsia",
+            "gainsboro",
+            "ghostwhite",
+            "gold",
+            "goldenrod",
+            "grey",
+            "green",
+            "greenyellow",
+            "honeydew",
+            "hotpink",
+            "indianred",
+            "indigo",
+            "ivory",
+            "khaki",
+            "lavender",
+            "lavenderblush",
+            "lawngreen",
+            "lemonchiffon",
+            "lightblue",
+            "lightcoral",
+            "lightcyan",
+            "lightgoldenrodyellow",
+            "lightgreen",
+            "lightgrey",
+            "lightpink",
+            "lightsalmon",
+            "lightseagreen",
+            "lightskyblue",
+            "lightslategrey",
+            "lightsteelblue",
+            "lightyellow",
+            "lime",
+            "limegreen",
+            "linen",
+            "magenta",
+            "maroon",
+            "mediumaquamarine",
+            "mediumblue",
+            "mediumorchid",
+            "mediumpurple",
+            "mediumseagreen",
+            "mediumslateblue",
+            "mediumspringgreen",
+            "mediumturquoise",
+            "mediumvioletred",
+            "midnightblue",
+            "mintcream",
+            "mistyrose",
+            "moccasin",
+            "navajowhite",
+            "navy",
+            "oldlace",
+            "olive",
+            "olivedrab",
+            "orange",
+            "orangered",
+            "orchid",
+            "palegoldenrod",
+            "palegreen",
+            "paleturquoise",
+            "palevioletred",
+            "papayawhip",
+            "peachpuff",
+            "peru",
+            "pink",
+            "plum",
+            "powderblue",
+            "purple",
+            "red",
+            "rosybrown",
+            "royalblue",
+            "saddlebrown",
+            "salmon",
+            "sandybrown",
+            "seagreen",
+            "seashell",
+            "sienna",
+            "silver",
+            "skyblue",
+            "slateblue",
+            "slategrey",
+            "snow",
+            "springgreen",
+            "steelblue",
+            "tan",
+            "teal",
+            "thistle",
+            "tomato",
+            "turquoise",
+            "violet",
+            "wheat",
+            "white",
+            "whitesmoke",
+            "yellow",
+            "yellowgreen"
+    };
+
+    // define the k-1 overlap
+    int overlap_length = int(hb.K()) - 1;
+
+    // remove any path from filename
+    int pos = filename.find_last_of("/");
+    std::string prefix = filename;
+    if (pos != std::string::npos){
+        prefix = filename.substr(pos + 1);
+    }
+
+    vec<vec<vec<vec<int>>>> lines;
+    vec<int> to_left, to_right;
+    hb.ToLeft(to_left), hb.ToRight(to_right);
+    std::vector<int64_t> edge_colour(hb.EdgeObjectCount(), -1);
+    std::vector<int64_t> vertex_colour(hb.N(), -1);
+    for (auto &e:marked_edges) {
+        auto eo=hb.EdgeObject(e);
+        if (eo.getCanonicalForm()==CanonicalForm::REV) {
+            edge_colour[e] = 420;//pink for reverse edges
+        } else {
+            edge_colour[e] = 112;
+        }
+    }
+    for (auto &e:marked_vertices) {
+        vertex_colour[e] = 423;//pink for reverse edges
+    }
+
+    // Do the raw dump
+    Ofstream(gfa_raw_out,filename+"_raw.gfa");
+    Ofstream(fasta_raw_out,filename+"_raw.fasta");
+
+    // header line
+    gfa_raw_out << "H\tVN:Z:1.0" << std::endl;
+
+    for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
+        auto eo=hb.EdgeObject(ei);
+
+        gfa_raw_out << "S\tedge" << ei << "\t*"
+                    << "\tLN:i:" << eo.isize()
+                    << "\tCL:Z:" << (edge_colour[ei]>0 ? colour_names[edge_colour[ei]%colour_names.size()] : (eo.getCanonicalForm()==CanonicalForm::REV ? "grey" : "black" ))
+                    << "\tUR:Z:" << prefix << "_raw.fasta"
+                    << std::endl;
+
+        // write seq to FASTA
+        fasta_raw_out << ">edge" << ei << std::endl << eo << std::endl;
+    }
+
+    for (auto vi=0;vi<hb.N();++vi) {
+        gfa_raw_out << "S\tvertex" << vi << "\t*"
+                    << "\tLN:i:0"
+                    << "\tCL:Z:" << (vertex_colour[vi]>0 ? "magenta" : "blue" )
+                    << std::endl;
+    }
+    for (auto vi=0;vi<hb.N();++vi) {
+        for (auto fi=0;fi<hb.From(vi).isize();++fi){
+            auto ei=hb.EdgeObjectIndexByIndexFrom(vi,fi);
+            gfa_raw_out << "L\tvertex" << vi << "\t+\tedge" << ei << "\t+\t0M"<< std::endl;
+        }
+        for (auto ti=0;ti<hb.To(vi).isize();++ti){
+            auto ei=hb.EdgeObjectIndexByIndexTo(vi,ti);
+            gfa_raw_out << "L\tedge" << ei << "\t+\tvertex" << vi << "\t+\t0M"<< std::endl;
+        }
+    }
+
+}
+
+bool check_from_to(const HyperBasevector &hb){
+    vec<int> toLeft,toRight;
+    hb.ToLeft(toLeft);
+    hb.ToRight(toRight);
+    bool ok=true;
+    for (auto vi=0;vi<hb.N();++vi){
+        for (auto fi=0;fi<hb.From(vi).isize();++fi){
+            auto ei=hb.EdgeObjectIndexByIndexFrom(vi,fi);
+            if (toLeft[ei]!=vi){
+                std::cout<<"Vertex #"<<vi<<" claims edge #"<<ei<<" is from it, but edge starts at vertex #"<<toLeft[ei]<<std::endl;
+                ok=false;
+            }
+        }
+        for (auto ti=0;ti<hb.To(vi).isize();++ti){
+            auto ei=hb.EdgeObjectIndexByIndexTo(vi,ti);
+            if (toRight[ei]!=vi){
+                std::cout<<"Vertex #"<<vi<<" claims edge #"<<ei<<" is To it, but edge ends at vertex #"<<toRight[ei]<<std::endl;
+                ok=false;
+            }
+        }
+    }
+    return ok;
+}

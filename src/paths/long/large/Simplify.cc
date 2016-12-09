@@ -22,6 +22,8 @@
 #include "kmers/kmatch/KMatch.h"
 #include "GFADump.h"
 
+
+
 void graph_status(const HyperBasevector &hb) {
     uint64_t total=0;
     uint64_t null_sized=0;
@@ -33,7 +35,6 @@ void graph_status(const HyperBasevector &hb) {
     std::cout << Date() << ": GRAPH contains " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges";
     if (null_sized>0) std::cout << " ("<<null_sized<<" gap edges)";
     std::cout << std::endl;
-
 }
 void path_status(const ReadPathVec &paths){
     uint64_t pe=0,ps=0,pm=0;
@@ -124,6 +125,8 @@ ForwardIt binary_find(ForwardIt first, ForwardIt last, const T& value)
     return (first != last && value == *first) ? first : last;
 }
 
+
+
 void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL, const int min_mult){
     uint64_t delcount=1;
     uint64_t pass=0;
@@ -161,18 +164,25 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
                     bool alternative_from=hb.To(vfrom).size()==0;
                     bool alternative_to=hb.From(vto).size()==0;
 
-                    for (auto other:hb.From(vfrom))
-                        if (other!=e and (inv[e]<0 or other!=inv[e]) and
-                                support_in[other] >= min_mult * support_in[e] and
-                                support_in[other] > min_mult and support_in[other] > MAX_SUPP_DEL) {
-                            alternative_from = true; break;
+                    for (auto fi=0;fi<hb.From(vfrom).isize();++fi) {
+                        auto other = hb.EdgeObjectIndexByIndexFrom(vfrom, fi);
+                        if (other != e and (inv[e] < 0 or other != inv[e]) and
+                            support_in[other] >= min_mult * support_in[e] and
+                            support_in[other] > min_mult and support_in[other] > MAX_SUPP_DEL) {
+                            alternative_from = true;
+                            break;
                         }
+                    }
 
-                    for (auto other:hb.To(vto))
-                        if (other!=e and (inv[e]<0 or other!=inv[e]) and support_out[other] >= min_mult * support_out[e] and
+                    for (auto ti=0;ti<hb.To(vto).isize();++ti) {
+                        auto other = hb.EdgeObjectIndexByIndexTo(vto, ti);
+                        if (other != e and (inv[e] < 0 or other != inv[e]) and
+                            support_out[other] >= min_mult * support_out[e] and
                             support_out[other] > min_mult and support_out[other] > MAX_SUPP_DEL) {
-                            alternative_to = true; break;
+                            alternative_to = true;
+                            break;
                         }
+                    }
 #pragma omp critical
                     if (alternative_from and alternative_to) {
                         dels.push_back(e);
@@ -196,6 +206,7 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
         }
         //GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
         GFADump("unsupported_paths_marked_"+std::to_string(pass),hb,inv,paths,0,0,false,dels);
+        GFADumpDetail("unsupported_paths_marked_detail"+std::to_string(pass),hb,inv,dels);
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
         std::cout << Date() << ": " << delcount << " / " << before << " unsupported edges removed, "
@@ -238,7 +249,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, const bool VERBOSE_PATHFINDER) {
 
 
-
+    std::cout<<Date()<<": "<<(check_from_to(hb)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
     graph_status(hb);
     path_status(paths);
 
