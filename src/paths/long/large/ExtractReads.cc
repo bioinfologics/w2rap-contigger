@@ -68,14 +68,14 @@ bool InputFileReader::get_bam_record(){
 
 int InputFileReader::read_binary(std::string out_dir, std::string library_name){
      // Read the fastb &qualp pair
-     this->bases.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
-     this->quals.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.qualp");
+     bases.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
+     quals.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.qualp");
 }
 
 int InputFileReader::write_binary(std::string out_dir, std::string library_name){
      // Write files fastb & qualb
-     this->bases.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
-     this->quals.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.qualp");
+     bases.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
+     quals.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.qualp");
 }
 
 bool InputFileReader::FilesExist(std::string infiles){
@@ -128,18 +128,18 @@ bool InputFileReader::ProduceValidPair(std::string filename_string){
      std::vector<std::string> infiles;
      infiles = tokenize(filename_string.c_str(), ',');
 
-     if (!this->FilesExist(infiles)) Scram(1);
+     if (!FilesExist(infiles)) Scram(1);
 
-     std::cout << Date() << ": reading " << this->infiles_pair.size() << " files (which may take a while)" << std::endl;
+     std::cout << Date() << ": reading " << infiles_pair.size() << " files (which may take a while)" << std::endl;
      for (auto a: infiles) {
           if (a.find(".fastq") != std::string::npos) {
                std::cout << a << std::endl;
-               this->infiles_pair.push_back(a);
+               infiles_pair.push_back(a);
           }
      }
 
-     if (this->infiles_pair.size() != 2) {
-          std::cout << "Error there are " << this->infiles_pair.size() << "files in the list but there should be 2, exiting" << std::endl;
+     if (infiles_pair.size() != 2) {
+          std::cout << "Error there are " << infiles_pair.size() << "files in the list but there should be 2, exiting" << std::endl;
           Scram(1);
      }
 
@@ -148,9 +148,9 @@ bool InputFileReader::ProduceValidPair(std::string filename_string){
 
 bool InputFileReader::ReadBinaryIfExist(std::string out_dir, std::string library_name){
      // check if
-     if (this->FilesExist(out_dir + "/" + library_name +"_frag_reads_orig.fastb") && this->FilesExist(out_dir + "/" + library_name +"_frag_reads_orig.qualp")){
+     if (FilesExist(out_dir + "/" + library_name +"_frag_reads_orig.fastb") && FilesExist(out_dir + "/" + library_name +"_frag_reads_orig.qualp")){
           std::cout << "The file " << out_dir + "/" + library_name +"_frag_reads_orig.fastb was already there, using that... " << std::endl;
-          this->read_binary(out_dir, library_name);
+          read_binary(out_dir, library_name);
           return true;
      } else {
           return false;
@@ -161,28 +161,28 @@ bool InputFileReader::ReadBinaryIfExist(std::string out_dir, std::string library
 PeData::PeData(std::string out_dir, std::string library_name, std::string reads_filename){
      //
 
-     this->filename_string = reads_filename;
+     filename_string = reads_filename;
 
 
      std::cout << Date() << ": finding input files" << std::endl;
 
-     if (!ProduceValidPair(this->filename_string)) Scram(1);
+     if (!ProduceValidPair(filename_string)) Scram(1);
 
-     const std::string fn1 = this->infiles_pair[0];
-     const std::string fn2 = this->infiles_pair[1];
+     const std::string fn1 = infiles_pair[0];
+     const std::string fn2 = infiles_pair[1];
 
      // Check if the file was already there, or gz or plain fq.
-     if (this->ReadBinaryIfExist(out_dir, library_name)){
+     if (ReadBinaryIfExist(out_dir, library_name)){
           std::cout<< "Files read from fastb..." << std::endl;
-     } else if (this->IsGz(fn1) && this->IsGz(fn2)){
+     } else if (IsGz(fn1) && IsGz(fn2)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
-          auto ec = this->read_files(in1, in2, &bases, &quals);
+          auto ec = read_files(in1, in2, &bases, &quals);
      } else {
           std::ifstream in1(fn1);
           std::ifstream in2(fn2);
-          auto ec = this->read_files(in1, in2, &bases, &quals);
+          auto ec = read_files(in1, in2, &bases, &quals);
      }
 }
 
@@ -210,8 +210,8 @@ int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
      while (1) {
           // TODO: [GONZA] add the checks
 
-          bool r1_status = this->get_fastq_record(in1, &record1);
-          bool r2_status = this->get_fastq_record(in2, &record2);
+          bool r1_status = get_fastq_record(in1, &record1);
+          bool r2_status = get_fastq_record(in2, &record2);
 
           if (!r1_status || !r2_status){
                break;
@@ -258,24 +258,24 @@ int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
 // -------------- Mp Data -------------
 MpData::MpData(std::string out_dir, std::string library_name, std::string reads_filename){
 
-     this->filename_string = reads_filename;
-     if (!ProduceValidPair(this->filename_string)) Scram(1);
+     filename_string = reads_filename;
+     if (!ProduceValidPair(filename_string)) Scram(1);
 
-     const std::string fn1 = this->infiles_pair[0];
-     const std::string fn2 = this->infiles_pair[1];
+     const std::string fn1 = infiles_pair[0];
+     const std::string fn2 = infiles_pair[1];
 
      // check if the file is gzip
-     if (this->ReadBinaryIfExist(out_dir, library_name)){
+     if (ReadBinaryIfExist(out_dir, library_name)){
           std::cout<< "Files read from fastb..." << std::endl;
-     } else if (this->IsGz(fn1) && this->IsGz(fn2)){
+     } else if (IsGz(fn1) && IsGz(fn2)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
-          auto ec = this->read_files(in1, in2, &bases, &quals);
+          auto ec = read_files(in1, in2, &bases, &quals);
      } else {
           std::ifstream in1(fn1);
           std::ifstream in2(fn2);
-          auto ec = this->read_files(in1, in2, &bases, &quals);
+          auto ec = read_files(in1, in2, &bases, &quals);
      }
 
 }
@@ -304,8 +304,8 @@ int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
      while (1) {
           // TODO: [GONZA] add the checks
 
-          bool r1_status = this->get_fastq_record(in1, &record1);
-          bool r2_status = this->get_fastq_record(in2, &record2);
+          bool r1_status = get_fastq_record(in1, &record1);
+          bool r2_status = get_fastq_record(in2, &record2);
 
           if (!r1_status || !r2_status){
                break;
@@ -353,24 +353,24 @@ int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& 
 TenXData::TenXData(std::string out_dir, std::string library_name, std::string reads_filename){
      //
 
-     this->filename_string = reads_filename;
-     if (!ProduceValidPair(this->filename_string)) Scram(1);
+     filename_string = reads_filename;
+     if (!ProduceValidPair(filename_string)) Scram(1);
 
-     const std::string fn1 = this->infiles_pair[0];
-     const std::string fn2 = this->infiles_pair[1];
+     const std::string fn1 = infiles_pair[0];
+     const std::string fn2 = infiles_pair[1];
 
      // check if the file is gzip
-     if (this->ReadBinaryIfExist(out_dir, library_name)){
+     if (ReadBinaryIfExist(out_dir, library_name)){
           std::cout<< "Files read from fastb..." << std::endl;
-     } else if (this->IsGz(fn1) && this->IsGz(fn2)){
+     } else if (IsGz(fn1) && IsGz(fn2)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
-          auto ec = this->read_files(in1, in2, &bases, &quals, &rIndexs);
+          auto ec = read_files(in1, in2, &bases, &quals, &rIndexs);
      } else {
           std::ifstream in1(fn1);
           std::ifstream in2(fn2);
-          auto ec = this->read_files(in1, in2, &bases, &quals, &rIndexs);
+          auto ec = read_files(in1, in2, &bases, &quals, &rIndexs);
      }
 }
 
@@ -400,8 +400,8 @@ int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>
      while (1) {
           // TODO: [GONZA] add the checks
 
-          bool r1_status = this->get_fastq_record(in1, &record1);
-          bool r2_status = this->get_fastq_record(in2, &record2);
+          bool r1_status = get_fastq_record(in1, &record1);
+          bool r2_status = get_fastq_record(in2, &record2);
 
           if (!r1_status || !r2_status){
                break;
@@ -449,40 +449,40 @@ int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>
 
 int TenXData::read_binary(std::string out_dir, std::string prefix){
      // thead the fastb &qualp pair
-     this->bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
-     this->bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
-     this->quals.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+     bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+     bases.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
+     quals.ReadAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
 }
 
 int TenXData::write_binary(std::string out_dir, std::string prefix){
      // Write files fast & qualb
-     this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
-     this->bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
-     this->quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+     bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+     bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
+     quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
 }
 
 // -------------- PacBio -------------
 PacBioData::PacBioData(std::string out_dir, std::string library_name, std::string read_filename){
      //
 
-     this->filename_string = read_filename;
+     filename_string = read_filename;
      std::cout << Date() << ": finding input files" << std::endl;
 
      // Check that files are OK.
-     if (!this->FilesExist(this->filename_string)) Scram(1);
+     if (!FilesExist(filename_string)) Scram(1);
      std::cout << Date() << ": reading 1 file (which may take a while)" << std::endl;
      const std::string fn = read_filename;
 
      // check if the file is gzip
-     if (this->ReadBinaryIfExist(out_dir, library_name)){
+     if (ReadBinaryIfExist(out_dir, library_name)){
           std::cout<< "Files read from fastb..." << std::endl;
-     } else if (this->IsGz(fn)){
+     } else if (IsGz(fn)){
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in(fn.c_str());
-          auto ec = this->read_file(in, &bases, &quals);
+          auto ec = read_file(in, &bases, &quals);
      } else {
           std::ifstream in(fn);
-          auto ec = this->read_file(in, &bases, &quals);
+          auto ec = read_file(in, &bases, &quals);
      }
 }
 
@@ -507,7 +507,7 @@ int PacBioData::read_file(std::basic_istream<char>& in1, vecbvec *Reads, VecPQVe
 
      while (1) {
 
-          bool r1_status = this->get_fastq_record(in1, &record1);
+          bool r1_status = get_fastq_record(in1, &record1);
           if (!r1_status){
                break;
           }
@@ -543,11 +543,11 @@ int PacBioData::read_file(std::basic_istream<char>& in1, vecbvec *Reads, VecPQVe
 }
 
 int PacBioData::read_binary(std::string out_dir, std::string library_name){
-     this->bases.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
+     bases.ReadAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
 }
 
 int PacBioData::write_binary(std::string out_dir, std::string library_name){
-     this->bases.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
+     bases.WriteAll(out_dir + "/" + library_name + "_frag_reads_orig.fastb");
 }
 
 // -------------- To read the data from the configuration file
