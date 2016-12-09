@@ -6,7 +6,7 @@
 #include "GFADump.h"
 
 void GFADump (std::string filename, const HyperBasevector &hb, const vec<int> &inv, const
-ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lines){
+ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lines, const std::vector<int> & marked_edges){
 
     std::vector<std::string> colour_names={
             "aliceblue",
@@ -246,7 +246,10 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
             ++current_colour;
         }
     }
-
+    for (auto &e:marked_edges) {
+        colour[e]=112;
+        if (inv[e]>=0) colour[inv[e]]=112;
+    }
     // Do the raw dump
     Ofstream(gfa_raw_out,filename+"_raw.gfa");
     Ofstream(fasta_raw_out,filename+"_raw.fasta");

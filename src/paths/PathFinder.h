@@ -22,8 +22,6 @@ public:
     mMinReads(min_reads),
     mVerbose(verbose)
     {
-        hbv.ToLeft(mToLeft);
-        hbv.ToRight(mToRight);
 
 
     }
@@ -43,7 +41,7 @@ public:
     void untangle_pins();
     void unroll_loops(uint64_t min_side_sizes);//untangles all single choices when support is uncontested
     void untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation=false);
-    void init_prev_next_vectors();
+    void update_prev_next();
     std::vector<std::vector<uint64_t>> is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);//returns size of the unrolled loop
     uint64_t paths_per_kbp(uint64_t e);
     std::string edge_pstr(uint64_t e);

@@ -56,7 +56,7 @@ int main(const int argc, const char * argv[]) {
     unsigned int minFreq;
     unsigned int minQual;
     int max_mem;
-    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches;
+    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches, min_input_reads;
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
@@ -107,6 +107,8 @@ int main(const int argc, const char * argv[]) {
                                                  "minimum quality for small k-mers on step 2 (default: 7)", false, 7, "int", cmd);
         TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
                                                     "max number of read pairs to use in local assemblies on step 5(default: 200)", false, 200, "int", cmd);
+            TCLAP::ValueArg<unsigned int> minInputArg("", "min_input",
+                                                    "min number of read entering an edge at step 6(default: 3)", false, 3, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
@@ -147,6 +149,7 @@ int main(const int argc, const char * argv[]) {
         disk_batches=disk_batchesArg.getValue();
         tmp_dir=tmp_dirArg.getValue();
         pf_verbose=pathFinderVerboseArg.getValue();
+        min_input_reads=minInputArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -476,9 +479,8 @@ int main(const int argc, const char * argv[]) {
     if (from_step<=6 and to_step>=6) {
         std::cout << "--== Step 6: Graph simplification and path finding ==--" << std::endl;
 
-
         //==Simplify
-        int MAX_SUPP_DEL = 3;//was 0
+        int MAX_SUPP_DEL = min_input_reads;//was 0
         bool TAMP_EARLY_MIN = True;
         int MIN_RATIO2 = 8;
         int MAX_DEL2 = 200;

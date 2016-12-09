@@ -9,8 +9,10 @@ std::string PathFinder::edge_pstr(uint64_t e){
     return "e"+std::to_string(e)+"("+std::to_string(mHBV.EdgeObject(e).size())+"bp "+std::to_string(paths_per_kbp(e))+"ppk)";
 };
 
-void PathFinder::init_prev_next_vectors(){
+void PathFinder::update_prev_next(){
     //TODO: this is stupid duplication of the digraph class, but it's so weird!!!
+    mHBV.ToLeft(mToLeft);
+    mHBV.ToRight(mToRight);
     prev_edges.resize(mToLeft.size());
     next_edges.resize(mToRight.size());
     for (auto e=0;e<mToLeft.size();++e){
@@ -399,7 +401,7 @@ void PathFinder::unroll_loops(uint64_t min_side_sizes) {
     //find nodes where in >1 or out>1 and in>0 and out>0
     uint64_t uloop=0,ursize=0;
     if (mVerbose) std::cout<<"Starting loop finding"<<std::endl;
-    init_prev_next_vectors();
+    update_prev_next();
     if (mVerbose) std::cout<<"Prev and Next vectors initialised"<<std::endl;
     //score all possible transitions, discards all decidible and
 
@@ -436,47 +438,14 @@ void PathFinder::unroll_loops(uint64_t min_side_sizes) {
         migrate_readpaths(old_edges_to_new);
     }
     if (mVerbose) std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
-    init_prev_next_vectors();
-    if (mVerbose) std::cout<<"Prev and Next vectors initialised"<<std::endl;
+    update_prev_next();
+    if (mVerbose) std::cout<<"Prev and Next vectors updated"<<std::endl;
 }
-/*
-void PathFinder::untangle_complex_in_out_choices() {
-    //find a complex path
-    init_prev_next_vectors();
-    for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
-        if (e < mInv[e] && mHBV.EdgeObject(e).size()>1000) {
-            //Ok, so why do we stop?
-            //is next edge a join? how long till it splits again? can we choose the split?
-            if (next_edges[e].size()==1 and prev_edges[next_edges[e][0]].size()>1){
-                //if (mVerbose) std::cout<<"next edge from "<<e<<" is a join!"<<std::endl;
-                if (mHBV.EdgeObject(next_edges[e][0]).size()<500 and next_edges[next_edges[e][0]].size()>1){
 
-                    if (prev_edges[next_edges[e][0]].size()==prev_edges[next_edges[e][0]].size()){
-                        if (mVerbose) std::cout<<"next edge from "<<e<<" is a small join! with "<<prev_edges[next_edges[e][0]].size()<<"in-outs"<<std::endl;
-                        auto join_edge=next_edges[e][0];
-                        std::vector<std::vector<uint64_t>> p0011={
-                                {prev_edges[join_edge][0],join_edge,next_edges[join_edge][0]},
-                                {prev_edges[join_edge][1],join_edge,next_edges[join_edge][1]}
-                        };
-                        std::vector<std::vector<uint64_t>> p1001={
-                                {prev_edges[join_edge][1],join_edge,next_edges[join_edge][0]},
-                                {prev_edges[join_edge][0],join_edge,next_edges[join_edge][1]}
-                        };
-                        auto v0011=multi_path_votes(p0011);
-                        auto v1001=multi_path_votes(p1001);
-                        if (mVerbose) std::cout<<"votes for: "<<path_str(p0011[0])<<" / "<<path_str(p0011[1])<<":  "<<v0011[0]<<":"<<v0011[1]<<":"<<v0011[2]<<std::endl;
-                        if (mVerbose) std::cout<<"votes for: "<<path_str(p1001[0])<<" / "<<path_str(p1001[1])<<":  "<<v1001[0]<<":"<<v1001[1]<<":"<<v1001[2]<<std::endl;
-                    }
-                }
-            }
-
-        }
-    }
-}*/
 
 void PathFinder::untangle_pins() {
 
-    init_prev_next_vectors();
+    update_prev_next();
     uint64_t pins=0;
     for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
         if (mToLeft[e]==mToLeft[mInv[e]] and next_edges[e].size()==1 ) {
@@ -499,7 +468,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
     //find a complex path
     uint64_t qsf=0,qsf_paths=0;
     uint64_t msf=0,msf_paths=0;
-    init_prev_next_vectors();
+    update_prev_next();
     if (mVerbose) std::cout<<"vectors initialised"<<std::endl;
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     std::vector<std::vector<uint64_t>> paths_to_separate;
@@ -641,6 +610,7 @@ void PathFinder::untangle_complex_in_out_choices(uint64_t large_frontier_size, b
         migrate_readpaths(old_edges_to_new);
     }
     if (mVerbose) std::cout<<" "<<sep<<" paths separated!"<<std::endl;
+
 }
 
 std::vector<std::vector<uint64_t>> PathFinder::AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length) {
