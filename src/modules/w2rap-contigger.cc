@@ -237,7 +237,6 @@ int main(const int argc, const char * argv[]) {
                 std::cout << Date() << ": Dumping small_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".small_K.hbv", hbv);
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
-                std::cout<<Date()<<": "<<(check_from_to(hbv)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
                 graph_status(hbv);
                 path_status(paths);
                 std::cout << Date() << ": Dumping small_K graph and paths DONE!" << std::endl;
@@ -250,7 +249,6 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Reading small_K graph and paths..." << std::endl;
             BinaryReader::readFile(out_dir + "/" + out_prefix + ".small_K.hbv", &hbv);
             LoadReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
-            std::cout<<Date()<<": "<<(check_from_to(hbv)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
             graph_status(hbv);
             path_status(paths);
             std::cout << Date() << ": Reading small_K graph and paths DONE!" << std::endl << std::endl;
@@ -275,7 +273,6 @@ int main(const int argc, const char * argv[]) {
                 std::cout << Date() << ": Dumping large_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.hbv", hbvr);
                 WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
-                std::cout<<Date()<<": "<<(check_from_to(hbv)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
                 graph_status(hbv);
                 path_status(paths);
                 std::cout << Date() << ": Dumping large_K graph and paths DONE!" << std::endl;
@@ -291,7 +288,7 @@ int main(const int argc, const char * argv[]) {
         std::cout << Date() << ": Reading large_K graph and paths..." << std::endl;
         BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.hbv", &hbvr);
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
-        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+        
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading large_K graph and paths DONE!" << std::endl << std::endl;
@@ -310,7 +307,6 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Dumping large_K clean graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
-            std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
             graph_status(hbvr);
             path_status(pathsr);
             std::cout << Date() << ": Dumping large_K clean graph and paths DONE!" << std::endl;
@@ -329,7 +325,6 @@ int main(const int argc, const char * argv[]) {
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
-        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading large_K clean graph and paths DONE!" << std::endl << std::endl;
@@ -365,7 +360,6 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Dumping large_K final graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
-            std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
             graph_status(hbvr);
             path_status(pathsr);
             std::cout << Date() << ": Dumping large_K final graph and paths DONE!" << std::endl;
@@ -383,7 +377,6 @@ int main(const int argc, const char * argv[]) {
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
-        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading large_K final graph and paths DONE!" << std::endl << std::endl;
@@ -403,7 +396,6 @@ int main(const int argc, const char * argv[]) {
         bool EXT_FINAL = True;
         int EXT_FINAL_MODE = 1;
         bool PULL_APART_VERBOSE = False;
-        //const String PULL_APART_TRACE="{}";
         const vec<int> PULL_APART_TRACE;
         int DEGLOOP_MODE = 1;
         float DEGLOOP_MIN_DIST = 2.5;
@@ -465,7 +457,6 @@ int main(const int argc, const char * argv[]) {
             std::cout << Date() << ": Dumping contig graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
             WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
-            std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
             graph_status(hbvr);
             path_status(pathsr);
             std::cout << Date() << ": Dumping contig graph and paths DONE!" << std::endl;
@@ -485,7 +476,6 @@ int main(const int argc, const char * argv[]) {
         hbvr.Involution(inv);
         paths_inv.clear();
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading contig graph and paths DONE!" << std::endl << std::endl;
@@ -508,7 +498,6 @@ int main(const int argc, const char * argv[]) {
 
         vecbasevector G;
         FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
-        std::cout<<Date()<<": "<<(check_from_to(hbvr)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
         graph_status(hbvr);
         path_status(pathsr);
         GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);

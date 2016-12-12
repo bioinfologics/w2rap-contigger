@@ -21,7 +21,7 @@
 #include "paths/long/large/Simplify.h"
 #include "kmers/kmatch/KMatch.h"
 #include "GFADump.h"
-
+#include "OverlapValidator.h"
 
 
 void graph_status(const HyperBasevector &hb) {
@@ -204,8 +204,7 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
                 }
             }
         }
-        //GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
-        GFADump("unsupported_paths_marked_"+std::to_string(pass),hb,inv,paths,0,0,false,dels);
+
         GFADumpDetail("unsupported_paths_marked_detail"+std::to_string(pass),hb,inv,dels);
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
@@ -215,13 +214,10 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
         std::cout << Date() << ": rerouting paths and cleaning pairs" << std::endl;
         ReroutePaths(hb, inv, paths, bases, quals);
         DeleteFunkyPathPairs(hb, inv, bases, paths, False);
-
-            std::cout << Date() << ": improving paths" << std::endl;
-
-            path_improver pimp;
-            vec<int64_t> ids;
-            ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, false, False);
-
+        std::cout << Date() << ": improving paths" << std::endl;
+        path_improver pimp;
+        vec<int64_t> ids;
+        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, false, False);
         pass++;
     }
 }
@@ -265,19 +261,13 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, IMPROVE_PATHS_LARGE, False);
     }
     path_status(paths);
+    OverlapValidator oval(hb,inv,paths);
+    oval.compute_overlap_support();
 
     // Remove unsupported edges in certain situations.
     const int min_mult=5;
     std::cout << Date() << ": removing alternative edges with input support <="<<MAX_SUPP_DEL << std::endl;
-    if (dump_pf_files) {
-        BinaryWriter::writeFile(fin_dir + "/before_unsupported_removal.hbv", hb);
-        WriteReadPathVec(paths,(fin_dir + "/before_unsupported_removal.paths").c_str());
-    }
     remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
-    if (dump_pf_files) {
-        BinaryWriter::writeFile(fin_dir + "/after_unsupported_removal.hbv", hb);
-        WriteReadPathVec(paths,(fin_dir + "/after_unsupported_removal.paths").c_str());
-    }
     graph_status(hb);
     path_status(paths);
 
@@ -285,7 +275,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
 
     // Clean up assembly.
-    std::cout << Date() <<": removing small components"<<std::endl;
+    /*std::cout << Date() <<": removing small components"<<std::endl;
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
 
@@ -299,11 +289,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveHangs(hb, inv, paths, 100);
     Cleanup(hb, inv, paths);
     graph_status(hb);
-    path_status(paths);
+    path_status(paths);*/
 
-    std::cout << Date() << ": analysing branches" << std::endl;
-    vec<int> to_right;
-    hb.ToRight(to_right);
+    /*std::cout << Date() << ": analysing branches" << std::endl;
+
 
     AnalyzeBranches(hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2);
     Cleanup(hb, inv, paths);
@@ -313,9 +302,9 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     Cleanup(hb, inv, paths);
 
     graph_status(hb);
-    path_status(paths);
+    path_status(paths);*/
 
-    std::cout << Date() << ": popping bubbles" << std::endl;
+    /*std::cout << Date() << ": popping bubbles" << std::endl;
     PopBubbles(hb, inv, bases, quals, paths);
 
     Cleanup(hb, inv, paths);
@@ -326,7 +315,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
     graph_status(hb);
-    path_status(paths);
+    path_status(paths);*/
 
     // Pull apart.
 
@@ -404,6 +393,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     if (EXT_FINAL) {
         std::cout << Date() << ": extending paths" << std::endl;
         vec<int> to_left;
+        vec<int> to_right;
+
         hb.ToLeft(to_left), hb.ToRight(to_right);
         int ext = 0;
         auto qvItr = quals.begin();
