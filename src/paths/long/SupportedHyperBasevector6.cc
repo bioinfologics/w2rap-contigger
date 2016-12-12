@@ -853,7 +853,7 @@ void JoinDiscoverer::processVertex( int vertexId, Recommendations* pRecs ) const
 }
 
 // run the vertex scanning in parallel
-void findJoins( SupportedHyperBasevector const& hbv, vec<int> const& toLeft,
+/*void findJoins( SupportedHyperBasevector const& hbv, vec<int> const& toLeft,
                     vec<int> const& toRight, int verbosity,
                     double minWeightSplit, Recommendations* pRecs )
 {
@@ -865,11 +865,11 @@ void findJoins( SupportedHyperBasevector const& hbv, vec<int> const& toLeft,
                         [jd,pRecs]( int vertexId )
                         { jd.processVertex(vertexId,pRecs); },
                         nThreads,verbosity==1);
-}
+}*/
 
 } // end of anonymous namespace
 
-void SupportedHyperBasevector::PullApart2( const double min_weight_split,
+/*void SupportedHyperBasevector::PullApart2( const double min_weight_split,
         const long_logging& logc )
 {
     // Logging stuff.
@@ -1078,7 +1078,7 @@ void SupportedHyperBasevector::PullApart2( const double min_weight_split,
         TestValid(logc);
         DeleteReverseComplementComponents(logc);
     }
-}
+}*/
 
 void SupportedHyperBasevector::Gulp( const long_logging_control& log_control, 
      const long_logging& logc )

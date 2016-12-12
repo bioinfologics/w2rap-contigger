@@ -92,18 +92,10 @@ class PullAparter {
                ForceAssertEq(readPathIndices.size()%2,0u);
                for ( auto itr = readPathIndices.cbegin();
                          itr != readPathIndices.cend(); advance(itr,2) ) {
-                    SerfVec<int> readPath = mPaths[itr[0]];
-                    SerfVec<int> readPath1 = inversePath(mPaths[itr[1]]);
+                    std::vector<int> readPath = mPaths[itr[0]];
+                    std::vector<int> readPath1 = inversePath(mPaths[itr[1]]);
 
-                    if ( mDebug ) {
-                         std::cout << itr[0] << ": " << printSeq(readPath) << std::endl;
-                         std::cout << itr[1] << ": " << printSeq(readPath1) << std::endl;
-                    }
                     OverlapAppend(readPath, readPath1);
-                    if ( mDebug ) {
-                         std::cout << itr[0] << "|" << itr[1] << ": " <<
-                                   printSeq(readPath) << std::endl;
-                    }
 
                     for ( size_t ipath=0; ipath < paths.size(); ++ipath ) {
                          auto f0 = readPath.end();
@@ -450,9 +442,9 @@ class PullAparter {
                         if ( ldebug ) std::cout << "... readpath already nulled" << std::endl;
                         continue;       // may have been nulled earlier
                     }
-                    SerfVec<int> extReadPath = readPath;
+                    std::vector<int> extReadPath = readPath;
                     int pair_offset = ( *itr % 2 == 0 ) ? +1 : -1 ;
-                    SerfVec<int> extReadPath1;
+                    std::vector<int> extReadPath1;
                     extReadPath1 = inversePath(mPaths[*itr + pair_offset]);
 
                     // make the read path contain the paired read's edges, too.

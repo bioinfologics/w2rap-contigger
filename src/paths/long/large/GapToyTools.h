@@ -134,8 +134,8 @@ void SelectSpecials( const HyperBasevector& hb, vecbasevector& bases,
 
 void LayoutReads( const HyperBasevector& hb, const vec<int>& inv, 
      const vecbasevector& bases, const ReadPathVec& paths, 
-     vec<vec<int>>& layout_pos, vec<vec<int64_t>>& layout_id, 
-     vec<vec<Bool>>& layout_or );
+     std::vector<std::vector<int>>& layout_pos, std::vector<std::vector<int64_t>>& layout_id,
+     std::vector<std::vector<bool>>& layout_or );
 
 void SortBlobs( const HyperBasevector& hb,
      const vec< triple< std::pair<int,int>, triple<int,vec<int>,vec<int>>, vec<int> > >&

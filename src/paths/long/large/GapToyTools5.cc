@@ -1499,7 +1499,14 @@ void PartnersToEnds(const HyperBasevector &hbv, ReadPathVec &paths,
 
      std::cout << Date() << ": finding uniquely aligning edges" << std::endl;
      EdgeProc proc(hbv, *pDict, reads, quals, paths);
-     parallelForBatch(0, hbv.E(), 100, proc);
+     #pragma omp parallel
+     {
+        auto p=proc;
+        #pragma omp for
+        for (auto i = 0; i < hbv.E(); ++i) {
+            p(i);
+        }
+     }
      proc.cleanAmbiguousPlacements(readIds);
      delete pDict;
 }

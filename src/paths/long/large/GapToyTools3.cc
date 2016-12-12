@@ -272,7 +272,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
     for ( int64_t i = 0; i < paths.size(); ++i ) {
         auto& path = paths[i];
         if ( path.size() ) {
-            SerfVec<int> oldPath = path;
+            std::vector<int> oldPath = path;
             path.clear();
             path.setOffset( path.getOffset() + offsets[oldPath[0]]);
             //XXX: is this the same scenario?

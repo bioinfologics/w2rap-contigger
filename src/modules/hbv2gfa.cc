@@ -51,7 +51,7 @@ int main(const int argc, const char * argv[]) {
     BinaryReader::readFile(in_prefix + ".hbv", &hbv);
     hbv.Involution(inv);
     TestInvolution(hbv,inv);
-    paths.ReadAll(in_prefix + ".paths");
+    LoadReadPathVec(paths,(in_prefix + ".paths").c_str());
     std::cout << "   DONE!" << std::endl;
 
     std::cout<<"=== Graph stats === "<<std::endl;
