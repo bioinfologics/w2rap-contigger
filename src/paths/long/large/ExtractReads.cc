@@ -354,10 +354,11 @@ TenXData::TenXData(std::string out_dir, std::string library_name, std::string re
      //
 
      filename_string = reads_filename;
-     if (!ProduceValidPair(filename_string)) Scram(1);
+//     if (!ProduceValidPair(filename_string)) Scram(1); Not a pair
 
      const std::string fn1 = infiles_pair[0];
      const std::string fn2 = infiles_pair[1];
+     const std::string fni = infiles_pair[2];
 
      // check if the file is gzip
      if (ReadBinaryIfExist(out_dir, library_name)){
@@ -366,75 +367,79 @@ TenXData::TenXData(std::string out_dir, std::string library_name, std::string re
           std::cout << "File1 is gzipped changing stream" << std::endl;
           igzstream in1(fn1.c_str());
           igzstream in2(fn2.c_str());
-          auto ec = read_files(in1, in2, &bases, &quals, &rIndexs);
+          igzstream ini(fni.c_str());
+          auto ec = read_files(in1, in2, ini);
      } else {
           std::ifstream in1(fn1);
           std::ifstream in2(fn2);
-          auto ec = read_files(in1, in2, &bases, &quals, &rIndexs);
+          std::ifstream ini(fni.c_str());
+          auto ec = read_files(in1, in2, ini);
      }
 }
 
-int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals, vecbvec *rIndexs){
+bool TenXData::split_filenames(std::string filename_string){
+     // Get the filename string from the arguments and produce a valid set of files to proces
+     // R1.fastq,R2.fastq,I.fastq
+     std::vector<std::string> infiles;
+     infiles = tokenize(filename_string.c_str(), ',');
+
+     if (!FilesExist(infiles)) Scram(1);
+
+     std::cout << Date() << ": reading " << infiles_pair.size() << " files (which may take a while)" << std::endl;
+     for (auto a: infiles) {
+          if (a.find(".fastq") != std::string::npos) {
+               std::cout << a << std::endl;
+               infiles_pair.push_back(a);
+          }
+     }
+
+     if (infiles_pair.size() != 3) {
+          std::cout << "Error there are " << infiles_pair.size() << "files in the list but there should be 2, exiting" << std::endl;
+          Scram(1);
+     }
+     return true;
+};
+
+int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, std::basic_istream<char>& ini){
      // Read the files.
      double lclock = WallClockTime();
-
-     vecbasevector& pReads = (*Reads);
-     VecPQVec& pQuals = (*Quals);
-     vecbasevector& prIndexs= (*rIndexs);
-
-     // Buffer for quality score compression in batches.
-     const int qbmax = 10000000;
-     std::vector<qvec> qualsbuf;
-     MempoolOwner<char> alloc;
-     for (int i = 0; i < qbmax; i++)
-          qualsbuf.emplace_back(alloc);
-     int qbcount = 0;
 
      // Go through the input files.
      std::tuple<std::string, std::string, std::string> record1;
      std::tuple<std::string, std::string, std::string> record2;
+     std::tuple<std::string, std::string, std::string> recordi;
 
      basevector b1;
      basevector b2;
      basevector idx;
+     basevector idt;
+
      while (1) {
-          // TODO: [GONZA] add the checks
+          tenXRead temp_record;
 
           bool r1_status = get_fastq_record(in1, &record1);
           bool r2_status = get_fastq_record(in2, &record2);
+          bool ri_status = get_fastq_record(ini, &recordi);
 
-          if (!r1_status || !r2_status){
+          if (!r1_status || !r2_status || !ri_status){
                break;
           }
 
-          idx.SetFromString(std::get<1>(record1).substr(0,16));
+
           b1.SetFromString(std::get<1>(record1).substr(16));
           b2.SetFromString(std::get<1>(record2));
 
-          pReads.push_back(b1);
-          prIndexs.push_back(idx);
-          pReads.push_back(b2);
+          idx.SetFromString(std::get<1>(recordi));
+          idt.SetFromString(std::get<1>(record1).substr(0,16));
 
-          // Save.
-          auto qc1 = std::get<2>(record1).substr(16);
-          auto qc2 = std::get<2>(record2);
+          temp_record.r1 = b1;
+          temp_record.r2 = b2;
 
-          qvec &q1 = qualsbuf[qbcount++];
-          qvec &q2 = qualsbuf[qbcount++];
+          temp_record.index = idx;
+          temp_record.tag = idt;
 
-          q1.resize(qc1.size()), q2.resize(qc2.size());
-          if (qbcount == qbmax) {
-               convertAppendParallel(qualsbuf.begin(),
-                                     qualsbuf.begin() + qbcount, pQuals);
-               qbcount = 0;
-          }
-          for (int i = 0; i < qc1.size(); i++)
-               q1[i] = qc1[i] - 33;
-          for (int i = 0; i < qc2.size(); i++)
-               q2[i] = qc2[i] - 33;
+          rReads.push_back(temp_record);
      }
-     convertAppendParallel(qualsbuf.begin(),
-                           qualsbuf.begin() + qbcount, pQuals);
 
      // Report stats.
 
@@ -456,6 +461,7 @@ int TenXData::read_binary(std::string out_dir, std::string prefix){
 
 int TenXData::write_binary(std::string out_dir, std::string prefix){
      // Write files fast & qualb
+
      bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
      bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
      quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");

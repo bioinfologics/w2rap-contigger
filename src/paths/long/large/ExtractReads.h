@@ -52,15 +52,24 @@ private:
     int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
 
+typedef struct {
+    basevector r1;
+    basevector r2;
+    basevector index;
+    basevector tag;
+} tenXRead;
+
 class TenXData: public InputFileReader{
   public:
     TenXData(std::string out_dir, std::string library_name, std::string reads_filename);
-    vecbvec rIndexs;
+    std::vector<tenXRead> rReads;
+
     int read_binary(std::string out_dir, std::string prefix);
     int write_binary(std::string out_dir, std::string prefix);
 
   private:
-    int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals, vecbvec *rIndexs);
+    int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, std::basic_istream<char>& ini);
+    bool split_filenames(std::string filestring);
 
 };
 
