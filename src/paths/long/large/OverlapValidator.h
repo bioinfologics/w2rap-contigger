@@ -34,6 +34,8 @@ public:
     void find_informative_pairs();
     void compute_overlap_support();
     void analyse_complex_overlaps();
+    std::vector<uint64_t> find_perfect_tips(uint16_t max_size);
+    uint64_t collect_all_support(uint64_t vi, uint64_t e1, uint64_t e2);
 
 private:
     HyperBasevector &mHBV;

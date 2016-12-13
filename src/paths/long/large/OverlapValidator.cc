@@ -226,13 +226,23 @@ void OverlapValidator::analyse_complex_overlaps() {
                 for (auto t:transitions) {
                     if (t.cross+t.jump>1) {
                         if (std::find(used_ins.begin(),used_ins.end(),t.e1)!=used_ins.end()) conflict=true;
-                        if (std::find(used_outs.begin(),used_outs.end(),t.e2)!=used_ins.end()) conflict=true;
+                        if (std::find(used_outs.begin(),used_outs.end(),t.e2)!=used_outs.end()) conflict=true;
                         used_ins.push_back(t.e1);
                         used_outs.push_back(t.e2);
                         valid_transitions.push_back(t);
                     }
                 }
-                if (valid_transitions.size()==mHBV.From(vi).size() and conflict==false) to_expand++;
+                std::cout<<"Vertex "<<vi<<" IN: ";
+                for (auto i1=0;i1<mHBV.To(vi).size();++i1) std::cout<<mHBV.EdgeObjectIndexByIndexTo(vi,i1)<<" ";
+                std::cout<<"  OUT: ";
+                for (auto i1=0;i1<mHBV.From(vi).size();++i1) std::cout<<mHBV.EdgeObjectIndexByIndexFrom(vi,i1)<<" ";
+                std::cout<<std::endl<<"Supported transitions: ";
+                for (auto &t:valid_transitions) std::cout<<"  "<<t.e1<<"->"<<t.e2<<":"<<t.cross<<","<<t.jump;
+                std::cout<<std::endl;
+                if (valid_transitions.size()==mHBV.From(vi).size() and conflict==false) {
+                    std::cout<<"Solved!"<<std::endl;
+                    to_expand++;
+                }
 
             }
             //std::cout<<" done "<<vi<<std::endl;
@@ -243,3 +253,51 @@ void OverlapValidator::analyse_complex_overlaps() {
     std::cout<<Date()<<": "<<to_expand<<" overlaps could be trivially expanded"<<std::endl;
 }
 
+
+
+std::vector<uint64_t> OverlapValidator::find_perfect_tips(uint16_t max_size) {
+    std::set<uint64_t> tip1, tip2;
+    std::vector<uint64_t> tips;
+    //Find vertices with only one input
+    for (auto vi=0;vi<mHBV.N();++vi) if (mHBV.To(vi).size()==1 and mHBV.From(vi).size()==0) {
+            //check edges and validate their lack of support on the output transition
+            uint64_t tip=mHBV.EdgeObjectIndexByIndexTo(vi,0);
+            auto vfork=mHBV.To(vi)[0];
+            //check Y topology
+            if (mHBV.From(vfork).size()==2 and mHBV.To(vfork).size()==1) {
+                auto prev=mHBV.EdgeObjectIndexByIndexTo(vfork,0);
+                auto other=mHBV.EdgeObjectIndexByIndexFrom(vfork,0);
+                if (other==tip) other=mHBV.EdgeObjectIndexByIndexFrom(vfork,1);
+
+                if (collect_all_support(vi,prev,tip)*10<collect_all_support(vi,prev,other))tip1.insert(tip);
+                //add to tip1
+
+            }
+        }
+    //Find vertices with only one output
+    for (auto vi=0;vi<mHBV.N();++vi) if (mHBV.From(vi).size()==1 and mHBV.To(vi).size()==0) {
+            //check edges and validate their lack of support on the input transition
+            uint64_t tip=mHBV.EdgeObjectIndexByIndexFrom(vi,0);
+            auto vfork=mHBV.From(vi)[0];
+            //check Y topology
+            if (mHBV.To(vfork).size()==2 and mHBV.From(vfork).size()==1) {
+                auto next=mHBV.EdgeObjectIndexByIndexFrom(vfork,0);
+                auto other=mHBV.EdgeObjectIndexByIndexTo(vfork,0);
+                if (other==tip) other=mHBV.EdgeObjectIndexByIndexTo(vfork,1);
+
+                if (collect_all_support(vi,tip,next)*10<collect_all_support(vi,other,next))tip2.insert(tip);
+
+            }
+        }
+
+    //edge on tip1, inverse on tip2, size >max_size -> ADD BOTH.
+    for (auto &tip:tip1) if (tip2.find(mInv[tip])!=tip2.end() and mHBV.EdgeObject(tip).size()<=max_size) tips.push_back(tip);
+    return tips;
+}
+
+uint64_t OverlapValidator::collect_all_support(uint64_t vi, uint64_t e1, uint64_t e2) {
+    uint64_t cross=0,jump=0;
+    for (auto &p:mCross[vi]) if (mInformativePairs[p].crosses_transition(e1,e2)) ++cross;
+    for (auto &p:mJump[vi]) if (mInformativePairs[p].jumps_transition(e1,e2)) ++jump;
+    return cross+jump;
+}

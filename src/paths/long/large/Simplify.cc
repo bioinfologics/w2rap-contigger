@@ -262,8 +262,14 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     }
     path_status(paths);
     OverlapValidator oval(hb,inv,paths);
+    GFADumpDetail("before_ovlpval_detail",hb,inv);
     oval.compute_overlap_support();
     oval.analyse_complex_overlaps();
+    std::vector<int> paint;
+    paint.reserve(hb.EdgeObjectCount());
+    for (int e:oval.find_perfect_tips(1000)) paint.push_back(e);
+    std::cout<<Date()<<": "<<paint.size()<<" perfect tips found"<<std::endl;
+    GFADumpDetail("ovlpval_perfect_tips_detail",hb,inv,paint);
 
     // Remove unsupported edges in certain situations.
     const int min_mult=5;
