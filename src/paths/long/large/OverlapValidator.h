@@ -16,6 +16,8 @@ public:
     inline bool is_combined(){return combined_path.size()>0;};
     std::vector<uint64_t> overlaps_crossed(vec<int> & toLeft, vec<int> &toRight);
     std::vector<uint64_t> overlaps_jumped(vec<int> & toLeft, vec<int> &toRight, uint8_t max_dist);
+    bool crosses_transition(uint64_t e1, uint64_t e2);
+    bool jumps_transition(uint64_t e1, uint64_t e2);
 
     //todo: add support for RF pairs
     uint64_t pathIndex; //original index of the first component of the path;
@@ -31,6 +33,7 @@ public:
     {};
     void find_informative_pairs();
     void compute_overlap_support();
+    void analyse_complex_overlaps();
 
 private:
     HyperBasevector &mHBV;

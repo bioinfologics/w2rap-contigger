@@ -96,6 +96,30 @@ std::vector<uint64_t> InformativePair::overlaps_jumped(vec<int> & toLeft, vec<in
     return crossed;
 }
 
+bool InformativePair::crosses_transition(uint64_t e1, uint64_t e2) {
+    if (is_combined()){
+        for (auto i=0;i<combined_path.size()-1;++i) if (combined_path[i]==e1 and combined_path[i+1]==e2) return true;
+        for (auto i=0;i<combined_rpath.size()-1;++i) if (combined_rpath[i]==e1 and combined_rpath[i+1]==e2) return true;
+    } else {
+        if (r1path.size()>1) {
+            for (auto i = 0; i < r1path.size() - 1; ++i) if (r1path[i] == e1 and r1path[i + 1] == e2) return true;
+            for (auto i = 0; i < r1rpath.size() - 1; ++i) if (r1rpath[i] == e1 and r1rpath[i + 1] == e2) return true;
+        }
+        if (r2path.size()>1) {
+            for (auto i = 0; i < r2path.size() - 1; ++i) if (r2path[i] == e1 and r2path[i + 1] == e2) return true;
+            for (auto i = 0; i < r2rpath.size() - 1; ++i) if (r2rpath[i] == e1 and r2rpath[i + 1] == e2) return true;
+        }
+    }
+    return false;
+}
+
+bool InformativePair::jumps_transition(uint64_t e1, uint64_t e2) {
+    if (!is_combined() and r1path.size()>0 and r2path.size()>0){
+        if (r1path.back()==e1 and r2rpath.front()==e2) return true;
+        if (r2path.back()==e1 and r1rpath.front()==e2) return true;
+    }
+    return false;
+}
 
 
 void OverlapValidator::compute_overlap_support() {
@@ -141,20 +165,81 @@ void OverlapValidator::find_informative_pairs() {
 
     }
     std::cout<<Date()<<": "<<mInformativePairs.size()<<" informative pairs ( "<<overlap<<" combined )"<<std::endl;
-    uint64_t vcross=0,vjump=0,unsupported=0,complex=0;
+    uint64_t vcross=0,vjump=0,unsupported=0,complex=0,in_eq_out=0;
 
     for (auto &vc:mCross) if (vc.size()>0) vcross++;
     for (auto &vj:mJump) if (vj.size()>0) vjump++;
     for (uint64_t i=0;i<mCross.size();++i){
         if (mCross[i].size()==0 and mJump[i].size()==0) ++unsupported;
         else {
-            if (mHBV.From(i).size()>1 and mHBV.From(i).size()>1) complex++;
+            if (mHBV.From(i).size()>1 and mHBV.To(i).size()>1) {
+                complex++;
+                if (mHBV.From(i).size() == mHBV.To(i).size()) in_eq_out++;
+            }
         }
     }
     std::cout<<Date()<<": "<<vcross<<" vertices crossed by a total of "<<cross<<" pairs"<<std::endl;
     std::cout<<Date()<<": "<<vjump<<" vertices jumped by a total of "<<jump<<" pairs"<<std::endl;
-    std::cout<<Date()<<": "<<complex<<" complex vertices with support"<<std::endl;
+    std::cout<<Date()<<": "<<complex<<" complex vertices with support ( "<<in_eq_out<<" with #in=#out )"<<std::endl;
     std::cout<<Date()<<": "<<unsupported<<" vertices unsupported"<<std::endl;
 
+}
+
+void OverlapValidator::analyse_complex_overlaps() {
+    struct transition_support{
+        uint64_t e1;
+        uint64_t e2;
+        uint64_t cross;
+        uint64_t jump;
+    };
+    uint64_t to_expand=0;
+    for (uint64_t vi=0;vi<mCross.size();++vi){
+        if (mHBV.From(vi).size()>1 and mHBV.To(vi).size()>1){
+            //std::cout<<" analyssing complex vertex "<<vi<<std::endl;
+            std::vector<struct transition_support> transitions;//generate all possible combinations of in-outs
+            std::vector<struct transition_support> valid_transitions;
+            //std::cout<<" generating transitions "<<vi<<std::endl;
+            for (auto i1=0;i1<mHBV.To(vi).size();++i1)
+                for (auto i2=0;i2<mHBV.From(vi).size();++i2){
+                    struct transition_support ts;
+                    ts.e1=mHBV.EdgeObjectIndexByIndexTo(vi,i1);
+                    ts.e2=mHBV.EdgeObjectIndexByIndexFrom(vi,i2);
+                    ts.cross=0;
+                    ts.jump=0;
+                    //std::cout<<ts.e1<<"->"<<ts.e2<<std::endl;
+                    for (auto &p:mCross[vi]){
+                        //std::cout<<"analysing crossing for informative pair "<<p<<std::endl;
+                        if (mInformativePairs[p].crosses_transition(ts.e1,ts.e2)) ++ts.cross;
+                        //std::cout<<"done!!!"<<std::endl;
+                    }
+                    //std::cout<<"cross: "<<ts.cross<<std::endl;
+                    for (auto &p:mJump[vi]) if (mInformativePairs[p].jumps_transition(ts.e1,ts.e2)) ++ts.jump;
+                    //std::cout<<"jump: "<<ts.jump<<std::endl;
+                    transitions.push_back(ts);
+                }
+            //std::cout<<" testing for possible solutions "<<vi<<std::endl;
+            if (mHBV.From(vi).size()==mHBV.To(vi).size()) {//simplest case, find 1-to-1s
+                uint64_t total_cross = mCross[vi].size(), total_jump = mJump[vi].size(), total=total_cross+total_jump;
+                //todo consider percentajes and such
+                std::vector<uint64_t> used_ins,used_outs;
+                bool conflict=false;
+                for (auto t:transitions) {
+                    if (t.cross+t.jump>1) {
+                        if (std::find(used_ins.begin(),used_ins.end(),t.e1)!=used_ins.end()) conflict=true;
+                        if (std::find(used_outs.begin(),used_outs.end(),t.e2)!=used_ins.end()) conflict=true;
+                        used_ins.push_back(t.e1);
+                        used_outs.push_back(t.e2);
+                        valid_transitions.push_back(t);
+                    }
+                }
+                if (valid_transitions.size()==mHBV.From(vi).size() and conflict==false) to_expand++;
+
+            }
+            //std::cout<<" done "<<vi<<std::endl;
+
+
+        }
+    }
+    std::cout<<Date()<<": "<<to_expand<<" overlaps could be trivially expanded"<<std::endl;
 }
 

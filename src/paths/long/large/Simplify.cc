@@ -263,6 +263,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     path_status(paths);
     OverlapValidator oval(hb,inv,paths);
     oval.compute_overlap_support();
+    oval.analyse_complex_overlaps();
 
     // Remove unsupported edges in certain situations.
     const int min_mult=5;
