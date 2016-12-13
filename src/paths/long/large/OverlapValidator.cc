@@ -255,7 +255,7 @@ void OverlapValidator::analyse_complex_overlaps() {
 
 
 
-std::vector<uint64_t> OverlapValidator::find_perfect_tips(uint16_t max_size) {
+std::vector<uint64_t> OverlapValidator::find_perfect_tips(uint16_t max_size,uint16_t coverage_mult) {
     std::set<uint64_t> tip1, tip2;
     std::vector<uint64_t> tips;
     //Find vertices with only one input
@@ -268,8 +268,8 @@ std::vector<uint64_t> OverlapValidator::find_perfect_tips(uint16_t max_size) {
                 auto prev=mHBV.EdgeObjectIndexByIndexTo(vfork,0);
                 auto other=mHBV.EdgeObjectIndexByIndexFrom(vfork,0);
                 if (other==tip) other=mHBV.EdgeObjectIndexByIndexFrom(vfork,1);
-
-                if (collect_all_support(vi,prev,tip)*10<collect_all_support(vi,prev,other))tip1.insert(tip);
+                //std::cout<<"evaluating tip transition support for edge"<<tip<<std::endl;
+                if (collect_all_support(vfork,prev,tip)*coverage_mult<collect_all_support(vfork,prev,other))tip1.insert(tip);
                 //add to tip1
 
             }
@@ -284,14 +284,18 @@ std::vector<uint64_t> OverlapValidator::find_perfect_tips(uint16_t max_size) {
                 auto next=mHBV.EdgeObjectIndexByIndexFrom(vfork,0);
                 auto other=mHBV.EdgeObjectIndexByIndexTo(vfork,0);
                 if (other==tip) other=mHBV.EdgeObjectIndexByIndexTo(vfork,1);
-
-                if (collect_all_support(vi,tip,next)*10<collect_all_support(vi,other,next))tip2.insert(tip);
+                //std::cout<<"evaluating tip transition support for edge"<<tip<<std::endl;
+                if (collect_all_support(vfork,tip,next)*coverage_mult<collect_all_support(vfork,other,next))tip2.insert(tip);
 
             }
         }
-
+    std::cout<<"tip1 has "<<tip1.size()<<" edges and tip2 has "<<tip2.size()<<" edges"<<std::endl;
     //edge on tip1, inverse on tip2, size >max_size -> ADD BOTH.
-    for (auto &tip:tip1) if (tip2.find(mInv[tip])!=tip2.end() and mHBV.EdgeObject(tip).size()<=max_size) tips.push_back(tip);
+    for (auto &tip:tip1) if (tip2.find(mInv[tip])!=tip2.end() and mHBV.EdgeObject(tip).size()<=max_size) {
+            tips.push_back(tip);
+            uint64_t rtip=mInv[tip];
+            tips.push_back(rtip);
+        }
     return tips;
 }
 

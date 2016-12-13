@@ -267,36 +267,39 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     oval.analyse_complex_overlaps();
     std::vector<int> paint;
     paint.reserve(hb.EdgeObjectCount());
-    for (int e:oval.find_perfect_tips(1000)) paint.push_back(e);
+    for (int e:oval.find_perfect_tips(1000,5)) paint.push_back(e);
     std::cout<<Date()<<": "<<paint.size()<<" perfect tips found"<<std::endl;
     GFADumpDetail("ovlpval_perfect_tips_detail",hb,inv,paint);
-
-    // Remove unsupported edges in certain situations.
-    const int min_mult=5;
-    std::cout << Date() << ": removing alternative edges with input support <="<<MAX_SUPP_DEL << std::endl;
-    remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
+    hb.DeleteEdges(paint);
+    Cleanup(hb,inv,paths);
     graph_status(hb);
     path_status(paths);
+
+
+    // Remove unsupported edges in certain situations.
+    //const int min_mult=5;
+    //std::cout << Date() << ": removing alternative edges with input support <="<<MAX_SUPP_DEL << std::endl;
+    //remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
 
 
 
 
     // Clean up assembly.
-    /*std::cout << Date() <<": removing small components"<<std::endl;
+    std::cout << Date() <<": removing small components"<<std::endl;
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
 
 
-
+    /*
     if (TAMP_EARLY) {
         std::cout << Date() << ": Tamping" << std::endl;
         Tamp(hb, inv, paths, 0);
     }
 
     RemoveHangs(hb, inv, paths, 100);
-    Cleanup(hb, inv, paths);
+    Cleanup(hb, inv, paths);*/
     graph_status(hb);
-    path_status(paths);*/
+    path_status(paths);
 
     /*std::cout << Date() << ": analysing branches" << std::endl;
 

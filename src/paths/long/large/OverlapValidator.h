@@ -34,7 +34,7 @@ public:
     void find_informative_pairs();
     void compute_overlap_support();
     void analyse_complex_overlaps();
-    std::vector<uint64_t> find_perfect_tips(uint16_t max_size);
+    std::vector<uint64_t> find_perfect_tips(uint16_t max_size,uint16_t coverage_mult);
     uint64_t collect_all_support(uint64_t vi, uint64_t e1, uint64_t e2);
 
 private:
