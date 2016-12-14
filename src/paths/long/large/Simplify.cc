@@ -276,7 +276,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     path_status(paths);
 
 
-    // Remove unsupported edges in certain situations.
+    //Remove unsupported edges in certain situations.
     //const int min_mult=5;
     //std::cout << Date() << ": removing alternative edges with input support <="<<MAX_SUPP_DEL << std::endl;
     //remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
@@ -314,7 +314,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     graph_status(hb);
     path_status(paths);*/
 
-    /*std::cout << Date() << ": popping bubbles" << std::endl;
+    std::cout << Date() << ": popping bubbles" << std::endl;
     PopBubbles(hb, inv, bases, quals, paths);
 
     Cleanup(hb, inv, paths);
@@ -325,14 +325,14 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
     graph_status(hb);
-    path_status(paths);*/
+    path_status(paths);
 
     // Pull apart.
 
 
 
     if (RUN_PATHFINDER) {
-        //TODO: remove pull aparter once the pathfinder solves all repeats
+        //TODO: remove pull aparter once the pathfinder solves all repeats (just using distance 2 on OverlapValidator should do)
         VecULongVec invPaths;
         std::cout << Date() << ": pulling apart canonical repeats" << std::endl;
         invert(paths, invPaths, hb.EdgeObjectCount());

@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <paths/PathFinder.h>
 #include <paths/long/large/ImprovePath.h>
+#include <paths/long/large/GraphImprover.h>
 #include "GFADump.h"
 
 
@@ -61,7 +62,7 @@ int main(const int argc, const char * argv[]) {
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
-    bool extend_paths,run_pathfinder,dump_all,dump_perf,dump_pf,pf_verbose;
+    bool extend_paths,run_pathfinder,dump_detailed_gfa,dump_all,dump_perf,dump_pf,pf_verbose,clean_smallk_graph;
 
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
@@ -111,12 +112,16 @@ int main(const int argc, const char * argv[]) {
                                                     "min number of read entering an edge at step 6(default: 3)", false, 3, "int", cmd);
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         cleanSmallKGraphArg        ("","clean_smallk_graph",
+                                                               "Enable cleaning on step3 (highly experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
                                                             "Run PathFinder (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderVerboseArg        ("","pf_verbose",
                                                             "PathFinder verbose (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
                                                                "Dump all intermediate files", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
+                                                         "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
                                                          "Dump performance info (devel)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPFArg        ("","dump_pf",
@@ -137,6 +142,7 @@ int main(const int argc, const char * argv[]) {
         min_size = minSizeArg.getValue();
         extend_paths=pathExtensionArg.getValue();
         run_pathfinder=pathFinderArg.getValue();
+        dump_detailed_gfa=dumpDetailedGFAArg.getValue();
         dump_all=dumpAllArg.getValue();
         dump_perf=dumpPerfArg.getValue();
         from_step=fromStep_Arg.getValue();
@@ -150,6 +156,7 @@ int main(const int argc, const char * argv[]) {
         tmp_dir=tmp_dirArg.getValue();
         pf_verbose=pathFinderVerboseArg.getValue();
         min_input_reads=minInputArg.getValue();
+        clean_smallk_graph=cleanSmallKGraphArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -231,14 +238,16 @@ int main(const int argc, const char * argv[]) {
             std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
             buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,tmp_dir,disk_batches);
             if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
-            FixPaths(hbv, paths); //TODO: is this even needed?
+            //FixPaths(hbv, paths); //TODO: is this even needed?
             if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
+            if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".small_K",hbv,inv);
             if (dump_all || to_step ==2){
                 std::cout << Date() << ": Dumping small_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".small_K.hbv", hbv);
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
                 graph_status(hbv);
                 path_status(paths);
+
                 std::cout << Date() << ": Dumping small_K graph and paths DONE!" << std::endl;
                 if (dump_perf) perf_file << checkpoint_perf_time("SmallKDump") << std::endl;
             }
@@ -255,7 +264,17 @@ int main(const int argc, const char * argv[]) {
             if (dump_perf) perf_file << std::endl << checkpoint_perf_time("SmallKLoad") << std::endl;
         }
         if (from_step<=3 and to_step>=3) {
-            std::cout << "--== Step 3: Repathing to second (large K) graph ==--" << std::endl;
+            if (clean_smallk_graph) {
+                std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
+                inv.clear();
+                hbv.Involution(inv);
+                GraphImprover gi(hbv, inv, paths);
+                gi.improve_graph();
+
+                std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
+            } else {
+                std::cout << "--== Step 3: Repathing to second (large K) graph ==--" << std::endl;
+            }
             vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
             inv.clear();
             hbv.Involution(inv);
@@ -268,7 +287,7 @@ int main(const int argc, const char * argv[]) {
 
             RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
             if (dump_perf) perf_file << checkpoint_perf_time("Repath") << std::endl;
-
+            if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K",hbvr,inv);
             if (dump_all || to_step ==3){
                 std::cout << Date() << ": Dumping large_K graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.hbv", hbvr);
@@ -302,7 +321,7 @@ int main(const int argc, const char * argv[]) {
         int CLEAN_200V = 3;
         Clean200x(hbvr, inv, pathsr, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_size);
         if (dump_perf) perf_file << checkpoint_perf_time("Clean200x") << std::endl;
-
+        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.clean",hbvr,inv);
         if (dump_all || to_step ==4){
             std::cout << Date() << ": Dumping large_K clean graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", hbvr);
@@ -356,6 +375,7 @@ int main(const int argc, const char * argv[]) {
         AddNewStuff(new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, TRACE_PATHS, out_dir, EXT_MODE);
         PartnersToEnds(hbvr, pathsr, bases, quals);
         if (dump_perf) perf_file << checkpoint_perf_time("NewStuff&Partners") << std::endl;
+        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.final",hbvr,inv);
         if (dump_all || to_step ==5){
             std::cout << Date() << ": Dumping large_K final graph and paths..." << std::endl;
             BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", hbvr);
@@ -452,6 +472,7 @@ int main(const int argc, const char * argv[]) {
         // Compute fragment distribution.
         FragDist(hbvr, inv, pathsr, out_dir + "/" + out_prefix + ".fin.frags.dist");
         if (dump_perf) perf_file << checkpoint_perf_time("FragDist") << std::endl;
+        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".contig",hbvr,inv);
         //TODO: add contig fasta dump.
         if (dump_all || to_step == 6){
             std::cout << Date() << ": Dumping contig graph and paths..." << std::endl;
@@ -480,6 +501,7 @@ int main(const int argc, const char * argv[]) {
         path_status(pathsr);
         std::cout << Date() << ": Reading contig graph and paths DONE!" << std::endl << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("ContigGraphLoad") << std::endl;
+
     }
     if (from_step<=7 and to_step>=7) {
         //== Scaffolding
@@ -501,6 +523,7 @@ int main(const int argc, const char * argv[]) {
         graph_status(hbvr);
         path_status(pathsr);
         GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
+        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".assembly",hbvr,inv);
         if (dump_perf) perf_file << checkpoint_perf_time("FinalFiles") << std::endl;
         std::cout << Date() << ": PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
 

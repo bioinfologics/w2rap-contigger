@@ -186,12 +186,7 @@ void OverlapValidator::find_informative_pairs() {
 }
 
 void OverlapValidator::analyse_complex_overlaps() {
-    struct transition_support{
-        uint64_t e1;
-        uint64_t e2;
-        uint64_t cross;
-        uint64_t jump;
-    };
+
     uint64_t to_expand=0;
     for (uint64_t vi=0;vi<mCross.size();++vi){
         if (mHBV.From(vi).size()>1 and mHBV.To(vi).size()>1){
@@ -304,4 +299,10 @@ uint64_t OverlapValidator::collect_all_support(uint64_t vi, uint64_t e1, uint64_
     for (auto &p:mCross[vi]) if (mInformativePairs[p].crosses_transition(e1,e2)) ++cross;
     for (auto &p:mJump[vi]) if (mInformativePairs[p].jumps_transition(e1,e2)) ++jump;
     return cross+jump;
+}
+
+std::vector<transition_support> OverlapValidator::find_unconnected_neighbours(uint16_t min_support) {
+    std::vector<transition_support> to_connect;
+
+    return to_connect;
 }

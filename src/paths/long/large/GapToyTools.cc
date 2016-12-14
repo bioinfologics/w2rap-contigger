@@ -324,14 +324,16 @@ void FixPaths(HyperBasevector const& hbv, ReadPathVec& paths)
      vec<int> to_right, to_left;
      hbv.ToRight(to_right);
      hbv.ToLeft(to_left);
+    std::atomic_uint_fast64_t mod(0);
      #pragma omp parallel for
      for ( int64_t m = 0; m < (int64_t) paths.size( ); m++ )
      {    ReadPath& p = paths[m];
           for ( int i = 0; i < ( (int) p.size( ) ) - 1; i++ )
           {    int e1 = p[i], e2 = p[i+1];
                if ( to_right[e1] != to_left[e2] )
-               {    p.resize(i+1);
+               {    p.resize(i+1); ++mod;
                     break;    }    }    }
+    std::cout<<Date()<<": "<<mod<<" paths truncated on transitions to non-connected edges"<<std::endl;
 }
 
 

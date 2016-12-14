@@ -8,6 +8,12 @@
 
 #include <paths/HyperBasevector.h>
 #include <paths/long/ReadPath.h>
+struct transition_support{
+    uint64_t e1;
+    uint64_t e2;
+    uint64_t cross;
+    uint64_t jump;
+};
 
 class InformativePair{ //a path that has something to offer, we'll save them all together for convenience
 
@@ -36,7 +42,7 @@ public:
     void analyse_complex_overlaps();
     std::vector<uint64_t> find_perfect_tips(uint16_t max_size,uint16_t coverage_mult);
     uint64_t collect_all_support(uint64_t vi, uint64_t e1, uint64_t e2);
-
+    std::vector<transition_support> find_unconnected_neighbours(uint16_t min_support);
 private:
     HyperBasevector &mHBV;
     vec<int> &mInv;
