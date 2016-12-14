@@ -384,7 +384,7 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/PathFinder.cc
         src/paths/PathFinder.h
         src/kmers/kmatch/KMatch.cc
-        src/test_code/pacbio/pacbio_pather.cpp)
+        src/pacbio/pacbio_pather.cpp)
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
@@ -396,7 +396,7 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:hb_base_libs>)
 
 add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/test_code/testcode_hbv.cpp src/test_code/testcode_2.cpp
-        src/kmers/kmatch/KMatch.cc src/test_code/pacbio/pacbio_pather.cpp $<TARGET_OBJECTS:hb_base_libs>)
+        src/kmers/kmatch/KMatch.cc src/pacbio/pacbio_pather.cpp $<TARGET_OBJECTS:hb_base_libs>)
 
 ##Zlib link
 if (ZLIB_FOUND)

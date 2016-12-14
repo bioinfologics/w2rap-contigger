@@ -16,7 +16,7 @@
 #include "feudal/PQVec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
-#include "test_code/pacbio/pacbio_pather.h"
+#include "pacbio/pacbio_pather.h"
 
 void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv, 
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,

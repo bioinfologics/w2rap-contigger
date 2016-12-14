@@ -2,7 +2,7 @@
 // Created by Gonzalo Garcia (TGAC) on 04/11/2016.
 //
 
-#include "test_code/pacbio/pacbio_pather.h"
+#include "pacbio_pather.h"
 
 
 PacbioPather::PacbioPather(vecbvec* aseqVector, HyperBasevector* ahbv) : KMatch(31) {
