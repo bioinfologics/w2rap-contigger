@@ -461,10 +461,13 @@ int TenXData::read_binary(std::string out_dir, std::string prefix){
 
 int TenXData::write_binary(std::string out_dir, std::string prefix){
      // Write files fast & qualb
+     std::string path(out_dir + "/" + prefix + "frag_reads_orig.10xreads");
+//     std::ofstream FILE(path, std::ios::out | std::ofstream::binary);
+//     std::copy(rReads.begin(), rReads.end(), std::ostreambuf_iterator<tenXRead>(FILE));
 
-     bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
-     bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
-     quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
+//     bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.fastb");
+//     bases.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.idxb");
+//     quals.WriteAll(out_dir + "/" + prefix + "frag_reads_orig.qualp");
 }
 
 // -------------- PacBio -------------
