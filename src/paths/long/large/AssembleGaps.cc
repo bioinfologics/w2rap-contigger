@@ -314,7 +314,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 #define BATCH_SIZE 5000
 
     for (uint64_t bstart = 0; bstart < nblobs; bstart += BATCH_SIZE) {
-        #pragma omp parallel firstprivate(LR, layout_pos, layout_id, layout_or)
+        #pragma omp parallel
         {
             #pragma omp for schedule(dynamic,1)
             for (uint64_t bl = bstart; bl < bstart + BATCH_SIZE; ++bl) {

@@ -21,15 +21,15 @@ class InputFileReader{
     vecbvec bases;
     VecPQVec quals;
 
-    bool InputFileReader::get_fastq_record(std::basic_istream<char>& in, std::tuple<std::string, std::string, std::string> *record);
-    bool InputFileReader::get_bam_record();
-    int InputFileReader::read_binary(std::string out_dir, std::string library_name);
-    int InputFileReader::write_binary(std::string out_dir, std::string library_name);
-    bool InputFileReader::FilesExist(std::string infiles);
-    bool InputFileReader::FilesExist(std::vector<std::string> infiles);
-    bool InputFileReader::IsGz(std::string filename);
-    bool InputFileReader::ProduceValidPair(std::string rfilename_string);
-    bool InputFileReader::ReadBinaryIfExist(std::string out_dir, std::string library_name);
+    bool get_fastq_record(std::basic_istream<char>& in, std::tuple<std::string, std::string, std::string> *record);
+    bool get_bam_record();
+    int read_binary(std::string out_dir, std::string library_name);
+    int write_binary(std::string out_dir, std::string library_name);
+    bool FilesExist(std::string infiles);
+    bool FilesExist(std::vector<std::string> infiles);
+    bool IsGz(std::string filename);
+    bool ProduceValidPair(std::string rfilename_string);
+    bool ReadBinaryIfExist(std::string out_dir, std::string library_name);
 
     // To hold files
     std::string filename_string;
@@ -41,7 +41,7 @@ class PeData: public InputFileReader{
     PeData(std::string out_dir, std::string library_name, std::string reads_filename);
 
   private:
-    int PeData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
+    int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
 
 class MpData: public InputFileReader{
@@ -49,29 +49,38 @@ public:
     MpData(std::string out_dir, std::string library_name, std::string reads_filename);
 
 private:
-    int MpData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
+    int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
+
+typedef struct {
+    basevector r1;
+    basevector r2;
+    basevector index;
+    basevector tag;
+} tenXRead;
 
 class TenXData: public InputFileReader{
   public:
     TenXData(std::string out_dir, std::string library_name, std::string reads_filename);
-    vecbvec rIndexs;
-    int TenXData::read_binary(std::string out_dir, std::string prefix);
-    int TenXData::write_binary(std::string out_dir, std::string prefix);
+    std::vector<tenXRead> rReads;
+
+    int read_binary(std::string out_dir, std::string prefix);
+    int write_binary(std::string out_dir, std::string prefix);
 
   private:
-    int TenXData::read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals, vecbvec *rIndexs);
+    int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, std::basic_istream<char>& ini);
+    bool split_filenames(std::string filestring);
 
 };
 
 class PacBioData: public InputFileReader{
 public:
     PacBioData(std::string out_dir, std::string library_name, std::string read_filename);
-    int PacBioData::read_binary(std::string out_dir, std::string prefix);
-    int PacBioData::write_binary(std::string out_dir, std::string prefix);
+    int read_binary(std::string out_dir, std::string prefix);
+    int write_binary(std::string out_dir, std::string prefix);
 
 private:
-    int PacBioData::read_file(std::basic_istream<char>& in1, vecbvec *Reads, VecPQVec *Quals);
+    int read_file(std::basic_istream<char>& in1, vecbvec *Reads, VecPQVec *Quals);
 };
 
 void ExtractReads( String reads,

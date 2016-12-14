@@ -842,7 +842,7 @@ namespace
             qvec mQV;
 
             #pragma omp for
-            for (auto readId=0;readId<reads.size();++readId){
+            for (size_t readId=0;readId<reads.size();++readId){
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
                 // convert any seeds on hanging edges to gaps
@@ -1271,7 +1271,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
         #pragma omp parallel shared(pDict,reads,quals)
         {
             #pragma omp single
-            createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, tmpdir, workdir);
+            createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, workdir, tmpdir);
         }
     }
     std::cout << Date() << ": updating adjacencies" <<std::endl;
