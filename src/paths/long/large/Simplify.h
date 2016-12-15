@@ -18,7 +18,8 @@
 #include "paths/long/ReadPath.h"
 #include "pacbio/pacbio_pather.h"
 
-void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv, 
+
+void SimplifyWpb( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,
      const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2, 
      const int MAX_DEL2,

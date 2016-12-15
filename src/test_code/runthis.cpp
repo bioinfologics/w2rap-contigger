@@ -39,9 +39,9 @@ int main(){
   invert(pathsr, invPaths, hbv.EdgeObjectCount());
 
   // pathfinders
-//  PathFinder(hbv, inv, pathsr, invPaths).unroll_loops(800);
-//  PathFinder(hbv,inv,pathsr,invPaths).untangle_pins();
-  PathFinder(hbv,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+//  PathFinder_pb(hbv, inv, pathsr, invPaths).unroll_loops(800);
+//  PathFinder_pb(hbv,inv,pathsr,invPaths).untangle_pins();
+  PathFinder_pb(hbv,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
 
   RemoveUnneededVertices2(hbv, inv, pathsr);
   Cleanup(hbv, inv, pathsr);

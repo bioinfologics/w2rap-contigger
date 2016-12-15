@@ -9,7 +9,6 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
-#include <paths/PathFinder.h>
 #include "CoreTools.h"
 #include "Qualvector.h"
 #include "paths/HyperBasevector.h"
@@ -18,8 +17,12 @@
 #include "paths/long/large/ImprovePath.h"
 #include "paths/long/large/PullAparter.h"
 #include "paths/long/large/Simplify.h"
+// Standard bj pathfinder
+#include "paths/PathFinder.h"
+// Pabcio modified pathfinder pathfinder
+#include "pacbio/PathFinder_pb.h"
 
-void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
+void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,
               const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2,
               const int MAX_DEL2,
@@ -151,7 +154,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     }
 
     if (RUN_PATHFINDER) {
-        std::cout << Date() << ": making paths index for PathFinder" << std::endl;
+        std::cout << Date() << ": making paths index for PathFinder_pb" << std::endl;
         VecULongVec invPaths;
         invert(paths, invPaths, hb.EdgeObjectCount());
         if (dump_pf_files) {
@@ -159,8 +162,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             //paths.WriteAll(fin_dir + "/pf_start.paths");
             WriteReadPathVec(paths,(fin_dir + "/pf_start.paths").c_str());
         }
-        std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
-        PathFinder(hb, inv, paths, invPaths).unroll_loops(800);
+        std::cout << Date() << ": PathFinder_pb: unrolling loops" << std::endl;
+        PathFinder_pb(hb, inv, paths, invPaths).unroll_loops(800);
         std::cout << "Removing Unneded Vertices" << std::endl;
         RemoveUnneededVertices2(hb, inv, paths);
         Cleanup(hb, inv, paths);
@@ -209,12 +212,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             auto totalpaths=pb_paths;
             invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
 
-            std::cout << Date() << ": PathFinder: resolving repeats of size " << i << std::endl;
+            std::cout << Date() << ": PathFinder_pb: resolving repeats of size " << i << std::endl;
 
             invtotalPaths.clear();
             invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
-            std::cout << Date() << ": PathFinder: analysing single-direction repeats" << std::endl;
-            PathFinder(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
+            std::cout << Date() << ": PathFinder_pb: analysing single-direction repeats" << std::endl;
+            PathFinder_pb(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
             std::cout << "Removing Unneded Vertices" << std::endl;
             RemoveUnneededVertices2(hb, inv, paths);
             Cleanup(hb, inv, paths);

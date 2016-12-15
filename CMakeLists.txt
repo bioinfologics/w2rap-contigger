@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
 ## Compiler flags
-#SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -O0 -DNDEBUG -lz")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
+#SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -O0 -DNDEBUG -lz")
 
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
@@ -381,8 +381,8 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/Simplify.cc
         src/paths/long/large/ImprovePath.cc
         src/GFADump.cc
+        src/pacbio/PathFinder_pb.cc
         src/paths/PathFinder.cc
-        src/paths/PathFinder.h
         src/kmers/kmatch/KMatch.cc
         src/pacbio/pacbio_pather.cpp)
 
@@ -395,7 +395,7 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
 add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:hb_base_libs>)
 
-add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/test_code/testcode_hbv.cpp src/test_code/testcode_2.cpp
+add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/pacbio/PathFinder_pb.cc src/test_code/testcode_hbv.cpp src/test_code/testcode_2.cpp
         src/kmers/kmatch/KMatch.cc src/pacbio/pacbio_pather.cpp $<TARGET_OBJECTS:hb_base_libs>)
 
 ##Zlib link

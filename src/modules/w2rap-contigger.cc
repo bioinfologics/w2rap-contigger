@@ -25,6 +25,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <paths/PathFinder.h>
+#include <pacbio/PathFinder_pb.h>
 #include <paths/long/large/ImprovePath.h>
 #include "GFADump.h"
 
@@ -130,7 +131,7 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
-                                                               "Run PathFinder (experimental)", false,false,"bool",cmd);
+                                                               "Run PathFinder_pb (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
                                                                "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
@@ -229,10 +230,10 @@ int main(const int argc, const char * argv[]) {
                 LoadReadPathVec(pathsr,(out_dir + "/pf_start.paths").c_str());
                 inv.clear();
                 hbvr.Involution(inv);
-                std::cout << Date() << ": making paths index for PathFinder" << std::endl;
+                std::cout << Date() << ": making paths index for PathFinder_pb" << std::endl;
 
                 invert(pathsr, invPaths, hbvr.EdgeObjectCount());
-                std::cout << Date() << ": PathFinder: unrolling loops" << std::endl;
+                std::cout << Date() << ": PathFinder_pb: unrolling loops" << std::endl;
                 PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
                 std::cout << "Removing Unneeded Vertices & Cleanup" << std::endl;
                 RemoveUnneededVertices2(hbvr, inv, pathsr);
@@ -246,11 +247,11 @@ int main(const int argc, const char * argv[]) {
                 inv.clear();
                 hbvr.Involution(inv);
             }
-            std::cout << Date() << ": making paths index for PathFinder" << std::endl;
+            std::cout << Date() << ": making paths index for PathFinder_pb" << std::endl;
             invPaths.clear();
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
 
-            std::cout << Date() << ": PathFinder: Separating solved single-flow repeats" << std::endl;
+            std::cout << Date() << ": PathFinder_pb: Separating solved single-flow repeats" << std::endl;
             PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
             std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
@@ -541,7 +542,7 @@ int main(const int argc, const char * argv[]) {
         auto pb_bases = dataMag.mag["PB1"]->bases;
         /////
 
-        Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
+        SimplifyWpb(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
                  ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
                  IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pb_bases);
