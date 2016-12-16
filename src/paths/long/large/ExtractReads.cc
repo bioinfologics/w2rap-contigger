@@ -353,12 +353,17 @@ TenXData::TenXData(std::string out_dir, std::string library_name, std::string re
      //
 
      filename_string = reads_filename;
+     auto infiles = tokenize(filename_string.c_str(), ',');
+
 //     if (!ProduceValidPair(filename_string)) Scram(1); Not a pair
 
-     const std::string fn1 = infiles_pair[0];
-     const std::string fn2 = infiles_pair[1];
-     const std::string fni = infiles_pair[2];
-
+     const std::string fn1 = infiles[0];
+     const std::string fn2 = infiles[1];
+     const std::string fni = infiles[2];
+     std::cout << "Using 10x files: " <<std::endl;
+     std::cout << fn1 <<std::endl;
+     std::cout << fn2 <<std::endl;
+     std::cout << fni <<std::endl;
      // check if the file is gzip
      if (ReadBinaryIfExist(out_dir, library_name)){
           std::cout<< "Files read from fastb..." << std::endl;

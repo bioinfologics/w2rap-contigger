@@ -200,6 +200,20 @@ int main(const int argc, const char * argv[]) {
     auto bases = dataMag.mag["PE1"]->bases;
     auto quals = dataMag.mag["PE1"]->quals;
 
+    //----------------------------
+
+    std::vector<tenXRead> txds = dataMag.mag["TEX"]->rReads;
+    std::cout << "Loaded: " << txds.size() << std::endl;
+    for (auto txd: txds) {
+        std::cout << "Test" << std::endl;
+        std::cout << "R1" << txd.r1 << std::endl;
+        std::cout << "R2" << txd.r2 << std::endl;
+        std::cout << "index" << txd.index << std::endl;
+        std::cout << "tag" << txd.tag << std::endl;
+    }
+
+    //----------------------------
+
     vec<String> subsam_names = {"C"};
     vec<int64_t> subsam_starts = {0};
     std::ofstream perf_file;
