@@ -13,6 +13,11 @@ struct transition_support{
     uint64_t e2;
     uint64_t cross;
     uint64_t jump;
+    const bool operator<(const transition_support &other) {
+        if (e1<other.e1) return true;
+        if (e1==other.e1) return e2<other.e2;
+        return false;
+    }
 };
 
 class InformativePair{ //a path that has something to offer, we'll save them all together for convenience
@@ -24,7 +29,7 @@ public:
     std::vector<uint64_t> overlaps_jumped(vec<int> & toLeft, vec<int> &toRight, uint8_t max_dist);
     bool crosses_transition(uint64_t e1, uint64_t e2);
     bool jumps_transition(uint64_t e1, uint64_t e2);
-
+    std::vector<transition_support> unconnected_transitions(vec<int> & toLeft, vec<int> &toRight);
     //todo: add support for RF pairs
     uint64_t pathIndex; //original index of the first component of the path;
     std::vector<uint64_t> r1path,r1rpath,r2path,r2rpath,combined_path,combined_rpath;

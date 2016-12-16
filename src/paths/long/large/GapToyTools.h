@@ -302,8 +302,6 @@ void TestInvolution( const HyperBasevector& hb, const vec<int>& inv );
 void DeleteFunkyPathPairs( const HyperBasevector& hb, const vec<int>& inv,
      const vecbasevector& bases, ReadPathVec& paths, const Bool verbose );
 
-void AlignToGenome( const HyperBasevector& hb, const vec<int>& inv,
-     const vecbasevector& genome, vec< vec< std::pair<int,int> > >& hits );
 
 // A perf_place is a perfect match between an assembly (extending across one or
 // more edges) and a genome reference sequence.  The starting position on the
@@ -341,9 +339,7 @@ class perf_place {
 //
 // perfs: { (g,gstart), (e,estart), len ) }
 
-void AlignToGenomePerf( const HyperBasevector& hb, const vecbasevector& genome, 
-     vec< triple< std::pair<int,int>, std::pair<int,int>, int > >& perfs,
-     vec<perf_place>& places );
+
 
 void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals );
@@ -370,23 +366,14 @@ void Clean200( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const int verbosity = 0 // 0 or 1
      );
 
-void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
-     const vec<vec<vec<vec<int>>>>& linesx, const vec<int>& npairsx,
-     const vec<vec<covcount>>& covs,
-     const String& out_dir, const String& out_prefix );
+
 
 String Chr( const int g );
 
 void PartnersToEnds( const HyperBasevector& hb, ReadPathVec& paths,
                         const vecbasevector& bases, const VecPQVec& quals );
 
-void PartnersToEndsOld( const HyperBasevector& hb, ReadPathVec& paths,
-                        const vecbasevector& bases, const VecPQVec& quals );
 
-void BuildGenomeMap( const HyperBasevector& hb, const vec<int>& inv,
-     const vec<vec<vec<vec<int>>>>& lines, const vec<vec<covcount>>& covs,
-     const vec< vec< std::pair<int,int> > >& hits, const vecbitvector& genome_amb,
-     const vec<String>& genome_names, const String& final_dir );
 
 void FragDist( const HyperBasevector& hb, const vec<int>& inv,
      const ReadPathVec& paths, const String out_file );

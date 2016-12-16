@@ -121,6 +121,40 @@ bool InformativePair::jumps_transition(uint64_t e1, uint64_t e2) {
     return false;
 }
 
+std::vector<transition_support> InformativePair::unconnected_transitions(vec<int> &toLeft, vec<int> &toRight) {
+    std::vector<transition_support> unconnected;
+    if (is_combined()){
+        for (auto i=0;i<combined_path.size()-1;++i) if (toRight[combined_path[i]] != toLeft[combined_path[i+1]]) unconnected.push_back({combined_path[i],combined_path[i+1],1,0});
+        for (auto i=0;i<combined_rpath.size()-1;++i) if (toRight[combined_rpath[i]] != toLeft[combined_rpath[i+1]]) unconnected.push_back({combined_rpath[i],combined_rpath[i+1],1,0});
+    } else {
+        if (r1path.size()>1) {
+            for (auto i=0;i<r1path.size()-1;++i) if (toRight[r1path[i]] != toLeft[r1path[i+1]]) unconnected.push_back({r1path[i],r1path[i+1],1,0});
+            for (auto i=0;i<r1rpath.size()-1;++i) if (toRight[r1rpath[i]] != toLeft[r1rpath[i+1]]) unconnected.push_back({r1rpath[i],r1rpath[i+1],1,0});
+        }
+        if (r2path.size()>1) {
+            for (auto i=0;i<r2path.size()-1;++i) if (toRight[r2path[i]] != toLeft[r2path[i+1]]) unconnected.push_back({r2path[i],r2path[i+1],1,0});
+            for (auto i=0;i<r2rpath.size()-1;++i) if (toRight[r2rpath[i]] != toLeft[r2rpath[i+1]]) unconnected.push_back({r2rpath[i],r2rpath[i+1],1,0});
+        }
+        if (r1path.size()>0 and r2path.size()>0){
+            if (toRight[r1path.back()]!=toLeft[r2rpath.front()]) unconnected.push_back({r1path.back(),r2rpath.front(),0,1});
+            if (toRight[r2path.back()]!=toLeft[r1rpath.front()]) unconnected.push_back({r2path.back(),r1rpath.front(),0,1});
+        }
+    }
+    /*if(unconnected.size()>0){
+        std::cout<<"Unconnected transitions for path [ ";
+        for (auto e: r1path) std::cout<<e<<" ";
+        std::cout<<"| ";
+        for (auto e: r1rpath) std::cout<<e<<" ";
+        std::cout<<"]    [ ";
+        for (auto e: r2path) std::cout<<e<<" ";
+        std::cout<<"| ";
+        for (auto e: r2rpath) std::cout<<e<<" ";
+        std::cout<<"]"<<std::endl;
+    }
+    for (auto &tc:unconnected) std::cout<<tc.e1<<" -> "<<tc.e2<<"  ( c: "<<tc.cross<<""<<"   j:"<<tc.jump<<std::endl;*/
+    return unconnected;
+}
+
 
 void OverlapValidator::compute_overlap_support() {
     find_informative_pairs();
@@ -302,7 +336,39 @@ uint64_t OverlapValidator::collect_all_support(uint64_t vi, uint64_t e1, uint64_
 }
 
 std::vector<transition_support> OverlapValidator::find_unconnected_neighbours(uint16_t min_support) {
-    std::vector<transition_support> to_connect;
+    std::vector<transition_support> all_unconnected,to_connect;
+    //find InformativePairs with connected transitions and list these unconnected transitions
+    vec<int> toLeft,toRight;
+    mHBV.ToLeft(toLeft);
+    mHBV.ToRight(toRight);
+    for (auto &p:mInformativePairs){
+        for (auto &u:p.unconnected_transitions(toLeft,toRight)) all_unconnected.push_back(u);
 
+    }
+    std::cout<<Date()<<": "<<all_unconnected.size()<<" instances of unconnected transitions found on informative pairs"<<std::endl;
+    //todo: as of now we only consider complete crossing support to join stuff
+    std::sort(all_unconnected.begin(),all_unconnected.end());
+    transition_support nt;
+    nt=all_unconnected[0];
+    nt.cross=0;
+    nt.jump=0;
+    for (auto &u:all_unconnected){
+        if (u.e1==nt.e1 and u.e2==nt.e2){
+            nt.cross+=u.cross;
+            nt.jump+=u.jump;
+        } else {
+            if (nt.cross>=min_support and nt.e1!=nt.e2)to_connect.push_back(nt);
+            nt=u;
+        }
+    }
+    if (nt.cross+nt.jump>=min_support)to_connect.push_back(nt);
+    std::cout<<Date()<<": "<<to_connect.size()<<" new transitions with support >="<<min_support<<std::endl;
+    uint64_t dead_ends=0;
+    //XXX: edges may have been removed?
+    for (auto &tc:to_connect){
+        std::cout<<tc.e1<<" -> "<<tc.e2<<"  ( c: "<<tc.cross<<""<<"   j:"<<tc.jump<<std::endl;
+        if (mHBV.From(toLeft[tc.e1]).size()==0 and mHBV.To(toRight[tc.e2]).size()==0) dead_ends++;
+    }
+    std::cout<<Date()<<": "<<dead_ends<<" new transitions connecting dead ends"<<std::endl;
     return to_connect;
 }
