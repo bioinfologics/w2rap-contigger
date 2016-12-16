@@ -207,7 +207,7 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
      // PullApart2: a bit more general than PullApart in some ways, but only
      // implemented for inversion-free components.
      // Defined in SupportedHyperBasevector6.cc.
-     void PullApart2( const double min_weight_split, const long_logging& logc );
+     //void PullApart2( const double min_weight_split, const long_logging& logc );
 
      // UnwindAssembly.  Attempt to simplify the assembly.
      // 

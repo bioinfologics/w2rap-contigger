@@ -21,9 +21,9 @@
 #include <unistd.h>
 
 #ifdef __APPLE__
-  #include <malloc/malloc.h>
+    #include <malloc/malloc.h>
 #else
-  #include <malloc.h>
+    #include <malloc.h>
 #endif
 
 #include <omp.h>

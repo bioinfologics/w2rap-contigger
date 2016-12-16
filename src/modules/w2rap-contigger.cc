@@ -117,8 +117,8 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
                                                  "number of disk batches for step2 (default: 0, 0->in memory)", false, 0, "int", cmd);
-        TCLAP::ValueArg<unsigned int> tmp_dirArg("", "tmp_dir",
-                                                      "tmp dir for step2 disk batches (default: workdir)", false, 4, "int", cmd);
+        TCLAP::ValueArg<std::string> tmp_dirArg("", "tmp_dir",
+                                                      "tmp dir for step2 disk batches (default: workdir)", false, "", "string", cmd);
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
         TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
@@ -198,6 +198,20 @@ int main(const int argc, const char * argv[]) {
     // [GONZA] this might be copying stuff, check out.
     auto bases = dataMag.mag["PE1"]->bases;
     auto quals = dataMag.mag["PE1"]->quals;
+
+    //----------------------------
+
+    std::vector<tenXRead> txds = dataMag.mag["TEX"]->rReads;
+    std::cout << "Loaded: " << txds.size() << std::endl;
+    for (auto txd: txds) {
+        std::cout << "Test" << std::endl;
+        std::cout << "R1" << txd.r1 << std::endl;
+        std::cout << "R2" << txd.r2 << std::endl;
+        std::cout << "index" << txd.index << std::endl;
+        std::cout << "tag" << txd.tag << std::endl;
+    }
+
+    //----------------------------
 
     vec<String> subsam_names = {"C"};
     vec<int64_t> subsam_starts = {0};
