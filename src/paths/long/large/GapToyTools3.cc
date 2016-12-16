@@ -495,69 +495,10 @@ void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles
      std::cout << Date() <<": " << delcount << " / " <<before<<" edges removed on small components"<<std::endl;
 }
 
-void Empty( const HyperBasevector& hb, const vec< std::pair<vec<int>,vec<int>> >& pairs, 
-     const vec<int64_t>& pairs_pid, vec<vec<int>>& left_empty, 
-     vec<vec<int>>& right_empty, const Bool EMPTY2 )
-{
-     int nedges = hb.EdgeObjectCount( );
-     left_empty.resize(nedges), right_empty.resize(nedges);
-     if (EMPTY2)
-     {    for ( int l = 0; l < pairs.isize( ); l++ )
-          {    if ( pairs[l].first.nonempty( ) && pairs[l].second.empty( ) )
-               {    left_empty[ pairs[l].first.back( ) ].push_back( pairs_pid[l] );
-                    if ( pairs[l].first.front( ) != pairs[l].first.back( ) )
-                    {    left_empty[ pairs[l].first.front( ) ].
-                              push_back( pairs_pid[l] );    }    }
-               if ( pairs[l].second.nonempty( ) && pairs[l].first.empty( ) )
-               {    right_empty[ pairs[l].second.front( ) ]
-                         .push_back( pairs_pid[l] );    
-                    if ( pairs[l].second.front( ) != pairs[l].second.back( ) )
-                    {    right_empty[ pairs[l].second.back( ) ]
-                              .push_back( pairs_pid[l] );    }    }    }    }
-     else
-     {    for ( int l = 0; l < pairs.isize( ); l++ )
-          {    if ( pairs[l].first.nonempty( ) && pairs[l].second.empty( ) )
-                    left_empty[ pairs[l].first.back( ) ].push_back( pairs_pid[l] );
-               if ( pairs[l].second.nonempty( ) && pairs[l].first.empty( ) )
-               {    right_empty[ pairs[l].second.front( ) ]
-                         .push_back( pairs_pid[l] );    }    }    }    }
-
-void Validate( const HyperBasevector& hb, const vec<int>& inv, 
+void Validate( const HyperBasevector& hb, const vec<int>& inv,
 	       const ReadPathVec& paths ) {
     if (ValidateAllReadPaths(hb, paths) == false)
 	TracebackThisProcess();
-}
-
-
-void TestIndex( const HyperBasevector& hb,
-        const ReadPathVec& paths, const VecULongVec& invPaths)
-{
-    // horribly inefficient, just meant to be quick to code
-    bool good = true;
-
-    // is each edge entry reflected in a path?
-    for ( size_t edge = 0; edge < invPaths.size(); ++edge )
-        for ( auto const readid : invPaths[edge] )
-            if ( std::find( paths[readid].begin(),
-                    paths[readid].end(), edge ) == paths[readid].end() ) {
-                std::cout << "the index for edge " << edge << " names readid "
-                        << readid << " but the readpath says "
-                        << printSeq( paths[readid] ) << std::endl;
-                good = false;
-            }
-
-    // is each path entry reflected in an edge index
-    for ( int64_t pathid = 0; pathid < paths.size(); ++pathid )
-        for ( auto const edge : paths[pathid] )
-            if ( std::find( invPaths[edge].begin(),
-                    invPaths[edge].end(), pathid ) == invPaths[edge].end() ) {
-                std::cout << "the path for read " << pathid << " names edge " <<
-                edge << " but the index for that edge says " <<
-                printSeq(invPaths[edge]) << std::endl;
-                good = false;
-            }
-
-    if ( !good ) TracebackThisProcess();
 }
 
 

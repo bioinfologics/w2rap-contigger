@@ -549,12 +549,6 @@ template void DegloopCore( const int mode, HyperBasevector& hb, vec<int>& inv,
      const double min_dist, vec<int>& EDELS, const int verbosity,
      const vec<int>* ids );
 
-template void DegloopCore( const int mode, HyperBasevectorX& hb, vec<int>& inv, 
-     ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,
-     const VecULongVec& paths_index, const int v, const int pass,
-     const double min_dist, vec<int>& EDELS, const int verbosity,
-     const vec<int>* ids );
-
 // Go through branch points.
 // Score branches by computing quality score at Kth base.
 // Uses version of quality score distribution test from DivineBubbles, but

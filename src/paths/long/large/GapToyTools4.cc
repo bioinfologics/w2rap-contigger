@@ -40,96 +40,6 @@
 #include "random/Random.h"
 #include "system/WorklistN.h"
 
-namespace {
-
-// GenerateLookups - generate alignments between two sets of edges
-//
-// given a vecbasevector trans[] where the first hb.EdgeObjectCount() entries are
-// either edges from hb or zero-size and the remaining entries are edges from
-// hb3 (or zero-size).  Generate 200-mer based alignments (offset-only) between
-// hb edges and hb3 edges.  These go into X.
-//
-// on exit, X is vec of triple( id1, offset, id2 )
-//
-void GenerateLookups( vecbasevector const& trans, HyperBasevector const& hb,
-          vec<triple<int,int,int>>& X, Bool debug = False )
-{
-     const int K = 200;
-     ForceAssertEq(K, hb.K());
-     int n_id1 = hb.EdgeObjectCount();
-     vec< triple<kmer<K>,int,int> > kmers_plus;
-     MakeKmerLookup0( trans, kmers_plus );
-#ifdef __linux
-     std::cout << "after kmers_plus creation, peak mem usage = "
-          << PeakMemUsageGBString( ) << std::endl;
-#endif
-     for ( int64_t i = 0; i < kmers_plus.jsize( ); i++ )
-     {    int64_t j;
-          for ( j = i + 1; j < kmers_plus.jsize( ); j++ )
-               if ( kmers_plus[j].first != kmers_plus[i].first ) break;
-          for ( int64_t k1 = i; k1 < j; k1++ )
-          for ( int64_t k2 = i; k2 < j; k2++ )
-          {    int id1 = kmers_plus[k1].second;
-               int id2 = kmers_plus[k2].second - n_id1;
-               // do we map an hb edge to an hb3 edge?
-               if ( id1 >= n_id1 || id2 < 0 ) continue;
-               int offset = kmers_plus[k1].third - kmers_plus[k2].third;
-               X.push( id1, offset, id2 );
-          }
-          i = j - 1;    }
-     ParallelUniqueSort(X);
-     if ( debug ) {
-          for ( auto const& x : X ) {
-               int id1 = x.first; int offset = x.second; int id2 = x.third;
-               PRINT3(id1,offset,id2);
-          }
-     }
-}
-
-
-void GenerateLookupsNaif( vecbasevector const& trans, HyperBasevector const& hb,
-          vec<triple<int,int,int>>& X, Bool debug = False )
-{
-     const int K = 200;
-     typedef Kmer248 Kmer_t;    // must be >= K
-     ForceAssertEq(K, hb.K());
-     int n_id1 = hb.EdgeObjectCount();
-
-     size_t NUM_THREADS = configNumThreads(0);
-
-     KmerAligns p;
-     KernelAllKmerAligns<Kmer_t> kpa( trans, n_id1, K, &p,
-               true /* ignore palindromes */, true /* ignore relative RC */ );
-     naif_kmerize(&kpa, NUM_THREADS, debug);
-
-     // push and pop to avoid double-memory or make naif_kmer use the same
-     // type
-     // -- could just make Unique() also more flexible
-     X.clear();
-     p.ReverseMe();
-     while ( p.size() ) {
-          if ( X.size() == 0 ||
-                    X.back().first != p.back().first ||
-                         X.back().second != p.back().second ||
-                              X.back().third  != p.back().third ) {
-               X.push_back(p.back());
-          }
-          p.pop_back();
-     }
-
-
-#if 0
-     if ( debug ) std::cout << "BEFORE X.size()=" << p.size() << std::endl;
-     Unique(p);
-     if ( debug ) std::cout << "AFTER X.size()=" << p.size() << std::endl;
-
-     X.clear_and_resize(p.size());
-     for ( size_t i = 0; i < p.size(); ++i ) X[i] = p[i];
-#endif
-}
-
-}; // end of anonymous namespace
-
 void BuildAll( vecbasevector& allx, const HyperBasevector& hb, const int64_t extra )
 {    size_t allxSize = hb.E( ) + extra;
      for ( auto itr=hb.To().begin(),end=hb.To().end(),itr2=hb.From().begin();
@@ -717,12 +627,7 @@ void LogBubbles( bubble_logger& logger, HyperBasevector& hb , const vec<int>& in
 
 }
 
-void PrintBubbles( std::ostream& os, HyperBasevector& hb , const vec<int>& inv2
-               , const vecbasevector & bases, const VecPQVec& quals, const ReadPathVec& paths2){
-     bubble_logger logger( hb , inv2 );
-     LogBubbles(logger,hb,inv2,bases,quals,paths2);
-     os << logger;
-}
+
 
 void PopBubbles( HyperBasevector& hb , const vec<int>& inv2
                , const vecbasevector & bases, const VecPQVec& quals, const ReadPathVec& paths2){
