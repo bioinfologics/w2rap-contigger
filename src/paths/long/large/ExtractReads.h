@@ -14,12 +14,20 @@
 #include "feudal/PQVec.h"
 #include "system/gzstream/gzstream.h"
 
+typedef struct {
+    basevector r1;
+    basevector r2;
+    basevector index;
+    basevector tag;
+} tenXRead;
+
 class InputFileReader{
   public:
     InputFileReader();
 
     vecbvec bases;
     VecPQVec quals;
+    std::vector<tenXRead> rReads;
 
     bool get_fastq_record(std::basic_istream<char>& in, std::tuple<std::string, std::string, std::string> *record);
     bool get_bam_record();
@@ -52,17 +60,11 @@ private:
     int read_files(std::basic_istream<char>& in1, std::basic_istream<char>& in2, vecbvec *Reads, VecPQVec *Quals);
 };
 
-typedef struct {
-    basevector r1;
-    basevector r2;
-    basevector index;
-    basevector tag;
-} tenXRead;
+
 
 class TenXData: public InputFileReader{
   public:
     TenXData(std::string out_dir, std::string library_name, std::string reads_filename);
-    std::vector<tenXRead> rReads;
 
     int read_binary(std::string out_dir, std::string prefix);
     int write_binary(std::string out_dir, std::string prefix);
