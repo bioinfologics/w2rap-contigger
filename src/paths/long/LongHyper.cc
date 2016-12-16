@@ -816,8 +816,6 @@ Bool LongHyper(const VecEFasta &correctede, const vec<pairing_info> &cpartner, S
 
     // Trace edges.
 
-    if (logc.TRACE_EDGES0 != "")
-        TraceEdges(shb, logc.TRACE_EDGES0, Bases, Quals);
 
     return True;
 }

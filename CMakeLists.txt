@@ -49,7 +49,6 @@ add_library(base_libs OBJECT
         src/IndexedAlignmentPlusVector.cc
         src/IntPairVec.cc
         src/Intvector.cc
-        src/LinkTimestamp.cc
         src/MemberOf.cc
         src/PackAlign.cc
         src/PairsManager.cc

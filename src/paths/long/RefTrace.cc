@@ -81,7 +81,7 @@
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "polymorphism/Edit.h"
-#include "reporting/PerfStat.h"
+//#include "reporting/PerfStat.h"
 #include "paths/long/Variants.h"
 #include "paths/long/ReadOriginTracker.h"
 #include "paths/long/CreateGenome.h"
@@ -437,14 +437,6 @@ RefTraceResults RefTraceInternal( const ref_data& ref,
               << "(d = gap bases = " << total_gap_bases << ")\n";
      }
 
-     if ( logc.PERF_STATS )
-     {    PerfStat::log( ) << std::fixed << std::setprecision(0)
-               << PerfStat( "gap_bases_per",
-               "gap bases per reference contig", gap_bases_per );
-          PerfStat::log( ) << std::fixed << std::setprecision(2)
-               << PerfStat( "errors_per_Mb", "errors per Mb", errors_per_Mb );
-          PerfStat::log( ) << std::fixed << std::setprecision(2)
-               << PerfStat( "gaps_per_Mb", "excess gaps per Mb", gaps_per_Mb );    }
      REPORT_TIME( tclock, "used tracing reference - tail" );
      return RefTraceResults( penalty, total_gaps, meta_events );    }
 

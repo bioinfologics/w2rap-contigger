@@ -193,59 +193,7 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
      {    for ( int l = 0; l < PairDataMutable(id).isize( ); l++ )
                PairDataMutable(id,l).TrimMutable( ) += t;    }
 
-     // ***** COMPLEX MODIFIERS *****
 
-     // PullApart: consider a diagram in which there is an edge r, with exactly two
-     // edges x1, x2 abutting r on the left, and exactly two edges y1, y2 abutting r
-     // on the right.  Suppose both x1,r,y1 and x2,r,y2 occur in the paths with
-     // weight >= min_weight_split, and that x1,r,y2 and x2,r,y1 occur not at all.
-     // Then replace all five edges by two new edges z1, z2.  Paths beginning or
-     // ending in any of the five edges are translated appropriately.
-
-     void PullApart( const double min_weight_split, const long_logging& logc );
-
-     // PullApart2: a bit more general than PullApart in some ways, but only
-     // implemented for inversion-free components.
-     // Defined in SupportedHyperBasevector6.cc.
-     //void PullApart2( const double min_weight_split, const long_logging& logc );
-
-     // UnwindAssembly.  Attempt to simplify the assembly.
-     // 
-     // WARNING: This is not a bona fide SupportedHyperBasevector method, because
-     // it does not update the paths and weights.  Call BootStrap to fix.
-
-     void UnwindAssembly( const long_logging_control& log_control,
-          const long_logging& logc );
-
-     // Delete very weak edges.
-
-     void DeleteWeakEdges( const long_logging& logc );
-
-     // ChunkEdges.  Find sequences of edges x1,...,xn satisfying the following:
-     // (1) n >= 2.
-     // (2) The length of x2,...,xn-1 in kmers is at most the median corrected
-     //     read length.
-     // (3) The sequence occurs at least min_chunk = 5 times in the paths.
-     // (4) Every path containing either x1 or xn is compatible with this sequence.
-     // If for a given x1, there is more than one x1,...,xn, we choose the longest.
-     // Now we traverse all x1,..,xn as above, from longest to shortest.
-     // Then:
-     // (A) Add an edge x, the concatenation of x1,...,xn.
-     // (B) Delete x1 and xn.
-     // (C) Any path containing x1 or xn is altered to contain x instead.
-     // (D) For each i = 2,...,n-1, if each path containing xi is compatible
-     //     with x1,...,xn, delete xi and replace the path by x.
-     // (E) Given a contiguous subsequence s of x2,...,xn-1, if every path containing
-     //     it is compatible with x1,...,xn, if a path contains s, replace it by x.
-
-     void ChunkEdges( const long_logging& logc );
-
-     void WordifyAlt2( const long_logging_control& log_control,
-          const long_logging& logc );
-
-     void Hookup( const long_logging& logc );
-
-     void KillWeakExits2( const long_heuristics& heur, const long_logging& logc );
 
      // PopBubbles.  Look for edges e: v --> w whose forward or reverse multiplicity 
      // is <= max_pop_del, and such that both are <= max_pop_del2.  Then find all 
@@ -269,9 +217,7 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
          double min_pop_ratio;
          double delta_kmers;
      };
-     void PopBubbles( BubbleParams const& params, unsigned nThreads,
-                             const long_logging_control& log_control,
-                             const long_logging& logc, const long_heuristics& heur );
+
 
      struct BubbleAux
      {
@@ -287,33 +233,7 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
                          const long_logging& logc,
                          vec<int>* pSubstPath, const long_heuristics& heur ) const;
 
-     // MakeLoops.  Given a pair of edges between two vertices, replace them by
-     // a loop.
-     //
-     // * --*--> v --e1--> w --*--> *
-     //            <--e2--
 
-     void MakeLoops( const long_logging& logc );
-
-     // UnrollLoops.  Attempt to find all instantiations of a simple loop.
-
-     void UnrollLoops( const long_logging& logc );
-
-     // Gulp.  Whenever we have u --e--> v --f1,f2--> w1,w2, replace the three
-     // edges by two edges ef1, ef2, provided that the length of e in kmers is
-     // at most 20.  And the other way too.
-
-     void Gulp( const long_logging_control& log_control,
-          const long_logging& logc );
-
-     // Ungulp.  Reverse gulping, using the same 20 threshold.
-     
-     void Ungulp( const long_logging& logc );
-
-     // TrimHangingEnds.  Remove edges that 'go nowhere'.
-
-     void TrimHangingEnds( const int max_del, const double junk_ratio,
-          const long_heuristics& heur, const long_logging& logc );
 
      // DeleteLowCoverage.  Whenever there is a branch, with one branch having
      // coverage <= 2, and the other branch having coverage at least 5 times higher,
@@ -323,22 +243,7 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
           const long_logging_control& log_control,
           const long_logging& logc );
 
-     // Check all bubbles and delete unlikely branches. 
 
-     void DivineBubbles( const int L, const vecbasevector& bases, 
-          const vecqualvector& quals, const long_heuristics& heur, 
-          const long_logging& logc);
-     
-     // Check all bubbles and delete unlikely branches. 
-     void DivineSingleMutationBubbles( const int L, const vecbasevector& bases, 
-          const vecqualvector& quals, const long_heuristics& heur, 
-          const long_logging& logc);
-
-     // Check if their are variants in the assembly.  Record all the detected
-     // SNP branches. 
-     void DetectVarients( const vecbasevector& bases, const vecqualvector& quals,
-             const long_logging& logc,
-             vec<VariantSignature>* snp_bubbles, vec<int>* snp_edge_list) const;
 
      // ***** METHODS TO FIX BROKEN DATA *****
 
@@ -360,13 +265,6 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
 
      void TruncatePaths( const long_logging& logc );
 
-     // Bootstrap.  Given a SupportedHyperBasevector shb0, map 
-     // HyperBasevector(*this) onto it and then lift the paths and weights of
-     // shb0 to *this.  Normally this would be applied in the case where shb0 is
-     // a subgraph of a unipath graph.
-
-     void Bootstrap( const SupportedHyperBasevector& shb0,
-          const long_logging& logc );
 
      // DeleteUnusedPaths.  Remove paths (and weights) that have dead edges in
      // them.  This is for fixing a SupportedHyperBasevector after deleting
@@ -396,13 +294,6 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
      void RemoveUnneededVertices( );
      void DeleteReverseComplementComponents( const long_logging& logc, 
           const int64_t iDirectionalSortFactor=0 );
-     void RemoveSmallComponents( const int K );
-     void RemoveSmallMostlyAcyclicComponents( const long_logging& logc, 
-          const int max_small_comp = 1500 );
-     void RemoveSmallComponents2( const long_logging& logc, 
-          const int max_small_comp );
-     void RemovePathsWithoutReverseComplements();
-     void RemovePairsWithoutReverseComplements();
 
      // **** WRITING METHODS *****
 
@@ -431,27 +322,7 @@ template<> struct Serializability<SupportedHyperBasevector>
 
 Bool Overlap( const vec<int>& v, const vec<int>& w, const int o );
 
-void OrientToReference( SupportedHyperBasevector& shb, const vecbasevector& genome,
-     const long_logging& logc );
-
-void TraceEdges( const SupportedHyperBasevector& shb, const String& TRACE_EDGES,
-     const vecbasevector& bases, const vecqualvector& quals );
-
-void AnalyzeAssembly( const SupportedHyperBasevector& shb, const vecbasevector& G,
-     const int LG, const VecIntPairVec& Glocs );
-
-void AssessAssembly( const String& SAMPLE, const SupportedHyperBasevector& shb,
-     const HyperEfasta& he, const vec<Bool>& hide, const String& TMP, 
-     const ref_data& ref, const String& HUMAN_CONTROLS, 
-     const long_logging& logc, const uint NUM_THREADS, RefTraceControl RTCtrl=RefTraceControl() );
-
-void ReportAssemblyStats( const SupportedHyperBasevector& shb );
-
-void DumpEfastaAssembly( const SupportedHyperBasevector& shb, const HyperEfasta& he,
-     const vec<int>& inv, const vec<Bool>& hide, const String& OUT_HEAD,
-     const long_logging& logc );
-
-void CountCov( const SupportedHyperBasevector& shb, const String& TMP, 
+void CountCov( const SupportedHyperBasevector& shb, const String& TMP,
      const int gp1 );
 
 void RemoveNegatives( vec<int>& p );
