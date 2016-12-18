@@ -5,8 +5,9 @@
 #include <iostream>
 #include <kmers/kmatch/KMatch.h>
 #include "paths/long/large/ExtractReads.h"
-#include "pacbio/pacbio_pather.h"
-#include "pacbio/PathFinder_pb.h"
+//#include "pacbio/pacbio_pather.h"
+//#include "pacbio/PathFinder_pb.h"
+#include "TenX/TenX_pather.h"
 
 #include "testcode_hbv.h"
 
@@ -29,6 +30,10 @@ int main(){
   hbv.Involution(inv);
 
   // Create the paths and invert them
+  TenXPather txp(&reads, &hbv);
+  txp.makeTagMap(true);
+  txp.tagMap.size();
+
 //  PacbioPather pbp(&reads, &hbv);
 //  pbp.Hbv2Map(&hbv);
 //
