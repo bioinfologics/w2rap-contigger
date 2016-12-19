@@ -372,3 +372,28 @@ std::vector<transition_support> OverlapValidator::find_unconnected_neighbours(ui
     std::cout<<Date()<<": "<<dead_ends<<" new transitions connecting dead ends"<<std::endl;
     return to_connect;
 }
+
+std::vector<std::pair<uint64_t, uint64_t>> OverlapValidator::shared_support_vertex_pairs() {
+    //This returns a list of pairs of cnsecutive vertices that are supported by the same pairs.
+    // Should identify all "canonical repeats" that can be expanded (and some that can't)
+    std::vector<std::pair<uint64_t, uint64_t>> ssvp;
+    for (auto v=0;v<mHBV.N();++v){
+        //First scenario: there is only one vertex, that only leads here anyway.
+        if (mHBV.FromSize(v)==1 and mHBV.ToSize(mHBV.From(v)[0])==1 ){
+            uint64_t v2=mHBV.From(v)[0];
+            auto s1=crosses_and_jumps(v);
+            auto s2=crosses_and_jumps(v2);
+            std::vector<uint64_t> shared_support;
+            std::set_intersection(s1.begin(),s1.end(),s2.begin(),s2.end(),std::back_inserter(shared_support));
+            if (shared_support.size()>0) ssvp.push_back(std::make_pair(v,v2));
+        }
+    }
+    return ssvp;
+}
+
+std::set<uint64_t> OverlapValidator::crosses_and_jumps(uint64_t v) {
+    std::set<uint64_t> r;
+    for (auto c:mCross[v]) r.insert(c);
+    for (auto c:mJump[v]) r.insert(c);
+    return r;
+}

@@ -31,6 +31,7 @@ public:
     bool jumps_transition(uint64_t e1, uint64_t e2);
     std::vector<transition_support> unconnected_transitions(vec<int> & toLeft, vec<int> &toRight);
     //todo: add support for RF pairs
+private:
     uint64_t pathIndex; //original index of the first component of the path;
     std::vector<uint64_t> r1path,r1rpath,r2path,r2rpath,combined_path,combined_rpath;
 };
@@ -45,9 +46,14 @@ public:
     void find_informative_pairs();
     void compute_overlap_support();
     void analyse_complex_overlaps();
+    std::set<uint64_t> crosses_and_jumps(uint64_t v);
+
     std::vector<uint64_t> find_perfect_tips(uint16_t max_size,uint16_t coverage_mult);
     uint64_t collect_all_support(uint64_t vi, uint64_t e1, uint64_t e2);
     std::vector<transition_support> find_unconnected_neighbours(uint16_t min_support);
+    std::vector<std::pair<uint64_t,uint64_t>> shared_support_vertex_pairs();
+
+
 private:
     HyperBasevector &mHBV;
     vec<int> &mInv;

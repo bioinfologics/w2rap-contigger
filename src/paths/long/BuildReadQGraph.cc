@@ -1282,6 +1282,9 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     vecbvec edges;
     edges.reserve(pDict->size()/100); //TODO: this is probably WAY too much in most scenarios
     buildEdges(*pDict,&edges);
+    uint64_t totalk=0;
+    for (auto &e:edges) totalk+=e.size()+1-K;
+    std::cout<<Date()<<": buildges generated "<<edges.size()<<" edges with "<<totalk<<" "<<K<<"-mers from "<<pDict->size()<<" elements in the Dict"<<std::endl;
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
 

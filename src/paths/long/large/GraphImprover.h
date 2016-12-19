@@ -16,7 +16,13 @@ public:
     mInv(inv),
     mPaths(paths),
     mOverlapValidator(OverlapValidator(hbv,inv,paths)){};
+
+
     void improve_graph();
+
+    //Graph modifying functions
+    std::set<uint64_t> expand_cannonical_repeats(uint64_t min_support, uint64_t min_alternative_support);
+
 private:
     HyperBasevector &mHBV;
     vec<int> &mInv;

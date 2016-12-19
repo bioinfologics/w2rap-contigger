@@ -269,6 +269,7 @@ int main(const int argc, const char * argv[]) {
                 inv.clear();
                 hbv.Involution(inv);
                 GraphImprover gi(hbv, inv, paths);
+                gi.expand_cannonical_repeats(2,2);
                 gi.improve_graph();
 
                 std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
