@@ -271,8 +271,10 @@ int main(const int argc, const char * argv[]) {
                 VecULongVec paths_inv;
                 invert(paths, paths_inv, hbv.EdgeObjectCount());
                 GraphImprover gi(hbv, inv, paths, paths_inv);
-                gi.expand_cannonical_repeats(2,2);
                 gi.improve_graph();
+                GraphImprover gi2(hbv, inv, paths, paths_inv);
+                gi2.expand_cannonical_repeats(2,2);
+
 
                 std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
             } else {

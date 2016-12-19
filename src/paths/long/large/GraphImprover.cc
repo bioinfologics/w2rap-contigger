@@ -9,33 +9,23 @@
 #include <GFADump.h>
 
 void GraphImprover::improve_graph() {
+    //first tip clipping
+
     path_status(mPaths);
     OverlapValidator oval(mHBV,mInv,mPaths);
     oval.compute_overlap_support();
-    //yoval.analyse_complex_overlaps();
-
-
-
 
     std::vector<int> paint;
     paint.reserve(mHBV.EdgeObjectCount());
-    for (auto &tc:oval.find_unconnected_neighbours(1)) {
-        int e=tc.e1;
-        paint.push_back(e);
-        e=tc.e2;
-        paint.push_back(e);
-    }
-    GFADumpDetail("smallk_new_connections_detail",mHBV,mInv,paint);
-
     for (int e:oval.find_perfect_tips(1000,5)) paint.push_back(e);
     std::cout<<Date()<<": "<<paint.size()<<" perfect tips found"<<std::endl;
-
+    GFADumpDetail("ovlpval_perfect_tips_detail",mHBV,mInv,paint);
     mHBV.DeleteEdges(paint);
     Cleanup(mHBV,mInv,mPaths);
     graph_status(mHBV);
     path_status(mPaths);
-    oval.compute_overlap_support();
-    //oval.find_unconnected_neighbours(10);
+
+    //todo: expand canonnical repeats
 
 }
 
@@ -111,13 +101,13 @@ std::set<uint64_t> GraphImprover::expand_cannonical_repeats(uint64_t min_support
         for (auto oi=0;oi<outs;++oi) for (auto oi2=oi+1;oi2<outs;++oi2) if (outdest[oi]==outdest[oi2]) clash=true;
         if (clash) continue;
 
-        std::cout<<"repeat solved!  ("<<ins<<":"<<outs<<") ";
+        //std::cout<<"repeat solved!  ("<<ins<<":"<<outs<<") ";
         for (auto i=0;i<ins;++i) {
             //TODO: is it right to assume the inverse will exist by definition? it should...
             if (in_edges[i]<mInv[outdest[i]]) canonical_separations.push_back({in_edges[i],r_edge,outdest[i]});
-            std::cout<<in_edges[i]<<"->"<<r_edge<<"->"<<outdest[i]<<"  ";
+            //std::cout<<in_edges[i]<<"->"<<r_edge<<"->"<<outdest[i]<<"  ";
         }
-        std::cout<<std::endl;
+        //std::cout<<std::endl;
         solved++;
 
     }
@@ -127,7 +117,7 @@ std::set<uint64_t> GraphImprover::expand_cannonical_repeats(uint64_t min_support
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:canonical_separations){
-        std::cout<<"Separating "<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
+        //std::cout<<"Separating "<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
         if (old_edges_to_new.count(p.front()) > 0 or old_edges_to_new.count(p.back()) > 0) {
             continue;
         }
