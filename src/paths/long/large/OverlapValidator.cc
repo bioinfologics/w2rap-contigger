@@ -155,6 +155,29 @@ std::vector<transition_support> InformativePair::unconnected_transitions(vec<int
     return unconnected;
 }
 
+bool InformativePair::jumps_from_to(uint64_t e1, uint64_t e2) {
+    std::vector<uint64_t> pf,pr;
+    if (is_combined()){
+        pf=combined_path;
+        pr=combined_rpath;
+    } else{
+        pf=r1path;
+        for (auto &e:r2rpath)pf.push_back(e);
+        pr=r2path;
+        for (auto &e:r1rpath)pr.push_back(e);
+    }
+    bool e1_seen=false;
+    for (auto e:pf){
+        if (not e1_seen){
+            if (e==e2) return false;
+            if (e==e1) e1_seen=true;
+        } else {
+            if (e==e2) return true;
+        }
+    }
+    return false;
+}
+
 
 void OverlapValidator::compute_overlap_support() {
     find_informative_pairs();

@@ -29,6 +29,7 @@ public:
     std::vector<uint64_t> overlaps_jumped(vec<int> & toLeft, vec<int> &toRight, uint8_t max_dist);
     bool crosses_transition(uint64_t e1, uint64_t e2);
     bool jumps_transition(uint64_t e1, uint64_t e2);
+    bool jumps_from_to(uint64_t e1, uint64_t e2);
     std::vector<transition_support> unconnected_transitions(vec<int> & toLeft, vec<int> &toRight);
     //todo: add support for RF pairs
 private:
@@ -54,11 +55,11 @@ public:
     std::vector<std::pair<uint64_t,uint64_t>> shared_support_vertex_pairs();
 
 
+    std::vector<InformativePair> mInformativePairs;
 private:
     HyperBasevector &mHBV;
     vec<int> &mInv;
     ReadPathVec &mPaths;
-    std::vector<InformativePair> mInformativePairs;
     std::vector<std::vector<uint64_t>> mCross, mJump; //for each overlap
 
 

@@ -268,7 +268,9 @@ int main(const int argc, const char * argv[]) {
                 std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
                 inv.clear();
                 hbv.Involution(inv);
-                GraphImprover gi(hbv, inv, paths);
+                VecULongVec paths_inv;
+                invert(paths, paths_inv, hbv.EdgeObjectCount());
+                GraphImprover gi(hbv, inv, paths, paths_inv);
                 gi.expand_cannonical_repeats(2,2);
                 gi.improve_graph();
 
