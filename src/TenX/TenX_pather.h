@@ -9,18 +9,18 @@
 #include "paths/long/ReadPath.h"
 #include "paths/long/large/ExtractReads.h"
 
-typedef struct {
+typedef  struct {
     int read_id;
-    int read_size;
+//    int read_size;
     int edge_id;
     int inv_edge_id;
     int edge_offset;
     int read_offset;
     int kmer;
-} linkReg;
+} tenXLink;
 
 struct linkreg_less_than {
-    inline bool operator() (const linkReg& struct1, const linkReg& struct2)
+    inline bool operator() (const tenXLink& struct1, const tenXLink& struct2)
     {
       return (struct1.read_offset < struct2.read_offset);
     }
@@ -28,29 +28,41 @@ struct linkreg_less_than {
 
 class TenXPather: public KMatch {
 public:
+    typedef std::pair<std::vector<tenXLink>, std::vector<tenXLink>> pairLink; // A pairLinks are the links of r1,r2 of one tenxread
+    typedef std::vector<pairLink> tagLink; // A tagLink are all the pairLink for a particular tag
+
     TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv);
 //    ReadPathVec mapReads();
 
     // Qc the run
-    int readsQc();
+    std::vector<int> readsTagQc();
 
-    // Map indexing records per tag and index
-    int makeIndexMap(bool to_disc=false);
-    int makeTagMap(bool to_disc=false);
+    //TODO: Map indexing records per tag and index
+    //TODO: Filter the tags
+    //TODO: Filter the reads
+
+    // Map reads to graph
+    std::vector<tagLink> getTagLinks(bool output_to_file=true);
+
+private:
+    // Reads and graph
+    std::vector<tenXRead>* seqVector;
+
+    vec<int> inv;
+    HyperBasevector* hbv;
+
+    // Read processing data
+    std::vector<std::string> tagVector;
     std::map<std::string, std::vector<int>> indexMap;
     std::map<std::string, std::vector<int>> tagMap;
 
-private:
-    std::vector<tenXRead>* seqVector;
-    HyperBasevector* hbv;
+    int makeIndexMap(bool to_disc=false);
+    int makeTagMap(bool to_disc=false);
+    int makeTagVector();
 
+    std::vector<tenXLink> processLinks(std::string read, int read_id);
 
-
-
-
-//    std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
-//    std::vector<linkReg> readOffsetFilter(std::vector<linkReg> data);
-//    std::vector<linkReg> matchLengthFilter(std::vector<linkReg> data);
+    // Get tagReads funciton(); Gets a tag return the read objects asociated with that tag ??
 };
 
 

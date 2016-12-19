@@ -86,7 +86,7 @@ void KMatch::Hbv2Map(HyperBasevector* hbv){
         tmatch.edge_id = seq_index;
         tmatch.edge_offset = kv[a].offset;
         temp_vector.push_back(tmatch);
-        this->edgeMap[kv[a].kmer] = temp_vector;
+        this-> [kv[a].kmer] = temp_vector;
       }
     }
     seq_index++;
