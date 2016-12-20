@@ -9,8 +9,6 @@
 //#include "pacbio/PathFinder_pb.h"
 #include "TenX/TenX_pather.h"
 
-#include "testcode_hbv.h"
-
 
 int main(int argc, char *argv[]){
   std::cout << "Loading reads..." << std::endl;
