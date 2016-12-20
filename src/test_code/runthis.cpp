@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 
   auto reads = dataMag.mag["TEX"]->rReads;
   std::cout << "Reads already loaded..." << std::endl;
-  std::cout << reads.size() << "Reads in the vector" << std::endl;
+  std::cout << reads.size() << " Reads in the vector" << std::endl;
 
   std::cout << "Loading hbv file..." << std::endl;
 //  std::string fn = "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200/athal_k200.large_K.clean.hbv";
@@ -32,8 +32,14 @@ int main(int argc, char *argv[]){
 
   // Create the paths and invert them
   TenXPather txp(&reads, &hbv);
+  std::cout<< Date() << "Map creation." << std::endl;
   txp.createEmptyMap(&hbv);
-  txp.kmerTagMap.size();
+  std::cout<< Date() << "Map creation done..." << std::endl;
+  std::cout<< Date() << "Map filling with reads..." << std::endl;
+  txp.reads2kmerTagMap();
+  std::cout<< Date() << "Map filling with reads done..." << std::endl;
+
+  std::cout << "Size of the dictionary: " << txp.kmerTagMap.size() << std::endl;
 
 //  txp.Hbv2Map(&hbv);
 
