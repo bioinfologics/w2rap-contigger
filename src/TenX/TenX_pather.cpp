@@ -8,11 +8,49 @@ TenXPather::TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv)
   //
   seqVector = aseqVector;
   hbv = ahbv;
-  hbv->Involution(inv);
 
-  makeIndexMap();
-  makeTagMap();
-  makeTagVector();
+//  makeIndexMap();
+//  makeTagMap();
+//  makeTagVector();
+}
+
+int TenXPather::createEmptyMap(HyperBasevector* hbv){
+  // Create empty kmer map from the edges.
+  auto edges = hbv->Edges();
+
+  for (auto e = 0; e<edges.size(); ++e) {
+    auto seq = edges[e].ToString();
+    auto kv = ProduceKmers(seq);
+    for (auto &k: kv)
+      kmerTagMap[k.kmer]; // TODO: check if this is doing the correct thing
+  }
+  return 0;
+}
+
+int TenXPather::reads2kmerTagMap(){
+  // for each read
+  for (auto e = seqVector->begin(); e!=seqVector->end(); ++e){
+    auto tag = e->tag.ToString();
+
+    auto seq = e->r1.ToString();
+    auto kv = ProduceKmers(seq);
+    // for each kmer
+    for (auto const& k: kv){
+      if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
+        kmerTagMap[k.kmer][tag]++;
+      }
+    }
+
+    seq = e->r2.ToString();
+    kv = ProduceKmers(seq);
+    // for each kmer
+    for (auto const& k: kv){
+      if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
+        kmerTagMap[k.kmer][tag]++;
+      }
+    }
+  }
+  return 0;
 }
 
 std::vector<int> TenXPather::readsTagQc(){

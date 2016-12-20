@@ -32,14 +32,17 @@ int main(int argc, char *argv[]){
 
   // Create the paths and invert them
   TenXPather txp(&reads, &hbv);
-  txp.Hbv2Map(&hbv);
+  txp.createEmptyMap(&hbv);
+  txp.kmerTagMap.size();
 
-  auto histogram = txp.readsTagQc();
-  for (auto g=0; g<histogram.size(); ++g){
-    std::cout << g << "," << histogram[g]<<std::endl;
-  }
+//  txp.Hbv2Map(&hbv);
 
-  auto g = txp.getTagLinks();
+//  auto histogram = txp.readsTagQc();
+//  for (auto g=0; g<histogram.size(); ++g){
+//    std::cout << g << "," << histogram[g]<<std::endl;
+//  }
+
+//  auto g = txp.getTagLinks();
 
 
 //  PacbioPather pbp(&reads, &hbv);

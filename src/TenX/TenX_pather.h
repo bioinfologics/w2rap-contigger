@@ -26,8 +26,17 @@ struct linkreg_less_than {
     }
 };
 
+
+
 class TenXPather: public KMatch {
 public:
+
+    std::map<uint64_t, std::map<std::string, int>> kmerTagMap;
+
+    int createEmptyMap(HyperBasevector* hbv);
+
+    int reads2tagMap();
+
     typedef std::pair<std::vector<tenXLink>, std::vector<tenXLink>> pairLink; // A pairLinks are the links of r1,r2 of one tenxread
     typedef std::vector<pairLink> tagLink; // A tagLink are all the pairLink for a particular tag
 
