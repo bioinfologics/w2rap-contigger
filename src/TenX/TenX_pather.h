@@ -35,7 +35,7 @@ public:
 
     int createEmptyMap(HyperBasevector* hbv);
 
-    int reads2tagMap();
+    int reads2kmerTagMap();
 
     typedef std::pair<std::vector<tenXLink>, std::vector<tenXLink>> pairLink; // A pairLinks are the links of r1,r2 of one tenxread
     typedef std::vector<pairLink> tagLink; // A tagLink are all the pairLink for a particular tag
