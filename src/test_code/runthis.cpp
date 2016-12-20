@@ -12,15 +12,17 @@
 #include "testcode_hbv.h"
 
 
-int main(){
+int main(int argc, char *argv[]){
   std::cout << "Loading reads..." << std::endl;
-  InputDataMag dataMag("/Users/ggarcia/Documents/arabidopsis_test_ds/configuration_file.config", "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200");
+//  InputDataMag dataMag("/Users/ggarcia/Documents/arabidopsis_test_ds/configuration_file.config", "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200");
+  InputDataMag dataMag(argv[1], argv[2]);
   auto reads = dataMag.mag["TEX"]->rReads;
   std::cout << "Reads already loaded..." << std::endl;
   std::cout << reads.size() << "Reads in the vector" << std::endl;
 
   std::cout << "Loading hbv file..." << std::endl;
-  std::string fn = "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200/athal_k200.large_K.clean.hbv";
+//  std::string fn = "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200/athal_k200.large_K.clean.hbv";
+  std::string fn = argv[3];
 
   // Load hbv and create inversion
   HyperBasevector hbv;
