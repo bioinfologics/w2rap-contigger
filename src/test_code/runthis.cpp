@@ -12,8 +12,9 @@
 
 int main(int argc, char *argv[]){
   std::cout << "Loading reads..." << std::endl;
-//  InputDataMag dataMag("/Users/ggarcia/Documents/arabidopsis_test_ds/configuration_file.config", "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200");
   InputDataMag dataMag(argv[1], argv[2]);
+//  InputDataMag dataMag("/Users/ggarcia/Documents/arabidopsis_test_ds/configuration_file.config", "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200");
+
   auto reads = dataMag.mag["TEX"]->rReads;
   std::cout << "Reads already loaded..." << std::endl;
   std::cout << reads.size() << "Reads in the vector" << std::endl;
