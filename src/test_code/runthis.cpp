@@ -39,8 +39,18 @@ int main(int argc, char *argv[]){
   txp.reads2kmerTagMap();
   std::cout<< Date() << "Map filling with reads done..." << std::endl;
 
+  for (auto &t: txp.kmerTagMap){
+    if (t.second.size()>0) {
+      std::cout << "Key: " << t.first << ", Count: " << t.second.size() << std::endl;
+      for (auto tt: t.second){
+        std::cout << "--->Tag: " << tt.first << "-->" <<tt.second <<std::endl;
+      }
+    }
+  }
   std::cout << "Size of the dictionary: " << txp.kmerTagMap.size() << std::endl;
 
+  auto tagidx = txp.kmerize_tag("ATCCACCGTGGTGCAA");
+  std::cout << "Tagkmer: " << tagidx << std::endl;
 //  txp.Hbv2Map(&hbv);
 
 //  auto histogram = txp.readsTagQc();

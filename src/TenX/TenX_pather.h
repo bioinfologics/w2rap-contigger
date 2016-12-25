@@ -30,8 +30,8 @@ struct linkreg_less_than {
 
 class TenXPather: public KMatch {
 public:
-
-    std::map<uint64_t, std::map<std::string, int>> kmerTagMap;
+    typedef std::uint16_t tagktype;
+    std::map<uint64_t, std::map<tagktype, int>> kmerTagMap;
 
     int createEmptyMap(HyperBasevector* hbv);
 
@@ -52,7 +52,7 @@ public:
 
     // Map reads to graph
     std::vector<tagLink> getTagLinks(bool output_to_file=true);
-
+    tagktype kmerize_tag(std::string tag);
 private:
     // Reads and graph
     std::vector<tenXRead>* seqVector;
@@ -72,6 +72,14 @@ private:
     std::vector<tenXLink> processLinks(std::string read, int read_id);
 
     // Get tagReads funciton(); Gets a tag return the read objects asociated with that tag ??
+
+    struct  {
+        inline bool operator() (const std::pair<uint64_t, std::pair<std::uint16_t, int>>& struct1, const std::pair<uint64_t, std::pair<std::uint16_t, int>>& struct2)
+        {
+            return (struct1.first < struct2.first);
+        }
+    } kmer_pair_lessthan;
+
 };
 
 

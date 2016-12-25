@@ -14,38 +14,108 @@ TenXPather::TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv)
 //  makeTagVector();
 }
 
+TenXPather::tagktype TenXPather::kmerize_tag(std::string seq){
+
+//  std::uint64_t kmer;
+  int K=16;
+  int offset=0;
+  const tagktype KMER_MASK=( ((uint16_t)1)<<(K*2) )-1;
+
+  const char *s = seq.c_str();
+//  tagktype last_unknown = -1;
+  tagktype fkmer = 0;
+  for (auto p=0; p < seq.size(); ++p) {
+    //fkmer: grows from the right (LSB)
+//    std::cout << s[p]<<std::endl;
+    switch (s[p]) {
+      case 'A':
+      case 'a':
+        fkmer = ((fkmer << 2) + 0) & KMER_MASK;
+        break;
+      case 'C':
+      case 'c':
+        fkmer = ((fkmer << 2) + 1) & KMER_MASK;
+        break;
+      case 'G':
+      case 'g':
+        fkmer = ((fkmer << 2) + 2) & KMER_MASK;
+        break;
+      case 'T':
+      case 't':
+        fkmer = ((fkmer << 2) + 3) & KMER_MASK;
+        break;
+      default:
+        fkmer = ((fkmer << 2) + 0) & KMER_MASK;
+        return 0; // TODO: [GONZA] Check if this is correcttly done??
+        break;
+    }
+  }
+  return fkmer;
+}
+
+
 int TenXPather::createEmptyMap(HyperBasevector* hbv){
   // Create empty kmer map from the edges.
-  auto edges = hbv->Edges();
+  int min_edge_length = 1500;
+  auto & edges = hbv->Edges();
+  auto kcount=0;
 
-  for (auto e = 0; e<edges.size(); ++e) {
-    auto seq = edges[e].ToString();
-    auto kv = ProduceKmers(seq);
-    for (auto &k: kv)
-      kmerTagMap[k.kmer]; // TODO: check if this is doing the correct thing
+  for (auto &e:edges){
+    if (e.size()>min_edge_length){
+      kcount+=e.size()-31;//XXX: harcoded kmer size!!!!
+    }
   }
+
+  //store all kmers in an std::vector
+  std::vector<std::pair<uint64_t, std::map<tagktype, int>>> all_kmers;
+  all_kmers.reserve(kcount);
+  std::cout << Date() << ": Number of kmers: " << kcount <<std::endl;
+
+
+//  for (auto e = 0; e<edges.size(); ++e) {
+#pragma omp parallel for
+  for (auto e = 0; e<1000; ++e) {
+    auto seq = edges[e].ToString();
+    if (seq.length()>min_edge_length){
+      auto kv = ProduceKmers(seq);
+      for (auto k: kv) {
+        std::map<tagktype, int> partest;
+#pragma omp critical (vectorpush)
+        all_kmers.push_back(std::make_pair(k.kmer, partest));
+      }
+    }
+  }
+
+//  std::sort(all_kmers.begin(),all_kmers.end(), kmer_pair_lessthan);
+//  all_kmers.erase(std::unique(all_kmers.begin(), all_kmers.end()),all_kmers.end()); // This workds comparing keys!? do i need a comparator??
+  kmerTagMap.insert(all_kmers.begin(), all_kmers.end());
   return 0;
 }
 
 int TenXPather::reads2kmerTagMap(){
   // for each read
-  for (auto e = seqVector->begin(); e!=seqVector->end(); ++e){
-    auto tag = e->tag.ToString();
 
-    auto seq = e->r1.ToString();
+#pragma omp parallel for
+  for (auto e = 0; e < seqVector->size(); ++e){
+    auto tag = kmerize_tag((*seqVector)[e].tag.ToString());
+//    std::cout << "Tga: " << tag<<std::endl;
+
+    auto seq = (*seqVector)[e].r1.ToString();
     auto kv = ProduceKmers(seq);
     // for each kmer
     for (auto const& k: kv){
       if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
+#pragma omp critical (taginsert)
         kmerTagMap[k.kmer][tag]++;
       }
     }
 
-    seq = e->r2.ToString();
+    seq = (*seqVector)[e].r2.ToString();
     kv = ProduceKmers(seq);
     // for each kmer
     for (auto const& k: kv){
       if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
+#pragma omp critical (taginsert)
         kmerTagMap[k.kmer][tag]++;
       }
     }
