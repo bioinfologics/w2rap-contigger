@@ -52,34 +52,25 @@ public:
 
     // Map reads to graph
     std::vector<tagLink> getTagLinks(bool output_to_file=true);
-    tagktype kmerize_tag(std::string tag);
+    std::vector<TenXPather::tagktype> getSequenceTags(std::string seq);
+    std::vector<TenXPather::tagktype> edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
+
 private:
     // Reads and graph
     std::vector<tenXRead>* seqVector;
-
     vec<int> inv;
     HyperBasevector* hbv;
+    tagktype kmerize_tag(std::string tag);
 
     // Read processing data
-    std::vector<std::string> tagVector;
-    std::map<std::string, std::vector<int>> indexMap;
-    std::map<std::string, std::vector<int>> tagMap;
+//    std::vector<std::string> tagVector;
+//    std::map<std::string, std::vector<int>> indexMap;
+//    std::map<std::string, std::vector<int>> tagMap;
 
-    int makeIndexMap(bool to_disc=false);
-    int makeTagMap(bool to_disc=false);
-    int makeTagVector();
-
-    std::vector<tenXLink> processLinks(std::string read, int read_id);
-
-    // Get tagReads funciton(); Gets a tag return the read objects asociated with that tag ??
-
-    struct  {
-        inline bool operator() (const std::pair<uint64_t, std::pair<std::uint16_t, int>>& struct1, const std::pair<uint64_t, std::pair<std::uint16_t, int>>& struct2)
-        {
-            return (struct1.first < struct2.first);
-        }
-    } kmer_pair_lessthan;
-
+//    int makeIndexMap(bool to_disc=false);
+//    int makeTagMap(bool to_disc=false);
+//    int makeTagVector();
+//    std::vector<tenXLink> processLinks(std::string read, int read_id);
 };
 
 

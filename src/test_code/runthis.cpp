@@ -49,8 +49,24 @@ int main(int argc, char *argv[]){
   }
   std::cout << "Size of the dictionary: " << txp.kmerTagMap.size() << std::endl;
 
-  auto tagidx = txp.kmerize_tag("ATCCACCGTGGTGCAA");
-  std::cout << "Tagkmer: " << tagidx << std::endl;
+  std::cout<<Date()<<" Intersecting:" << std::endl;
+  auto edges = hbv.Edges();
+  for (auto i=0; i<100; ++i){
+    for (auto j=0; j<100; ++j) {
+      auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 500);
+      if (interseccion.size()>0){
+        std::cout << Date() << " Print intersection: " << i << "-" << j << "->" << interseccion.size() << std::endl;
+      }
+//      for (auto elemento: interseccion){
+//        std::cout << elemento << std::endl;
+//    }
+    }
+  }
+
+
+
+//  auto tagidx = txp.kmerize_tag("ATCCACCGTGGTGCAA");
+//  std::cout << "Tagkmer: " << tagidx << std::endl;
 //  txp.Hbv2Map(&hbv);
 
 //  auto histogram = txp.readsTagQc();
