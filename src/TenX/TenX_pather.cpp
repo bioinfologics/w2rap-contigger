@@ -123,9 +123,9 @@ std::vector<TenXPather::tagktype> TenXPather::getSequenceTags(std::string seq){
 
   std::vector<TenXPather::tagktype> tags;
   auto kmers = ProduceKmers(seq);
-  for (auto kmer: kmers){
-    if (kmerTagMap.find(kmer.kmer) != kmerTagMap.end()){
-      for (auto tag: kmerTagMap[kmer.kmer]){
+  for (auto k: kmers){
+    if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
+      for (auto tag: kmerTagMap[k.kmer]){
         tags.push_back(tag.first);
       }
     }
@@ -133,7 +133,7 @@ std::vector<TenXPather::tagktype> TenXPather::getSequenceTags(std::string seq){
   return tags;
 }
 
-std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi=500) {
+std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi) {
   // Given 2 edges as strings will return the set of tags that are common to both edges
   // Directional, edgeFrom (tail roi), edgeTo(head roi)
 
@@ -147,11 +147,13 @@ std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string ed
   }
   std::string edgeTo_roi;
   if (edgeTo.size()>roi){
-    edgeTo_roi = edgeTo.substr(edgeTo.size()-roi);
+    edgeTo_roi = edgeTo.substr(0, roi);
   } else {
     edgeTo_roi = edgeTo;
   }
 
+//  edgeFrom_roi = edgeFrom;
+//  edgeTo_roi = edgeTo;
   auto tagsFrom = getSequenceTags(edgeFrom_roi);
   auto tagsTo = getSequenceTags(edgeTo_roi);
 
@@ -159,6 +161,11 @@ std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string ed
   std::sort(tagsTo.begin(), tagsTo.end());
 
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
+//  std::cout << "edgeFrom: " << edgeFrom_roi.size()
+//            << " tagsFrom: " << tagsFrom.size()
+//            << " edgeTo: " << edgeTo_roi.size()
+//            << " tagsTo: " << tagsTo.size()
+//            << " Set intersection size: " << intersection_tagset.size() << std::endl;
 
   return intersection_tagset;
 }

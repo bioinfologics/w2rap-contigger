@@ -51,15 +51,19 @@ int main(int argc, char *argv[]){
 
   std::cout<<Date()<<" Intersecting:" << std::endl;
   auto edges = hbv.Edges();
-  for (auto i=0; i<100; ++i){
-    for (auto j=0; j<100; ++j) {
-      auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 500);
-      if (interseccion.size()>0){
-        std::cout << Date() << " Print intersection: " << i << "-" << j << "->" << interseccion.size() << std::endl;
-      }
+#pragma omp parallel for
+  for (auto i=0; i<edges.size(); ++i){
+    for (auto j=0; j<edges.size(); ++j) {
+      if (edges[i].size()>5000 & edges[j].size()>5000) {
+        auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 5500);
+        if (interseccion.size() > 0) {
+#pragma omp critical (printest)
+          std::cout << "Print intersection: " << i << "-" << j << "->" << interseccion.size() << std::endl;
+        }
 //      for (auto elemento: interseccion){
 //        std::cout << elemento << std::endl;
 //    }
+      }
     }
   }
 
