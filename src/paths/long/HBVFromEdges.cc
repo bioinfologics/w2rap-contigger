@@ -22,13 +22,8 @@ public:
     EdgeEnd( bvec const* pBV, bool rc, bool distal, unsigned K )
             : mItr(pBV,distal ? pBV->size()-K:0,rc), mK(K), mHash(FNV1a(mItr,mItr+K)) {}
 
-    size_t getHash() const { return mHash; }
     bvec::SwitchHitterIter begin() const { return mItr; }
     bvec::SwitchHitterIter end() const { return mItr+mK; }
-
-    struct Hasher
-    { typedef EdgeEnd argument_type;
-        size_t operator()( EdgeEnd const& ee ) const { return ee.getHash(); } };
 
     friend bool operator<( EdgeEnd const& ee1, EdgeEnd const& ee2 )
     { if ( ee1.mHash != ee2.mHash ) return ee1.mHash < ee2.mHash;
@@ -170,7 +165,7 @@ void buildHKPFromHBV( HyperBasevector const& hbv,
     long nextPalindrome = first_palindrome;
     long nextKmerId = 1;
     auto oItr = pHKP->EdgesMutable().begin();
-    vec<bvec> const edges = hbv.Edges();//TODO: if the graph is any large, this is going to kill the machine
+    vec<bvec> const & edges = hbv.Edges();
     for ( auto itr=edges.begin(),end=edges.end(); itr != end; ++itr,++oItr )
     {
         size_t len = itr->size();
