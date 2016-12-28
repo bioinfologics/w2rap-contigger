@@ -462,6 +462,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                             bpathsx.push_back(bpaths[l]);
                         BasesToGraph(bpathsx, K, *mhbp_t);
                         ++solved;
+#pragma omp critical
+                        std::cout<<"solved at K="<<K
                     }
                 }
                 //}//---OMP TASK END---
@@ -475,7 +477,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);
     TIMELOG_REPORT(std::cout,CorrectPairs1,CP1_Align,CP1_MakeStacks,CP1_Correct);
-    // Do the patching.
-    const vec<std::pair<int, int> > blobs(LR.size());
-    Patch(hb, blobs, mhbp, work_dir, new_stuff);
+    // Create patches (edges+edge unions)
+    Patch(hb, mhbp, new_stuff);
 }

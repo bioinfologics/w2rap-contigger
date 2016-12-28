@@ -338,11 +338,8 @@ void RemoveHangs( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      hb.DeleteEdges(e_to_delete);
      }
 
-void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
-           vec<HyperBasevector> &mhbp, const String &work_dir,
-           vecbvec &new_stuff) {
+void Patch(HyperBasevector &hb, vec<HyperBasevector> &mhbp, vecbvec &new_stuff) {
      double clock = WallClockTime();
-     std::cout << Date() << ": patching" << std::endl;
      new_stuff.clear();
      new_stuff.reserve(std::accumulate(mhbp.begin(), mhbp.end(), 0ul,
                                        [](size_t nnn, HyperBasevector const &hbv) {
@@ -354,12 +351,11 @@ void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
                                            return nnn;
                                        }));
      int K = hb.K();
-     for (int bl = 0; bl < blobs.isize(); bl++) {
+     for (int bl = 0; bl < mhbp.isize(); bl++) {
 
           if (mhbp[bl].N() > 0) {
                HyperBasevector const &hbp = mhbp[bl];
                // Insert patch.
-
                for (int e = 0; e < hbp.EdgeObjectCount(); e++)
                     new_stuff.push_back(hbp.EdgeObject(e));
                for (int v = 0; v < hbp.N(); v++)
@@ -368,8 +364,6 @@ void Patch(HyperBasevector &hb, const vec<std::pair<int, int> > &blobs,
                               basevector const &e1 = hbp.EdgeObjectByIndexTo(v, i1);
                               basevector const &e2 = hbp.EdgeObjectByIndexFrom(v, i2);
                               new_stuff.push_back(TrimCat(K, e1, e2));
-                              // new_stuff.back( ).Print( rout, "patch." + ToString(v)
-                              //      + "." + ToString(i1) + "." + ToString(i2) );
                          }
           }
      }
