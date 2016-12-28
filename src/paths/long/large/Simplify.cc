@@ -245,7 +245,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, const bool VERBOSE_PATHFINDER) {
 
 
-    std::cout<<Date()<<": "<<(check_from_to(hb)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
+    //std::cout<<Date()<<": "<<(check_from_to(hb)? "graph adjacencies OK":"graph has incorrect vertex-edge adjacencies")<<std::endl;
     graph_status(hb);
     path_status(paths);
 

@@ -27,6 +27,7 @@
 #include <paths/PathFinder.h>
 #include <paths/long/large/ImprovePath.h>
 #include <paths/long/large/GraphImprover.h>
+#include <paths/long/large/ConsensusChecker.h>
 #include "GFADump.h"
 
 
@@ -358,10 +359,21 @@ int main(const int argc, const char * argv[]) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
         std::cout << Date() <<": creating edge-to-path index"<<std::endl;
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
+       /* ConsensusChecker cc(hbvr,inv,pathsr,bases);
+        for (auto e=0;e<hbvr.EdgeObjectCount();++e){
+            if (not cc.consensus_OK(e)){
+                std::cout<<"=========================================================================="<<e<<std::endl;
+                std::cout<<"Consensus problem on edge "<<e<<std::endl;
+                cc.print_detail();
+                std::cout<<"=========================================================================="<<e<<std::endl;
+
+            }
+        }*/
+
         if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
 
         vecbvec new_stuff;
-
+        //TODO: Hardcoded parameters
         bool CYCLIC_SAVE = True;
         int A2V = 5;
         int MAX_PROX_LEFT = 400;
