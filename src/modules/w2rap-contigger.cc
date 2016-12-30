@@ -81,7 +81,7 @@ int main(const int argc, const char * argv[]) {
                                                    "Stop after step (default: 7)", false, 7, &steps, cmd);
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
-                                                 "number of disk batches for step2 (default: 0, 0->in memory)", false, 0, "int", cmd);
+                                                 "number of disk batches for step2 (default: 0, 0->in memory)", false, 8, "int", cmd);
         TCLAP::ValueArg<std::string> tmp_dirArg("", "tmp_dir",
                                                       "tmp dir for step2 disk batches (default: workdir)", false, "", "string", cmd);
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
