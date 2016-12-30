@@ -296,9 +296,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
     // Make gap assemblies.
 
-    vec<int> mgc = {2};
-    int tmpdir_serial = 0;
-    int min_gap_count = mgc[0], nobj = hb.EdgeObjectCount();
     vec<int> to_left, to_right;
     hb.ToLeft(to_left), hb.ToRight(to_right);
     vec<vec<basevector> > extras(LR.size());//this is accumulation, generates memory blocks
@@ -307,6 +304,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     double clockp1 = WallClockTime();
     int nblobs = LR.size();
     std::atomic_uint_fast64_t solved(0);
+    std::atomic_uint_fast64_t solutionK[500];
+    for (auto &sk:solutionK) sk=0;
 
     //TODO: check local variable usage, should be made minimal!!!
     //Init readstacks, we'll need them!
@@ -462,8 +461,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                             bpathsx.push_back(bpaths[l]);
                         BasesToGraph(bpathsx, K, *mhbp_t);
                         ++solved;
-#pragma omp critical
-                        std::cout<<"solved at K="<<K
+                        ++solutionK[xshb.K()];
                     }
                 }
                 //}//---OMP TASK END---
@@ -473,6 +471,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         std::cout << Date() << ": "<< std::min(bstart+BATCH_SIZE,(uint64_t)nblobs) <<" blobs processed, paths found for " << solved << std::endl;
     }
     std::cout << Date() << ": "<< TimeSince(clockp1) << " spent in local assemblies." << std::endl;
+    for (auto i=0;i<500;++i)
+        if (solutionK[i]>0) std::cout << Date() << ": "<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
 
     TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);

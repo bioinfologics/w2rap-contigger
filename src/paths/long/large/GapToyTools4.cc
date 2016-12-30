@@ -108,27 +108,17 @@ void TranslatePaths( ReadPathVec& paths2, const HyperBasevector& hb3,
 
 void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2, 
      ReadPathVec& paths2, const vecbasevector& bases, const VecPQVec& quals, 
-     const int MIN_GAIN, const vec<int>& TRACE_PATHS, 
-     const String& work_dir, const int EXT_MODE )
+     const int MIN_GAIN,
+     const int EXT_MODE )
 {
-     vec<int> trace_edges;
-     if ( TRACE_PATHS.size() ) 
-     {    std::cout << "TRACE_PATHS:" << std::endl;
-          for ( auto const i : TRACE_PATHS )
-          {    const ReadPath& p = paths2[i];
-               std::cout << "[" << i  << "] (" << p.getOffset( ) << ") " << printSeq(p)
-                    << std::endl;
-               std::copy( p.begin(), p.end(), 
-                    std::back_inserter(trace_edges) );    }    }
-
-     double clock1 = WallClockTime( );
-     Validate( hb, inv2, paths2 );
+     std::cout << Date( ) << ": adding new content to graph" << std::endl;
+     //Validate( hb, inv2, paths2 );
      //const int K = 200;
      int K=hb.K();//TODO: check K effect
      ForceAssertEq( K, hb.K( ) );
      vec<Bool> used;
      hb.Used(used);
-
+     // This first just creates all possible edges+transitions again!
      HyperBasevector hb3;
      vec<vec<int>> to3( hb.EdgeObjectCount( ) );
      vec<int> left3( hb.EdgeObjectCount( ) );
@@ -139,14 +129,9 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
           // add in "new_stuff" to allx
           allx.append(new_stuff.begin(),new_stuff.end());
 
-          std::cout << Date( ) << ": adding new content to graph" << std::endl;
-          //std::cout << TimeSince(clock1) << " used in new stuff 1 test" << std::endl;
-          //std::cout << "memory in use now = " << MemUsageBytes( )
-          //     << std::endl;
-          double clock2 = WallClockTime( );
+
           const int coverage = 4;
           buildBigKHBVFromReads( K, allx, coverage, &hb3, &allx_paths);
-          //std::cout << Date( ) << ": back from buildBigKHBVFromReads" << std::endl;
 
           // build to3 and left3 from allx_paths
 
@@ -155,36 +140,24 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
                     to3[i].push_back( p );
                left3[i] = allx_paths[i].getFirstSkip();    }
 
-          //std::cout << TimeSince(clock2) << " used in new stuff 2 test" << std::endl;
-
-          if ( trace_edges.size() ) 
-          {    std::cout << "BigKHBV EDGE-PATHS:" << std::endl;
-               for ( auto const& edge : trace_edges )
-                    std::cout << edge << ": " << allx_paths[edge] << std::endl;    }    }
-#ifdef __linux
-     std::cout << "peak mem usage = " << PeakMemUsageGBString( ) << std::endl;
-#endif
-     double clock3 = WallClockTime( );
+     }
      TranslatePaths( paths2, hb3, to3, left3 );
      hb = hb3;
-     hb.Involution(inv2);
 
      // Extend paths.
 
-     Validate( hb, inv2, paths2 );
-     Bool extend_paths_verbose = False;
-     double clock5 = WallClockTime( );
-     if (extend_paths_verbose) std::cout << "\nINCOMPLETE PATHS\n";
+
      vec<int> to_right;
      hb.ToRight(to_right);
-     #pragma omp parallel for
+
+    #pragma omp parallel for
      for ( int64_t i = 0; i < (int64_t) paths2.size( ); i++ )
      {    if ( paths2[i].size( ) > 0 ) paths2[i].resize(1);
           ExtendPath( paths2[i], i, hb, to_right, bases[i], quals.begin()[i],
-                  MIN_GAIN, extend_paths_verbose, EXT_MODE );    }
-     Validate( hb, inv2, paths2 );
-     //std::cout << TimeSince(clock5) << " used in new stuff 5" << std::endl;
-     }
+                  MIN_GAIN, false, EXT_MODE );    }
+
+     std::cout << Date( ) << ": new content added" << std::endl;
+ }
 
 // ExtendPath.
 // - Does not change a path that has a negative start.

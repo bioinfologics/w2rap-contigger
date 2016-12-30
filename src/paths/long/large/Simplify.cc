@@ -130,7 +130,7 @@ ForwardIt binary_find(ForwardIt first, ForwardIt last, const T& value)
 void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals, const int MAX_SUPP_DEL, const int min_mult){
     uint64_t delcount=1;
     uint64_t pass=0;
-    while(delcount) {
+    //while(delcount) {
         vec<int> toLeft,toRight;
         hb.ToLeft(toLeft);
         hb.ToRight(toRight);
@@ -193,9 +193,9 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
         }
         auto before = hb.EdgeObjectCount();
         delcount = dels.size();
-        std::sort(dels.begin(), dels.end());
-        //Update paths first, just to be sure
 
+        /*
+        //Update paths first, just to be sure
         for (int64_t i = 0; i < (int64_t) paths.size(); i++) {
             for (int64_t j = 0; j < (int64_t) paths[i].size(); j++) {
                 if (binary_find(dels.begin(), dels.end(), paths[i][j]) != dels.end()) {
@@ -203,23 +203,23 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
                     break;
                 }
             }
-        }
+        }*/
 
-        GFADumpDetail("unsupported_paths_marked_detail"+std::to_string(pass),hb,inv,dels);
+        //GFADumpDetail("unsupported_paths_marked_detail"+std::to_string(pass),hb,inv,dels);
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
         std::cout << Date() << ": " << delcount << " / " << before << " unsupported edges removed, "
                   << hb.EdgeObjectCount() << " edges after cleanup" << std::endl;
         // Improve read placements and delete funky pairs.
         std::cout << Date() << ": rerouting paths and cleaning pairs" << std::endl;
-        ReroutePaths(hb, inv, paths, bases, quals);
+        /*ReroutePaths(hb, inv, paths, bases, quals);
         DeleteFunkyPathPairs(hb, inv, bases, paths, False);
         std::cout << Date() << ": improving paths" << std::endl;
         path_improver pimp;
         vec<int64_t> ids;
-        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, false, False);
+        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, false, False);*/
         pass++;
-    }
+    //}
 }
 
 void full_cleanup(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths, const int tampsize, const int hangssize){
@@ -253,15 +253,15 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     std::cout << Date() << ": rerouting paths and cleaning pairs" << std::endl;
     ReroutePaths(hb, inv, paths, bases, quals);
     DeleteFunkyPathPairs(hb, inv, bases, paths, False);
-    if (IMPROVE_PATHS) {
+    /*if (IMPROVE_PATHS) {
         std::cout << Date() << ": improving paths" << std::endl;
 
         path_improver pimp;
         vec<int64_t> ids;
         ImprovePaths(paths, hb, inv, bases, quals, ids, pimp, IMPROVE_PATHS_LARGE, False);
-    }
+    }*/
     path_status(paths);
-    OverlapValidator oval(hb,inv,paths);
+    /*OverlapValidator oval(hb,inv,paths);
     GFADumpDetail("before_ovlpval_detail",hb,inv);
     oval.compute_overlap_support();
     oval.analyse_complex_overlaps();
@@ -273,13 +273,13 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     hb.DeleteEdges(paint);
     Cleanup(hb,inv,paths);
     graph_status(hb);
-    path_status(paths);
+    path_status(paths);*/
 
 
     //Remove unsupported edges in certain situations.
-    //const int min_mult=5;
-    //std::cout << Date() << ": removing alternative edges with input support <="<<MAX_SUPP_DEL << std::endl;
-    //remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
+    const int min_mult=5;
+    std::cout << Date() << ": removing alternative edges with input support <="<<MAX_SUPP_DEL << std::endl;
+    remove_unsupported_edges(hb,inv,paths,bases,quals,MAX_SUPP_DEL,min_mult);
 
 
 

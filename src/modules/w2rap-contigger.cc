@@ -380,16 +380,16 @@ int main(const int argc, const char * argv[]) {
         int MAX_PROX_RIGHT = 400;
         int MAX_BPATHS = 100000;
         std::vector<int> k2floor_sequence={0, 100, 128, 144, 172, 200};
+        if (hbvr.K()>=240) k2floor_sequence.push_back(240);
+        if (hbvr.K()>=260) k2floor_sequence.push_back(260);
 
         AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, k2floor_sequence,
                       new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
         if (dump_perf) perf_file << checkpoint_perf_time("AssembleGaps2") << std::endl;
         int MIN_GAIN = 5;
-        //const String TRACE_PATHS="{}";
-        const vec<int> TRACE_PATHS;
         int EXT_MODE = 1;
 
-        AddNewStuff(new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, TRACE_PATHS, out_dir, EXT_MODE);
+        AddNewStuff(new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, EXT_MODE);
         PartnersToEnds(hbvr, pathsr, bases, quals);
         if (dump_perf) perf_file << checkpoint_perf_time("NewStuff&Partners") << std::endl;
         if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.final",hbvr,inv);

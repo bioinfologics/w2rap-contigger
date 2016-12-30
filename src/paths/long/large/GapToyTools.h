@@ -114,8 +114,7 @@ void RemoveSmallComponents3( HyperBasevector& hb,
 
 void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2, 
      ReadPathVec& paths2, const vecbasevector& bases, const VecPQVec& quals, 
-     const int MIN_GAIN, const vec<int>& TRACE_PATHS, const String& work_dir,
-     const int EXT_MODE );
+     const int MIN_GAIN, const int EXT_MODE );
 
 void ExtendPath( ReadPath& p, const int64_t i, const HyperBasevector& hb, 
      const vec<int>& to_right, const bvec& bases,
