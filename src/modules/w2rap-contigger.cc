@@ -30,23 +30,6 @@
 #include <paths/long/large/ConsensusChecker.h>
 #include "GFADump.h"
 
-
-std::string checkpoint_perf_time(const std::string section_name){
-    static double wtimer, cputimer;
-    double new_wtimer, wtime, new_cputimer, cputime;
-    //wallclock time
-    struct timeval time;
-    if (gettimeofday(&time,NULL)) new_wtimer=0;
-    else new_wtimer = (double)time.tv_sec + (double)time.tv_usec * .000001;
-    //cpu_time
-    new_cputimer= (double)clock() / CLOCKS_PER_SEC;
-    wtime=new_wtimer-wtimer;
-    cputime=new_cputimer-cputimer;
-    wtimer=new_wtimer;
-    cputimer=new_cputimer;
-    return "TIME, "+section_name+", "+std::to_string(wtime)+", "+std::to_string(cputime);
-}
-
 int main(const int argc, const char * argv[]) {
 
     std::string out_prefix;
@@ -63,7 +46,7 @@ int main(const int argc, const char * argv[]) {
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
-    bool extend_paths,run_pathfinder,dump_detailed_gfa,dump_all,dump_perf,dump_pf,pf_verbose,clean_smallk_graph;
+    bool extend_paths,run_pathfinder,dump_detailed_gfa,dump_all,dump_pf,pf_verbose,clean_smallk_graph;
 
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
@@ -123,8 +106,6 @@ int main(const int argc, const char * argv[]) {
                                                                "Dump all intermediate files", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
                                                          "Dump all intermediate files", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         dumpPerfArg        ("","dump_perf",
-                                                         "Dump performance info (devel)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         dumpPFArg        ("","dump_pf",
                                                           "Dump pathfinder info (devel)", false,false,"bool",cmd);
 
@@ -145,7 +126,6 @@ int main(const int argc, const char * argv[]) {
         run_pathfinder=pathFinderArg.getValue();
         dump_detailed_gfa=dumpDetailedGFAArg.getValue();
         dump_all=dumpAllArg.getValue();
-        dump_perf=dumpPerfArg.getValue();
         from_step=fromStep_Arg.getValue();
         to_step=toStep_Arg.getValue();
         dev_run=dev_runArg.getValue();
@@ -184,7 +164,6 @@ int main(const int argc, const char * argv[]) {
 
     vec<String> subsam_names = {"C"};
     vec<int64_t> subsam_starts = {0};
-    std::ofstream perf_file;
     //double wtimer,cputimer;
     vec<int> inv;
     HyperBasevector hbvr;
@@ -201,22 +180,15 @@ int main(const int argc, const char * argv[]) {
 
     //== Load reads (and saves in binary format) ======
 
-    if (dump_perf) {
-        perf_file.open(out_dir+"/"+out_prefix+".perf",std::ofstream::out | std::ofstream::app);
-    }
-    if (dump_perf) checkpoint_perf_time(""); //initialisation!
-
     if (from_step==1)
     {
         std::cout << "--== Step 1: Reading input files ==--" << std::endl;
         ExtractReads(read_files, out_dir, subsam_names, subsam_starts, &bases, &quals);
-        if (dump_perf) perf_file << checkpoint_perf_time("ExtractReads") << std::endl;
         //TODO: add an option to dump the reads
         if (dump_all || to_step<6) {
             std::cout << Date() << ": Dumping reads in fastb/qualp format..." << std::endl;
             bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
             quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
-            if (dump_perf) perf_file << checkpoint_perf_time("DumpReads") << std::endl;
         }
         std::cout << Date() << ": Reading input files DONE!" << std::endl << std::endl << std::endl;
     }
@@ -228,7 +200,6 @@ int main(const int argc, const char * argv[]) {
         bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
         quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
         std::cout << Date() << ": Loading reads DONE!" << std::endl << std::endl;
-        if (dump_perf) perf_file << checkpoint_perf_time("LoadReads") << std::endl;
     }
     {//This scope-trick to invalidate old data is dirty
 
@@ -238,9 +209,7 @@ int main(const int argc, const char * argv[]) {
             bool FILL_JOIN = False;
             std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
             buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,tmp_dir,disk_batches);
-            if (dump_perf) perf_file << checkpoint_perf_time("buildReadQGraph") << std::endl;
             //FixPaths(hbv, paths); //TODO: is this even needed?
-            if (dump_perf) perf_file << checkpoint_perf_time("FixPaths") << std::endl;
             if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".small_K",hbv,inv);
             if (dump_all || to_step ==2){
                 std::cout << Date() << ": Dumping small_K graph and paths..." << std::endl;
@@ -250,7 +219,6 @@ int main(const int argc, const char * argv[]) {
                 path_status(paths);
 
                 std::cout << Date() << ": Dumping small_K graph and paths DONE!" << std::endl;
-                if (dump_perf) perf_file << checkpoint_perf_time("SmallKDump") << std::endl;
             }
             std::cout << Date() << ": Building first graph DONE!" << std::endl << std::endl << std::endl;
         }
@@ -262,7 +230,6 @@ int main(const int argc, const char * argv[]) {
             graph_status(hbv);
             path_status(paths);
             std::cout << Date() << ": Reading small_K graph and paths DONE!" << std::endl << std::endl;
-            if (dump_perf) perf_file << std::endl << checkpoint_perf_time("SmallKLoad") << std::endl;
         }
         if (from_step<=3 and to_step>=3) {
             if (clean_smallk_graph) {
@@ -284,15 +251,12 @@ int main(const int argc, const char * argv[]) {
             vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
             inv.clear();
             hbv.Involution(inv);
-            if (dump_perf) perf_file << checkpoint_perf_time("Edges&Involution") << std::endl;
             FragDist(hbv, inv, paths, out_dir + "/" + out_prefix + ".first.frags.dist");
-            if (dump_perf) perf_file << checkpoint_perf_time("FragDist") << std::endl;
             const string run_head = out_dir + "/" + out_prefix;
 
             pathsr.resize(paths.size());
 
             RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
-            if (dump_perf) perf_file << checkpoint_perf_time("Repath") << std::endl;
             if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K",hbvr,inv);
             if (dump_all || to_step ==3){
                 std::cout << Date() << ": Dumping large_K graph and paths..." << std::endl;
@@ -301,7 +265,6 @@ int main(const int argc, const char * argv[]) {
                 graph_status(hbv);
                 path_status(paths);
                 std::cout << Date() << ": Dumping large_K graph and paths DONE!" << std::endl;
-                if (dump_perf) perf_file << checkpoint_perf_time("LargeKDump") << std::endl;
             }
             std::cout << Date() << ": Repathing to second graph DONE!" << std::endl << std::endl;
         }
@@ -317,7 +280,6 @@ int main(const int argc, const char * argv[]) {
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading large_K graph and paths DONE!" << std::endl << std::endl;
-        if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKLoad") << std::endl;
     }
     if (from_step<=4 and to_step>=4) {
         std::cout << "--== Step 4: Cleaning graph ==--" << std::endl;
@@ -326,7 +288,6 @@ int main(const int argc, const char * argv[]) {
         int CLEAN_200_VERBOSITY = 0;
         int CLEAN_200V = 3;
         Clean200x(hbvr, inv, pathsr, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_size);
-        if (dump_perf) perf_file << checkpoint_perf_time("Clean200x") << std::endl;
         if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.clean",hbvr,inv);
         if (dump_all || to_step ==4){
             std::cout << Date() << ": Dumping large_K clean graph and paths..." << std::endl;
@@ -335,7 +296,6 @@ int main(const int argc, const char * argv[]) {
             graph_status(hbvr);
             path_status(pathsr);
             std::cout << Date() << ": Dumping large_K clean graph and paths DONE!" << std::endl;
-            if (dump_perf) perf_file << checkpoint_perf_time("LargeKCleanDump") << std::endl;
         }
         std::cout << Date() << ": Cleaning graph DONE!" << std::endl<< std::endl;
     }
@@ -353,7 +313,6 @@ int main(const int argc, const char * argv[]) {
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading large_K clean graph and paths DONE!" << std::endl << std::endl;
-        if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKCleanLoad") << std::endl;
     }
     if (from_step<=5 and to_step>=5) {
         std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
@@ -370,8 +329,6 @@ int main(const int argc, const char * argv[]) {
             }
         }*/
 
-        if (dump_perf) perf_file << checkpoint_perf_time("Invert") << std::endl;
-
         vecbvec new_stuff;
         //TODO: Hardcoded parameters
         bool CYCLIC_SAVE = True;
@@ -380,18 +337,17 @@ int main(const int argc, const char * argv[]) {
         int MAX_PROX_RIGHT = 400;
         int MAX_BPATHS = 100000;
         std::vector<int> k2floor_sequence={0, 100, 128, 144, 172, 200};
+        if (hbvr.K()>=224) k2floor_sequence.push_back(224);
         if (hbvr.K()>=240) k2floor_sequence.push_back(240);
         if (hbvr.K()>=260) k2floor_sequence.push_back(260);
 
         AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, k2floor_sequence,
                       new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
-        if (dump_perf) perf_file << checkpoint_perf_time("AssembleGaps2") << std::endl;
         int MIN_GAIN = 5;
         int EXT_MODE = 1;
 
         AddNewStuff(new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, EXT_MODE);
         PartnersToEnds(hbvr, pathsr, bases, quals);
-        if (dump_perf) perf_file << checkpoint_perf_time("NewStuff&Partners") << std::endl;
         if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.final",hbvr,inv);
         if (dump_all || to_step ==5){
             std::cout << Date() << ": Dumping large_K final graph and paths..." << std::endl;
@@ -400,7 +356,6 @@ int main(const int argc, const char * argv[]) {
             graph_status(hbvr);
             path_status(pathsr);
             std::cout << Date() << ": Dumping large_K final graph and paths DONE!" << std::endl;
-            if (dump_perf) perf_file << checkpoint_perf_time("LargeKFinalDump") << std::endl;
         }
         std::cout << Date() << ": Assembling gaps DONE!" << std::endl << std::endl ;
 
@@ -417,7 +372,6 @@ int main(const int argc, const char * argv[]) {
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading large_K final graph and paths DONE!" << std::endl << std::endl;
-        if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKFinalLoad") << std::endl;
     }
     if (from_step<=6 and to_step>=6) {
         std::cout << "--== Step 6: Graph simplification and path finding ==--" << std::endl;
@@ -446,7 +400,6 @@ int main(const int argc, const char * argv[]) {
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
                  IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pf_verbose);
 
-        if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
         // For now, fix paths and write the and their inverse
         for (int i = 0; i < (int) pathsr.size(); i++) { //XXX TODO: change this int for uint 32
             Bool bad = False;
@@ -457,13 +410,11 @@ int main(const int argc, const char * argv[]) {
         // TODO: this is "bj making sure the inversion still works", but shouldn't be required
         paths_inv.clear();
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        if (dump_perf) perf_file << checkpoint_perf_time("Fix&Invert") << std::endl;
 
         // Find lines and write files.
         vec<vec<vec<vec<int>>>> lines;
 
         FindLines(hbvr, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-        if (dump_perf) perf_file << checkpoint_perf_time("FindLines") << std::endl;
         BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
         // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
@@ -483,12 +434,10 @@ int main(const int argc, const char * argv[]) {
             std::cout << "CN fraction good = " << cn_frac_good << std::endl;
             PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
         }
-        if (dump_perf) perf_file << checkpoint_perf_time("LineStats") << std::endl;
 
         // TestLineSymmetry( lines, inv2 );
         // Compute fragment distribution.
         FragDist(hbvr, inv, pathsr, out_dir + "/" + out_prefix + ".fin.frags.dist");
-        if (dump_perf) perf_file << checkpoint_perf_time("FragDist") << std::endl;
         if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".contig",hbvr,inv);
         //TODO: add contig fasta dump.
         if (dump_all || to_step == 6){
@@ -498,7 +447,6 @@ int main(const int argc, const char * argv[]) {
             graph_status(hbvr);
             path_status(pathsr);
             std::cout << Date() << ": Dumping contig graph and paths DONE!" << std::endl;
-            if (dump_perf) perf_file << checkpoint_perf_time("ContigGraphDump") << std::endl;
         }
         //vecbasevector G;
         //FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
@@ -517,8 +465,6 @@ int main(const int argc, const char * argv[]) {
         graph_status(hbvr);
         path_status(pathsr);
         std::cout << Date() << ": Reading contig graph and paths DONE!" << std::endl << std::endl;
-        if (dump_perf) perf_file << std::endl << checkpoint_perf_time("ContigGraphLoad") << std::endl;
-
     }
     if (from_step<=7 and to_step>=7) {
         //== Scaffolding
@@ -531,7 +477,6 @@ int main(const int argc, const char * argv[]) {
 
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
-        if (dump_perf) perf_file << checkpoint_perf_time("MakeGaps") << std::endl;
 
         // Carry out final analyses and write final assembly files.
 
@@ -541,11 +486,9 @@ int main(const int argc, const char * argv[]) {
         path_status(pathsr);
         GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
         if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".assembly",hbvr,inv);
-        if (dump_perf) perf_file << checkpoint_perf_time("FinalFiles") << std::endl;
         std::cout << Date() << ": PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
 
     }
-    if (dump_perf) perf_file.close();
     return 0;
 }
 
