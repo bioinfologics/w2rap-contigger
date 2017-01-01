@@ -23,12 +23,6 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      const int version, const uint min_size )
 {
      // Start.
-
-
-     uint64_t total=0;
-     for (auto i=0; i<hb.EdgeObjectCount(); ++i) total+=hb.EdgeObject(i).size()-hb.K()+1;
-
-     std::cout << Date() << ": cleaning graph with " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges"<< std::endl;
      // Heuristics.
 
      const int max_exts = 10;
@@ -206,11 +200,7 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      hb.DeleteEdges(to_delete);
      Cleanup( hb, inv, paths );    }
      TestInvolution( hb, inv );
-     Validate( hb, inv, paths );    
-     //std::cout << TimeSince(clock) << " used cleaning large_k-mer graph" << std::endl;
-     total=0;
-     for (auto i=0; i<hb.EdgeObjectCount(); ++i) total+=hb.EdgeObject(i).size()-hb.K()+1;
-     std::cout << Date() << ": graph cleaned to " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges"<< std::endl;
+     Validate( hb, inv, paths );
 }
 
 void AnalyzeScores( const HyperBasevectorX& hb, const vec<int>& inv, const int v,

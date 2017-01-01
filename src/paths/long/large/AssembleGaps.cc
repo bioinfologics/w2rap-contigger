@@ -24,6 +24,7 @@
 #include <util/w2rap_timers.h>
 #include <paths/long/LoadCorrectCore.h>
 #include <paths/long/ReadStack.h>
+#include <util/OutputLog.h>
 
 
 template<int M>
@@ -281,7 +282,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         }
         EraseIf(LR, lrd);
     }
-    std::cout << Date() << ": " << LR.size() << " unique clusters to be processed as blobs" << std::endl;
+    OutputLog(2) << LR.size() << " unique clusters to be processed as blobs" << std::endl;
     // Some setup stuff.
 
     int nedges = hb.EdgeObjectCount();
@@ -468,11 +469,11 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
             }
         }
 
-        std::cout << Date() << ": "<< std::min(bstart+BATCH_SIZE,(uint64_t)nblobs) <<" blobs processed, paths found for " << solved << std::endl;
+        OutputLog(3)<< std::min(bstart+BATCH_SIZE,(uint64_t)nblobs) <<" blobs processed, paths found for " << solved << std::endl;
     }
-    std::cout << Date() << ": "<< TimeSince(clockp1) << " spent in local assemblies." << std::endl;
+    OutputLog(2)<< TimeSince(clockp1) << " spent in local assemblies." << std::endl;
     for (auto i=0;i<500;++i)
-        if (solutionK[i]>0) std::cout << Date() << ": "<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
+        if (solutionK[i]>0) OutputLog(2)<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
 
     TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);

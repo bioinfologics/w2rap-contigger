@@ -31,6 +31,11 @@
 #include "GFADump.h"
 #include "util/OutputLog.h"
 
+//TODO: stupid globals!
+
+int MAX_CELL_PATHS = 50;
+int MAX_DEPTH = 10;
+
 
 void step_1(vecbvec & bases,
             VecPQVec & quals,
@@ -115,20 +120,140 @@ void step_3_new(HyperBasevector &hbv,
 
 }
 
-void step_4(){
+void step_4(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            unsigned int min_size){
+    OutputLog(2)<<"cleaning graph"<<std::endl;
+    int CLEAN_200_VERBOSITY = 0;
+    int CLEAN_200V = 3;
+    Clean200x(hbv, hbvinv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_size);
 
 }
 
-void step_5(){
+void step_5(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            unsigned int pair_sample,
+            std::string out_dir){
+    vecbvec new_stuff;
+    //TODO: Hardcoded parameters
+    bool CYCLIC_SAVE = True;
+    int A2V = 5;
+    int MAX_PROX_LEFT = 400;
+    int MAX_PROX_RIGHT = 400;
+    int MAX_BPATHS = 100000;
+    std::vector<int> k2floor_sequence={0, 100, 128, 144, 172, 200};
+    if (hbv.K()>=224) k2floor_sequence.push_back(224);
+    if (hbv.K()>=240) k2floor_sequence.push_back(240);
+    if (hbv.K()>=260) k2floor_sequence.push_back(260);
+    VecULongVec pathsinv;
+    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+    invert(paths,pathsinv,hbv.EdgeObjectCount());
+    AssembleGaps2(hbv, hbvinv, paths, pathsinv, bases, quals, out_dir, k2floor_sequence,
+                  new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
+    int MIN_GAIN = 5;
+    int EXT_MODE = 1;
+
+    AddNewStuff(new_stuff, hbv, hbvinv, paths, bases, quals, MIN_GAIN, EXT_MODE);
+    PartnersToEnds(hbv, paths, bases, quals);
+}
+
+void step_6(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            unsigned int min_input_reads,
+            std::string out_dir,
+            std::string out_prefix){
+
+    int MAX_SUPP_DEL = min_input_reads;//was 0
+    bool TAMP_EARLY_MIN = True;
+    int MIN_RATIO2 = 8;
+    int MAX_DEL2 = 200;
+    bool ANALYZE_BRANCHES_VERBOSE2 = False;
+    const String TRACE_SEQ = "";
+    bool DEGLOOP = True;
+    bool EXT_FINAL = True;
+    int EXT_FINAL_MODE = 1;
+    bool PULL_APART_VERBOSE = False;
+    const vec<int> PULL_APART_TRACE;
+    int DEGLOOP_MODE = 1;
+    float DEGLOOP_MIN_DIST = 2.5;
+    bool IMPROVE_PATHS = True;
+    bool IMPROVE_PATHS_LARGE = False;
+    bool FINAL_TINY = True;
+    bool UNWIND3 = True;
+
+    Simplify(out_dir, hbv, hbvinv, paths, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
+             ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
+             PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
+             IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, False, False, False);//TODO: the last 3 Falses disable pathfinder
+
+    // For now, fix paths and write the and their inverse
+    for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
+        Bool bad = False;
+        for (int j = 0; j < (int) paths[i].size(); j++)
+            if (paths[i][j] < 0) bad = True;
+        if (bad) paths[i].resize(0);
+    }
+    VecULongVec pathsinv;
+    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+    invert(paths,pathsinv,hbv.EdgeObjectCount());
+
+    // Find lines and write files.
+    vec<vec<vec<vec<int>>>> lines;
+
+    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
+
+    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
+    {
+        vec<int> llens, npairs;
+        GetLineLengths(hbv, lines, llens);
+        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+
+        vec<vec<covcount>> covs;
+        vec<int64_t> subsam_starts={0};
+        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+
+        //TODO: maybe Report some similar to CN stats ???
+        //double cn_frac_good = CNIntegerFraction(hbv, covs);
+        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
+    }
 
 }
 
-void step_6(){
+void step_7(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            std::string out_dir,
+            std::string out_prefix){
+    int MIN_LINE = 5000;
+    int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
 
-}
+    bool SCAFFOLD_VERBOSE = False;
+    bool GAP_CLEANUP = True;
 
-void step_7(){
+    VecULongVec pathsinv;
+    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+    invert(paths,pathsinv,hbv.EdgeObjectCount());
 
+    MakeGaps(hbv, hbvinv, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
+
+    // Carry out final analyses and write final assembly files.
+
+    vecbasevector G;
+    vec<int64_t> subsam_starts={0};
+    vec<String> subsam_names={"C"};
+    FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
 }
 
 
@@ -198,7 +323,7 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> minInputArg("", "min_input",
                                                     "min number of read entering an edge at step 6(default: 3)", false, 3, "int", cmd);
         TCLAP::ValueArg<unsigned int> logLevelArg("", "log_level",
-                                                  "verbosity level (default: 3)", false, 3, "1-3", cmd);
+                                                  "verbosity level (default: 3)", false, 3, "1-4", cmd);
 
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
@@ -310,34 +435,40 @@ int main(const int argc, const char * argv[]) {
     HyperBasevector hbv;
     vec<int> hbvinv;
     ReadPathVec paths;
-    vec<vec<int>> pathsinv;
 
-    int MAX_CELL_PATHS = 50;
-    int MAX_DEPTH = 10;
+
 
 
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
-        if ( (2==step or 3==step or 4==step or 5==step or 6==step) and bases.size()==0){
+        if ( (2==step or 4==step or 5==step or 6==step) and bases.size()==0){
             OutputLog(2) << "Loading bases and quals..." << std::endl;
             bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
             quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
-            OutputLog(2) << "Loading reads DONE!" << std::endl << std::endl;
+            OutputLog(2) << "Reads loaded" << std::endl << std::endl;
         }
         //steps that require a graph
         if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
             //Load hbv
-
+            OutputLog(2) <<"Loading graph..." << std::endl;
+            BinaryReader::readFile(out_dir + "/" + out_prefix + "." + step_inputg_prefix[step-1] + ".hbv", &hbv);
             //Create inversion
-
+            OutputLog(4) <<"Creating graph involution..." << std::endl;
+            hbvinv.clear();
+            hbv.Involution(hbvinv);
             //load paths
-
-            //create path inversion?
+            OutputLog(2) <<"Loading paths..." << std::endl;
+            LoadReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_inputg_prefix[step-1] + ".paths").c_str());
+            //create path inversion
+            OutputLog(2) << "Graph and paths loaded" << std::endl << std::endl;
+            graph_status(hbv);
+            path_status(paths);
 
         }
 
         //Print step header and start timers and memory metrics
+
 
         OutputLog(1,false) << std::endl << "--== Step " << step << ": " << step_names[step-1] <<" ";
         OutputLog(1)<< " ==--"<< std::endl << std::endl;
@@ -356,16 +487,16 @@ int main(const int argc, const char * argv[]) {
                 step_3(hbv,hbvinv,paths,large_K,out_dir);
                 break;
             case 4:
-                step_4();
+                step_4(hbv, hbvinv, paths, bases, quals, min_size);
                 break;
             case 5:
-                step_5();
+                step_5(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
                 break;
             case 6:
-                step_6();
+                step_6(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
                 break;
             case 7:
-                step_7();
+                step_7(hbv, hbvinv, paths, out_dir, out_prefix);
                 break;
         }
 
@@ -385,7 +516,7 @@ int main(const int argc, const char * argv[]) {
         } else {
             if (step_outputg_prefix[step-1]!="" and (dump_all or step==to_step)){
                 //TODO: dump graph and paths
-                OutputLog(2) << "Dumping small_K graph and paths..." << std::endl;
+                OutputLog(2) << "Dumping graph and paths..." << std::endl;
                 BinaryWriter::writeFile(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1] +".hbv", hbv);
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1] +".paths").c_str());
                 OutputLog(2) << "DONE!" << std::endl;
@@ -394,313 +525,13 @@ int main(const int argc, const char * argv[]) {
                 //TODO:
             }
         }
-        OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl;
-    }
-    return 0;
-    /*
-    if (from_step==1)
-    {
-        std::cout << "--== Step 1: Reading input files ==--" << std::endl;
-
-        //TODO: add an option to dump the reads
-        if (dump_all || to_step<6) {
-            std::cout << Date() << ": Dumping reads in fastb/qualp format..." << std::endl;
-            bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
-            quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
-        }
-        std::cout << Date() << ": Reading input files DONE!" << std::endl << std::endl << std::endl;
-    }
-
-    //== Read QGraph, and repath (k=60, k=200 (and saves in binary format) ======
-
-    if (from_step>1 && from_step<7 and not (from_step==3 and to_step==3)){
-
-    }
-    {//This scope-trick to invalidate old data is dirty
-
-        HyperBasevector hbv;
-        ReadPathVec paths;
-        if (from_step<=2 and to_step>=2) {
-            //FixPaths(hbv, paths); //TODO: is this even needed?
-            if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".small_K",hbv,inv);
-            if (dump_all || to_step ==2){
-                std::cout << Date() << ": Dumping small_K graph and paths..." << std::endl;
-                BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".small_K.hbv", hbv);
-                WriteReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
-                graph_status(hbv);
-                path_status(paths);
-
-                std::cout << Date() << ": Dumping small_K graph and paths DONE!" << std::endl;
-            }
-            std::cout << Date() << ": Building first graph DONE!" << std::endl << std::endl << std::endl;
-        }
-
-        if (from_step==3){
-            std::cout << Date() << ": Reading small_K graph and paths..." << std::endl;
-            BinaryReader::readFile(out_dir + "/" + out_prefix + ".small_K.hbv", &hbv);
-            LoadReadPathVec(paths,(out_dir + "/" + out_prefix + ".small_K.paths").c_str());
+        OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl<<std::endl;
+        if (step_outputg_prefix[step-1]!=""){
             graph_status(hbv);
             path_status(paths);
-            std::cout << Date() << ": Reading small_K graph and paths DONE!" << std::endl << std::endl;
+            OutputLog(2,false)<<std::endl;
         }
-        if (from_step<=3 and to_step>=3) {
-            if (clean_smallk_graph) {
-                std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
-                inv.clear();
-                hbv.Involution(inv);
-                VecULongVec paths_inv;
-                invert(paths, paths_inv, hbv.EdgeObjectCount());
-                GraphImprover gi(hbv, inv, paths, paths_inv);
-                gi.improve_graph();
-                GraphImprover gi2(hbv, inv, paths, paths_inv);
-                gi2.expand_cannonical_repeats(2,2);
-
-
-                std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
-            } else {
-                std::cout << "--== Step 3: Repathing to second (large K) graph ==--" << std::endl;
-            }
-            vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
-            inv.clear();
-            hbv.Involution(inv);
-            FragDist(hbv, inv, paths, out_dir + "/" + out_prefix + ".first.frags.dist");
-            const string run_head = out_dir + "/" + out_prefix;
-
-            pathsr.resize(paths.size());
-
-            RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);
-            if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K",hbvr,inv);
-            if (dump_all || to_step ==3){
-                std::cout << Date() << ": Dumping large_K graph and paths..." << std::endl;
-                BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.hbv", hbvr);
-                WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
-                graph_status(hbv);
-                path_status(paths);
-                std::cout << Date() << ": Dumping large_K graph and paths DONE!" << std::endl;
-            }
-            std::cout << Date() << ": Repathing to second graph DONE!" << std::endl << std::endl;
-        }
-
     }
-
-    //== Clean ======
-    if (from_step==4){
-        std::cout << Date() << ": Reading large_K graph and paths..." << std::endl;
-        BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.hbv", &hbvr);
-        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.paths").c_str());
-        
-        graph_status(hbvr);
-        path_status(pathsr);
-        std::cout << Date() << ": Reading large_K graph and paths DONE!" << std::endl << std::endl;
-    }
-    if (from_step<=4 and to_step>=4) {
-        std::cout << "--== Step 4: Cleaning graph ==--" << std::endl;
-        inv.clear();
-        hbvr.Involution(inv);
-        int CLEAN_200_VERBOSITY = 0;
-        int CLEAN_200V = 3;
-        Clean200x(hbvr, inv, pathsr, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_size);
-        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.clean",hbvr,inv);
-        if (dump_all || to_step ==4){
-            std::cout << Date() << ": Dumping large_K clean graph and paths..." << std::endl;
-            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", hbvr);
-            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
-            graph_status(hbvr);
-            path_status(pathsr);
-            std::cout << Date() << ": Dumping large_K clean graph and paths DONE!" << std::endl;
-        }
-        std::cout << Date() << ": Cleaning graph DONE!" << std::endl<< std::endl;
-    }
-
-    //== Patching ======
-
-    VecULongVec paths_inv;
-
-    if (from_step==5){
-        std::cout << Date() << ": Reading large_K clean graph and paths..." << std::endl;
-        BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.clean.hbv", &hbvr);
-        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.clean.paths").c_str());
-        inv.clear();
-        hbvr.Involution(inv);
-        graph_status(hbvr);
-        path_status(pathsr);
-        std::cout << Date() << ": Reading large_K clean graph and paths DONE!" << std::endl << std::endl;
-    }
-    if (from_step<=5 and to_step>=5) {
-        std::cout << "--== Step 5: Assembling gaps ==--" << std::endl;
-        std::cout << Date() <<": creating edge-to-path index"<<std::endl;
-        invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-       /* ConsensusChecker cc(hbvr,inv,pathsr,bases);
-        for (auto e=0;e<hbvr.EdgeObjectCount();++e){
-            if (not cc.consensus_OK(e)){
-                std::cout<<"=========================================================================="<<e<<std::endl;
-                std::cout<<"Consensus problem on edge "<<e<<std::endl;
-                cc.print_detail();
-                std::cout<<"=========================================================================="<<e<<std::endl;
-
-            }
-        }* /
-
-        vecbvec new_stuff;
-        //TODO: Hardcoded parameters
-        bool CYCLIC_SAVE = True;
-        int A2V = 5;
-        int MAX_PROX_LEFT = 400;
-        int MAX_PROX_RIGHT = 400;
-        int MAX_BPATHS = 100000;
-        std::vector<int> k2floor_sequence={0, 100, 128, 144, 172, 200};
-        if (hbvr.K()>=224) k2floor_sequence.push_back(224);
-        if (hbvr.K()>=240) k2floor_sequence.push_back(240);
-        if (hbvr.K()>=260) k2floor_sequence.push_back(260);
-
-        AssembleGaps2(hbvr, inv, pathsr, paths_inv, bases, quals, out_dir, k2floor_sequence,
-                      new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
-        int MIN_GAIN = 5;
-        int EXT_MODE = 1;
-
-        AddNewStuff(new_stuff, hbvr, inv, pathsr, bases, quals, MIN_GAIN, EXT_MODE);
-        PartnersToEnds(hbvr, pathsr, bases, quals);
-        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".large_K.final",hbvr,inv);
-        if (dump_all || to_step ==5){
-            std::cout << Date() << ": Dumping large_K final graph and paths..." << std::endl;
-            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", hbvr);
-            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
-            graph_status(hbvr);
-            path_status(pathsr);
-            std::cout << Date() << ": Dumping large_K final graph and paths DONE!" << std::endl;
-        }
-        std::cout << Date() << ": Assembling gaps DONE!" << std::endl << std::endl ;
-
-    }
-
-
-
-    if (from_step==6){
-        std::cout << Date() << ": Reading large_K final graph and paths..." << std::endl;
-        BinaryReader::readFile(out_dir + "/" + out_prefix + ".large_K.final.hbv", &hbvr);
-        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
-        inv.clear();
-        hbvr.Involution(inv);
-        graph_status(hbvr);
-        path_status(pathsr);
-        std::cout << Date() << ": Reading large_K final graph and paths DONE!" << std::endl << std::endl;
-    }
-    if (from_step<=6 and to_step>=6) {
-        std::cout << "--== Step 6: Graph simplification and path finding ==--" << std::endl;
-
-        //==Simplify
-        int MAX_SUPP_DEL = min_input_reads;//was 0
-        bool TAMP_EARLY_MIN = True;
-        int MIN_RATIO2 = 8;
-        int MAX_DEL2 = 200;
-        bool ANALYZE_BRANCHES_VERBOSE2 = False;
-        const String TRACE_SEQ = "";
-        bool DEGLOOP = True;
-        bool EXT_FINAL = True;
-        int EXT_FINAL_MODE = 1;
-        bool PULL_APART_VERBOSE = False;
-        const vec<int> PULL_APART_TRACE;
-        int DEGLOOP_MODE = 1;
-        float DEGLOOP_MIN_DIST = 2.5;
-        bool IMPROVE_PATHS = True;
-        bool IMPROVE_PATHS_LARGE = False;
-        bool FINAL_TINY = True;
-        bool UNWIND3 = True;
-
-        Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
-                 ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
-                 PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pf_verbose);
-
-        // For now, fix paths and write the and their inverse
-        for (int i = 0; i < (int) pathsr.size(); i++) { //XXX TODO: change this int for uint 32
-            Bool bad = False;
-            for (int j = 0; j < (int) pathsr[i].size(); j++)
-                if (pathsr[i][j] < 0) bad = True;
-            if (bad) pathsr[i].resize(0);
-        }
-        // TODO: this is "bj making sure the inversion still works", but shouldn't be required
-        paths_inv.clear();
-        invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-
-        // Find lines and write files.
-        vec<vec<vec<vec<int>>>> lines;
-
-        FindLines(hbvr, inv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-        // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-        {
-            vec<int> llens, npairs;
-            GetLineLengths(hbvr, lines, llens);
-            GetLineNpairs(hbvr, inv, pathsr, lines, npairs);
-            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-            vec<vec<covcount>> covs;
-            ComputeCoverage(hbvr, inv, pathsr, lines, subsam_starts, covs);
-            //BinaryWriter::writeFile( work_dir + "/" +prefix+ ".fin.covs", covs );
-            //WriteLineStats( work_dir, lines, llens, npairs, covs );
-
-            // Report CN stats
-            double cn_frac_good = CNIntegerFraction(hbvr, covs);
-            std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-            PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-        }
-
-        // TestLineSymmetry( lines, inv2 );
-        // Compute fragment distribution.
-        FragDist(hbvr, inv, pathsr, out_dir + "/" + out_prefix + ".fin.frags.dist");
-        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".contig",hbvr,inv);
-        //TODO: add contig fasta dump.
-        if (dump_all || to_step == 6){
-            std::cout << Date() << ": Dumping contig graph and paths..." << std::endl;
-            BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".contig.hbv", hbvr);
-            WriteReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
-            graph_status(hbvr);
-            path_status(pathsr);
-            std::cout << Date() << ": Dumping contig graph and paths DONE!" << std::endl;
-        }
-        //vecbasevector G;
-        //FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
-        GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
-        std::cout << Date() << ": Contigging DONE!" << std::endl << std::endl;
-
-    }
-    if (from_step==7){
-        std::cout << Date() << ": Reading contig graph and paths..." << std::endl;
-        BinaryReader::readFile(out_dir + "/" + out_prefix + ".contig.hbv", &hbvr);
-        LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
-        inv.clear();
-        hbvr.Involution(inv);
-        paths_inv.clear();
-        invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        graph_status(hbvr);
-        path_status(pathsr);
-        std::cout << Date() << ": Reading contig graph and paths DONE!" << std::endl << std::endl;
-    }
-    if (from_step<=7 and to_step>=7) {
-        //== Scaffolding
-        std::cout << "--== Step 7: PE-Scaffolding ==--" << std::endl;
-        int MIN_LINE = 5000;
-        int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
-
-        bool SCAFFOLD_VERBOSE = False;
-        bool GAP_CLEANUP = True;
-
-
-        MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
-
-        // Carry out final analyses and write final assembly files.
-
-        vecbasevector G;
-        FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
-        graph_status(hbvr);
-        path_status(pathsr);
-        GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
-        if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".assembly",hbvr,inv);
-        std::cout << Date() << ": PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
-
-    }*/
     return 0;
 }
 

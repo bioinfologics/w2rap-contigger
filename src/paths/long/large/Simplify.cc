@@ -11,6 +11,7 @@
 
 #include <paths/PathFinder.h>
 #include <kmers/kmatch/KMatch.h>
+#include <util/OutputLog.h>
 #include "CoreTools.h"
 #include "Qualvector.h"
 #include "paths/HyperBasevector.h"
@@ -32,17 +33,32 @@ void graph_status(const HyperBasevector &hb) {
         total+=hb.EdgeObject(i).size()-hb.K()+1;
         else ++null_sized;
     }
-    std::cout << Date() << ": GRAPH contains " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges";
-    if (null_sized>0) std::cout << " ("<<null_sized<<" gap edges)";
-    std::cout << std::endl;
+    OutputLog(2) << "GRAPH: " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges";
+    if (null_sized>0) OutputLog(2,false) << " ("<<null_sized<<" gap edges)";
+    OutputLog(2,false) << std::endl;
 }
 void path_status(const ReadPathVec &paths){
-    uint64_t pe=0,ps=0,pm=0;
-    for (auto &p:paths)
-        if (p.size()==0) ++pe;
-        else if (p.size()==1) ++ps;
+    uint64_t u=0,ps=0,pm=0,none=0,single=0,both=0;
+    bool first=true;
+    uint8_t uends=0;
+    for (auto &p:paths) {
+        if (p.size() == 0) {
+            ++u;
+            ++uends;
+        }
+        else if (p.size() == 1) ++ps;
         else ++pm;
-    std::cout << Date() << ": PATHS -> empty: " << pe << "  single-edge: " << ps <<"  multi-edge: " << pm << std::endl;
+
+        if (not first){
+            if (uends==2) ++none;
+            else if (uends==1) ++single;
+            else ++both;
+            uends=0;
+        }
+        first=!first;
+    }
+    OutputLog(2) << "PATHS:  empty: " << u << "  1: " << ps <<"  2+: " << pm << std::endl;
+    OutputLog(2) << "PAIR ENDS: none: " << none << "  single: " << single << "  both: " << both << std::endl;
 
 }
 

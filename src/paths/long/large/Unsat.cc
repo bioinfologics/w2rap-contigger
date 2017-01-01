@@ -11,6 +11,7 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
+#include <util/OutputLog.h>
 #include "CoreTools.h"
 #include "Equiv.h"
 //#include "ParallelVecUtilities.h"
@@ -131,7 +132,7 @@ void PrintClusters( const vec< vec< std::pair<int,int> > >& xs,
 void Unsat(const HyperBasevector &hb, const vec<int> &inv,
            const ReadPathVec &paths, vec<vec<std::pair<int, int> > > &xs,
            const String &work_dir, const int A2V) {
-     std::cout << Date() << ": Finding unsatisfied path clusters" << std::endl;
+     OutputLog(2)<<"Finding unsatisfied path clusters" << std::endl;
      // Heuristics.
      //TODO: Hardcoded Parameters
      const int max_depth = 15;
@@ -272,7 +273,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
 
 
      double mclock = WallClockTime();
-     std::cout << Date() << ": Merging " << xs.size() << " clusters" << std::endl;
+     OutputLog(2)<<"Merging " << xs.size() << " clusters" << std::endl;
      for (int p = 1; p <= merge_passes; p++) {
           MergeClusters(xs, xs, n, hb.EdgeObjectCount());
           int n = 0;
