@@ -179,7 +179,7 @@ add_library(base_libs OBJECT
         src/random/NormalDistribution.cc
         src/GFADump.cc
         src/util/TextTable.cc
-        src/paths/long/ReadPath.cc)
+        src/paths/long/ReadPath.cc src/util/OutputLog.h src/util/OutpuLog.cc)
 
 add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/GapToyTools4.cc

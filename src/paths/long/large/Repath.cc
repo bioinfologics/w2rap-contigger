@@ -9,6 +9,7 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
+#include <util/OutputLog.h>
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
 #include "VecUtilities.h"
@@ -31,17 +32,17 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      // (b) if the inverse of a path is smaller we use it instead;
      // (c) places are unique sorted.
 
-     std::cout << Date( ) << ": beginning repathing "<<edges.size()<<" edges from K="<<K<<" to K2="<<K2<< std::endl;
-     std::cout << Date( ) << ": constructing places from "<<paths.size()<<" paths" << std::endl;
+     OutputLog(2) << "beginning repathing "<<edges.size()<<" edges from K="<<K<<" to K2="<<K2<< std::endl;
+     OutputLog(2) << "constructing places from "<<paths.size()<<" paths" << std::endl;
      uint64_t pathed=0,multipathed=0;
      for (auto &p:paths) {
           if (p.size()>0 ) pathed++;
           if (p.size()>2 ) multipathed++;
      }
-     std::cout << Date() << ": " <<pathed<<" / "<<paths.size()<<" reads pathed, "<< multipathed << " spanning junctions"<< std::endl;
+     OutputLog(2) <<pathed<<" / "<<paths.size()<<" reads pathed, "<< multipathed << " spanning junctions"<< std::endl;
      std::vector< std::vector<int> > places;
      places.reserve( paths.size( ) );
-
+     //TODO: same path -> same place, why don't we sort and unique paths then? before complicating all of this code!
      const int batch = 10000;
      #pragma omp parallel for
      for (int64_t m = 0; m < (int64_t) paths.size(); m += batch) {
@@ -64,15 +65,15 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
           #pragma omp critical
           { places.insert(places.end(),placesm.begin(),placesm.end()); }
      }
-     std::cout << Date() << ": sorting "<<places.size()<<" places" << std::endl;
+     OutputLog(4) << "sorting "<<places.size()<<" path-places" << std::endl;
      sortInPlaceParallel(places.begin(), places.end());
      places.erase(std::unique(places.begin(),places.end()),places.end());
      places.shrink_to_fit();
-     std::cout << Date() << ": "<<places.size()<<" unique places" << std::endl;
+     OutputLog(3) << places.size()<<" unique places" << std::endl;
      // Add extended places.
 
      if (EXTEND_PATHS)
-     {    std::cout << Date( ) << ": begin extending paths" << std::endl;
+     {    OutputLog(2) << "begin extending paths" << std::endl;
           vec<int> to_left, to_right;
           hb.ToLeft(to_left), hb.ToRight(to_right);
           std::vector<std::vector<int>> eplaces;
@@ -89,16 +90,16 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                     else break;    }
                if ( p.size( ) > places[i].size( ) ) eplaces.push_back(p);    }
           places.insert(places.end(),eplaces.begin(),eplaces.end());
-          std::cout << Date( ) << ": resorting" << std::endl;
+          OutputLog(2) << "resorting" << std::endl;
           sortInPlaceParallel(places.begin(),places.end());
           places.erase(std::unique(places.begin(),places.end()),places.end());
           places.shrink_to_fit();
-          std::cout << Date( ) << ": done extending paths" << std::endl;    }
+          OutputLog(2) << "done extending paths" << std::endl;    }
 
      // Convert places to bases.  For paths of length > 1, we truncate at the
      // beginning and end so that they each contribute at most K2 bases.
 
-     std::cout << Date( ) << ": building all" << std::endl;
+     OutputLog(2) << "building all" << std::endl;
      vecbasevector all( places.size( ) );
      vec<int> left_trunc( places.size( ), 0 ), right_trunc( places.size( ), 0 );
 #pragma omp parallel for
@@ -127,7 +128,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      //HyperBasevector hb2;
      vecKmerPath xpaths;
      HyperKmerPath h2;
-     std::cout << Date( ) << ": calling LongReadsToPaths" << std::endl;
+     OutputLog(2) << "building new graph from places" << std::endl;
      unsigned const COVERAGE = 2u;
      LongReadsToPaths( all, K2, COVERAGE, &hb2, &h2, &xpaths );
      Destroy(all);
@@ -139,7 +140,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
 
      // Translate paths to the K=200 graph.  Translation method is very ugly.
      if (REPATH_TRANSLATE)
-     {    std::cout << Date( ) << ": translating paths" << std::endl;
+     {    OutputLog(2) << "translating paths" << std::endl;
           vecKmerPath hpaths;
           vec<big_tagged_rpint> hpathsdb;
           for ( int64_t e = 0; e < h2.EdgeObjectCount( ); e++ )
@@ -207,9 +208,6 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                     stops[id] = hb2.EdgeObject( u.back( ) ).isize( )
                                 - ( M.back( ).third.Stop( ) + K2 );     }
                if ( !bad && u.nonempty( ) ) ipaths2[id] = u;    }
-
-          std::cout << Date( ) << ": final stage of path translation" << std::endl;
-
           // Parallelizing this loop does not speed it up.  Perhaps to speed it up
           // we have to do something smarter, so as to eliminate the binary search
           // inside the loop.
@@ -247,5 +245,6 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                else
                {    for ( int j = 0; j < n; j++ )
                          paths2[id][j] = inv2[ ipaths2[pos][n-j-1] ];    }    }
+          OutputLog(2) << "paths translation done" << std::endl;
      }
 }

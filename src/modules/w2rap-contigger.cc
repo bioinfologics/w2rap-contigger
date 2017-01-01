@@ -29,6 +29,109 @@
 #include <paths/long/large/GraphImprover.h>
 #include <paths/long/large/ConsensusChecker.h>
 #include "GFADump.h"
+#include "util/OutputLog.h"
+
+
+void step_1(vecbvec & bases,
+            VecPQVec & quals,
+            std::string out_dir,
+            std::string read_files){
+    OutputLog(2) << "processing reads into bases and quals"<<std::endl;
+    ExtractReads(read_files, out_dir, &bases, &quals);
+}
+
+void step_2(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            unsigned int minFreq,
+            unsigned int minQual,
+            unsigned int disk_batches,
+            unsigned int small_K,
+            std::string out_dir,
+            std::string tmp_dir) {
+    bool FILL_JOIN = False;
+    buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,
+                    tmp_dir, disk_batches);
+    OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
+    hbvinv.clear();
+    hbv.Involution(hbvinv);
+    FragDist(hbv, hbvinv, paths, out_dir + "/small_K.frags.dist");
+}
+
+void step_3(HyperBasevector &hbv,
+              vec<int> &hbvinv,
+              ReadPathVec &paths,
+              unsigned int large_K,
+              std::string out_dir){
+
+    //Swap the old graph and such to variables private to this context
+    ReadPathVec old_paths;
+    std::swap(old_paths,paths);
+    paths.resize(old_paths.size());
+    HyperBasevector old_hbv;
+    std::swap(hbv,old_hbv);
+    vec<int> old_hbvinv;
+    std::swap(hbvinv,old_hbvinv);
+
+    vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
+
+    //Produce the new graph and such in the argument variables
+    RepathInMemory(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), large_K, hbv, paths, True, True, False);
+    OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
+    hbvinv.clear();
+    hbv.Involution(hbvinv);
+    FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
+}
+
+void step_3_new(HyperBasevector &hbv,
+            ReadPathVec &paths, vec<int> &hbvinv){
+    /*if (clean_smallk_graph) {
+        std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
+        inv.clear();
+        hbv.Involution(inv);
+        VecULongVec paths_inv;
+        invert(paths, paths_inv, hbv.EdgeObjectCount());
+        GraphImprover gi(hbv, inv, paths, paths_inv);
+        gi.improve_graph();
+        GraphImprover gi2(hbv, inv, paths, paths_inv);
+        gi2.expand_cannonical_repeats(2,2);
+
+
+        std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
+    } else {
+        std::cout << "--== Step 3: Repathing to second (large K) graph ==--" << std::endl;
+    }
+    vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
+    inv.clear();
+    hbv.Involution(inv);
+    FragDist(hbv, inv, paths, out_dir + "/" + out_prefix + ".first.frags.dist");
+    const string run_head = out_dir + "/" + out_prefix;
+
+    pathsr.resize(paths.size());
+
+    RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);*/
+
+}
+
+void step_4(){
+
+}
+
+void step_5(){
+
+}
+
+void step_6(){
+
+}
+
+void step_7(){
+
+}
+
+
 
 int main(const int argc, const char * argv[]) {
 
@@ -92,8 +195,11 @@ int main(const int argc, const char * argv[]) {
                                                  "minimum quality for small k-mers on step 2 (default: 7)", false, 7, "int", cmd);
         TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
                                                     "max number of read pairs to use in local assemblies on step 5(default: 200)", false, 200, "int", cmd);
-            TCLAP::ValueArg<unsigned int> minInputArg("", "min_input",
+        TCLAP::ValueArg<unsigned int> minInputArg("", "min_input",
                                                     "min number of read entering an edge at step 6(default: 3)", false, 3, "int", cmd);
+        TCLAP::ValueArg<unsigned int> logLevelArg("", "log_level",
+                                                  "verbosity level (default: 3)", false, 3, "1-3", cmd);
+
         TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
                                                                "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         cleanSmallKGraphArg        ("","clean_smallk_graph",
@@ -138,6 +244,7 @@ int main(const int argc, const char * argv[]) {
         pf_verbose=pathFinderVerboseArg.getValue();
         min_input_reads=minInputArg.getValue();
         clean_smallk_graph=cleanSmallKGraphArg.getValue();
+        OutputLogLevel=logLevelArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -158,32 +265,143 @@ int main(const int argc, const char * argv[]) {
     if (omp_get_proc_bind()==omp_proc_bind_false) std::cout<< "WARNING: you are running the code with omp_proc_bind_false, parallel performance may suffer"<<std::endl;
     if (omp_get_proc_bind()==omp_proc_bind_master) std::cout<< "WARNING: you are running the code with omp_proc_bind_master, parallel performance may suffer"<<std::endl;
 
-    //========== Main Program Begins ======
-    vecbvec bases;
-    VecPQVec quals;
 
-    vec<String> subsam_names = {"C"};
-    vec<int64_t> subsam_starts = {0};
-    //double wtimer,cputimer;
-    vec<int> inv;
-    HyperBasevector hbvr;
-    ReadPathVec pathsr;
-
-
-    int MAX_CELL_PATHS = 50;
-    int MAX_DEPTH = 10;
 
     //== Set computational resources ===
     SetThreads(threads, False);
     SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
     //TODO: try to find out max memory on the system to default to.
+    std::string step_names[7]={
+            "Processing read files",
+            "Small K graph construction",
+            "Large K graph construction",
+            "Large K graph cleanup",
+            "Local Assembly",
+            "Final graph cleanup",
+            "Paired-end scaffolding"
+    };
+    std::string step_outputg_prefix[7]={
+            "",
+            "small_K",
+            "large_K",
+            "large_K_clean",
+            "large_K_patched",
+            "large_K_expanded",
+            "large_K_final"
+    };
 
-    //== Load reads (and saves in binary format) ======
+    std::string step_inputg_prefix[7]={
+            "",
+            "",
+            "small_K",
+            "large_K",
+            "large_K_clean",
+            "large_K_patched",
+            "large_K_expanded"
+    };
 
+    //========== Main Program Begins ======
+    vecbvec bases;
+    VecPQVec quals;
+
+
+    //double wtimer,cputimer;
+
+    HyperBasevector hbv;
+    vec<int> hbvinv;
+    ReadPathVec paths;
+    vec<vec<int>> pathsinv;
+
+    int MAX_CELL_PATHS = 50;
+    int MAX_DEPTH = 10;
+
+
+    //Step-by-step execution loop
+    for (auto step=from_step; step <=to_step; ++step){
+        //First make sure all needed data is there.
+        if ( (2==step or 3==step or 4==step or 5==step or 6==step) and bases.size()==0){
+            OutputLog(2) << "Loading bases and quals..." << std::endl;
+            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
+            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+            OutputLog(2) << "Loading reads DONE!" << std::endl << std::endl;
+        }
+        //steps that require a graph
+        if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
+            //Load hbv
+
+            //Create inversion
+
+            //load paths
+
+            //create path inversion?
+
+        }
+
+        //Print step header and start timers and memory metrics
+
+        OutputLog(1,false) << std::endl << "--== Step " << step << ": " << step_names[step-1] <<" ";
+        OutputLog(1)<< " ==--"<< std::endl << std::endl;
+        auto step_time=WallClockTime();
+        //TODO: reset memory metrics?
+
+        //Run step
+        switch (step){
+            case 1:
+                step_1(bases, quals, out_dir, read_files);
+                break;
+            case 2:
+                step_2(hbv, hbvinv, paths, bases, quals, minFreq, minQual, disk_batches, small_K, out_dir, tmp_dir);
+                break;
+            case 3:
+                step_3(hbv,hbvinv,paths,large_K,out_dir);
+                break;
+            case 4:
+                step_4();
+                break;
+            case 5:
+                step_5();
+                break;
+            case 6:
+                step_6();
+                break;
+            case 7:
+                step_7();
+                break;
+        }
+
+
+        //Cleanup
+
+
+        //TODO: Report time, memory, etc
+
+
+        if (1==step and (to_step<6 or dump_all)) {
+            //TODO: dump reads
+            OutputLog(2) << "Dumping reads in fastb/qualp format..." << std::endl;
+            bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
+            quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
+            OutputLog(2) << "DONE!" << std::endl;
+        } else {
+            if (step_outputg_prefix[step-1]!="" and (dump_all or step==to_step)){
+                //TODO: dump graph and paths
+                OutputLog(2) << "Dumping small_K graph and paths..." << std::endl;
+                BinaryWriter::writeFile(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1] +".hbv", hbv);
+                WriteReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1] +".paths").c_str());
+                OutputLog(2) << "DONE!" << std::endl;
+            }
+            if (dump_detailed_gfa){
+                //TODO:
+            }
+        }
+        OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl;
+    }
+    return 0;
+    /*
     if (from_step==1)
     {
         std::cout << "--== Step 1: Reading input files ==--" << std::endl;
-        ExtractReads(read_files, out_dir, subsam_names, subsam_starts, &bases, &quals);
+
         //TODO: add an option to dump the reads
         if (dump_all || to_step<6) {
             std::cout << Date() << ": Dumping reads in fastb/qualp format..." << std::endl;
@@ -196,19 +414,13 @@ int main(const int argc, const char * argv[]) {
     //== Read QGraph, and repath (k=60, k=200 (and saves in binary format) ======
 
     if (from_step>1 && from_step<7 and not (from_step==3 and to_step==3)){
-        std::cout << Date() << ": Loading reads in fastb/qualp format..." << std::endl;
-        bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
-        quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
-        std::cout << Date() << ": Loading reads DONE!" << std::endl << std::endl;
+
     }
     {//This scope-trick to invalidate old data is dirty
 
         HyperBasevector hbv;
         ReadPathVec paths;
         if (from_step<=2 and to_step>=2) {
-            bool FILL_JOIN = False;
-            std::cout << "--== Step 2: Building first (small K) graph ==--" << std::endl;
-            buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,tmp_dir,disk_batches);
             //FixPaths(hbv, paths); //TODO: is this even needed?
             if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".small_K",hbv,inv);
             if (dump_all || to_step ==2){
@@ -327,7 +539,7 @@ int main(const int argc, const char * argv[]) {
                 std::cout<<"=========================================================================="<<e<<std::endl;
 
             }
-        }*/
+        }* /
 
         vecbvec new_stuff;
         //TODO: Hardcoded parameters
@@ -488,7 +700,7 @@ int main(const int argc, const char * argv[]) {
         if(dump_detailed_gfa) GFADumpDetail(out_dir + "/" + out_prefix + ".assembly",hbvr,inv);
         std::cout << Date() << ": PE-Scaffolding DONE!" << std::endl << std::endl << std::endl;
 
-    }
+    }*/
     return 0;
 }
 

@@ -42,6 +42,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <util/OutputLog.h>
 #include "paths/HyperBasevector.h"
 #include "paths/long/ExtendReadPath.h"
 #include "paths/long/ShortKmerReadPather.h"
@@ -322,8 +323,8 @@ namespace
 
         size_t nRegularEdges = pEdges->size();
         size_t nTotalLength = pEdges->SizeSum();
-        std::cout<<Date()<< ": " << nRegularEdges
-                  << " edges of total length " << nTotalLength << '.' << std::endl;
+        OutputLog(2) << nRegularEdges
+                  << " edges of total length " << nTotalLength << std::endl;
 
         // if a kmer isn't marked as being on an edge, it must be a part of a smooth
         // circle: add those edges, too.  simpleCircle method isn't thread-safe, so
@@ -333,9 +334,9 @@ namespace
             for ( auto const& entry : hhs )
                 if ( entry.getKDef().isNull() )
                     eb.simpleCircle(entry);
-        std::cout << Date() << ": " << pEdges->size()-nRegularEdges
+        OutputLog(2) << pEdges->size()-nRegularEdges
                   << " circular edges of total length "
-                  << pEdges->SizeSum()-nTotalLength << '.' << std::endl;
+                  << pEdges->SizeSum()-nTotalLength << std::endl;
     }
 
     template <class Itr1, class Itr2>
@@ -367,38 +368,6 @@ namespace
 
         return result;
     }
-
-// fuzzyMatchLenBi - bidirectional matcher
-//
-// note the semantics:
-//
-// forward is the usual iterator traversal from its initial position
-// up to, but not including, the end.
-//
-// backward first compares *(--itr) and continues backwards up to and
-// including the passed in "end" position (which should be something like the
-// beginning of the read or edge)
-    template <class Itr1, class Itr2, class ItrW, typename sumType >
-    size_t fuzzyMatchLenBi( Itr1 itr1, Itr1 end1, Itr2 itr2, Itr2 end2,
-                            ItrW itrw, ItrW endw, sumType& maxWeight, bool backward=false)
-    {
-        size_t result = 0;
-        int offset  = backward ? -1 : 0 ;
-        int incr    = backward ? -1 : 1 ;
-
-        while ( itr1 != end1 && itr2 != end2 && itrw != endw )
-        {
-            if ( itr1[offset] != itr2[offset] ) maxWeight -= *itrw;
-
-            if ( maxWeight < 0 ) break;             // EARLY EXIT!
-
-            ++result;
-            itr1 += incr; itr2 += incr; itrw += incr;
-        }
-
-        return result;
-    }
-
 
     class EdgeLoc
     {
@@ -1088,7 +1057,7 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
 
 
     if (NULL != dict) { //merge sort and return that
-        std::cout << Date() << ": " << kmer_list.size() << " kmers counted, filtering..." << std::endl;
+        OutputLog(2) << kmer_list.size() << " kmers counted, filtering..." << std::endl;
         (*dict) = new BRQ_Dict(kmer_list.size());
         uint64_t used = 0,not_used=0;
         uint64_t hist[101];
@@ -1103,7 +1072,7 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
             }
 
         }
-        std::cout << Date() << ": " << used << " / " << kmer_list.size() << " kmers with Freq >= " << minFreq << std::endl;
+        OutputLog(2) << used << " / " << kmer_list.size() << " kmers with Freq >= " << minFreq << std::endl;
         kmer_list.clear();
         if (""!=workdir) {
             std::ofstream kff(workdir + "/small_K.freqs");
@@ -1119,7 +1088,7 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
 
 void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec const& quals, unsigned char disk_batches, uint64_t batch_size, unsigned minQual, unsigned minFreq, std::string workdir="", std::string tmpdir=""){
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
-    std::cout<<Date()<<": disk-based kmer counting with "<<(int) disk_batches<<" batches"<<std::endl;
+    OutputLog(2) << "disk-based kmer counting with "<<(int) disk_batches<<" batches"<<std::endl;
     uint64_t total_kmers_in_batches=0;
     for (auto batch=0;batch < disk_batches;batch++) {
         uint64_t nkmers=0;
@@ -1169,12 +1138,12 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
         entries2.clear();
         entries2.shrink_to_fit();
         batch_file.close();
-        std::cout<< Date() <<": batch "<<(int) batch<<" done and dumped with "<<nkmers<< " kmers" <<std::endl;
+        OutputLog(2) << "batch "<<(int) batch<<" done and dumped with "<<nkmers<< " kmers" <<std::endl;
         total_kmers_in_batches+=nkmers;
     }
 
     //now a multi-merge sort between all batch files into the Dict
-    std::cout<<Date()<<": merging from disk"<<std::endl;
+    OutputLog(2) << "merging from disk"<<std::endl;
     //open all batch files
     std::ifstream dbf[disk_batches];
     bool dbf_active[disk_batches];
@@ -1240,7 +1209,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
     }
     (*dict)=new BRQ_Dict(kmerlist.size());
     for (auto &knf: kmerlist) (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
-    std::cout << Date() << ": " << used << " / " << used+not_used << " kmers with Freq >= " << minFreq << std::endl;
+    OutputLog(2) << used << " / " << used+not_used << " kmers with Freq >= " << minFreq << std::endl;
     if (""!=workdir) {
         std::ofstream kff(workdir + "/small_K.freqs");
         for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
@@ -1256,7 +1225,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
                       double minFreq2Fract, unsigned maxGapSize,
                       HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir, std::string tmpdir="", unsigned char disk_batches=0)
 {
-    std::cout << Date() << ": creating kmers from reads..." << std::endl;
+    OutputLog(2) << "creating kmers from reads..." << std::endl;
     //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
     BRQ_Dict * pDict;
     if (1>=disk_batches) {
@@ -1274,27 +1243,25 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
             createDictOMPDiskBased(&pDict, reads, quals, disk_batches, 1000000, minQual, minFreq, workdir, tmpdir);
         }
     }
-    std::cout << Date() << ": updating adjacencies" <<std::endl;
     pDict->recomputeAdjacencies();
-    std::cout << Date() << ": dict finished" <<std::endl;
-    std::cout << Date() << ": finding edges (unique paths)" << std::endl;
+    OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
     edges.reserve(pDict->size()/100); //TODO: this is probably WAY too much in most scenarios
     buildEdges(*pDict,&edges);
     uint64_t totalk=0;
     for (auto &e:edges) totalk+=e.size()+1-K;
-    std::cout<<Date()<<": buildges generated "<<edges.size()<<" edges with "<<totalk<<" "<<K<<"-mers from "<<pDict->size()<<" elements in the Dict"<<std::endl;
+    OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<K<<"-mers"<<std::endl;
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
 
     if ( doFillGaps ) { // Off by default
-        std::cout << Date() << ": filling gaps." << std::endl;
+        OutputLog(2) << "filling gaps." << std::endl;
         fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
     }
 
     if ( doJoinOverlaps ) { // Off by default
-        std::cout << Date() << ": joining Overlaps." << std::endl;
+        OutputLog(2) << "joining Overlaps." << std::endl;
         joinOverlaps(reads, _K / 2, minFreq2, &edges, pDict);
     }
 
@@ -1303,28 +1270,21 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
     if ( !pPaths )
     {
         delete pDict;
-        std::cout << Date() << ": building graph..." << std::endl;
+        OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
-        std::cout << Date() << ": graph built" << std::endl;
+        OutputLog(2) << "graph built" << std::endl;
 
     }
     else
     {
-        std::cout << Date() << ": building graph..." << std::endl;
+        OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
-        std::cout << Date() << ": graph built" << std::endl;
-        std::cout << Date() << ": pathing reads into graph..." << std::endl;
+        OutputLog(2) << "graph built, pathing reads into graph..." << std::endl;
         pPaths->clear();
         pPaths->resize(reads.size());
         path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
-        uint64_t pathed=0;
-        uint64_t multipathed=0;
-        for (auto &p:*pPaths) {
-            if (p.size()>0 ) pathed++;
-            if (p.size()>2 ) multipathed++;
-        }
-        std::cout << Date() << ": " <<pathed<<" / "<<pPaths->size()<<" reads pathed, "<< multipathed << " spanning junctions"<< std::endl;
         delete pDict;
+        OutputLog(2) << "reads pathed"<<std::endl;
     }
 
 }

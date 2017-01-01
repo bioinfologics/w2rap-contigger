@@ -9,6 +9,7 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
+#include <util/OutputLog.h>
 #include "Basevector.h"
 #include "Bitvector.h"
 #include "FastIfstream.h"
@@ -37,9 +38,10 @@ class rs_meta { // read set meta info
                << m.lib << ",frac=" << m.frac;    }
 };
 
-void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_names,
-     vec<int64_t>& subsam_starts, vecbvec* pReads, VecPQVec* quals )
+void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals )
 {
+     vec<String> subsam_names={"C"};
+     vec<int64_t> subsam_starts={0};
      double lclock = WallClockTime( );
 
 
@@ -294,7 +296,6 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
      int nfiles = 0;
      for (int g = 0; g < groups.isize(); g++)
           nfiles += infiles[g].size();
-     std::cout << Date() << ": reading " << nfiles << " files" << std::endl;
      for (int g = 0; g < groups.isize(); g++) {
           if (g > 0 && subsam_names[g] != subsam_names[g - 1])
                subsam_starts[g] = xbases.size();
@@ -638,25 +639,7 @@ void ExtractReads( String reads, const String& work_dir, vec<String>& subsam_nam
                   work_dir + "/data/frag_reads_orig.names.idx", look);
      }
 
-     // Report stats.
-
-     std::cout << Date() << ": data extraction complete"
-     #ifdef __linux
-     << ", peak = " << PeakMemUsageGBString( )
-     #endif
-     << std::endl;
-     std::cout << Date() << ": " << TimeSince(lclock) << " used extracting reads" << std::endl;
 
 
 
 }
-
-void GetAmbInt( const vecbitvector& amb, vec< std::pair<int,ho_interval> >& amb_int )
-{    for ( int g = 0; g < (int) amb.size( ); g++ )
-     {    for ( int i = 0; i < (int) amb[g].size( ); i++ )
-          {    if ( !amb[g][i] ) continue;
-               int j;
-               for ( j = i + 1; j < (int) amb[g].size( ); j++ )
-                    if ( !amb[g][j] ) break;
-               amb_int.push( g, ho_interval( i, j ) );
-               i = j - 1;    }    }    }
