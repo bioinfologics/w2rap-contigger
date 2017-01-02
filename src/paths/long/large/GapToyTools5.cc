@@ -725,7 +725,7 @@ void PartnersToEnds(const HyperBasevector &hbv, ReadPathVec &paths,
      // find unplaced partners of reads near sinks
 
      vec<size_t> readIds;
-     std::cout << Date() << ": finding interesting reads" << std::endl;
+     OutputLog(2) << "finding interesting reads" << std::endl;
 
      size_t nKmers = findInterestingReadIds(hbv, paths, reads, &readIds);
      size_t nReads = readIds.size();
@@ -733,12 +733,12 @@ void PartnersToEnds(const HyperBasevector &hbv, ReadPathVec &paths,
 
      // kmerize those reads, and reduce them into a dictionary of KmerLocs
 
-     std::cout << Date() << ": building dictionary" << std::endl;
+     OutputLog(2) << "building dictionary" << std::endl;
      GT_Dict *pDict = new GT_Dict(nKmers);
 
      Mempool locsAlloc;
      size_t const MAX_MULTIPLICITY = 80;
-     std::cout << Date() << ": reducing" << std::endl;
+     OutputLog(2) << "reducing" << std::endl;
      {
           RMRE rmre(MREReadProc(readIds, reads, locsAlloc, MAX_MULTIPLICITY, pDict));
           rmre.run(nKmers, 0ul, nReads, RMRE::VERBOSITY::QUIET);
@@ -746,7 +746,7 @@ void PartnersToEnds(const HyperBasevector &hbv, ReadPathVec &paths,
 
      // kmerize edges, setting the multiplicity for existing dictionary entries
 
-     std::cout << Date() << ": kmerizing" << std::endl;
+     OutputLog(2) << "kmerizing" << std::endl;
      {
           EMRE emre(MREEdgeProc(hbv, pDict));
           auto const &edges = hbv.Edges();
@@ -756,12 +756,12 @@ void PartnersToEnds(const HyperBasevector &hbv, ReadPathVec &paths,
 
      // remove dictionary entries having too great a kmer multiplicity
 
-     std::cout << Date() << ": cleaning" << std::endl;
+     OutputLog(2) << "cleaning" << std::endl;
      pDict->remove_if([](KmerLocs const &kLocs) { return kLocs.getTotalLocs() > MAX_MULTIPLICITY; });
 
      // find a uniquely aligning edge and path the read on that edge
 
-     std::cout << Date() << ": finding uniquely aligning edges" << std::endl;
+     OutputLog(2) << "finding uniquely aligning edges" << std::endl;
      EdgeProc proc(hbv, *pDict, reads, quals, paths);
      #pragma omp parallel
      {

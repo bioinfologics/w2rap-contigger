@@ -9,6 +9,7 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
+#include <util/OutputLog.h>
 #include "CoreTools.h"
 //#include "ParallelVecUtilities.h"
 #include "Qualvector.h"
@@ -113,7 +114,7 @@ void Patch(HyperBasevector &hb, vec<HyperBasevector> &mhbp, vecbvec &new_stuff) 
           }
      }
 
-     std::cout << Date() << ": "<< TimeSince(clock) << " used patching" << std::endl;
+     OutputLog(2) << TimeSince(clock) << " creating patches" << std::endl;
 }
 
 template<class H> void DegloopCore( const int mode, H& hb, vec<int>& inv, 

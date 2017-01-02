@@ -112,7 +112,7 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
      const int MIN_GAIN,
      const int EXT_MODE )
 {
-     std::cout << Date( ) << ": adding new content to graph" << std::endl;
+     OutputLog(2) << "adding new content to graph" << std::endl;
      //Validate( hb, inv2, paths2 );
      //const int K = 200;
      int K=hb.K();//TODO: check K effect
@@ -157,7 +157,7 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
           ExtendPath( paths2[i], i, hb, to_right, bases[i], quals.begin()[i],
                   MIN_GAIN, false, EXT_MODE );    }
 
-     std::cout << Date( ) << ": new content added" << std::endl;
+     OutputLog(2) << "new content added" << std::endl;
  }
 
 // ExtendPath.
