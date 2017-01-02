@@ -143,7 +143,10 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
 
      }
      TranslatePaths( paths2, hb3, to3, left3 );
-     hb = hb3;
+
+     //replace old HBV and re-compute the involution.
+     std::swap(hb,hb3);
+     hb.Involution(inv2);
 
      // Extend paths.
 
