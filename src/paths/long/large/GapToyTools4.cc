@@ -10,6 +10,7 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include <atomic>
+#include <util/OutputLog.h>
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
@@ -593,7 +594,7 @@ void LogBubbles( bubble_logger& logger, HyperBasevector& hb , const vec<int>& in
          }
      }
      if(nWarnings>0){
-         std::cout << Date() << ": WARNING: " << nWarnings << " suspicious read-paths." << std::endl;
+         OutputLog(2) << "WARNING: " << nWarnings << " suspicious read-paths." << std::endl;
      }
 }
 
@@ -681,7 +682,7 @@ void PopBubbles( HyperBasevector& hb , const vec<int>& inv2
                 if(edges.size()==4) to_delete.push_back(edges[2+shift]);
            }
      }
-     std::cout<< Date() << ": "<< to_delete.size() << " edges marked to delete by bubble popper " <<std::endl;
+    OutputLog(2) << to_delete.size() << " edges marked to delete by bubble popper " <<std::endl;
      hb.DeleteEdges(to_delete);
 }
 

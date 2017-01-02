@@ -9,6 +9,7 @@
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
+#include <util/OutputLog.h>
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
 #include "paths/HyperBasevector.h"
@@ -409,7 +410,7 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      EraseIf( accepted, acdel );
      accepted.append(accepted2);
      UniqueSort(accepted);
-     std::cout << Date( ) << ": deleting " << Sum(acdel) << " gaps and adding " 
+     OutputLog(2)<<"deleting " << Sum(acdel) << " gaps and adding "
           << accepted.isize( ) - na << " gaps to force symmetry" << std::endl;
      graph_status(hb);
      // Fix problem with overlinked edges.
@@ -505,9 +506,6 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      // Done.
 
-     if (verbose) std::cout << "\n";
-     // PRINT(events);
-     if (verbose) std::cout << "\n";
-     std::cout << Date( ) << ": done making gaps, time used = "
+     OutputLog(2) << "done making gaps, time used = "
           << TimeSince(clock) << std::endl;
           }

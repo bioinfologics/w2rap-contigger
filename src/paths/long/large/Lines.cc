@@ -6,6 +6,7 @@
 //   Institute is not responsible for its use, misuse, or functionality.     //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <util/OutputLog.h>
 #include "CoreTools.h"
 #include "Intvector.h"
 #include "ParallelVecUtilities.h"
@@ -510,7 +511,7 @@ void ComputeCoverage( const HyperBasevector& hb, const vec<int>& inv,
 	 
 	 // Ofstream(covx_out, "covx." + ToString(ss) );
 	 
-	 std::cout << Date() << ": determining candidates" << std::endl;
+	 OutputLog(2) << "determining candidates" << std::endl;
 	 for ( int i = 0; i < lines.isize( ); i++ ) {
 	     if ( lens[i] >= min_len && covl[ss][i] > 0) {
 		 ids.push_back(i);

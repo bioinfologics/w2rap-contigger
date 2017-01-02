@@ -30,6 +30,7 @@
 #include "system/WorklistN.h"
 #include <algorithm>
 #include <ctime>
+#include <util/OutputLog.h>
 
 // AlignToGenome.  Find alignments of assembly edges to the genome.  Currently this
 // maps edges to pairs (g,p) consisting of a genome contig g and an inferred start
@@ -397,7 +398,7 @@ void Tamp( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
 
      LogTime( clock, "tamping" );
      Cleanup( hb, inv, paths );
-     std::cout << Date() << ": "<< count << " / " << edges_before << " edges tamped, " << hb.EdgeObjectCount() << " edges a after tamping" << std::endl;
+     OutputLog(2) << count << " / " << edges_before << " edges tamped, " << hb.EdgeObjectCount() << " edges a after tamping" << std::endl;
      //std::cout << "[GapToyTools5.cc] Finished Tamping: " << ctime(&now) << std::endl;
 }
 

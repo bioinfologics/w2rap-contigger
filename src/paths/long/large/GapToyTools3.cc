@@ -28,6 +28,7 @@
 #include "paths/long/ReadStack.h"
 #include "paths/long/large/GapToyTools.h"
 #include <ctime>
+#include <util/OutputLog.h>
 
 
 void FixPath( ReadPath& p, const vec< triple<int,int,int> >& merges,
@@ -492,7 +493,7 @@ void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles
      hb.DeleteEdges(e_to_delete);
 
      LogTime( clock3, "removing small components 3" );
-     std::cout << Date() <<": " << delcount << " / " <<before<<" edges removed on small components"<<std::endl;
+     OutputLog(2)<< delcount << " / " <<before<<" edges removed on small components"<<std::endl;
 }
 
 void Validate( const HyperBasevector& hb, const vec<int>& inv,
