@@ -163,6 +163,54 @@ void step_5(HyperBasevector &hbv,
     PartnersToEnds(hbv, paths, bases, quals);
 }
 
+void step_6DV(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            std::string out_dir,
+            std::string out_prefix){
+    OutputLog(2)<<"DISCOVAR-like heuristics being run"<<std::endl;
+
+
+    SimplifyDV(out_dir, hbv, hbvinv, paths, bases, quals);
+
+    // For now, fix paths and write the and their inverse
+    for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
+        Bool bad = False;
+        for (int j = 0; j < (int) paths[i].size(); j++)
+            if (paths[i][j] < 0) bad = True;
+        if (bad) paths[i].resize(0);
+    }
+    VecULongVec pathsinv;
+    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+    invert(paths,pathsinv,hbv.EdgeObjectCount());
+
+    // Find lines and write files.
+    vec<vec<vec<vec<int>>>> lines;
+
+    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
+
+    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
+    {
+        vec<int> llens, npairs;
+        GetLineLengths(hbv, lines, llens);
+        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+
+        vec<vec<covcount>> covs;
+        vec<int64_t> subsam_starts={0};
+        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+
+        //TODO: maybe Report some similar to CN stats ???
+        //double cn_frac_good = CNIntegerFraction(hbv, covs);
+        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
+    }
+
+}
+
 void step_6(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
@@ -193,7 +241,75 @@ void step_6(HyperBasevector &hbv,
     Simplify(out_dir, hbv, hbvinv, paths, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
              ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
              PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-             IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, False, False, False);//TODO: the last 3 Falses disable pathfinder
+             IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3);//TODO: the last 3 Falses disable pathfinder
+
+    // For now, fix paths and write the and their inverse
+    for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
+        Bool bad = False;
+        for (int j = 0; j < (int) paths[i].size(); j++)
+            if (paths[i][j] < 0) bad = True;
+        if (bad) paths[i].resize(0);
+    }
+    VecULongVec pathsinv;
+    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+    invert(paths,pathsinv,hbv.EdgeObjectCount());
+
+    // Find lines and write files.
+    vec<vec<vec<vec<int>>>> lines;
+
+    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
+
+    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
+    {
+        vec<int> llens, npairs;
+        GetLineLengths(hbv, lines, llens);
+        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+
+        vec<vec<covcount>> covs;
+        vec<int64_t> subsam_starts={0};
+        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+
+        //TODO: maybe Report some similar to CN stats ???
+        //double cn_frac_good = CNIntegerFraction(hbv, covs);
+        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
+    }
+
+}
+
+void step_6EXP(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            unsigned int min_input_reads,
+            std::string out_dir,
+            std::string out_prefix){
+    OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
+    int MAX_SUPP_DEL = min_input_reads;//was 0
+    bool TAMP_EARLY_MIN = True;
+    int MIN_RATIO2 = 8;
+    int MAX_DEL2 = 200;
+    bool ANALYZE_BRANCHES_VERBOSE2 = False;
+    const String TRACE_SEQ = "";
+    bool DEGLOOP = True;
+    bool EXT_FINAL = True;
+    int EXT_FINAL_MODE = 1;
+    bool PULL_APART_VERBOSE = False;
+    const vec<int> PULL_APART_TRACE;
+    int DEGLOOP_MODE = 1;
+    float DEGLOOP_MIN_DIST = 2.5;
+    bool IMPROVE_PATHS = True;
+    bool IMPROVE_PATHS_LARGE = False;
+    bool FINAL_TINY = True;
+    bool UNWIND3 = True;
+
+    SimplifyEXP(out_dir, hbv, hbvinv, paths, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
+                ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
+                PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
+                IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, False, False, False);//TODO: the last 3 Falses disable pathfinder
 
     // For now, fix paths and write the and their inverse
     for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
@@ -263,7 +379,6 @@ int main(const int argc, const char * argv[]) {
     std::string out_prefix;
     std::string read_files;
     std::string out_dir;
-    std::string dev_run;
     std::string tmp_dir;
     unsigned int threads;
     unsigned int minFreq;
@@ -274,7 +389,7 @@ int main(const int argc, const char * argv[]) {
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
-    bool extend_paths,run_pathfinder,dump_detailed_gfa,dump_all,dump_pf,pf_verbose,clean_smallk_graph;
+    bool dump_detailed_gfa,dump_all,run_dv,run_exp;
 
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
@@ -310,38 +425,38 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
                                                  "number of disk batches for step2 (default: 0, 0->in memory)", false, 8, "int", cmd);
+
         TCLAP::ValueArg<std::string> tmp_dirArg("", "tmp_dir",
                                                       "tmp dir for step2 disk batches (default: workdir)", false, "", "string", cmd);
+
+        TCLAP::ValueArg<unsigned int> minQualArg("", "min_qual",
+                                                 "minimum quality for small k-mers (default: 7)", false, 7, "int", cmd);
+
+        TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
+                                                 "minimum frequency for small k-mers (default: 4)", false, 4, "int", cmd);
+
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
-        TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
-                                                 "minimum frequency for small k-mers on step 2 (default: 4)", false, 4, "int", cmd);
-        TCLAP::ValueArg<unsigned int> minQualArg("", "min_qual",
-                                                 "minimum quality for small k-mers on step 2 (default: 7)", false, 7, "int", cmd);
+
         TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
-                                                    "max number of read pairs to use in local assemblies on step 5(default: 200)", false, 200, "int", cmd);
+                                                    "max number of read pairs to use in local assemblies (default: 200)", false, 200, "int", cmd);
+
         TCLAP::ValueArg<unsigned int> minInputArg("", "min_input",
                                                     "min number of read entering an edge at step 6(default: 3)", false, 3, "int", cmd);
+
         TCLAP::ValueArg<unsigned int> logLevelArg("", "log_level",
                                                   "verbosity level (default: 3)", false, 3, "1-4", cmd);
 
-        TCLAP::ValueArg<bool>         pathExtensionArg        ("","extend_paths",
-                                                               "Enable extend paths on repath (experimental)", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         cleanSmallKGraphArg        ("","clean_smallk_graph",
-                                                               "Enable cleaning on step3 (highly experimental)", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         pathFinderArg        ("","path_finder",
-                                                            "Run PathFinder (experimental)", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         pathFinderVerboseArg        ("","pf_verbose",
-                                                            "PathFinder verbose (experimental)", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
-                                                               "Dump all intermediate files", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump all intermediate files", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         dumpPFArg        ("","dump_pf",
-                                                          "Dump pathfinder info (devel)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         runDiscovarCompatibleArg        ("","dv_like",
+                                                               "Run with discovar-like heuristics (default: 0)", false,false,"bool",cmd);
 
-        TCLAP::ValueArg<std::string> dev_runArg("", "dev_run_test",
-                                                   "runs development tests", false, "", "devel only", cmd);
+        TCLAP::ValueArg<bool>         runExperimentalArg        ("","experimental",
+                                                                    "Run latest EXPERIMENTAL heuristics (default: 0)", false,false,"bool",cmd);
+
+        TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
+                                                               "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
+                                                         "Dump detailed GFA for every graph (default: 0)", false,false,"bool",cmd);
 
         cmd.parse(argc, argv);
         // Get the value parsed by each arg.
@@ -353,23 +468,19 @@ int main(const int argc, const char * argv[]) {
         large_K = large_KArg.getValue();
         small_K = 60;//small_KArg.getValue();
         min_size = minSizeArg.getValue();
-        extend_paths=pathExtensionArg.getValue();
-        run_pathfinder=pathFinderArg.getValue();
         dump_detailed_gfa=dumpDetailedGFAArg.getValue();
         dump_all=dumpAllArg.getValue();
         from_step=fromStep_Arg.getValue();
         to_step=toStep_Arg.getValue();
-        dev_run=dev_runArg.getValue();
-        dump_pf=dumpPFArg.getValue();
         pair_sample=pairSampleArg.getValue();
         minFreq=minFreqArg.getValue();
         minQual=minQualArg.getValue();
         disk_batches=disk_batchesArg.getValue();
         tmp_dir=tmp_dirArg.getValue();
-        pf_verbose=pathFinderVerboseArg.getValue();
         min_input_reads=minInputArg.getValue();
-        clean_smallk_graph=cleanSmallKGraphArg.getValue();
         OutputLogLevel=logLevelArg.getValue();
+        run_dv=runDiscovarCompatibleArg.getValue();
+        run_exp=runExperimentalArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -493,7 +604,9 @@ int main(const int argc, const char * argv[]) {
                 step_5(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
                 break;
             case 6:
-                step_6(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                if (run_dv) step_6DV(hbv, hbvinv, paths, bases, quals, out_dir, out_prefix);
+                else if (run_exp) step_6EXP(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                else step_6(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
                 break;
             case 7:
                 step_7(hbv, hbvinv, paths, out_dir, out_prefix);
