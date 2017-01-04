@@ -275,7 +275,7 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      for (int64_t i=0; i < (int64_t) old_paths.size(); ++i) {
           if (old_paths[i].size() > 1 ) {
                std::vector<int> newplace(old_paths[i]);//copy constructor from std::vector inherited, discards offset
-               if (newplace[0]>newplace.back()) {
+               if (newplace[0]>old_hbvinv[newplace.back()]) {
                     newplace.clear();
                     for (auto e=old_paths[i].rbegin();e!=old_paths[i].rend();++e) {
                          newplace.push_back(old_hbvinv[*e]);
@@ -336,9 +336,11 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      // Build HyperBasevector.
 
      //HyperBasevector hb2;
+
      vecKmerPath xpaths;
      HyperKmerPath h2;
      OutputLog(2) << "building new graph from places" << std::endl;
+
      unsigned const COVERAGE = 1u;
      LongReadsToPaths(all, new_K, COVERAGE, &new_hbv, &h2, &xpaths);
      Destroy(all);
@@ -359,9 +361,10 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
 
 
 
-     vec<int> sources, sinks, to_left, to_right;
-     h2.Sources(sources), h2.Sinks(sinks);
+     vec<int> to_left, to_right;
+
      h2.ToLeft(to_left), h2.ToRight(to_right);
+
      vec<vec<int> > ipaths2(xpaths.size());
      vec<int> starts(xpaths.size()), stops(xpaths.size());
 
@@ -436,7 +439,7 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      // Parallelizing this loop does not speed it up.  Perhaps to speed it up
      // we have to do something smarter, so as to eliminate the binary search
      // inside the loop.
-     OutputLog(2) << "translating" << std::endl;
+     OutputLog(4) << "translating" << std::endl;
      for (int64_t id = 0; id < (int64_t) old_paths.size(); id++) {
           if (old_paths[id].empty()) continue;
 
