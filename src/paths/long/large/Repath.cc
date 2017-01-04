@@ -52,15 +52,17 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
           int64_t n = Min(m + batch, (int64_t) paths.size());
           for (int64_t i = m; i < n; i++) {
                x.clear(), y.clear();
-               for (int64_t j = 0; j < (int64_t) paths[i].size(); j++)
-                    x.push_back(paths[i][j]);
                int nkmers = 0;
-               for (int j = 0; j < x.size(); j++)
-                    nkmers += edges[x[j]].size() - ((int) K - 1);
-               if (nkmers + ((int) K - 1) < K2) continue;
-               for (int j = x.size() - 1; j >= 0; j--)
-                    y.push_back(inv[x[j]]);
-               placesm.push_back(x < y ? x : y);
+               for (auto &e:paths[i]) {
+                    x.push_back(e);
+                    nkmers += edges[e].size() - ((int) K - 1);
+               }
+
+               if (nkmers + ((int) K - 1) >= K2) {
+                    for (int j = x.size() - 1; j >= 0; j--)
+                         y.push_back(inv[x[j]]);
+                    placesm.push_back(x < y ? x : y);
+               }
           }
           #pragma omp critical
           { places.insert(places.end(),placesm.begin(),placesm.end()); }
@@ -267,36 +269,42 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      }
      std::vector<std::vector<int> > places;
      places.reserve(multipathed+old_hbv.EdgeObjectCount());
+     std::vector<bool> used_edges(old_edges.size(),false);
      //TODO: change this to do path-transversal through pairs? or even better path exploration in a radious with search for support after, could allow K2 to grow to 500 or so
 
      #pragma omp parallel for
 
      //TODO: same path -> same place, why don't we sort and unique paths then? before complicating all of this code!
+
      for (int64_t i=0; i < (int64_t) old_paths.size(); ++i) {
+
           if (old_paths[i].size() > 1 ) {
                std::vector<int> newplace(old_paths[i]);//copy constructor from std::vector inherited, discards offset
-               if (newplace[0]>old_hbvinv[newplace.back()]) {
+               if (newplace[0] > old_hbvinv[newplace.back()]) {
                     newplace.clear();
-                    for (auto e=old_paths[i].rbegin();e!=old_paths[i].rend();++e) {
+                    for (auto e = old_paths[i].rbegin(); e != old_paths[i].rend(); ++e) {
                          newplace.push_back(old_hbvinv[*e]);
                     }
                }
                //check size
-               uint64_t s=0;
+               uint64_t s = 0;
                for (auto e:newplace) s += old_edges[e].size() - old_K + 1;
-               if (s + old_K > new_K) {
+               if (s + old_K -1 >= new_K) {
                     #pragma omp critical(places)
                     places.push_back(std::move(newplace));
                }
           }
+     }
 
-     }
      for (auto i=0;i<old_edges.size();++i){
-          if (i<old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
+          if (i<=old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
      }
+
      OutputLog(4) << "sorting " << places.size() << " places" << std::endl;
      __gnu_parallel::sort(places.begin(), places.end());
      places.erase(std::unique(places.begin(), places.end()), places.end());
+
+
      places.shrink_to_fit();
      OutputLog(3) << places.size() << " unique places" << std::endl;
 
@@ -335,8 +343,6 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
 
      // Build HyperBasevector.
 
-     //HyperBasevector hb2;
-
      vecKmerPath xpaths;
      HyperKmerPath h2;
      OutputLog(2) << "building new graph from places" << std::endl;
@@ -370,7 +376,10 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
 
      OutputLog(4) << "creating coordinate translation structures" << std::endl;
 
+     //for each kmerpath (i.e.) a kmer representation of a a place
      for (int64_t id = 0; id < (int64_t) xpaths.size(); id++) {
+
+          //first: creates a "location" entry from each segment
           vec<int> u;
           const KmerPath &p = xpaths[id];
           vec<triple<ho_interval, int, ho_interval> > M, M2;
@@ -397,6 +406,8 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
                }
                rpos += I.Length();
           }
+
+
           Bool bad = False;
           for (int i = 0; i < M.isize(); i++) {
                int j;
@@ -428,6 +439,8 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
                     bad = True;
                i = j - 1;
           }
+
+          //finally,  it assigns a start and stop to that "read"
           if (!bad && u.nonempty()) {
                starts[id] = M.front().third.Start();
                stops[id] = new_hbv.EdgeObject(u.back()).isize()
@@ -436,6 +449,8 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
           if (!bad && u.nonempty()) ipaths2[id] = u;
      }
 
+     //TODO: this can be greatly speeded up by knowing most paths are singles, so if we keep the single paths as indexed, and just jump through, we dont need to translate every possible combination!
+     //TODO: also, every non-single-edge place could be pointed
      // Parallelizing this loop does not speed it up.  Perhaps to speed it up
      // we have to do something smarter, so as to eliminate the binary search
      // inside the loop.
