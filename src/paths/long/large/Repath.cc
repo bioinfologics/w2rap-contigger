@@ -293,11 +293,14 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
                     #pragma omp critical(places)
                     places.push_back(std::move(newplace));
                }
-          }
+          } else if (old_paths[i].size() == 1 )
+               #pragma omp critical(used)
+               used_edges[Min(old_paths[i][0],old_hbvinv[old_paths[i][0]])]=true;
+
      }
 
      for (auto i=0;i<old_edges.size();++i){
-          if (i<=old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
+          if (used_edges[i] and i<=old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
      }
 
      OutputLog(4) << "sorting " << places.size() << " places" << std::endl;
