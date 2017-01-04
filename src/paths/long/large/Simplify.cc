@@ -28,14 +28,29 @@
 void graph_status(const HyperBasevector &hb) {
     uint64_t total=0;
     uint64_t null_sized=0;
+    std::vector<uint64_t> sizes;
+    sizes.reserve(hb.EdgeObjectCount());
     for (auto i=0; i<hb.EdgeObjectCount(); ++i) {
+        sizes.push_back(hb.EdgeObject(i).size()-hb.K()+1);
         if (hb.EdgeObject(i).size()>0)
         total+=hb.EdgeObject(i).size()-hb.K()+1;
         else ++null_sized;
+
     }
-    OutputLog(2) << "GRAPH: " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges";
+    OutputLog(2) << "GRAPH:  " << total << " " <<hb.K()<<"-mers in " <<hb.EdgeObjectCount()<<" edges";
     if (null_sized>0) OutputLog(2,false) << " ("<<null_sized<<" gap edges)";
     OutputLog(2,false) << std::endl;
+
+    std::sort(sizes.begin(),sizes.end(),std::greater<uint64_t>());
+    uint64_t n20=0,n50=0,n80=0,t20=20*total/100,t50=50*total/100,t80=80*total/100,t=0;
+    for (auto s:sizes) {
+        t+=s;
+        if (0==n20 and t>=t20) n20=s;
+        if (0==n50 and t>=t50) n50=s;
+        if (0==n80 and t>=t80) { n80=s; break;};
+    }
+    OutputLog(2) << "GRAPH EDGES:  Nk20=" << n20 << "  Nk50=" << n50 << "  Nk80=" << n80 <<std::endl;
+
 }
 
 void path_status(const ReadPathVec &paths){
