@@ -260,7 +260,7 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      // (c) places are unique sorted.
      const int old_K=old_hbv.K();
      vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
-     OutputLog(2) << "beginning repathing " << old_edges.size() << " edges from K1=" << old_K << " to K2=" << new_K << std::endl;
+     OutputLog(2) << "repathing " << old_edges.size() << " edges from K1=" << old_K << " to K2=" << new_K << std::endl;
      uint64_t pathed = 0, multipathed = 0;
      for (auto &p:old_paths) {
           if (p.size() >= 2) multipathed++;
@@ -294,29 +294,6 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      for (auto i=0;i<old_edges.size();++i){
           if (i<old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
      }
-
-/*     const int batch = 10000;
-#pragma omp parallel for
-     for (int64_t m = 0; m < (int64_t) old_paths.size(); m += batch) {
-          std::vector<std::vector<int> > placesm;
-          placesm.reserve(batch);
-          std::vector<int> x, y;
-          int64_t n = Min(m + batch, (int64_t) old_paths.size());
-          for (int64_t i = m; i < n; i++) {
-               x.clear(), y.clear();
-               for (int64_t j = 0; j < (int64_t) old_paths[i].size(); j++)
-                    x.push_back(old_paths[i][j]);
-               int nkmers = 0;
-               for (int j = 0; j < x.size(); j++)
-                    nkmers += old_edges[x[j]].size() - ((int) old_K - 1);
-               if (nkmers + ((int) old_K - 1) < new_K) continue;
-               for (int j = x.size() - 1; j >= 0; j--)
-                    y.push_back(old_hbvinv[x[j]]);
-               placesm.push_back(x < y ? x : y);
-          }
-#pragma omp critical
-          { places.insert(places.end(), placesm.begin(), placesm.end()); }
-     }*/
      OutputLog(4) << "sorting " << places.size() << " places" << std::endl;
      __gnu_parallel::sort(places.begin(), places.end());
      places.erase(std::unique(places.begin(), places.end()), places.end());
@@ -335,6 +312,7 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
           for (int j = 0; j < (int) places[i].size(); j++)
                e.push_back(places[i][j]);
           basevector b = old_edges[e[0]];
+          //TODO: the stupid multi-for cat again (although possibly most of the times it is 2 elements?)
           for (int l = 1; l < e.isize(); l++) {
                b.resize(b.isize() - (old_K - 1));
                b = Cat(b, old_edges[e[l]]);
@@ -378,11 +356,17 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      for (int64_t e = 0; e < h2.EdgeObjectCount(); e++)
           hpaths.push_back_reserve(h2.EdgeObject(e));
      CreateDatabase(hpaths, hpathsdb);
+
+
+
      vec<int> sources, sinks, to_left, to_right;
      h2.Sources(sources), h2.Sinks(sinks);
      h2.ToLeft(to_left), h2.ToRight(to_right);
      vec<vec<int> > ipaths2(xpaths.size());
      vec<int> starts(xpaths.size()), stops(xpaths.size());
+
+     OutputLog(4) << "creating coordinate translation structures" << std::endl;
+
      for (int64_t id = 0; id < (int64_t) xpaths.size(); id++) {
           vec<int> u;
           const KmerPath &p = xpaths[id];
@@ -448,9 +432,11 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
           }
           if (!bad && u.nonempty()) ipaths2[id] = u;
      }
+
      // Parallelizing this loop does not speed it up.  Perhaps to speed it up
      // we have to do something smarter, so as to eliminate the binary search
      // inside the loop.
+     OutputLog(2) << "translating" << std::endl;
      for (int64_t id = 0; id < (int64_t) old_paths.size(); id++) {
           if (old_paths[id].empty()) continue;
 
