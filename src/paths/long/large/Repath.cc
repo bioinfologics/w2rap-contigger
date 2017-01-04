@@ -37,7 +37,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      uint64_t pathed=0,multipathed=0;
      for (auto &p:paths) {
           if (p.size()>0 ) pathed++;
-          if (p.size()>2 ) multipathed++;
+          if (p.size()>=2 ) multipathed++;
      }
      OutputLog(2) <<pathed<<" / "<<paths.size()<<" reads pathed, "<< multipathed << " spanning junctions"<< std::endl;
      std::vector< std::vector<int> > places;
@@ -250,51 +250,75 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
 }
 
 
-void RepathInMemoryEXP(const HyperBasevector &hb, const vecbasevector &edges,
-                       const vec<int> &inv, ReadPathVec &paths, const int K, const int K2,
-                       HyperBasevector &hb2, ReadPathVec &paths2) {
+void RepathInMemoryEXP(const HyperBasevector &old_hbv,
+                       const vec<int> &old_hbvinv, ReadPathVec &old_paths, const int new_K,
+                       HyperBasevector &new_hbv, ReadPathVec &new_paths) {
      // Build and unique sort places.  These are the paths, with the following
      // modifications:
      // (a) paths implying base sequence < K2 bases are discarded;
      // (b) if the inverse of a path is smaller we use it instead;
      // (c) places are unique sorted.
-
-     OutputLog(2) << "beginning repathing " << edges.size() << " edges from K=" << K << " to K2=" << K2 << std::endl;
-     OutputLog(2) << "constructing places from " << paths.size() << " paths" << std::endl;
+     const int old_K=old_hbv.K();
+     vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
+     OutputLog(2) << "beginning repathing " << old_edges.size() << " edges from K1=" << old_K << " to K2=" << new_K << std::endl;
      uint64_t pathed = 0, multipathed = 0;
-     for (auto &p:paths) {
-          if (p.size() > 0) pathed++;
-          if (p.size() > 2) multipathed++;
+     for (auto &p:old_paths) {
+          if (p.size() >= 2) multipathed++;
      }
-     OutputLog(2) << pathed << " / " << paths.size() << " reads pathed, " << multipathed << " spanning junctions"
-                  << std::endl;
      std::vector<std::vector<int> > places;
-     places.reserve(paths.size());
+     places.reserve(multipathed+old_hbv.EdgeObjectCount());
+     //TODO: change this to do path-transversal through pairs? or even better path exploration in a radious with search for support after, could allow K2 to grow to 500 or so
+
+     #pragma omp parallel for
+
      //TODO: same path -> same place, why don't we sort and unique paths then? before complicating all of this code!
-     const int batch = 10000;
+     for (int64_t i=0; i < (int64_t) old_paths.size(); ++i) {
+          if (old_paths[i].size() > 1 ) {
+               std::vector<int> newplace(old_paths[i]);//copy constructor from std::vector inherited, discards offset
+               if (newplace[0]>newplace.back()) {
+                    newplace.clear();
+                    for (auto e=old_paths[i].rbegin();e!=old_paths[i].rend();++e) {
+                         newplace.push_back(old_hbvinv[*e]);
+                    }
+               }
+               //check size
+               uint64_t s=0;
+               for (auto e:newplace) s += old_edges[e].size() - old_K + 1;
+               if (s + old_K > new_K) {
+                    #pragma omp critical(places)
+                    places.push_back(std::move(newplace));
+               }
+          }
+
+     }
+     for (auto i=0;i<old_edges.size();++i){
+          if (i<old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
+     }
+
+/*     const int batch = 10000;
 #pragma omp parallel for
-     for (int64_t m = 0; m < (int64_t) paths.size(); m += batch) {
+     for (int64_t m = 0; m < (int64_t) old_paths.size(); m += batch) {
           std::vector<std::vector<int> > placesm;
           placesm.reserve(batch);
           std::vector<int> x, y;
-          int64_t n = Min(m + batch, (int64_t) paths.size());
+          int64_t n = Min(m + batch, (int64_t) old_paths.size());
           for (int64_t i = m; i < n; i++) {
                x.clear(), y.clear();
-               for (int64_t j = 0; j < (int64_t) paths[i].size(); j++)
-                    x.push_back(paths[i][j]);
+               for (int64_t j = 0; j < (int64_t) old_paths[i].size(); j++)
+                    x.push_back(old_paths[i][j]);
                int nkmers = 0;
                for (int j = 0; j < x.size(); j++)
-                    nkmers += edges[x[j]].size() - ((int) K - 1);
-               if (nkmers + ((int) K - 1) < K2) continue;
+                    nkmers += old_edges[x[j]].size() - ((int) old_K - 1);
+               if (nkmers + ((int) old_K - 1) < new_K) continue;
                for (int j = x.size() - 1; j >= 0; j--)
-                    y.push_back(inv[x[j]]);
+                    y.push_back(old_hbvinv[x[j]]);
                placesm.push_back(x < y ? x : y);
           }
 #pragma omp critical
           { places.insert(places.end(), placesm.begin(), placesm.end()); }
-     }
-     OutputLog(4) << "sorting " << places.size() << " path-places" << std::endl;
-     sortInPlaceParallel(places.begin(), places.end());
+     }*/
+     OutputLog(4) << "sorting " << places.size() << " places" << std::endl;
+     __gnu_parallel::sort(places.begin(), places.end());
      places.erase(std::unique(places.begin(), places.end()), places.end());
      places.shrink_to_fit();
      OutputLog(3) << places.size() << " unique places" << std::endl;
@@ -310,22 +334,22 @@ void RepathInMemoryEXP(const HyperBasevector &hb, const vecbasevector &edges,
           vec<int> e;
           for (int j = 0; j < (int) places[i].size(); j++)
                e.push_back(places[i][j]);
-          basevector b = edges[e[0]];
+          basevector b = old_edges[e[0]];
           for (int l = 1; l < e.isize(); l++) {
-               b.resize(b.isize() - (K - 1));
-               b = Cat(b, edges[e[l]]);
+               b.resize(b.isize() - (old_K - 1));
+               b = Cat(b, old_edges[e[l]]);
           }
           if (e.size() > 1) {
                int x = e.back();
-               if (edges[x].isize() > K2) {
-                    b.resize(b.isize() - (edges[x].size() - K2));
-                    right_trunc[i] = edges[x].isize() - K2;
+               if (old_edges[x].isize() > new_K) {
+                    b.resize(b.isize() - (old_edges[x].size() - new_K));
+                    right_trunc[i] = old_edges[x].isize() - new_K;
                }
                x = e.front();
-               if (edges[x].isize() > K2) {
-                    b.SetToSubOf(b, edges[x].size() - K2,
-                                 b.isize() - (edges[x].size() - K2));
-                    left_trunc[i] = edges[x].isize() - K2;
+               if (old_edges[x].isize() > new_K) {
+                    b.SetToSubOf(b, old_edges[x].size() - new_K,
+                                 b.isize() - (old_edges[x].size() - new_K));
+                    left_trunc[i] = old_edges[x].isize() - new_K;
                }
           }
           all[i] = b;
@@ -337,14 +361,14 @@ void RepathInMemoryEXP(const HyperBasevector &hb, const vecbasevector &edges,
      vecKmerPath xpaths;
      HyperKmerPath h2;
      OutputLog(2) << "building new graph from places" << std::endl;
-     unsigned const COVERAGE = 2u;
-     LongReadsToPaths(all, K2, COVERAGE, &hb2, &h2, &xpaths);
+     unsigned const COVERAGE = 1u;
+     LongReadsToPaths(all, new_K, COVERAGE, &new_hbv, &h2, &xpaths);
      Destroy(all);
 
      // Write files.
 
      vec<int> inv2;
-     hb2.Involution(inv2);
+     new_hbv.Involution(inv2);
 
      // Translate paths to the K=200 graph.  Translation method is very ugly.
 
@@ -419,48 +443,48 @@ void RepathInMemoryEXP(const HyperBasevector &hb, const vecbasevector &edges,
           }
           if (!bad && u.nonempty()) {
                starts[id] = M.front().third.Start();
-               stops[id] = hb2.EdgeObject(u.back()).isize()
-                           - (M.back().third.Stop() + K2);
+               stops[id] = new_hbv.EdgeObject(u.back()).isize()
+                           - (M.back().third.Stop() + new_K);
           }
           if (!bad && u.nonempty()) ipaths2[id] = u;
      }
      // Parallelizing this loop does not speed it up.  Perhaps to speed it up
      // we have to do something smarter, so as to eliminate the binary search
      // inside the loop.
-     for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-          if (paths[id].empty()) continue;
+     for (int64_t id = 0; id < (int64_t) old_paths.size(); id++) {
+          if (old_paths[id].empty()) continue;
 
           // Note that we have more info here: paths[id].getOffset( )
           // is the start position of the read on the original path.
 
           vec<int> x, y;
-          for (int64_t j = 0; j < (int64_t) paths[id].size(); j++)
-               x.push_back(paths[id][j]);
+          for (int64_t j = 0; j < (int64_t) old_paths[id].size(); j++)
+               x.push_back(old_paths[id][j]);
           int nkmers = 0;
           for (int j = 0; j < x.isize(); j++)
-               nkmers += edges[x[j]].isize() - ((int) K - 1);
-          if (nkmers + ((int) K - 1) < K2) continue;
+               nkmers += old_edges[x[j]].isize() - ((int) old_K - 1);
+          if (nkmers + ((int) old_K - 1) < new_K) continue;
           for (int j = x.isize() - 1; j >= 0; j--)
-               y.push_back(inv[x[j]]);
+               y.push_back(old_hbvinv[x[j]]);
           Bool rc = (y < x);
           x = Min(x, y);
           long pos = BinPosition(places, x);
           long n = ipaths2[pos].size();
 
-          paths2[id].resize(n);
+          new_paths[id].resize(n);
 
           int offset;
           if (!rc)
-               offset = paths[id].getOffset() + starts[pos] - left_trunc[pos];
-          else offset = paths[id].getOffset() + stops[pos] - right_trunc[pos];
-          paths2[id].setOffset(offset);
+               offset = old_paths[id].getOffset() + starts[pos] - left_trunc[pos];
+          else offset = old_paths[id].getOffset() + stops[pos] - right_trunc[pos];
+          new_paths[id].setOffset(offset);
 
           if (!rc) {
                for (int j = 0; j < n; j++)
-                    paths2[id][j] = ipaths2[pos][j];
+                    new_paths[id][j] = ipaths2[pos][j];
           } else {
                for (int j = 0; j < n; j++)
-                    paths2[id][j] = inv2[ipaths2[pos][n - j - 1]];
+                    new_paths[id][j] = inv2[ipaths2[pos][n - j - 1]];
           }
      }
      OutputLog(2) << "paths translation done" << std::endl;

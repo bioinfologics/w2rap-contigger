@@ -95,7 +95,6 @@ void step_3(HyperBasevector &hbv,
             ReadPathVec &paths,
             unsigned int large_K,
             std::string out_dir){
-
     step_3DV(hbv,hbvinv,paths,large_K,out_dir);
 }
 
@@ -106,6 +105,7 @@ void step_3EXP(HyperBasevector &hbv,
                ReadPathVec &paths,
                unsigned int large_K,
                std::string out_dir){
+    OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
     /*if (clean_smallk_graph) {
         std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
         inv.clear();
@@ -130,10 +130,10 @@ void step_3EXP(HyperBasevector &hbv,
     vec<int> old_hbvinv;
     std::swap(hbvinv,old_hbvinv);
 
-    vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
+
 
     //Produce the new graph and such in the argument variables
-    RepathInMemoryEXP(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), large_K, hbv, paths);
+    RepathInMemoryEXP(old_hbv, old_hbvinv, old_paths, large_K, hbv, paths);
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
     hbvinv.clear();
     hbv.Involution(hbvinv);
