@@ -133,7 +133,6 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
 
           const int coverage = 4;
           buildBigKHBVFromReads( K, allx, coverage, &hb3, &allx_paths);
-
           // build to3 and left3 from allx_paths
 
           for ( int64_t i = 0; i < hb.EdgeObjectCount(); ++i ) 

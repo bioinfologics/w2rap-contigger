@@ -65,11 +65,11 @@ void step_2(HyperBasevector &hbv,
     FragDist(hbv, hbvinv, paths, out_dir + "/small_K.frags.dist");
 }
 
-void step_3(HyperBasevector &hbv,
-              vec<int> &hbvinv,
-              ReadPathVec &paths,
-              unsigned int large_K,
-              std::string out_dir){
+void step_3DV(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            unsigned int large_K,
+            std::string out_dir){
 
     //Swap the old graph and such to variables private to this context
     ReadPathVec old_paths;
@@ -90,8 +90,22 @@ void step_3(HyperBasevector &hbv,
     FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 }
 
-void step_3_new(HyperBasevector &hbv,
-            ReadPathVec &paths, vec<int> &hbvinv){
+void step_3(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            unsigned int large_K,
+            std::string out_dir){
+
+    step_3DV(hbv,hbvinv,paths,large_K,out_dir);
+}
+
+
+
+void step_3EXP(HyperBasevector &hbv,
+               vec<int> &hbvinv,
+               ReadPathVec &paths,
+               unsigned int large_K,
+               std::string out_dir){
     /*if (clean_smallk_graph) {
         std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
         inv.clear();
@@ -107,16 +121,23 @@ void step_3_new(HyperBasevector &hbv,
         std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
     } else {
         std::cout << "--== Step 3: Repathing to second (large K) graph ==--" << std::endl;
-    }
-    vecbvec edges(hbv.Edges().begin(), hbv.Edges().end());
-    inv.clear();
-    hbv.Involution(inv);
-    FragDist(hbv, inv, paths, out_dir + "/" + out_prefix + ".first.frags.dist");
-    const string run_head = out_dir + "/" + out_prefix;
+    }*/
+    ReadPathVec old_paths;
+    std::swap(old_paths,paths);
+    paths.resize(old_paths.size());
+    HyperBasevector old_hbv;
+    std::swap(hbv,old_hbv);
+    vec<int> old_hbvinv;
+    std::swap(hbvinv,old_hbvinv);
 
-    pathsr.resize(paths.size());
+    vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
 
-    RepathInMemory(hbv, edges, inv, paths, hbv.K(), large_K, hbvr, pathsr, True, True, extend_paths);*/
+    //Produce the new graph and such in the argument variables
+    RepathInMemoryEXP(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), large_K, hbv, paths, True, True, False);
+    OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
+    hbvinv.clear();
+    hbv.Involution(hbvinv);
+    FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 
 }
 
@@ -161,6 +182,7 @@ void step_5(HyperBasevector &hbv,
 
     AddNewStuff(new_stuff, hbv, hbvinv, paths, bases, quals, MIN_GAIN, EXT_MODE);
     PartnersToEnds(hbv, paths, bases, quals);
+
 }
 
 void step_6DV(HyperBasevector &hbv,
@@ -595,7 +617,9 @@ int main(const int argc, const char * argv[]) {
                 step_2(hbv, hbvinv, paths, bases, quals, minFreq, minQual, disk_batches, small_K, out_dir, tmp_dir);
                 break;
             case 3:
-                step_3(hbv,hbvinv,paths,large_K,out_dir);
+                if (run_dv) step_3DV(hbv,hbvinv,paths,large_K,out_dir);
+                else if (run_exp) step_3EXP(hbv,hbvinv,paths,large_K,out_dir);
+                else step_3(hbv,hbvinv,paths,large_K,out_dir);
                 break;
             case 4:
                 step_4(hbv, hbvinv, paths, bases, quals, min_size);
