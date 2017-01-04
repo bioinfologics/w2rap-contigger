@@ -133,7 +133,7 @@ void step_3EXP(HyperBasevector &hbv,
     vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
 
     //Produce the new graph and such in the argument variables
-    RepathInMemoryEXP(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), large_K, hbv, paths, True, True, False);
+    RepathInMemoryEXP(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), large_K, hbv, paths);
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
     hbvinv.clear();
     hbv.Involution(hbvinv);
