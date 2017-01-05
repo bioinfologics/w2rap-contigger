@@ -513,12 +513,13 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                             auto out_i_seq = edges[out_i].ToString();
 
                             // intersect read here
-                            auto interseccion = mTxp->edgeTagIntersection(in_i_seq, out_i_seq, 500);
-                            std::cout<< Date() << " Intersection size: " << interseccion.size() << std::endl;
+                            auto interseccion = mTxp->edgeTagIntersection(in_i_seq, out_i_seq, 1500);
                             if (interseccion.size()>10){
-
+                                std::cout<< Date() << " Intersection size: " << interseccion.size() << std::endl;
                                 // Si intersect agregar el par
                                 pid = std::to_string(in_e) + "-" + std::to_string(out_e);
+//                                shared_paths[pid] += mPaths[inp].size(); /// This is the original line for the pb version
+                                shared_paths[pid] += interseccion.size(); // This should score the link based in the number of tags that tha pair shares
                                 out_used[out_i]++;
                                 in_used[in_i]++;
                             }
@@ -584,6 +585,8 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                             if (0==seen_in[a] or 0==seen_out[a]){
                                 all_used = false;
                                 std::cout << "One of the edges was not used in this permutation, discarded!!" << std::endl;
+                            } else {
+                                std::cout << ">>>>All ends used<<<<" << std::endl;
                             }
                         }
 
@@ -598,7 +601,7 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                     } while (std::next_permutation(out_frontiers.begin(), out_frontiers.end()));
 
                     // Get the solution
-                    int score_threshold = 10;
+                    int score_threshold = 2;
                     if (max_score>score_threshold){
                         std::cout << " Found solution to region: " <<std::endl;
                         for (auto ri=0; ri<max_score_permutation.size(); ++ri){
