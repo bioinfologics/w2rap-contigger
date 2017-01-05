@@ -33,6 +33,8 @@ public:
     typedef std::uint16_t tagktype;
     std::map<uint64_t, std::map<tagktype, int>> kmerTagMap;
 
+    TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv);
+
     int createEmptyMap(HyperBasevector* hbv);
 
     int reads2kmerTagMap();
@@ -40,7 +42,7 @@ public:
     typedef std::pair<std::vector<tenXLink>, std::vector<tenXLink>> pairLink; // A pairLinks are the links of r1,r2 of one tenxread
     typedef std::vector<pairLink> tagLink; // A tagLink are all the pairLink for a particular tag
 
-    TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv);
+
 //    ReadPathVec mapReads();
 
     // Qc the run
@@ -54,6 +56,8 @@ public:
     std::vector<tagLink> getTagLinks(bool output_to_file=true);
     std::vector<TenXPather::tagktype> getSequenceTags(std::string seq);
     std::vector<TenXPather::tagktype> edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
+
+//    int resolve_regions(int large_frontier_size=500);
 
 private:
     // Reads and graph

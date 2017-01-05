@@ -3,6 +3,7 @@
 //
 
 #include "TenX_pather.h"
+#include "paths/PathFinder.h"
 
 TenXPather::TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv): KMatch(31)  {
   //
@@ -161,14 +162,33 @@ std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string ed
   std::sort(tagsTo.begin(), tagsTo.end());
 
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
-//  std::cout << "edgeFrom: " << edgeFrom_roi.size()
-//            << " tagsFrom: " << tagsFrom.size()
-//            << " edgeTo: " << edgeTo_roi.size()
-//            << " tagsTo: " << tagsTo.size()
-//            << " Set intersection size: " << intersection_tagset.size() << std::endl;
+  if (intersection_tagset.size()>0){
+#pragma omp critical (printest)
+    std::cout << "edgeFrom: " << edgeFrom_roi.size()
+              << " tagsFrom: " << tagsFrom.size()
+              << " edgeTo: " << edgeTo_roi.size()
+              << " tagsTo: " << tagsTo.size()
+              << " Set intersection size: " << intersection_tagset.size() << std::endl;
+  }
 
   return intersection_tagset;
 }
+
+//int TenXPather::resolve_regions(int large_frontier_size=500){
+//  // get the regions and
+//
+//  // Create pathfinder instance
+//  PathFinder pf(hbv, inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5 );
+//
+//  for (int e = 0; e < hbv->EdgeObjectCount(); ++e) {
+//    if (e < inv[e] && hbv->EdgeObject(e).size() < large_frontier_size) {
+//      auto f=pf.get_all_long_frontiers(e, large_frontier_size);
+//      for (auto x: f){
+//        std::cout << f << std::endl;
+//      }
+//    }
+//  }
+//}
 
 //std::vector<int> TenXPather::readsTagQc(){
 //  // Calculate tags statistics
