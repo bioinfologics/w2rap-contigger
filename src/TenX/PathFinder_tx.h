@@ -4,29 +4,16 @@
 
 #ifndef W2RAP_CONTIGGER_PATHFINDER_H_TX
 #define W2RAP_CONTIGGER_PATHFINDER_H_TX
+
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
-
 #include "paths/long/large/GapToyTools.h"
-
 #include "Vec.h"
+#include "TenX/TenX_pather.h"
 
 class PathFinder_tx {
 public:
-    PathFinder_tx (TenXPather* txp, HyperBasevector* hbv, vec<int>* inv, int min_reads = 5 )
-//    mTxp(txp),
-//    mHBV(hbv),
-//    mInv(inv),
-//    mMinReads(min_reads)
-    {
-        mHBV = hbv;
-        mInv = inv;
-        mMinReads = min_reads;
-        mTxp = txp;
-
-        hbv->ToLeft(mToLeft);
-        hbv->ToRight(mToRight);
-    }
+    PathFinder_tx(TenXPather* txp, HyperBasevector* hbv, vec<int> inv, int min_reads = 5 );
 
     //Graph-related methods
     std::vector<std::vector<uint64_t>> AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length);
@@ -60,7 +47,7 @@ public:
 private:
     TenXPather* mTxp;
     HyperBasevector* mHBV;
-    vec<int>* mInv;
+    vec<int> mInv;
     ReadPathVec& mPaths;
     VecULongVec& mEdgeToPathIds;
     vec<int> mToLeft;
@@ -72,4 +59,4 @@ private:
 };
 
 
-#endif //W2RAP_CONTIGGER_PATHFINDER_TX
+#endif //W2RAP_CONTIGGER_PATHFINDER_H_TX

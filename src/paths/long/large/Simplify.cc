@@ -154,7 +154,7 @@ void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     }
 
     if (RUN_PATHFINDER) {
-        std::cout << Date() << ": making paths index for PathFinder_tx" << std::endl;
+        std::cout << Date() << ": making paths index for PathFinder_pb" << std::endl;
         VecULongVec invPaths;
         invert(paths, invPaths, hb.EdgeObjectCount());
         if (dump_pf_files) {
@@ -162,8 +162,8 @@ void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             //paths.WriteAll(fin_dir + "/pf_start.paths");
             WriteReadPathVec(paths,(fin_dir + "/pf_start.paths").c_str());
         }
-        std::cout << Date() << ": PathFinder_tx: unrolling loops" << std::endl;
-        PathFinder_tx(hb, inv, paths, invPaths).unroll_loops(800);
+        std::cout << Date() << ": PathFinder_pb: unrolling loops" << std::endl;
+        PathFinder_pb(hb, inv, paths, invPaths).unroll_loops(800);
         std::cout << "Removing Unneded Vertices" << std::endl;
         RemoveUnneededVertices2(hb, inv, paths);
         Cleanup(hb, inv, paths);
@@ -212,12 +212,12 @@ void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             auto totalpaths=pb_paths;
             invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
 
-            std::cout << Date() << ": PathFinder_tx: resolving repeats of size " << i << std::endl;
+            std::cout << Date() << ": PathFinder_pb: resolving repeats of size " << i << std::endl;
 
             invtotalPaths.clear();
             invert(totalpaths, invtotalPaths, hb.EdgeObjectCount());
-            std::cout << Date() << ": PathFinder_tx: analysing single-direction repeats" << std::endl;
-            PathFinder_tx(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
+            std::cout << Date() << ": PathFinder_pb: analysing single-direction repeats" << std::endl;
+            PathFinder_pb(hb, inv, totalpaths, invtotalPaths).untangle_complex_in_out_choices(i);
             std::cout << "Removing Unneded Vertices" << std::endl;
             RemoveUnneededVertices2(hb, inv, paths);
             Cleanup(hb, inv, paths);

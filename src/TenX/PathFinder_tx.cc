@@ -4,9 +4,19 @@
 
 #include "TenX/PathFinder_tx.h"
 
+PathFinder_tx::PathFinder_tx (TenXPather* txp, HyperBasevector* hbv, vec<int> inv, int min_reads = 5) {
+    mHBV = hbv;
+    mInv = inv;
+    mMinReads = min_reads;
+    mTxp = txp;
+
+    hbv->ToLeft(mToLeft);
+    hbv->ToRight(mToRight);
+}
+
 std::string PathFinder_tx::edge_pstr(uint64_t e){
-    return "e"+std::to_string(e)+"("+std::to_string(mHBV.EdgeObject(e).size())+"bp "+std::to_string(paths_per_kbp(e))+"ppk)";
-};
+    return "e"+std::to_string(e)+"("+std::to_string(mHBV->EdgeObject(e).size())+"bp "+std::to_string(paths_per_kbp(e))+"ppk)";
+}
 
 void PathFinder_tx::init_prev_next_vectors(){
     //TODO: this is stupid duplication of the digraph class, but it's so weird!!!
@@ -16,29 +26,29 @@ void PathFinder_tx::init_prev_next_vectors(){
 
         uint64_t prev_node=mToLeft[e];
 
-        prev_edges[e].resize(mHBV.ToSize(prev_node));
-        for (int i=0;i<mHBV.ToSize(prev_node);++i){
-            prev_edges[e][i]=mHBV.EdgeObjectIndexByIndexTo(prev_node,i);
+        prev_edges[e].resize(mHBV->ToSize(prev_node));
+        for (int i=0;i<mHBV->ToSize(prev_node);++i){
+            prev_edges[e][i]=mHBV->EdgeObjectIndexByIndexTo(prev_node,i);
         }
 
         uint64_t next_node=mToRight[e];
 
-        next_edges[e].resize(mHBV.FromSize(next_node));
-        for (int i=0;i<mHBV.FromSize(next_node);++i){
-            next_edges[e][i]=mHBV.EdgeObjectIndexByIndexFrom(next_node,i);
+        next_edges[e].resize(mHBV->FromSize(next_node));
+        for (int i=0;i<mHBV->FromSize(next_node);++i){
+            next_edges[e][i]=mHBV->EdgeObjectIndexByIndexFrom(next_node,i);
         }
     }
 
 
 }
 
-std::array<uint64_t,3> PathFinder_tx::transition_votes(uint64_t left_e,uint64_t right_e){
-    std::array<uint64_t,3> tv={0,0,0};
-    std::cout<<"Scoring transition from "<<left_e<<"to"<<right_e<<std::endl;
-
-    std::cout<<"Paths on right edge "<<mEdgeToPathIds[right_e].size()<<" inv "<<mEdgeToPathIds[mInv[right_e]].size()<<std::endl;
-    return tv;
-};
+//std::array<uint64_t,3> PathFinder_tx::transition_votes(uint64_t left_e,uint64_t right_e){
+//    std::array<uint64_t,3> tv={0,0,0};
+//    std::cout<<"Scoring transition from "<<left_e<<"to"<<right_e<<std::endl;
+//
+//    std::cout<<"Paths on right edge "<<mEdgeToPathIds[right_e].size()<<" inv "<<mEdgeToPathIds[mInv[right_e]].size()<<std::endl;
+//    return tv;
+//};
 
 std::array<uint64_t,3> PathFinder_tx::path_votes(std::vector<uint64_t> path){
     //Returns a vote vector: { FOR, PARTIAL (reads end halfway, but validate at least one transition), AGAINST }
@@ -180,14 +190,16 @@ std::array<uint64_t,3> PathFinder_tx::path_votes(std::vector<uint64_t> path){
     }
     return pv;
 }
+
 std::string PathFinder_tx::path_str(std::vector<uint64_t> path) {
     std::string s="[";
     for (auto p:path){
-        s+=std::to_string(p)+":"+std::to_string(mInv[p])+" ";//+" ("+std::to_string(mHBV.EdgeObject(p).size())+"bp "+std::to_string(paths_per_kbp(p))+"ppk)  ";
+        s+=std::to_string(p)+":"+std::to_string(mInv[p])+" ";//+" ("+std::to_string(mHBV->EdgeObject(p).size())+"bp "+std::to_string(paths_per_kbp(p))+"ppk)  ";
     }
     s+="]";
     return s;
 }
+
 std::array<uint64_t,3> PathFinder_tx::multi_path_votes(std::vector<std::vector<uint64_t>> paths){
     //Returns a vote vector: { FOR, PARTIAL (reads end halfway, but validate at least one transition), AGAINST }
     //does this on forward and reverse paths, just in case
@@ -334,26 +346,26 @@ std::array<uint64_t,3> PathFinder_tx::multi_path_votes(std::vector<std::vector<u
 void PathFinder_tx::classify_forks(){
     int64_t nothing_fw=0, line_fw=0,join_fw=0,split_fw=0,join_split_fw=0;
     uint64_t nothing_fw_size=0, line_fw_size=0,join_fw_size=0,split_fw_size=0,join_split_fw_size=0;
-    for ( int i = 0; i < mHBV.EdgeObjectCount(); ++i ) {
+    for ( int i = 0; i < mHBV->EdgeObjectCount(); ++i ) {
         //checks for both an edge and its complement, because it only looks forward
         uint64_t out_node=mToRight[i];
-        if (mHBV.FromSize(out_node)==0) {
+        if (mHBV->FromSize(out_node)==0) {
             nothing_fw++;
-            nothing_fw_size+=mHBV.EdgeObject(i).size();
-        } else if (mHBV.FromSize(out_node)==1) {
-            if (mHBV.ToSize(out_node)==1){
+            nothing_fw_size+=mHBV->EdgeObject(i).size();
+        } else if (mHBV->FromSize(out_node)==1) {
+            if (mHBV->ToSize(out_node)==1){
                 line_fw++;
-                line_fw_size+=mHBV.EdgeObject(i).size();
+                line_fw_size+=mHBV->EdgeObject(i).size();
             } else {
                 split_fw++;
-                split_fw_size+=mHBV.EdgeObject(i).size();
+                split_fw_size+=mHBV->EdgeObject(i).size();
             }
-        } else if (mHBV.ToSize(out_node)==1){
+        } else if (mHBV->ToSize(out_node)==1){
             join_fw++;
-            join_fw_size+=mHBV.EdgeObject(i).size();
+            join_fw_size+=mHBV->EdgeObject(i).size();
         } else {
             join_split_fw++;
-            join_split_fw_size+=mHBV.EdgeObject(i).size();
+            join_split_fw_size+=mHBV->EdgeObject(i).size();
         }
     }
     std::cout<<"Forward Node Edge Classification: "<<std::endl
@@ -365,61 +377,61 @@ void PathFinder_tx::classify_forks(){
 
 }
 
-void PathFinder_tx::unroll_loops(uint64_t min_side_sizes) {
-    //find nodes where in >1 or out>1 and in>0 and out>0
-    uint64_t uloop=0,ursize=0;
-    std::cout<<"Starting loop finding"<<std::endl;
-    init_prev_next_vectors();
-    std::cout<<"Prev and Next vectors initialised"<<std::endl;
-    //score all possible transitions, discards all decidible and
-
-        // is there any score>0 transition that is not incompatible with any other transitions?
-    std::vector<std::vector<uint64_t>> new_paths; //these are solved paths, they will be materialised later
-    for ( int e = 0; e < mHBV.EdgeObjectCount(); ++e ) {
-        if (e<mInv[e]) {
-            auto urs=is_unrollable_loop(e,min_side_sizes);
-
-            auto iurs=is_unrollable_loop(mInv[e],min_side_sizes);
-            if (urs.size()>0 && iurs.size()>0) {
-                //std::cout<<"unrolling loop on edge"<<e<<std::endl;
-                new_paths.push_back(urs[0]);
-            }
-        }
-
-    }
-    //std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
-
-    std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
-    uint64_t sep=0;
-    std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
-    for (auto p:new_paths){
-        auto oen=separate_path(p);
-        if (oen.size()>0) {
-            for (auto et:oen){
-                if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
-                for (auto ne:et.second) old_edges_to_new[et.first].push_back(ne);
-            }
-            sep++;
-        }
-    }
-    if (old_edges_to_new.size()>0) {
-        migrate_readpaths(old_edges_to_new);
-    }
-    std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
-    init_prev_next_vectors();
-    std::cout<<"Prev and Next vectors initialised"<<std::endl;
-}
+//void PathFinder_tx::unroll_loops(uint64_t min_side_sizes) {
+//    //find nodes where in >1 or out>1 and in>0 and out>0
+//    uint64_t uloop=0,ursize=0;
+//    std::cout<<"Starting loop finding"<<std::endl;
+//    init_prev_next_vectors();
+//    std::cout<<"Prev and Next vectors initialised"<<std::endl;
+//    //score all possible transitions, discards all decidible and
+//
+//        // is there any score>0 transition that is not incompatible with any other transitions?
+//    std::vector<std::vector<uint64_t>> new_paths; //these are solved paths, they will be materialised later
+//    for ( int e = 0; e < mHBV->EdgeObjectCount(); ++e ) {
+//        if (e<mInv[e]) {
+//            auto urs=is_unrollable_loop(e,min_side_sizes);
+//
+//            auto iurs=is_unrollable_loop(mInv[e],min_side_sizes);
+//            if (urs.size()>0 && iurs.size()>0) {
+//                //std::cout<<"unrolling loop on edge"<<e<<std::endl;
+//                new_paths.push_back(urs[0]);
+//            }
+//        }
+//
+//    }
+//    //std::cout<<"Unrollable loops: "<<uloop<<" ("<<ursize<<"bp)"<<std::endl;
+//
+//    std::cout<<"Loop finding finished, "<<new_paths.size()<< " loops to unroll" <<std::endl;
+//    uint64_t sep=0;
+//    std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
+//    for (auto p:new_paths){
+//        auto oen=separate_path(p);
+//        if (oen.size()>0) {
+//            for (auto et:oen){
+//                if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
+//                for (auto ne:et.second) old_edges_to_new[et.first].push_back(ne);
+//            }
+//            sep++;
+//        }
+//    }
+//    if (old_edges_to_new.size()>0) {
+//        migrate_readpaths(old_edges_to_new);
+//    }
+//    std::cout<<sep<<" loops unrolled, re-initing the prev and next vectors, just in case :D"<<std::endl;
+//    init_prev_next_vectors();
+//    std::cout<<"Prev and Next vectors initialised"<<std::endl;
+//}
 /*
 void PathFinder_tx::untangle_complex_in_out_choices() {
     //find a complex path
     init_prev_next_vectors();
-    for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
-        if (e < mInv[e] && mHBV.EdgeObject(e).size()>1000) {
+    for (int e = 0; e < mHBV->EdgeObjectCount(); ++e) {
+        if (e < mInv[e] && mHBV->EdgeObject(e).size()>1000) {
             //Ok, so why do we stop?
             //is next edge a join? how long till it splits again? can we choose the split?
             if (next_edges[e].size()==1 and prev_edges[next_edges[e][0]].size()>1){
                 //std::cout<<"next edge from "<<e<<" is a join!"<<std::endl;
-                if (mHBV.EdgeObject(next_edges[e][0]).size()<500 and next_edges[next_edges[e][0]].size()>1){
+                if (mHBV->EdgeObject(next_edges[e][0]).size()<500 and next_edges[next_edges[e][0]].size()>1){
 
                     if (prev_edges[next_edges[e][0]].size()==prev_edges[next_edges[e][0]].size()){
                         std::cout<<"next edge from "<<e<<" is a small join! with "<<prev_edges[next_edges[e][0]].size()<<"in-outs"<<std::endl;
@@ -444,40 +456,42 @@ void PathFinder_tx::untangle_complex_in_out_choices() {
     }
 }*/
 
-void PathFinder_tx::untangle_pins() {
-
-    init_prev_next_vectors();
-    uint64_t pins=0;
-    for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
-        if (mToLeft[e]==mToLeft[mInv[e]] and next_edges[e].size()==1 ) {
-            std::cout<<" Edge "<<e<<" forms a pinhole!!!"<<std::endl;
-            if (next_edges[next_edges[e][0]].size()==2) {
-                std::vector<uint64_t> pfw = {mInv[next_edges[next_edges[e][0]][0]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][1]};
-                std::vector<uint64_t> pbw = {mInv[next_edges[next_edges[e][0]][1]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][0]};
-                auto vpfw=multi_path_votes({pfw});
-                auto vpbw=multi_path_votes({pbw});
-                std::cout<<"votes FW: "<<vpfw[0]<<":"<<vpfw[1]<<":"<<vpfw[2]<<"     BW: "<<vpbw[0]<<":"<<vpbw[1]<<":"<<vpbw[2]<<std::endl;
-            }
-            ++pins;
-        }
-    }
-    std::cout<<"Total number of pinholes: "<<pins;
-}
+//void PathFinder_tx::untangle_pins() {
+//
+//    init_prev_next_vectors();
+//    uint64_t pins=0;
+//    for (int e = 0; e < mHBV->EdgeObjectCount(); ++e) {
+//        if (mToLeft[e]==mToLeft[mInv[e]] and next_edges[e].size()==1 ) {
+//            std::cout<<" Edge "<<e<<" forms a pinhole!!!"<<std::endl;
+//            if (next_edges[next_edges[e][0]].size()==2) {
+//                std::vector<uint64_t> pfw = {mInv[next_edges[next_edges[e][0]][0]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][1]};
+//                std::vector<uint64_t> pbw = {mInv[next_edges[next_edges[e][0]][1]],mInv[next_edges[e][0]],e,next_edges[e][0],next_edges[next_edges[e][0]][0]};
+//                auto vpfw=multi_path_votes({pfw});
+//                auto vpbw=multi_path_votes({pbw});
+//                std::cout<<"votes FW: "<<vpfw[0]<<":"<<vpfw[1]<<":"<<vpfw[2]<<"     BW: "<<vpbw[0]<<":"<<vpbw[1]<<":"<<vpbw[2]<<std::endl;
+//            }
+//            ++pins;
+//        }
+//    }
+//    std::cout<<"Total number of pinholes: "<<pins;
+//}
 
 void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation) {
     //find a complex path
+    auto edges = mHBV->Edges();
+
     uint64_t qsf=0,qsf_paths=0;
     uint64_t msf=0,msf_paths=0;
     init_prev_next_vectors();
     std::cout<<"vectors initialised"<<std::endl;
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     std::vector<std::vector<uint64_t>> paths_to_separate;
-    for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
-        if (e < mInv[e] && mHBV.EdgeObject(e).size() < large_frontier_size) {
+    for (int e = 0; e < mHBV->EdgeObjectCount(); ++e) {
+        if (e < mInv[e] && mHBV->EdgeObject(e).size() < large_frontier_size) {
             auto f=get_all_long_frontiers(e, large_frontier_size);
+//            std::cout<< Date() << " Frontiers found: " << f.size() << std::endl;
             if (f[0].size()>1 and f[1].size()>1 and f[0].size() == f[1].size() and seen_frontiers.count(f)==0){
                 seen_frontiers.insert(f);
-
                 bool single_dir=true;
                 std::map<std::string, int> shared_paths;
                 for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
@@ -495,10 +509,14 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                             auto out_e=f[1][out_i];
                             int edges_in_path;
                             std::string pid;
+                            auto in_i_seq = edges[in_i].ToString();
+                            auto out_i_seq = edges[out_i].ToString();
 
                             // intersect read here
-                            auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 500);
+                            auto interseccion = mTxp->edgeTagIntersection(in_i_seq, out_i_seq, 500);
+                            std::cout<< Date() << " Intersection size: " << interseccion.size() << std::endl;
                             if (interseccion.size()>10){
+
                                 // Si intersect agregar el par
                                 pid = std::to_string(in_e) + "-" + std::to_string(out_e);
                                 out_used[out_i]++;
@@ -663,12 +681,12 @@ std::array<std::vector<uint64_t>,2> PathFinder_tx::get_all_long_frontiers(uint64
                 if (seen_edges.count(mInv[x])) return std::array<std::vector<uint64_t>,2>(); //just cancel for now
 
                 for (auto p:prev_edges[x]) {
-                    if (mHBV.EdgeObject(p).size() >= large_frontier_size )  {
+                    if (mHBV->EdgeObject(p).size() >= large_frontier_size )  {
                         //What about frontiers on both sides?
                         in_frontiers.insert(p);
                         for (auto other_n:next_edges[p]){
                             if (!seen_edges.count(other_n)) {
-                                if (mHBV.EdgeObject(other_n).size() >= large_frontier_size) {
+                                if (mHBV->EdgeObject(other_n).size() >= large_frontier_size) {
                                     out_frontiers.insert(other_n);
                                     seen_edges.insert(other_n);
                                 }
@@ -680,12 +698,12 @@ std::array<std::vector<uint64_t>,2> PathFinder_tx::get_all_long_frontiers(uint64
                 }
 
                 for (auto n:next_edges[x]) {
-                    if (mHBV.EdgeObject(n).size() >= large_frontier_size) {
+                    if (mHBV->EdgeObject(n).size() >= large_frontier_size) {
                         //What about frontiers on both sides?
                         out_frontiers.insert(n);
                         for (auto other_p:prev_edges[n]){
                             if (!seen_edges.count(other_p)) {
-                                if (mHBV.EdgeObject(other_p).size() >= large_frontier_size) {
+                                if (mHBV->EdgeObject(other_p).size() >= large_frontier_size) {
                                     in_frontiers.insert(other_p);
                                     seen_edges.insert(other_p);
                                 }
@@ -761,7 +779,7 @@ std::vector<std::vector<uint64_t>> PathFinder_tx::is_unrollable_loop(uint64_t lo
     if (prev_e==next_e or prev_e==mInv[next_e]) return {};
 
     //3) size constraints: prev_e and next_e must be at least 1Kbp
-    if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
+    if (mHBV->EdgeObject(prev_e).size()<min_size_sizes or mHBV->EdgeObject(next_e).size()<min_size_sizes) return {};
 
 
     //std::cout<<" LOOP: "<< edge_pstr(prev_e)<<" ---> "<<edge_pstr(repeat_e)<<" -> "<<edge_pstr(loop_e)<<" -> "<<edge_pstr(repeat_e)<<" ---> "<<edge_pstr(next_e)<<std::endl;
@@ -801,12 +819,12 @@ std::vector<std::vector<uint64_t>> PathFinder_tx::is_unrollable_loop(uint64_t lo
     }
     //std::cout<<"   UNROLLABLE"<<std::endl;
     return {{prev_e,repeat_e,loop_e,repeat_e,next_e}};
-    //return mHBV.EdgeObject(prev_e).size()+mHBV.EdgeObject(repeat_e).size()+
-            //mHBV.EdgeObject(loop_e).size()+mHBV.EdgeObject(repeat_e).size()+mHBV.EdgeObject(next_e).size()-4*mHBV.K();
+    //return mHBV->EdgeObject(prev_e).size()+mHBV->EdgeObject(repeat_e).size()+
+            //mHBV->EdgeObject(loop_e).size()+mHBV->EdgeObject(repeat_e).size()+mHBV->EdgeObject(next_e).size()-4*mHBV->K();
 }
 
 uint64_t PathFinder_tx::paths_per_kbp(uint64_t e){
-    return 1000 * mEdgeToPathIds[e].size()/mHBV.EdgeObject(e).size();
+    return 1000 * mEdgeToPathIds[e].size()/mHBV->EdgeObject(e).size();
 };
 
 std::map<uint64_t,std::vector<uint64_t>> PathFinder_tx::separate_path(std::vector<uint64_t> p, bool verbose_separation){
@@ -828,32 +846,32 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder_tx::separate_path(std::vecto
             return {};}
     }
     //create two new vertices (for the FW and BW path)
-    uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
-    mHBV.AddVertices(2);
+    uint64_t current_vertex_fw=mHBV->N(),current_vertex_rev=mHBV->N()+1;
+    mHBV->AddVertices(2);
     //migrate connections (dangerous!!!)
     if (verbose_separation) std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
-    mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
+    mHBV->GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
     if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
-    mHBV.GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
+    mHBV->GiveEdgeNewFromVx(mInv[p[0]],mToLeft[mInv[p[0]]],current_vertex_rev);
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
 
     for (auto ei=1;ei<p.size()-1;++ei){
         //add a new vertex for each of FW and BW paths
         uint64_t prev_vertex_fw=current_vertex_fw,prev_vertex_rev=current_vertex_rev;
         //create two new vertices (for the FW and BW path)
-        current_vertex_fw=mHBV.N();
-        current_vertex_rev=mHBV.N()+1;
-        mHBV.AddVertices(2);
+        current_vertex_fw=mHBV->N();
+        current_vertex_rev=mHBV->N()+1;
+        mHBV->AddVertices(2);
 
         //now, duplicate next edge for the FW and reverse path
-        auto nef=mHBV.AddEdge(prev_vertex_fw,current_vertex_fw,mHBV.EdgeObject(p[ei]));
+        auto nef=mHBV->AddEdge(prev_vertex_fw,current_vertex_fw,mHBV->EdgeObject(p[ei]));
         if (verbose_separation)  std::cout<<"Edge "<<nef<<": copy of "<<p[ei]<<": "<<prev_vertex_fw<<" - "<<current_vertex_fw<<std::endl;
         mToLeft.push_back(prev_vertex_fw);
         mToRight.push_back(current_vertex_fw);
         if (! old_edges_to_new.count(p[ei]))  old_edges_to_new[p[ei]]={};
         old_edges_to_new[p[ei]].push_back(nef);
 
-        auto ner=mHBV.AddEdge(current_vertex_rev,prev_vertex_rev,mHBV.EdgeObject(mInv[p[ei]]));
+        auto ner=mHBV->AddEdge(current_vertex_rev,prev_vertex_rev,mHBV->EdgeObject(mInv[p[ei]]));
         if (verbose_separation) std::cout<<"Edge "<<ner<<": copy of "<<mInv[p[ei]]<<": "<<current_vertex_rev<<" - "<<prev_vertex_rev<<std::endl;
         mToLeft.push_back(current_vertex_rev);
         mToRight.push_back(prev_vertex_rev);
@@ -865,12 +883,12 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder_tx::separate_path(std::vecto
         mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
     }
     if (verbose_separation) std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
-    mHBV.GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
+    mHBV->GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
     if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[p.size()-1]]<<" To node old: "<<mToRight[mInv[p[p.size()-1]]]<<" new: "<<current_vertex_rev<<std::endl;
-    mHBV.GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
+    mHBV->GiveEdgeNewToVx(mInv[p[p.size()-1]],mToRight[mInv[p[p.size()-1]]],current_vertex_rev);
 
     //TODO: cleanup new isolated elements and leading-nowhere paths.
-    //for (auto ei=1;ei<p.size()-1;++ei) mHBV.DeleteEdges({p[ei]});
+    //for (auto ei=1;ei<p.size()-1;++ei) mHBV->DeleteEdges({p[ei]});
     return old_edges_to_new;
 
 }
@@ -880,8 +898,8 @@ void PathFinder_tx::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> e
     //Migrate readpaths: this changes the readpaths from old edges to new edges
     //if an old edge has more than one new edge it tries all combinations until it gets the paths to map
     //if more than one combination is valid, this chooses at random among them (could be done better? should the path be duplicated?)
-    mHBV.ToLeft(mToLeft);
-    mHBV.ToRight(mToRight);
+    mHBV->ToLeft(mToLeft);
+    mHBV->ToRight(mToRight);
     for (auto &p:mPaths){
         std::vector<std::vector<uint64_t>> possible_new_edges;
         bool translated=false,ambiguous=false;

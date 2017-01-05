@@ -7,6 +7,7 @@
 #include "paths/long/large/ExtractReads.h"
 //#include "pacbio/pacbio_pather.h"
 //#include "pacbio/PathFinder_pb.h"
+
 #include "TenX/TenX_pather.h"
 #include "TenX/PathFinder_tx.h"
 
@@ -45,9 +46,9 @@ int main(int argc, char *argv[]){
 //  TenXPather* txp2 = &txp;
   // Pathfinder
   std::cout<< Date() << " Starting pathfinder..." << std::endl;
-  PathFinder_tx pf_tx (&txp, &hbv, &inv, 5);
+  PathFinder_tx pf_tx (&txp, &hbv, inv, 5);
   std::cout<< Date() << " done pathfinder..." << std::endl;
-
+  pf_tx.untangle_complex_in_out_choices(1000, true);
 
 //  // Print the map content
 //  for (auto &t: txp.kmerTagMap){
