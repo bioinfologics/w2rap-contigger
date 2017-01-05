@@ -8,6 +8,7 @@
 //#include "pacbio/pacbio_pather.h"
 //#include "pacbio/PathFinder_pb.h"
 #include "TenX/TenX_pather.h"
+#include "TenX/PathFinder_tx.h"
 
 
 int main(int argc, char *argv[]){
@@ -30,42 +31,53 @@ int main(int argc, char *argv[]){
   inv.clear();
   hbv.Involution(inv);
 
+
+
   // Create the paths and invert them
-  TenXPather txp(&reads, &hbv);
-  std::cout<< Date() << "Map creation." << std::endl;
+  TenXPather txp (&reads, &hbv);
+  std::cout<< Date() << " Map creation." << std::endl;
   txp.createEmptyMap(&hbv);
-  std::cout<< Date() << "Map creation done..." << std::endl;
-  std::cout<< Date() << "Map filling with reads..." << std::endl;
+  std::cout<< Date() << " Map creation done..." << std::endl;
+  std::cout<< Date() << " Map filling with reads..." << std::endl;
   txp.reads2kmerTagMap();
-  std::cout<< Date() << "Map filling with reads done..." << std::endl;
+  std::cout<< Date() << " Map filling with reads done..." << std::endl;
 
-  for (auto &t: txp.kmerTagMap){
-    if (t.second.size()>0) {
-      std::cout << "Key: " << t.first << ", Count: " << t.second.size() << std::endl;
-      for (auto tt: t.second){
-        std::cout << "--->Tag: " << tt.first << "-->" <<tt.second <<std::endl;
-      }
-    }
-  }
-  std::cout << "Size of the dictionary: " << txp.kmerTagMap.size() << std::endl;
+//  TenXPather* txp2 = &txp;
+  // Pathfinder
+  std::cout<< Date() << " Starting pathfinder..." << std::endl;
+  PathFinder_tx pf_tx (&txp, &hbv, &inv, 5);
+  std::cout<< Date() << " done pathfinder..." << std::endl;
 
-  std::cout<<Date()<<" Intersecting:" << std::endl;
-  auto edges = hbv.Edges();
-#pragma omp parallel for
-  for (auto i=0; i<edges.size(); ++i){
-    for (auto j=0; j<edges.size(); ++j) {
-      if (edges[i].size()>5000 & edges[j].size()>5000) {
-        auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 5500);
-        if (interseccion.size() > 0) {
-#pragma omp critical (printest)
-          std::cout << "Print intersection: " << i << "-" << j << "->" << interseccion.size() << std::endl;
-        }
-//      for (auto elemento: interseccion){
-//        std::cout << elemento << std::endl;
+
+//  // Print the map content
+//  for (auto &t: txp.kmerTagMap){
+//    if (t.second.size()>0) {
+//      std::cout << "Key: " << t.first << ", Count: " << t.second.size() << std::endl;
+//      for (auto tt: t.second){
+//        std::cout << "--->Tag: " << tt.first << "-->" <<tt.second <<std::endl;
+//      }
 //    }
-      }
-    }
-  }
+////  }
+//  std::cout << "Size of the dictionary: " << txp.kmerTagMap.size() << std::endl;
+//
+//  // Intersection all vs all
+//  std::cout<<Date()<<" Intersecting:" << std::endl;
+//  auto edges = hbv.Edges();
+//#pragma omp parallel for
+//  for (auto i=0; i<edges.size(); ++i){
+//    for (auto j=0; j<edges.size(); ++j) {
+//      if (edges[i].size()>5000 & edges[j].size()>5000) {
+//        auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 500);
+//        if (interseccion.size() > 0) {
+//#pragma omp critical (printest)
+//          std::cout << "Print intersection: " << i << "-" << j << "->" << interseccion.size() << std::endl;
+//        }
+////      for (auto elemento: interseccion){
+////        std::cout << elemento << std::endl;
+////    }
+//      }
+//    }
+//  }
 
 
 
@@ -91,9 +103,9 @@ int main(int argc, char *argv[]){
 //  invert(pathsr, invPaths, hbv.EdgeObjectCount());
 
   // pathfinders
-//  PathFinder_pb(hbv, inv, pathsr, invPaths).unroll_loops(800);
-//  PathFinder_pb(hbv,inv,pathsr,invPaths).untangle_pins();
-//  PathFinder_pb(hbv,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+//  PathFinder_tx(hbv, inv, pathsr, invPaths).unroll_loops(800);
+//  PathFinder_tx(hbv,inv,pathsr,invPaths).untangle_pins();
+//  PathFinder_tx(hbv,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
 
 //  RemoveUnneededVertices2(hbv, inv, pathsr);
 //  Cleanup(hbv, inv, pathsr);
