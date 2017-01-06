@@ -489,7 +489,6 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
     for (int e = 0; e < mHBV->EdgeObjectCount(); ++e) {
         if (e < mInv[e] && mHBV->EdgeObject(e).size() < large_frontier_size) {
             auto f=get_all_long_frontiers(e, large_frontier_size);
-//            std::cout<< Date() << " Frontiers found: " << f.size() << std::endl;
             if (f[0].size()>1 and f[1].size()>1 and f[0].size() == f[1].size() and seen_frontiers.count(f)==0){
                 seen_frontiers.insert(f);
                 bool single_dir=true;

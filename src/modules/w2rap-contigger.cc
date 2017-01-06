@@ -25,12 +25,15 @@
 #include <time.h>
 #include <sys/time.h>
 #include <paths/PathFinder.h>
-#include <pacbio/PathFinder_pb.h>
 #include <paths/long/large/ImprovePath.h>
 #include "GFADump.h"
 
 // [GONZA]
-#include "pacbio/pacbio_pather.h"
+//#include <pacbio/PathFinder_pb.h>
+//#include "pacbio/pacbio_pather.h"
+
+#include "TenX/TenX_pather.h"
+#include "TenX/PathFinder_tx.h"
 
 std::string checkpoint_perf_time(const std::string section_name){
     static double wtimer, cputimer;
@@ -246,9 +249,30 @@ int main(const int argc, const char * argv[]) {
                 hbvr.Involution(inv);
                 std::cout << Date() << ": making paths index for PathFinder_tx" << std::endl;
 
-                invert(pathsr, invPaths, hbvr.EdgeObjectCount());
-                std::cout << Date() << ": PathFinder_tx: unrolling loops" << std::endl;
-                PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
+                // construct tenx dict here
+                auto tx_reads = dataMag.mag["TEX"]->rReads;
+                std::cout << "Reads already loaded..." << std::endl;
+                std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
+
+                TenXPather txp (&tx_reads, &hbvr);
+                std::cout<< Date() << " Map creation." << std::endl;
+                txp.createEmptyMap(&hbvr);
+                std::cout<< Date() << " Map creation done..." << std::endl;
+                std::cout<< Date() << " Map filling with reads..." << std::endl;
+                txp.reads2kmerTagMap();
+                std::cout<< Date() << " Map filling with reads done..." << std::endl;
+
+                // execute pathfinder here
+                std::cout<< Date() << " Starting pathfinder..." << std::endl;
+                PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
+                std::cout<< Date() << " done pathfinder..." << std::endl;
+                pf_tx.untangle_complex_in_out_choices(1000, true);
+
+
+//                invert(pathsr, invPaths, hbvr.EdgeObjectCount());
+//                std::cout << Date() << ": PathFinder_tx: unrolling loops" << std::endl;
+//                PathFinder(hbvr, inv, pathsr, invPaths).unroll_loops(800);
+
                 std::cout << "Removing Unneeded Vertices & Cleanup" << std::endl;
                 RemoveUnneededVertices2(hbvr, inv, pathsr);
                 Cleanup(hbvr, inv, pathsr);
@@ -266,7 +290,8 @@ int main(const int argc, const char * argv[]) {
             invert( pathsr, invPaths, hbvr.EdgeObjectCount( ) );
 
             std::cout << Date() << ": PathFinder_tx: Separating solved single-flow repeats" << std::endl;
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+
+            PathFinder_tx(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
             std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );
