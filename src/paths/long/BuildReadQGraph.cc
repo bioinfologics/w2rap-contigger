@@ -1060,10 +1060,10 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
         OutputLog(2) << kmer_list.size() << " kmers counted, filtering..." << std::endl;
         (*dict) = new BRQ_Dict(kmer_list.size());
         uint64_t used = 0,not_used=0;
-        uint64_t hist[101];
+        uint64_t hist[256];
         for (auto &h:hist) h=0;
         for (auto &knf:kmer_list) {
-            ++hist[std::min(100,(int)knf.count)];
+            ++hist[std::min(255,(int)knf.count)];
             if (knf.count >= minFreq) {
                 (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
                 used++;
@@ -1076,7 +1076,7 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
         kmer_list.clear();
         if (""!=workdir) {
             std::ofstream kff(workdir + "/small_K.freqs");
-            for (auto i = 1; i < 101; i++) kff << i << ", " << hist[i] << std::endl;
+            for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
             kff.close();
         }
 
@@ -1168,6 +1168,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
     current_kmer.count=0;
     uint64_t used = 0,not_used=0;
     uint64_t hist[256];
+    for (auto &h:hist) h=0;
     std::vector<KMerNodeFreq> kmerlist;
 
     while (finished_files<disk_batches) {
@@ -1179,7 +1180,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, VecPQVec con
             }
         //larger than current kmer?
         if (next_knf_from_dbf[min] > current_kmer) {
-            ++hist[current_kmer.count];
+            ++hist[std::min(255,(int)current_kmer.count)];
             if (current_kmer.count>=minFreq) {
                 //(*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) current_kmer, current_kmer.kc));
                 kmerlist.push_back(current_kmer);
