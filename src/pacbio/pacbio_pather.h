@@ -18,7 +18,7 @@ typedef struct {
     int kmer;
 } linkReg;
 
-struct linkreg_less_than {
+struct linkreg_less_than_pb {
     inline bool operator() (const linkReg& struct1, const linkReg& struct2)
     {
       return (struct1.read_offset < struct2.read_offset);

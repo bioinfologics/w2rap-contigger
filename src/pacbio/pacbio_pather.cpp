@@ -130,7 +130,7 @@ ReadPathVec PacbioPather::mapReads(){
     auto minmatchFilter = matchLengthFilter(offset_filter);
 
     // sort the vector
-    std::sort(minmatchFilter.begin(), minmatchFilter.end(), linkreg_less_than());
+    std::sort(minmatchFilter.begin(), minmatchFilter.end(), linkreg_less_than_pb());
 
     // Create vector of unique edge_ids
     std::vector<int> presentes;

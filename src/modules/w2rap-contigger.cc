@@ -291,7 +291,7 @@ int main(const int argc, const char * argv[]) {
 
             std::cout << Date() << ": PathFinder_tx: Separating solved single-flow repeats" << std::endl;
 
-            PathFinder_tx(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
             std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );

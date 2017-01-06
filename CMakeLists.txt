@@ -384,7 +384,10 @@ add_library(specific_w2rap-contigger OBJECT
         src/pacbio/PathFinder_pb.cc
         src/paths/PathFinder.cc
         src/kmers/kmatch/KMatch.cc
-        src/pacbio/pacbio_pather.cpp)
+        src/pacbio/pacbio_pather.cpp
+        src/TenX/TenX_pather.cpp
+        src/TenX/TenX_pather.h
+        src/TenX/PathFinder_tx.cc)
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
