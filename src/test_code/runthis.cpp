@@ -50,6 +50,8 @@ int main(int argc, char *argv[]){
   std::cout<< Date() << " done pathfinder..." << std::endl;
   pf_tx.untangle_complex_in_out_choices(1000, true);
 
+
+
 //  // Print the map content
 //  for (auto &t: txp.kmerTagMap){
 //    if (t.second.size()>0) {
