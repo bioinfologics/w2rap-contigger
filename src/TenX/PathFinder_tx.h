@@ -43,7 +43,6 @@ public:
     void migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap);
 
 
-
 private:
     TenXPather* mTxp;
     HyperBasevector* mHBV;
@@ -55,8 +54,29 @@ private:
     std::vector<std::vector<uint64_t>> next_edges,prev_edges;
     int mMinReads;
 
-
 };
 
+class LocalPaths {
+public:
+    LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int>* to_right);
 
+    int LocalPaths::find_all_solution_paths();
+
+    // Find all paths conecting 2 edges in the graph
+    bool find_all_pair_conecting_paths(int edge_name , std::vector<int> path, int cont, int end_edge, int maxloop = 2);
+
+private:
+    HyperBasevector* mHBV;
+    std::vector<std::vector<int>> frontier_solutions;
+    std::vector<int> ins;
+    std::vector<int> outs;
+
+    std::vector<std::vector<int>> pair_temp_paths;
+    // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
+    std::vector<std::vector<std::vector<int>>> all_paths;
+
+    vec<int>* mToLeft;
+    vec<int>* mToRight;
+
+};
 #endif //W2RAP_CONTIGGER_PATHFINDER_H_TX

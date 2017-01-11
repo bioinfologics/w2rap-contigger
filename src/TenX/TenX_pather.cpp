@@ -164,11 +164,11 @@ std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string ed
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
   if (intersection_tagset.size()>0){
 #pragma omp critical (printest)
-    std::cout << "edgeFrom: " << edgeFrom_roi.size()
-              << " tagsFrom: " << tagsFrom.size()
-              << " edgeTo: " << edgeTo_roi.size()
-              << " tagsTo: " << tagsTo.size()
-              << " Set intersection size: " << intersection_tagset.size() << std::endl;
+    std::cout << "EdgeFrom size: " << edgeFrom_roi.size()
+              << " tagsFrom (#): " << tagsFrom.size()
+              << " edgeTo size: " << edgeTo_roi.size()
+              << " tagsTo (#): " << tagsTo.size()
+              << " Set intersection size (#): " << intersection_tagset.size() << std::endl;
   }
 
   return intersection_tagset;
