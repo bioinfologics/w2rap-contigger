@@ -476,10 +476,10 @@ void PathFinder_tx::untangle_complex_in_out_choices() {
 //    std::cout<<"Total number of pinholes: "<<pins;
 //}
 
-LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int>* to_right){
+LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int> & to_right){
     mHBV = hbv;
     frontier_solutions = pair_solutions;
-    mToRight = to_right;
+    mToRight = &to_right;
     for (auto p: pair_solutions){
         ins.push_back(p[0]);
         outs.push_back(p[1]);
@@ -505,7 +505,7 @@ bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> 
         for (auto x: path){
             std::cout << x <<",";
         }
-        std::cout << " /";
+        std::cout << std::endl;//" / ";
         // END DEBUGGING COUT
         return true;
     } else if (find(outs.begin(), outs.end(), edge_name) != outs.end()) {
@@ -515,7 +515,8 @@ bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> 
     for (auto en=0; en<mHBV->FromSize(r_vertex); ++en){
         edge_name =mHBV->EdgeObjectIndexByIndexFrom(r_vertex, en);
         if (std::count(path.begin(), path.end(), edge_name) < maxloop+1){
-            find_all_pair_conecting_paths(edge_name , path, cont, end_edge);
+            std::vector<int> subpath (path.begin(), path.begin()+cont);
+            find_all_pair_conecting_paths(edge_name , subpath, cont, end_edge);
         }
     }
 }
@@ -550,6 +551,8 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
     std::cout<<"vectors initialised"<<std::endl;
     std::set<std::array<std::vector<uint64_t>,2>> seen_frontiers,solved_frontiers;
     std::vector<std::vector<uint64_t>> paths_to_separate;
+    int solved_regions = 0;
+    int unsolved_regions = 0;
     for (int e = 0; e < mHBV->EdgeObjectCount(); ++e) {
         if (e < mInv[e] && mHBV->EdgeObject(e).size() < large_frontier_size) {
             auto f=get_all_long_frontiers(e, large_frontier_size);
@@ -577,10 +580,10 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                             auto out_e_seq = edges[out_e].ToString();
 
                             // intersect read here
-                            auto interseccion = mTxp->edgeTagIntersection(in_e_seq, out_e_seq, 2500);
+                            auto interseccion = mTxp->edgeTagIntersection(in_e_seq, out_e_seq, 1500);
                             if (interseccion.size()>10){
-                                std::cout << "Intersectiong: " << in_e << "<-->" << out_e << std::endl;
-                                std::cout<< Date() << " Intersection size: " << interseccion.size() << std::endl;
+//                                std::cout << "Intersectiong: " << in_e << "<-->" << out_e << std::endl;
+//                                std::cout<< Date() << " Intersection size: " << interseccion.size() << std::endl;
                                 // Si intersect agregar el par
                                 pid = std::to_string(in_e) + "-" + std::to_string(out_e);
                                 shared_paths[pid] += interseccion.size(); // This should score the link based in the number of tags that tha pair shares
@@ -640,24 +643,35 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                     int score_threshold = 1;
                     if (max_score>score_threshold){
                         std::cout << " Found solution to region: " <<std::endl;
+                        solved_regions++;
+
+                        std::vector<std::vector<int>> wining_permitation;
                         for (auto ri=0; ri<max_score_permutation.size(); ++ri){
                             std::cout << in_frontiers[ri] << "(" << mInv[in_frontiers[ri]] << ") --> " << max_score_permutation[ri] << "("<< mInv[max_score_permutation[ri]] <<"), Score: "<<  max_score << std::endl;
-                            // [GONZA] todo: this vecto only has te ins and outs not the middle
-                            // [GONZA] HERE ADD THE INTERMEDIATE NODES
-
-                            std::vector<uint64_t> tp = {in_frontiers[ri], max_score_permutation[ri]};
-                            paths_to_separate.push_back(tp);
+                            std::vector<int> tp = {in_frontiers[ri], max_score_permutation[ri]};
+                            wining_permitation.push_back(tp);
+//                            paths_to_separate.push_back(tp);
                         }
                         std::cout << "--------------------" << std::endl;
 
+                        // [GONZA] HERE ADD THE INTERMEDIATE NODES
+                        LocalPaths lp (mHBV, wining_permitation, mToRight);
+                        lp.find_all_solution_paths();
+
+                        std::cout << "--------------------" << std::endl;
                     } else {
-                        std::cout << "Region not resolved, not enough links or bad combinations" <<std::endl;
+//                        std::cout << "Region not resolved, not enough links or bad combinations" <<std::endl;
+                        unsolved_regions++;
                     }
 
                 }
             }
         }
     }
+    std::cout << "========================" << std::endl;
+    std::cout << "Solved regions: " << solved_regions << ", Unsolved regions: " << unsolved_regions << " --> " << (float)solved_regions / (float)(solved_regions + unsolved_regions) * 100 << " %" << std::endl;
+    std::cout << "========================" << std::endl;
+
 //    std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
 //    //std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
 //    //std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
