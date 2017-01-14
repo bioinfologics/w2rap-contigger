@@ -476,20 +476,20 @@ void PathFinder_tx::untangle_complex_in_out_choices() {
 //    std::cout<<"Total number of pinholes: "<<pins;
 //}
 
-LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int> & to_right){
+LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int> & to_right, TenXPather* txp, std::vector<BaseVec>& edges){
     mHBV = hbv;
+    mTxp = txp;
     frontier_solutions = pair_solutions;
     mToRight = &to_right;
+    mEdges = &edges;
+
     for (auto p: pair_solutions){
         ins.push_back(p[0]);
         outs.push_back(p[1]);
     }
-
-//    // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
-//    std::vector<std::vector<std::vector<uint64_t>>> all_paths;
 }
 
-bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> path, int cont, int end_edge, int maxloop = 2) {
+bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> path, int cont, int end_edge, int maxloop = 1) {
     // Find all paths between 2 given edges
 
     path.push_back(edge_name);
@@ -500,14 +500,16 @@ bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> 
     if (edge_name == end_edge){
         pair_temp_paths.push_back(path);
 
-        // DEBUGGING COUT!!
-        std::cout << "Found path: ";
-        for (auto x: path){
-            std::cout << x <<",";
-        }
-        std::cout << std::endl;//" / ";
-        // END DEBUGGING COUT
+//        // DEBUGGING COUT!!
+//        std::cout << "Found path: ";
+//        for (auto x: path){
+//            std::cout << x <<",";
+//        }
+//        std::cout << std::endl;//" / ";
+//        // END DEBUGGING COUT
+
         return true;
+
     } else if (find(outs.begin(), outs.end(), edge_name) != outs.end()) {
         return false;
     }
@@ -537,9 +539,45 @@ int LocalPaths::find_all_solution_paths(){
         std::vector<int> path;
         int cont = 0;
         auto status = find_all_pair_conecting_paths(p_in, path, cont, p_out);
-        all_paths.push_back(pair_temp_paths);
+
+        // Vote the best path from the all available
+        auto best_path = choose_best_path(&pair_temp_paths);
+        all_paths.push_back(best_path);
     }
 }
+
+std::vector<int> LocalPaths::choose_best_path(std::vector<std::vector<int>>* alternative_paths){
+    // Choose the best path for the combination from the pairs list
+
+    // If there is only one posible path return that path and finish
+    if (alternative_paths->size() == 1){
+        std::cout << "Only one patha available: " << std::endl;
+
+        return (*alternative_paths)[0];
+    }
+    // If there is more than one path vote for the best (the criteria here is most tag density (presentTags/totalKmers)
+    int best_path;
+    int best_path_score = 0;
+    for (auto path_index=0; path_index<(*alternative_paths).size(); ++path_index){
+        for (auto ei=0; ei<(*alternative_paths)[path_index].size()-1; ++ei){
+            auto from_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei]].ToString();
+            auto to_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei+1]].ToString();
+            auto interseccion = mTxp->edgeTagIntersection(from_edge_string, to_edge_string, 1500);
+            if (interseccion.size()>best_path_score){
+                best_path = path_index;
+                best_path_score=interseccion.size();
+            }
+        }
+    }
+    std::cout << "Best path selected: " << best_path << ", score: " << best_path_score << std::endl;
+    for (auto p: (*alternative_paths)[best_path]){
+        std::cout << p << ",";
+    }
+    std::cout << std::endl;
+
+    return (*alternative_paths)[best_path];
+}
+
 
 void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation) {
     //find a complex path
@@ -645,19 +683,23 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                         std::cout << " Found solution to region: " <<std::endl;
                         solved_regions++;
 
-                        std::vector<std::vector<int>> wining_permitation;
+                        std::vector<std::vector<int>> wining_permutation;
                         for (auto ri=0; ri<max_score_permutation.size(); ++ri){
                             std::cout << in_frontiers[ri] << "(" << mInv[in_frontiers[ri]] << ") --> " << max_score_permutation[ri] << "("<< mInv[max_score_permutation[ri]] <<"), Score: "<<  max_score << std::endl;
                             std::vector<int> tp = {in_frontiers[ri], max_score_permutation[ri]};
-                            wining_permitation.push_back(tp);
+                            wining_permutation.push_back(tp);
 //                            paths_to_separate.push_back(tp);
                         }
                         std::cout << "--------------------" << std::endl;
 
                         // [GONZA] HERE ADD THE INTERMEDIATE NODES
-                        LocalPaths lp (mHBV, wining_permitation, mToRight);
+                        LocalPaths lp (mHBV, wining_permutation, mToRight, mTxp, edges);
                         lp.find_all_solution_paths();
 
+                        for (auto spi = 0; spi<lp.all_paths.size(); ++spi){
+                            std::cout << "Esto esta push: " << lp.all_paths[spi] << std::endl;
+//                            paths_to_separate.push_back(lp.all_paths[spi]);
+                        }
                         std::cout << "--------------------" << std::endl;
                     } else {
 //                        std::cout << "Region not resolved, not enough links or bad combinations" <<std::endl;
@@ -678,7 +720,7 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
 //
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
-    for (auto p:paths_to_separate){
+    for (auto p: paths_to_separate){
 
         if (old_edges_to_new.count(p.front()) > 0 or old_edges_to_new.count(p.back()) > 0) {
             std::cout<<"WARNING: path starts or ends in an already modified edge, skipping"<<std::endl;
