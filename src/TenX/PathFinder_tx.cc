@@ -476,7 +476,7 @@ void PathFinder_tx::untangle_complex_in_out_choices() {
 //    std::cout<<"Total number of pinholes: "<<pins;
 //}
 
-LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int> & to_right, TenXPather* txp, std::vector<BaseVec>& edges){
+LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int> & to_right, TenXPather* txp, std::vector<BaseVec>& edges){
     mHBV = hbv;
     mTxp = txp;
     frontier_solutions = pair_solutions;
@@ -489,7 +489,7 @@ LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_
     }
 }
 
-bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> path, int cont, int end_edge, int maxloop = 1) {
+bool LocalPaths::find_all_pair_conecting_paths(uint64_t edge_name , std::vector<uint64_t> path, int cont, uint64_t end_edge, int maxloop = 1) {
     // Find all paths between 2 given edges
 
     path.push_back(edge_name);
@@ -517,7 +517,7 @@ bool LocalPaths::find_all_pair_conecting_paths(int edge_name , std::vector<int> 
     for (auto en=0; en<mHBV->FromSize(r_vertex); ++en){
         edge_name =mHBV->EdgeObjectIndexByIndexFrom(r_vertex, en);
         if (std::count(path.begin(), path.end(), edge_name) < maxloop+1){
-            std::vector<int> subpath (path.begin(), path.begin()+cont);
+            std::vector<uint64_t> subpath (path.begin(), path.begin()+cont);
             find_all_pair_conecting_paths(edge_name , subpath, cont, end_edge);
         }
     }
@@ -536,7 +536,7 @@ int LocalPaths::find_all_solution_paths(){
         pair_temp_paths.clear();
 
         // Find all paths between the ends of the path
-        std::vector<int> path;
+        std::vector<uint64_t> path;
         int cont = 0;
         auto status = find_all_pair_conecting_paths(p_in, path, cont, p_out);
 
@@ -546,7 +546,7 @@ int LocalPaths::find_all_solution_paths(){
     }
 }
 
-std::vector<int> LocalPaths::choose_best_path(std::vector<std::vector<int>>* alternative_paths){
+std::vector<uint64_t> LocalPaths::choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths){
     // Choose the best path for the combination from the pairs list
 
     // If there is only one posible path return that path and finish
@@ -593,6 +593,8 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
     int unsolved_regions = 0;
     for (int e = 0; e < mHBV->EdgeObjectCount(); ++e) {
         if (e < mInv[e] && mHBV->EdgeObject(e).size() < large_frontier_size) {
+            // Get the frontiers fo the edge
+            // [GONZA] TODO: check the return details to document
             auto f=get_all_long_frontiers(e, large_frontier_size);
             if (f[0].size()>1 and f[1].size()>1 and f[0].size() == f[1].size() and seen_frontiers.count(f)==0){
                 seen_frontiers.insert(f);
@@ -601,35 +603,36 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                 for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
 
                 if (single_dir) {
+                    // If there is a region to resolve within the frontiers
                     std::cout<<" Single direction frontiers for complex region on edge "<<e<<" IN:"<<path_str(f[0])<<" OUT: "<<path_str(f[1])<<std::endl;
                     std::vector<int> in_used(f[0].size(),0);
                     std::vector<int> out_used(f[1].size(),0);
                     std::vector<std::vector<uint64_t>> first_full_paths;
                     bool reversed=false;
 
-                    // intersect all pairs of ins and outs to score
+                    // intersect all pairs of ins and outs to score, save the scores in a map to score the combinations later
                     for (auto in_i=0;in_i<f[0].size();++in_i) {
                         auto in_e=f[0][in_i];
                         for (auto out_i=0;out_i<f[1].size();++out_i) {
                             auto out_e=f[1][out_i];
+
                             int edges_in_path;
                             std::string pid;
                             auto in_e_seq = edges[in_e].ToString();
                             auto out_e_seq = edges[out_e].ToString();
 
-                            // intersect read here
+                            // Intersect the tags for the edges
                             auto interseccion = mTxp->edgeTagIntersection(in_e_seq, out_e_seq, 1500);
+                            // [GONZA] TODO: set this threshold as a parameter!!
                             if (interseccion.size()>10){
-//                                std::cout << "Intersectiong: " << in_e << "<-->" << out_e << std::endl;
-//                                std::cout<< Date() << " Intersection size: " << interseccion.size() << std::endl;
-                                // Si intersect agregar el par
+                                // if the edges overlap in the tagspace thay are added to the map and the combination is markes in the used edges
                                 pid = std::to_string(in_e) + "-" + std::to_string(out_e);
                                 shared_paths[pid] += interseccion.size(); // This should score the link based in the number of tags that tha pair shares
                                 out_used[out_i]++;
                                 in_used[in_i]++;
                             }
                         }
-                    }
+                    } // When this is done i get a map of all combinations of ins and outs to score the permutations in the next step
 
                     // Here all combinations are counted, now i need to get the best configuration between nodes
                     auto in_frontiers = f[0];
@@ -662,9 +665,6 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                                 all_used = false;
                                 //std::cout << "One of the edges was not used in this permutation, discarded!!" << std::endl;
                             }
-//                            else {
-//                                std::cout << ">>>>All ends used<<<<" << std::endl;
-//                            }
                         }
 
                         if (current_score>max_score and all_used){
@@ -683,22 +683,21 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                         std::cout << " Found solution to region: " <<std::endl;
                         solved_regions++;
 
-                        std::vector<std::vector<int>> wining_permutation;
+                        std::vector<std::vector<uint64_t>> wining_permutation;
                         for (auto ri=0; ri<max_score_permutation.size(); ++ri){
                             std::cout << in_frontiers[ri] << "(" << mInv[in_frontiers[ri]] << ") --> " << max_score_permutation[ri] << "("<< mInv[max_score_permutation[ri]] <<"), Score: "<<  max_score << std::endl;
-                            std::vector<int> tp = {in_frontiers[ri], max_score_permutation[ri]};
+                            std::vector<uint64_t> tp = {in_frontiers[ri], max_score_permutation[ri]};
                             wining_permutation.push_back(tp);
-//                            paths_to_separate.push_back(tp);
                         }
                         std::cout << "--------------------" << std::endl;
 
-                        // [GONZA] HERE ADD THE INTERMEDIATE NODES
+                        // Fill intermediate nodes
                         LocalPaths lp (mHBV, wining_permutation, mToRight, mTxp, edges);
                         lp.find_all_solution_paths();
 
                         for (auto spi = 0; spi<lp.all_paths.size(); ++spi){
-                            std::cout << "Esto esta push: " << lp.all_paths[spi] << std::endl;
-//                            paths_to_separate.push_back(lp.all_paths[spi]);
+                            auto sv = lp.all_paths[spi];
+                            paths_to_separate.push_back(sv);
                         }
                         std::cout << "--------------------" << std::endl;
                     } else {

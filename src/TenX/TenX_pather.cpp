@@ -136,10 +136,11 @@ std::vector<TenXPather::tagktype> TenXPather::getSequenceTags(std::string seq){
 
 std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi) {
   // Given 2 edges as strings will return the set of tags that are common to both edges
-  // Directional, edgeFrom (tail roi), edgeTo(head roi)
+  // Directional, edgeFrom (tail roi), edgeTo(head roi), takes the end of the first edge and the tail of the second
 
   std::vector<TenXPather::tagktype> intersection_tagset;
 
+  // Set rois in both edges
   std::string edgeFrom_roi;
   if (edgeFrom.size()>roi){
     edgeFrom_roi = edgeFrom.substr(edgeFrom.size()-roi);
@@ -153,15 +154,16 @@ std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string ed
     edgeTo_roi = edgeTo;
   }
 
-//  edgeFrom_roi = edgeFrom;
-//  edgeTo_roi = edgeTo;
+  // Get tags from the map
   auto tagsFrom = getSequenceTags(edgeFrom_roi);
   auto tagsTo = getSequenceTags(edgeTo_roi);
 
+  // [GONZA] TODO: check if this sort is really necesary with the set intersection!
   std::sort(tagsFrom.begin(), tagsFrom.end());
   std::sort(tagsTo.begin(), tagsTo.end());
 
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
+
 //  if (intersection_tagset.size()>0){
 //#pragma omp critical (printest)
 //    std::cout << "EdgeFrom size: " << edgeFrom_roi.size()

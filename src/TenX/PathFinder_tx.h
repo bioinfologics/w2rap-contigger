@@ -58,19 +58,19 @@ private:
 
 class LocalPaths {
 public:
-    LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<int>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges);
+    LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges);
 
     int find_all_solution_paths();
 
     // Find all paths conecting 2 edges in the graph
-    bool find_all_pair_conecting_paths(int edge_name , std::vector<int> path, int cont, int end_edge, int maxloop);
+    bool find_all_pair_conecting_paths(uint64_t edge_name , std::vector<uint64_t > path, int cont, uint64_t end_edge, int maxloop);
 
-    std::vector<int> choose_best_path(std::vector<std::vector<int>>* alternative_paths);
+    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths);
 
-    std::vector<std::vector<int>> frontier_solutions;
+    std::vector<std::vector<uint64_t>> frontier_solutions;
 
     // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
-    std::vector<std::vector<int>> all_paths;
+    std::vector<std::vector<uint64_t>> all_paths;
 
 private:
     TenXPather* mTxp;
@@ -80,11 +80,11 @@ private:
     HyperBasevector* mHBV;
 
 //    std::vector<std::vector<int>> frontier_solutions;
-    std::vector<int> ins;
-    std::vector<int> outs;
+    std::vector<uint64_t> ins;
+    std::vector<uint64_t> outs;
 
 
-    std::vector<std::vector<int>> pair_temp_paths;
+    std::vector<std::vector<uint64_t>> pair_temp_paths;
     // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
 //    std::vector<std::vector<std::vector<int>>> all_paths;
 
