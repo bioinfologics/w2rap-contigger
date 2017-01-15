@@ -70,7 +70,7 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
 
 //  for (auto e = 0; e<edges.size(); ++e) {
 #pragma omp parallel for
-  for (auto e = 0; e<10000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
+  for (auto e=0; e<edges.size(); ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
     auto seq = edges[e].ToString();
     if (seq.length()>min_edge_length){
       auto kv = ProduceKmers(seq);
@@ -134,7 +134,7 @@ std::vector<TenXPather::tagktype> TenXPather::getSequenceTags(std::string seq){
   return tags;
 }
 
-std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi) {
+float TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi) {
   // Given 2 edges as strings will return the set of tags that are common to both edges
   // Directional, edgeFrom (tail roi), edgeTo(head roi), takes the end of the first edge and the tail of the second
 
@@ -164,16 +164,9 @@ std::vector<TenXPather::tagktype> TenXPather::edgeTagIntersection(std::string ed
 
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
 
-//  if (intersection_tagset.size()>0){
-//#pragma omp critical (printest)
-//    std::cout << "EdgeFrom size: " << edgeFrom_roi.size()
-//              << " tagsFrom (#): " << tagsFrom.size()
-//              << " edgeTo size: " << edgeTo_roi.size()
-//              << " tagsTo (#): " << tagsTo.size()
-//              << " Set intersection size (#): " << intersection_tagset.size() << std::endl;
-//  }
-
-  return intersection_tagset;
+  // Calculate the intersection score as the density of tags/kmer
+  float intersection_score = (float)intersection_tagset.size() / (float)(edgeFrom_roi.size() + edgeTo_roi.size());
+  return intersection_score;
 }
 
 //int TenXPather::resolve_regions(int large_frontier_size=500){

@@ -55,7 +55,7 @@ public:
     // Map reads to graph
     std::vector<tagLink> getTagLinks(bool output_to_file=true);
     std::vector<TenXPather::tagktype> getSequenceTags(std::string seq);
-    std::vector<TenXPather::tagktype> edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
+    float edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
 
 //    int resolve_regions(int large_frontier_size=500);
 

@@ -552,30 +552,31 @@ std::vector<uint64_t> LocalPaths::choose_best_path(std::vector<std::vector<uint6
     // If there is only one posible path return that path and finish
     if (alternative_paths->size() == 1){
         std::cout << "Only one patha available: " << std::endl;
-
         return (*alternative_paths)[0];
     }
-    // If there is more than one path vote for the best (the criteria here is most tag density (presentTags/totalKmers)
-    int best_path;
-    int best_path_score = 0;
-    for (auto path_index=0; path_index<(*alternative_paths).size(); ++path_index){
-        for (auto ei=0; ei<(*alternative_paths)[path_index].size()-1; ++ei){
-            auto from_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei]].ToString();
-            auto to_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei+1]].ToString();
-            auto interseccion = mTxp->edgeTagIntersection(from_edge_string, to_edge_string, 1500);
-            if (interseccion.size()>best_path_score){
-                best_path = path_index;
-                best_path_score=interseccion.size();
-            }
-        }
-    }
-    std::cout << "Best path selected: " << best_path << ", score: " << best_path_score << std::endl;
-    for (auto p: (*alternative_paths)[best_path]){
-        std::cout << p << ",";
-    }
-    std::cout << std::endl;
+//    // If there is more than one path vote for the best (the criteria here is most tag density (presentTags/totalKmers)
+//    int best_path = 0;
+//    float best_path_score = 0;
+//    for (auto path_index=0; path_index<alternative_paths->size(); ++path_index){
+//        float cpath_score = 0;
+//        for (auto ei=0; ei<(*alternative_paths)[path_index].size()-1; ++ei) {
+//            auto from_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei]].ToString();
+//            auto to_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei + 1]].ToString();
+//            cpath_score += mTxp->edgeTagIntersection(from_edge_string, to_edge_string, 1500);
+//        }
+//        if (cpath_score > best_path_score){
+//            best_path = path_index;
+//            best_path_score=cpath_score;
+//        }
+//    }
+//    std::cout << "Best path selected: " << best_path << ", score: " << best_path_score << std::endl;
+//    for (auto p=0; p<(*alternative_paths)[best_path].size(); ++p){
+//        std::cout << (*alternative_paths)[best_path][p] << ",";
+//    }
+//    std::cout << std::endl;
 
-    return (*alternative_paths)[best_path];
+//    return (*alternative_paths)[best_path];
+    return (*alternative_paths)[0];
 }
 
 
@@ -622,12 +623,12 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                             auto out_e_seq = edges[out_e].ToString();
 
                             // Intersect the tags for the edges
-                            auto interseccion = mTxp->edgeTagIntersection(in_e_seq, out_e_seq, 1500);
-                            // [GONZA] TODO: set this threshold as a parameter!!
-                            if (interseccion.size()>10){
+                            auto intersection_score = mTxp->edgeTagIntersection(in_e_seq, out_e_seq, 1500);
+
+                            if (intersection_score>0.05){
                                 // if the edges overlap in the tagspace thay are added to the map and the combination is markes in the used edges
                                 pid = std::to_string(in_e) + "-" + std::to_string(out_e);
-                                shared_paths[pid] += interseccion.size(); // This should score the link based in the number of tags that tha pair shares
+                                shared_paths[pid] += intersection_score; // This should score the link based in the number of tags that tha pair shares
                                 out_used[out_i]++;
                                 in_used[in_i]++;
                             }
@@ -642,23 +643,22 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
 
                     std::vector<int> max_score_permutation;
                     do {
-                        // Score
+                        // Vectors to count seen edges (check that all edges are included in th solution)
                         std::vector<int> seen_in(in_frontiers.size(), 0);
                         std::vector<int> seen_out(in_frontiers.size(), 0);
 
-                        int current_score = 0;
                         //std::cout << "-----------------------------Testing permutaiton ------------------" << std::endl;
+                        int current_score = 0;
                         for (auto pi=0; pi<in_frontiers.size(); ++pi){
                             std::string index = std::to_string(in_frontiers[pi])+"-"+std::to_string(out_frontiers[pi]);
                             if ( shared_paths.find(index) != shared_paths.end() ){
                                 // Mark the pair as seen in this iteration
-//                                std::cout << "Index: " << index << " " << shared_paths[index] << std::endl;
                                 seen_in[pi]++;
                                 seen_out[pi]++;
                                 current_score += shared_paths[index];
                             }
                         }
-                        // check that all boundaries are used in the permutation
+                        // Check that all boundaries are used in the permutation
                         bool all_used = true;
                         for (auto a=0; a<seen_in.size(); ++a){
                             if (0==seen_in[a] or 0==seen_out[a]){
@@ -678,7 +678,7 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                     } while (std::next_permutation(out_frontiers.begin(), out_frontiers.end()));
 
                     // Get the solution
-                    int score_threshold = 1;
+                    float score_threshold = 0.5;
                     if (max_score>score_threshold){
                         std::cout << " Found solution to region: " <<std::endl;
                         solved_regions++;
@@ -716,7 +716,14 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
 //    std::cout<<"Complex Regions solved by paths: "<<solved_frontiers.size() <<"/"<<seen_frontiers.size()<<" comprising "<<paths_to_separate.size()<<" paths to separate"<< std::endl;
 //    //std::cout<<"Complex Regions quasi-solved by paths (not acted on): "<< qsf <<"/"<<seen_frontiers.size()<<" comprising "<<qsf_paths<<" paths to separate"<< std::endl;
 //    //std::cout<<"Multiple Solution Regions (not acted on): "<< msf <<"/"<<seen_frontiers.size()<<" comprising "<<msf_paths<<" paths to separate"<< std::endl;
-//
+    std::cout << "Paths to separate" << std::endl;
+    for (auto ss: paths_to_separate){
+      for (auto sx: ss){
+        std::cout << sx << ",";
+      }
+      std::cout << std::endl;
+    }
+
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p: paths_to_separate){
@@ -726,7 +733,9 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
             continue;
         }
 
-        auto oen=separate_path(p, verbose_separation);
+//        auto oen=separate_path(p, verbose_separation);
+        auto oen=separate_path(p, true);
+        std::cout << "End separate paths" << oen.size() << std::endl;
         if (oen.size()>0) {
             for (auto et:oen){
                 if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
@@ -973,10 +982,11 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder_tx::separate_path(std::vecto
         mToRight.push_back(prev_vertex_rev);
         if (! old_edges_to_new.count(mInv[p[ei]]))  old_edges_to_new[mInv[p[ei]]]={};
         old_edges_to_new[mInv[p[ei]]].push_back(ner);
-
+        std::cout << "before pushing" << std::endl;
         mInv.push_back(ner);
         mInv.push_back(nef);
-        mEdgeToPathIds.resize(mEdgeToPathIds.size()+2);
+//        mEdgeToPathIds.resize(mEdgeToPathIds.size()+2); // [GONZA] TODO: this fals for some reason commented now
+
     }
     if (verbose_separation) std::cout<<"Migrating edge "<<p[p.size()-1]<<" From node old: "<<mToLeft[p[p.size()-1]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV->GiveEdgeNewFromVx(p[p.size()-1],mToLeft[p[p.size()-1]],current_vertex_fw);
