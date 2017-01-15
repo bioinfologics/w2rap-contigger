@@ -489,7 +489,7 @@ LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> 
     }
 }
 
-bool LocalPaths::find_all_pair_conecting_paths(uint64_t edge_name , std::vector<uint64_t> path, int cont, uint64_t end_edge, int maxloop = 1) {
+bool LocalPaths::find_all_pair_conecting_paths(uint64_t edge_name , std::vector<uint64_t> path, int cont, uint64_t end_edge, int maxloop = 0) {
     // Find all paths between 2 given edges
 
     path.push_back(edge_name);
@@ -540,14 +540,14 @@ int LocalPaths::find_all_solution_paths(){
         int cont = 0;
         auto status = find_all_pair_conecting_paths(p_in, path, cont, p_out);
 
-        for (auto tp=0; tp<pair_temp_paths.size(); ++tp){
-            if (pair_temp_paths[tp].size()==0){
-                pair_temp_paths.erase(pair_temp_paths.begin()+tp);
-            }
-        }
         // Vote the best path from the all available
         auto best_path = choose_best_path(&pair_temp_paths);
-        all_paths.push_back(best_path);
+        if (best_path.size()>0){
+            all_paths.push_back(best_path);
+        }
+        else {
+            std::cout << "Skipping an empty path between :" << p_in <<" and "<<  p_out << std::endl;
+        }
     }
 }
 
