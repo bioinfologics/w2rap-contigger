@@ -42,13 +42,14 @@ int main(int argc, char *argv[]){
   std::cout<< Date() << " Map filling with reads..." << std::endl;
   txp.reads2kmerTagMap();
   std::cout<< Date() << " Map filling with reads done..." << std::endl;
+  txp.kmerTagDensity();
 
 //  TenXPather* txp2 = &txp;
   // Pathfinder
   std::cout<< Date() << " Starting pathfinder..." << std::endl;
   PathFinder_tx pf_tx (&txp, &hbv, inv, 5);
   std::cout<< Date() << " done pathfinder..." << std::endl;
-  pf_tx.untangle_complex_in_out_choices(1500, true);
+  pf_tx.untangle_complex_in_out_choices(5000, true);
 
 
 

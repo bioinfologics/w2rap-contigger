@@ -70,7 +70,7 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
 
 //  for (auto e = 0; e<edges.size(); ++e) {
 #pragma omp parallel for
-  for (auto e=0; e<edges.size(); ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
+  for (auto e=0; e<edges.size(; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
     auto seq = edges[e].ToString();
     if (seq.length()>min_edge_length){
       auto kv = ProduceKmers(seq);
@@ -166,7 +166,31 @@ float TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, 
 
   // Calculate the intersection score as the density of tags/kmer
   float intersection_score = (float)intersection_tagset.size() / (float)(edgeFrom_roi.size() + edgeTo_roi.size());
+//  float intersection_score = (float)intersection_tagset.size();
   return intersection_score;
+}
+
+float TenXPather::kmerTagDensity(){
+  // Get the tag kmer map and create a histogram of tag count, then choose a treshold
+  std::vector<int> histogram (255, 0);
+  for (auto kt: kmerTagMap){
+    int count = 0;
+    for (auto tagcount: kt.second){
+      count += tagcount.second;
+    }
+    if (count > 255){
+      count = 255;
+    }
+    histogram[count]++;
+  }
+
+  std::cout << "Tag count histogram begining" << std::endl;
+  for (auto h=0; h<histogram.size(); ++h){
+    std::cout << h << "," << histogram[h] << std::endl;
+  }
+  std::cout << "Histogram end" << std::endl;
+
+  return 1.0;
 }
 
 //int TenXPather::resolve_regions(int large_frontier_size=500){

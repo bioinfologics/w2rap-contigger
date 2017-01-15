@@ -601,7 +601,7 @@ int main(const int argc, const char * argv[]) {
         std::cout<< Date() << " Starting pathfinder..." << std::endl;
         PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
         std::cout<< Date() << " done pathfinder..." << std::endl;
-        pf_tx.untangle_complex_in_out_choices(1000, true);
+        pf_tx.untangle_complex_in_out_choices(3000, true);
 
 
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
