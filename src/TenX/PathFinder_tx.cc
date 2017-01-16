@@ -755,9 +755,9 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
             std::cout << "separated_paths: " << sep << std::endl;
         }
     }
-//    if (old_edges_to_new.size()>0) {
-//        migrate_readpaths(old_edges_to_new);
-//    }
+    if (old_edges_to_new.size()>0) {
+        migrate_readpaths(old_edges_to_new);
+    }
     std::cout<<" "<<sep<<" paths separated!"<<std::endl;
 }
 
@@ -1040,6 +1040,9 @@ void PathFinder_tx::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> e
                     for (auto pp:possible_paths) { //take every possible one
                         for (auto e:possible_new_edges[i]) {
                             //if i>0 check there is a real connection to the previous edge
+                          if (i == 0 and pp[i] == e){
+                            std::cout << "first edge of path does not need migrating" << std::endl;
+                          }
                             if (i == 0 or (mToRight[pp.back()]==mToLeft[e])) {
                                 new_possible_paths.push_back(pp);
                                 new_possible_paths.back().push_back(e);

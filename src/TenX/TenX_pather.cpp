@@ -70,7 +70,7 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
 
 //  for (auto e = 0; e<edges.size(); ++e) {
 #pragma omp parallel for
-  for (auto e=0; e<edges.size(); ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
+  for (auto e=0; e<10000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
     auto seq = edges[e].ToString();
     if (seq.length()>min_edge_length){
       auto kv = ProduceKmers(seq);
@@ -89,7 +89,7 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
 }
 
 int TenXPather::reads2kmerTagMap(){
-  // for each read
+  // Load the reads into the map
 
 #pragma omp parallel for
   for (auto e = 0; e < seqVector->size(); ++e){
@@ -103,6 +103,13 @@ int TenXPather::reads2kmerTagMap(){
       if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
 #pragma omp critical (taginsert)
         kmerTagMap[k.kmer][tag]++;
+        
+//        if (kmerTagMap[k.kmer].find(tag) != kmerTagMap[k.kmer].end()){
+//          kmerTagMap[k.kmer][tag]++;
+//        } else {
+//          kmerTagMap[k.kmer][tag]++;
+//        }
+
       }
     }
 
