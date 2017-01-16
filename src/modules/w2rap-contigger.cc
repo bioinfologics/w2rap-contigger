@@ -714,6 +714,14 @@ int main(const int argc, const char * argv[]) {
         std::cout<< Date() << " done pathfinder..." << std::endl;
         pf_tx.untangle_complex_in_out_choices(3000, true);
 
+        RemoveUnneededVertices2(hbvr, inv, pathsr);
+        Cleanup(hbvr, inv, pathsr);
+        // so all the above numbers add up, and the edge which breaks it is the first new edge
+        // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
+        inv.clear();
+        hbvr.Involution(inv);
+        TestInvolution(hbvr, inv);
+
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);
         if (dump_perf) perf_file << checkpoint_perf_time("MakeGaps") << std::endl;

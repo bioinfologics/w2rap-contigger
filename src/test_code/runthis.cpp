@@ -51,7 +51,15 @@ int main(int argc, char *argv[]){
   std::cout<< Date() << " done pathfinder..." << std::endl;
   pf_tx.untangle_complex_in_out_choices(1000, true);
 
+  ReadPathVec* mPaths = new ReadPathVec();
 
+  RemoveUnneededVertices2(hbv, inv, *mPaths);
+  Cleanup(hbv, inv, *mPaths);
+  // so all the above numbers add up, and the edge which breaks it is the first new edge
+  // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
+  inv.clear();
+  hbv.Involution(inv);
+  TestInvolution(hbv, inv);
 
 //  // Print the map content
 //  for (auto &t: txp.kmerTagMap){
