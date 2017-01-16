@@ -585,24 +585,24 @@ int main(const int argc, const char * argv[]) {
 //                 PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
 //                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pb_bases);
 
-        // construct tenx dict here
-        auto tx_reads = dataMag.mag["TEX"]->rReads;
-        std::cout << "Reads already loaded..." << std::endl;
-        std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
-
-        TenXPather txp (&tx_reads, &hbvr);
-        std::cout<< Date() << " Map creation." << std::endl;
-        txp.createEmptyMap(&hbvr);
-        std::cout<< Date() << " Map creation done..." << std::endl;
-        std::cout<< Date() << " Map filling with reads..." << std::endl;
-        txp.reads2kmerTagMap();
-        std::cout<< Date() << " Map filling with reads done..." << std::endl;
-
-        // execute pathfinder here
-        std::cout<< Date() << " Starting pathfinder..." << std::endl;
-        PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
-        std::cout<< Date() << " done pathfinder..." << std::endl;
-        pf_tx.untangle_complex_in_out_choices(3000, true);
+//        // construct tenx dict here
+//        auto tx_reads = dataMag.mag["TEX"]->rReads;
+//        std::cout << "Reads already loaded..." << std::endl;
+//        std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
+//
+//        TenXPather txp (&tx_reads, &hbvr);
+//        std::cout<< Date() << " Map creation." << std::endl;
+//        txp.createEmptyMap(&hbvr);
+//        std::cout<< Date() << " Map creation done..." << std::endl;
+//        std::cout<< Date() << " Map filling with reads..." << std::endl;
+//        txp.reads2kmerTagMap();
+//        std::cout<< Date() << " Map filling with reads done..." << std::endl;
+//
+//        // execute pathfinder here
+//        std::cout<< Date() << " Starting pathfinder..." << std::endl;
+//        PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
+//        std::cout<< Date() << " done pathfinder..." << std::endl;
+//        pf_tx.untangle_complex_in_out_choices(3000, true);
 
 
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
@@ -694,6 +694,25 @@ int main(const int argc, const char * argv[]) {
         //std::cout<<"all structures refreshed"<<std::endl;
         //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_pins();
         //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_complex_in_out_choices();
+
+        // construct tenx dict here
+        auto tx_reads = dataMag.mag["TEX"]->rReads;
+        std::cout << "Reads already loaded..." << std::endl;
+        std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
+
+        TenXPather txp (&tx_reads, &hbvr);
+        std::cout<< Date() << " Map creation." << std::endl;
+        txp.createEmptyMap(&hbvr);
+        std::cout<< Date() << " Map creation done..." << std::endl;
+        std::cout<< Date() << " Map filling with reads..." << std::endl;
+        txp.reads2kmerTagMap();
+        std::cout<< Date() << " Map filling with reads done..." << std::endl;
+
+        // execute pathfinder here
+        std::cout<< Date() << " Starting pathfinder..." << std::endl;
+        PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
+        std::cout<< Date() << " done pathfinder..." << std::endl;
+        pf_tx.untangle_complex_in_out_choices(3000, true);
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);

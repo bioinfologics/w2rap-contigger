@@ -755,9 +755,9 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
             std::cout << "separated_paths: " << sep << std::endl;
         }
     }
-    if (old_edges_to_new.size()>0) {
-        migrate_readpaths(old_edges_to_new);
-    }
+//    if (old_edges_to_new.size()>0) {
+//        migrate_readpaths(old_edges_to_new);
+//    }
     std::cout<<" "<<sep<<" paths separated!"<<std::endl;
 }
 
