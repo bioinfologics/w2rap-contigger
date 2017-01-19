@@ -10,6 +10,7 @@
 #include "paths/long/large/GapToyTools.h"
 #include "Vec.h"
 #include "TenX/TenX_pather.h"
+#include "paths/local/LocalPather.h"
 
 class PathFinder_tx {
 public:
@@ -31,7 +32,7 @@ public:
     void untangle_path(std::vector<uint64_t> path);
     void untangle_pins();
     void unroll_loops(uint64_t min_side_sizes);//untangles all single choices when support is uncontested
-    void untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation=false);
+    void untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation=false, float score_threshold=1.0);
     void init_prev_next_vectors();
     std::vector<std::vector<uint64_t>> is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);//returns size of the unrolled loop
     uint64_t paths_per_kbp(uint64_t e);
@@ -56,40 +57,4 @@ private:
 
 };
 
-class LocalPaths {
-public:
-    LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges);
-
-    int find_all_solution_paths();
-
-    // Find all paths conecting 2 edges in the graph
-    bool find_all_pair_conecting_paths(uint64_t edge_name , std::vector<uint64_t > path, int cont, uint64_t end_edge, int maxloop);
-
-    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths);
-
-    std::vector<std::vector<uint64_t>> frontier_solutions;
-
-    // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
-    std::vector<std::vector<uint64_t>> all_paths;
-
-private:
-    TenXPather* mTxp;
-
-    std::vector<BaseVec>* mEdges;
-
-    HyperBasevector* mHBV;
-
-//    std::vector<std::vector<int>> frontier_solutions;
-    std::vector<uint64_t> ins;
-    std::vector<uint64_t> outs;
-
-
-    std::vector<std::vector<uint64_t>> pair_temp_paths;
-    // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
-//    std::vector<std::vector<std::vector<int>>> all_paths;
-
-    vec<int>* mToLeft;
-    vec<int>* mToRight;
-
-};
 #endif //W2RAP_CONTIGGER_PATHFINDER_H_TX

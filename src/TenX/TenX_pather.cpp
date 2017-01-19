@@ -82,15 +82,13 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
     }
   }
 
-//  std::sort(all_kmers.begin(),all_kmers.end(), kmer_pair_lessthan);
-//  all_kmers.erase(std::unique(all_kmers.begin(), all_kmers.end()),all_kmers.end()); // This workds comparing keys!? do i need a comparator??
   kmerTagMap.insert(all_kmers.begin(), all_kmers.end());
   return 0;
 }
 
 int TenXPather::reads2kmerTagMap(){
   // Load the reads into the map
-
+  std::cout << Date() << ": Filling the map with reads" << std::endl;
 #pragma omp parallel for
   for (auto e = 0; e < seqVector->size(); ++e){
     auto tag = kmerize_tag((*seqVector)[e].tag.ToString());
@@ -103,13 +101,6 @@ int TenXPather::reads2kmerTagMap(){
       if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
 #pragma omp critical (taginsert)
         kmerTagMap[k.kmer][tag]++;
-        
-//        if (kmerTagMap[k.kmer].find(tag) != kmerTagMap[k.kmer].end()){
-//          kmerTagMap[k.kmer][tag]++;
-//        } else {
-//          kmerTagMap[k.kmer][tag]++;
-//        }
-
       }
     }
 
@@ -123,6 +114,7 @@ int TenXPather::reads2kmerTagMap(){
       }
     }
   }
+  std::cout << Date() << ": Done filling the maps" << std::endl;
   return 0;
 }
 
@@ -172,8 +164,7 @@ float TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, 
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
 
   // Calculate the intersection score as the density of tags/kmer
-  float intersection_score = (float)intersection_tagset.size() / (float)(edgeFrom_roi.size() + edgeTo_roi.size());
-//  float intersection_score = (float)intersection_tagset.size();
+  float intersection_score = (float)intersection_tagset.size()*2 / (float)(edgeFrom_roi.size() + edgeTo_roi.size());
   return intersection_score;
 }
 

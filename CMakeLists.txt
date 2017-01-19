@@ -203,7 +203,7 @@ add_library(base_libs OBJECT
         src/random/NormalDistribution.cc
         src/util/TextTable.cc
         src/util/w2rap_timers.h
-        src/paths/long/ReadPath.cc)
+        src/paths/long/ReadPath.cc src/paths/local/LocalPather.cpp src/paths/local/LocalPather.h)
 
 add_library(hb_base_libs OBJECT
         src/Alignment.cc
@@ -399,7 +399,7 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:hb_base_libs>)
 
 add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/pacbio/PathFinder_pb.cc
-        src/kmers/kmatch/KMatch.cc src/pacbio/pacbio_pather.cpp $<TARGET_OBJECTS:hb_base_libs> src/TenX/TenX_pather.cpp src/TenX/TenX_pather.h src/TenX/PathFinder_tx.cc)
+        src/kmers/kmatch/KMatch.cc src/pacbio/pacbio_pather.cpp $<TARGET_OBJECTS:hb_base_libs> src/TenX/TenX_pather.cpp src/TenX/TenX_pather.h src/TenX/PathFinder_tx.cc src/paths/local/LocalPather.cpp)
 
 ##Zlib link
 if (ZLIB_FOUND)
