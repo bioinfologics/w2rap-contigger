@@ -30,7 +30,6 @@ private:
 
     HyperBasevector* mHBV;
 
-//    std::vector<std::vector<int>> frontier_solutions;
     std::vector<uint64_t> ins;
     std::vector<uint64_t> outs;
 

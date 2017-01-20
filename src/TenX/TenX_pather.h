@@ -42,18 +42,7 @@ public:
     typedef std::pair<std::vector<tenXLink>, std::vector<tenXLink>> pairLink; // A pairLinks are the links of r1,r2 of one tenxread
     typedef std::vector<pairLink> tagLink; // A tagLink are all the pairLink for a particular tag
 
-
-//    ReadPathVec mapReads();
-
-    // Qc the run
-    std::vector<int> readsTagQc();
-
-    //TODO: Map indexing records per tag and index
-    //TODO: Filter the tags
-    //TODO: Filter the reads
-
     // Map reads to graph
-    std::vector<tagLink> getTagLinks(bool output_to_file=true);
     std::vector<TenXPather::tagktype> getSequenceTags(std::string seq);
     float edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
 
@@ -65,16 +54,7 @@ private:
     vec<int> inv;
     HyperBasevector* hbv;
     tagktype kmerize_tag(std::string tag);
-
-    // Read processing data
-//    std::vector<std::string> tagVector;
-//    std::map<std::string, std::vector<int>> indexMap;
-//    std::map<std::string, std::vector<int>> tagMap;
-
-//    int makeIndexMap(bool to_disc=false);
-//    int makeTagMap(bool to_disc=false);
-//    int makeTagVector();
-//    std::vector<tenXLink> processLinks(std::string read, int read_id);
+    
 };
 
 
