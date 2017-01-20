@@ -190,3 +190,47 @@ float TenXPather::kmerTagDensity(){
 
   return 1.0;
 }
+
+
+//LocalPaths_TX::LocalPaths_TX(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges)
+//    : LocalPaths(hbv, pair_solutions, to_right, edges){
+//  mTxp = txp;
+//}
+
+std::vector<uint64_t> LocalPaths_TX::choose_best_path(std::vector<std::vector<uint64_t>> *alternative_paths) {
+  // Choose the best path for the combination from the pairs list
+
+  // If there is only one posible path return that path and finish
+  if (alternative_paths->size() == 0){
+    std::cout <<"This path still CEROOOO" <<std::endl;
+    std::vector<uint64_t> nopaths;
+    return nopaths;
+  }
+  if (alternative_paths->size() == 1){
+    std::cout << "Only one patha available: " << std::endl;
+    return (*alternative_paths)[0];
+  } else {
+    // If there is more than one path vote for the best (the criteria here is most tag density (presentTags/totalKmers)
+    float best_path = 0.0;
+    float best_path_score = 0.0;
+    for (auto path_index = 0; path_index < alternative_paths->size(); ++path_index) {
+      float cpath_score = 0;
+      for (auto ei = 0; ei < (*alternative_paths)[path_index].size() - 1; ++ei) {
+        auto from_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei]].ToString();
+        auto to_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei + 1]].ToString();
+        cpath_score += mTxp->edgeTagIntersection(from_edge_string, to_edge_string, 1500);
+      }
+      if (cpath_score > best_path_score) {
+        best_path = path_index;
+        best_path_score = cpath_score;
+      }
+    }
+    std::cout << "Best path selected: " << best_path << ", score: " << best_path_score << std::endl;
+    for (auto p=0; p<(*alternative_paths)[best_path].size(); ++p){
+      std::cout << (*alternative_paths)[best_path][p] << ",";
+    }
+    std::cout << std::endl;
+
+    return (*alternative_paths)[best_path];
+  }
+}

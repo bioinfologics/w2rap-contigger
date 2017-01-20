@@ -5,9 +5,8 @@
 #ifndef W2RAP_CONTIGGER_TENX_PATHER_H
 #define W2RAP_CONTIGGER_TENX_PATHER_H
 
-#include "kmers/kmatch/KMatch.h"
-#include "paths/long/ReadPath.h"
-#include "paths/long/large/ExtractReads.h"
+
+#include "paths/local/LocalPather.h"
 
 typedef  struct {
     int read_id;
@@ -54,9 +53,18 @@ private:
     vec<int> inv;
     HyperBasevector* hbv;
     tagktype kmerize_tag(std::string tag);
-    
+
 };
 
+class LocalPaths_TX: public LocalPaths {
+public:
+    LocalPaths_TX(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges)
+        : LocalPaths(hbv, pair_solutions, to_right, edges), mTxp (txp) {};
 
+    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>> *alternative_paths);
+
+    TenXPather* mTxp;
+
+};
 
 #endif //W2RAP_CONTIGGER_TENX_PATHER_H

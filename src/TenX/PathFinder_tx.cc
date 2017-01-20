@@ -588,7 +588,7 @@ void PathFinder_tx::untangle_complex_in_out_choices(uint64_t large_frontier_size
                         std::cout << "--------------------" << std::endl;
 
                         // Fill intermediate nodes
-                        LocalPaths lp (mHBV, wining_permutation, mToRight, mTxp, edges);
+                        LocalPaths_TX lp (mHBV, wining_permutation, mToRight, mTxp, edges);
                         lp.find_all_solution_paths();
                         std::cout << "All paths done" << std::endl;
                         for (auto spi = 0; spi<lp.all_paths.size(); ++spi){
