@@ -191,12 +191,6 @@ float TenXPather::kmerTagDensity(){
   return 1.0;
 }
 
-
-//LocalPaths_TX::LocalPaths_TX(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges)
-//    : LocalPaths(hbv, pair_solutions, to_right, edges){
-//  mTxp = txp;
-//}
-
 std::vector<uint64_t> LocalPaths_TX::choose_best_path(std::vector<std::vector<uint64_t>> *alternative_paths) {
   // Choose the best path for the combination from the pairs list
 

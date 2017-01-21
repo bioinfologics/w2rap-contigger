@@ -26,7 +26,6 @@ struct linkreg_less_than {
 };
 
 
-
 class TenXPather: public KMatch {
 public:
     typedef std::uint16_t tagktype;
@@ -44,8 +43,6 @@ public:
     // Map reads to graph
     std::vector<TenXPather::tagktype> getSequenceTags(std::string seq);
     float edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
-
-//    int resolve_regions(int large_frontier_size=500);
 
 private:
     // Reads and graph

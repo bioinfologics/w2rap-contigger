@@ -102,7 +102,6 @@ std::vector<linkReg> PacbioPather::matchLengthFilter(std::vector<linkReg> data){
   return good_links;
 }
 
-
 ReadPathVec PacbioPather::mapReads(){
   // get the reads and map them to the graph using the dictionary
   // returns a vector of paths

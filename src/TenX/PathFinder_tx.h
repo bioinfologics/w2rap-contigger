@@ -21,8 +21,6 @@ public:
 
 
     //ReadPath-related methods
-
-
     void classify_forks();//how many forks of each type are there?
     std::vector<uint64_t> best_path_fw(uint64_t edge, int distance); //finds the best path forward for an edge
     std::array<uint64_t,3> transition_votes(uint64_t left_e,uint64_t right_e);
@@ -32,6 +30,7 @@ public:
     void untangle_path(std::vector<uint64_t> path);
     void untangle_pins();
     void unroll_loops(uint64_t min_side_sizes);//untangles all single choices when support is uncontested
+
     void untangle_complex_in_out_choices(uint64_t large_frontier_size, bool verbose_separation=false, float score_threshold=1.0);
     void init_prev_next_vectors();
     std::vector<std::vector<uint64_t>> is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);//returns size of the unrolled loop

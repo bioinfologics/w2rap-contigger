@@ -19,7 +19,7 @@ public:
     // Find all paths conecting 2 edges in the graph
     bool find_all_pair_conecting_paths(uint64_t edge_name , std::vector<uint64_t > path, int cont, uint64_t end_edge, int maxloop);
 
-
+    // This function needs to be defined in the particular cases because depends on the nature of the data
     virtual std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths) = 0;
 
     std::vector<std::vector<uint64_t>> frontier_solutions;
@@ -27,13 +27,11 @@ public:
     // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
     std::vector<std::vector<uint64_t>> all_paths;
 
-    std::vector<BaseVec>* mEdges;
-
     HyperBasevector* mHBV;
+    std::vector<BaseVec>* mEdges;
 
     std::vector<uint64_t> ins;
     std::vector<uint64_t> outs;
-
 
     std::vector<std::vector<uint64_t>> pair_temp_paths;
     // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself

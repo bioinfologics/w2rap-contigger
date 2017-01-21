@@ -7,7 +7,6 @@
 
 LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int> & to_right, std::vector<BaseVec>& edges){
   mHBV = hbv;
-//  mTxp = txp;
   frontier_solutions = pair_solutions;
   mToRight = &to_right;
   mEdges = &edges;
