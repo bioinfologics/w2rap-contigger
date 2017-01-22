@@ -9,10 +9,6 @@ TenXPather::TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv)
   //
   seqVector = aseqVector;
   hbv = ahbv;
-
-//  makeIndexMap();
-//  makeTagMap();
-//  makeTagVector();
 }
 
 TenXPather::tagktype TenXPather::kmerize_tag(std::string seq){
@@ -212,7 +208,7 @@ std::vector<uint64_t> LocalPaths_TX::choose_best_path(std::vector<std::vector<ui
       for (auto ei = 0; ei < (*alternative_paths)[path_index].size() - 1; ++ei) {
         auto from_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei]].ToString();
         auto to_edge_string = (*mEdges)[(*alternative_paths)[path_index][ei + 1]].ToString();
-        cpath_score += mTxp->edgeTagIntersection(from_edge_string, to_edge_string, 1500);
+        cpath_score += mTxp.edgeTagIntersection(from_edge_string, to_edge_string, 1500);
       }
       if (cpath_score > best_path_score) {
         best_path = path_index;

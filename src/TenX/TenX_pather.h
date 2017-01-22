@@ -55,12 +55,12 @@ private:
 
 class LocalPaths_TX: public LocalPaths {
 public:
-    LocalPaths_TX(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather* txp, std::vector<BaseVec>& edges)
+    LocalPaths_TX(HyperBasevector& hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather& txp, std::vector<BaseVec>& edges)
         : LocalPaths(hbv, pair_solutions, to_right, edges), mTxp (txp) {};
 
     std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>> *alternative_paths);
 
-    TenXPather* mTxp;
+    TenXPather& mTxp;
 
 };
 

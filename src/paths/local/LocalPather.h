@@ -12,7 +12,7 @@
 
 class LocalPaths {
 public:
-    LocalPaths::LocalPaths(HyperBasevector* hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, std::vector<BaseVec>& edges);
+    LocalPaths::LocalPaths(HyperBasevector& hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, std::vector<BaseVec>& edges);
 
     int find_all_solution_paths();
 

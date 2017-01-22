@@ -32,7 +32,12 @@ int main(int argc, char *argv[]){
   inv.clear();
   hbv.Involution(inv);
 
+  ReadPathVec pathsr;
+  VecULongVec paths_inv;
+  LoadReadPathVec(pathsr,argv[4]);
 
+  paths_inv.clear();
+  invert(pathsr, paths_inv, hbv.EdgeObjectCount());
 
   // Create the paths and invert them
   TenXPather txp (&reads, &hbv);
@@ -44,12 +49,11 @@ int main(int argc, char *argv[]){
   std::cout<< Date() << " Map filling with reads done..." << std::endl;
   txp.kmerTagDensity();
 
-//  TenXPather* txp2 = &txp;
   // Pathfinder
   std::cout<< Date() << " Starting pathfinder..." << std::endl;
-  PathFinder_tx pf_tx (&txp, &hbv, inv, 5);
+  PathFinder_tx pf_tx (txp, hbv, inv, 5, pathsr, paths_inv);
   std::cout<< Date() << " done pathfinder..." << std::endl;
-  pf_tx.untangle_complex_in_out_choices(1000, true);
+  pf_tx.solve_region_using_TenX(1000, true);
 
   ReadPathVec* mPaths = new ReadPathVec();
 

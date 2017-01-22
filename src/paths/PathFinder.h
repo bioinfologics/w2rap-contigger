@@ -21,10 +21,10 @@ public:
     mEdgeToPathIds(invPaths),
     mMinReads(min_reads)
     {
+        std::cout << "Llego hasta aca" << std::endl;
         hbv.ToLeft(mToLeft);
         hbv.ToRight(mToRight);
-
-
+        std::cout << "Llego hasta aca 2" << std::endl;
     }
 
     //Graph-related methods
@@ -56,7 +56,7 @@ public:
 
 
 
-private:
+//private:
     HyperBasevector& mHBV;
     vec<int>& mInv;
     ReadPathVec& mPaths;
