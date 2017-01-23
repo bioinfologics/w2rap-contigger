@@ -7,6 +7,7 @@
 
 
 #include "paths/local/LocalPather.h"
+#include "paths/PathFinder.h"
 
 typedef  struct {
     int read_id;
@@ -26,12 +27,13 @@ struct linkreg_less_than {
 };
 
 
-class TenXPather: public KMatch {
+class TenXPather: public KMatch, public PathFinder {
 public:
+    // Data types
     typedef std::uint16_t tagktype;
     std::map<uint64_t, std::map<tagktype, int>> kmerTagMap;
 
-    TenXPather(std::vector<tenXRead>* aseqVector, HyperBasevector* ahbv);
+    TenXPather(std::vector<tenXRead>& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths);
 
     int createEmptyMap(HyperBasevector* hbv);
     int reads2kmerTagMap();
@@ -44,24 +46,16 @@ public:
     std::vector<TenXPather::tagktype> getSequenceTags(std::string seq);
     float edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi);
 
-private:
-    // Reads and graph
-    std::vector<tenXRead>* seqVector;
-    vec<int> inv;
-    HyperBasevector* hbv;
-    tagktype kmerize_tag(std::string tag);
-
-};
-
-class LocalPaths_TX: public LocalPaths {
-public:
-    LocalPaths_TX(HyperBasevector& hbv, std::vector<std::vector<uint64_t>> pair_solutions, vec<int>& to_right, TenXPather& txp, std::vector<BaseVec>& edges)
-        : LocalPaths(hbv, pair_solutions, to_right, edges), mTxp (txp) {};
+    // Pathfinder
+    void solve_region_using_TenX(uint64_t large_frontier_size, bool verbose_separation=false, float score_threshold=1.0);
 
     std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>> *alternative_paths);
 
-    TenXPather& mTxp;
-
+private:
+    // Reads and graph
+    std::vector<tenXRead>& seqVector;
+    tagktype kmerize_tag(std::string tag);
+    std::vector<BaseVec>& mEdges;
 };
 
 #endif //W2RAP_CONTIGGER_TENX_PATHER_H

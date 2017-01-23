@@ -14,26 +14,13 @@
 
 class PathFinder {
 public:
-    PathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5 ) :
-    mHBV(hbv),
-    mInv(inv),
-    mPaths(paths),
-    mEdgeToPathIds(invPaths),
-    mMinReads(min_reads)
-    {
-        std::cout << "Llego hasta aca" << std::endl;
-        hbv.ToLeft(mToLeft);
-        hbv.ToRight(mToRight);
-        std::cout << "Llego hasta aca 2" << std::endl;
-    }
+    PathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5 );
 
     //Graph-related methods
     std::vector<std::vector<uint64_t>> AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length);
 
 
     //ReadPath-related methods
-
-
     void classify_forks();//how many forks of each type are there?
     std::vector<uint64_t> best_path_fw(uint64_t edge, int distance); //finds the best path forward for an edge
     std::array<uint64_t,3> transition_votes(uint64_t left_e,uint64_t right_e);
@@ -55,8 +42,18 @@ public:
     void migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edgemap);
 
 
+    // ------------------ LocalPather class methods  ------------------ //
+    std::vector<std::vector<uint64_t>>find_all_solution_paths(std::vector<std::vector<uint64_t>> pair_solutions);
+    // 1st dim is the pair order, second dim one of the paths for that pair and 3rd dim ins the path itself
+    bool find_all_pair_conecting_paths(uint64_t edge_name, std::vector<uint64_t> path, int cont, uint64_t end_edge, int maxloop);
+    virtual std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths) = 0;
 
-//private:
+    // Vector to store the recursive pathfinder results
+    std::vector<std::vector<uint64_t>> pair_temp_paths;
+    std::vector<uint64_t> ins;
+    std::vector<uint64_t> outs;
+    // ------------------ LocalPather class methods  ------------------ //
+
     HyperBasevector& mHBV;
     vec<int>& mInv;
     ReadPathVec& mPaths;
@@ -65,7 +62,6 @@ public:
     vec<int> mToRight;
     std::vector<std::vector<uint64_t>> next_edges,prev_edges;
     int mMinReads;
-
 
 };
 

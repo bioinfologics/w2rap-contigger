@@ -28,6 +28,7 @@ int main(int argc, char *argv[]){
   // Load hbv and create inversion
   HyperBasevector hbv;
   BinaryReader::readFile(fn, &hbv);
+  std::cout << "Objetos en el hbv: " << hbv.EdgeObjectCount() << std::endl;
   vec<int> inv;
   inv.clear();
   hbv.Involution(inv);
@@ -35,25 +36,29 @@ int main(int argc, char *argv[]){
   ReadPathVec pathsr;
   VecULongVec paths_inv;
   LoadReadPathVec(pathsr,argv[4]);
+  auto edges = hbv.Edges();
 
   paths_inv.clear();
   invert(pathsr, paths_inv, hbv.EdgeObjectCount());
-
+  std::cout << "Size of the paths vector" << pathsr.size() <<" , inverse: " << paths_inv.size() << std::endl;
   // Create the paths and invert them
-  TenXPather txp (&reads, &hbv);
+  std::cout << "Starting tenxPather..." << std::endl;
+
+  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
+
   std::cout<< Date() << " Map creation." << std::endl;
   txp.createEmptyMap(&hbv);
-  std::cout<< Date() << " Map creation done..." << std::endl;
+
   std::cout<< Date() << " Map filling with reads..." << std::endl;
   txp.reads2kmerTagMap();
   std::cout<< Date() << " Map filling with reads done..." << std::endl;
   txp.kmerTagDensity();
 
+
   // Pathfinder
   std::cout<< Date() << " Starting pathfinder..." << std::endl;
-  PathFinder_tx pf_tx (txp, hbv, inv, 5, pathsr, paths_inv);
   std::cout<< Date() << " done pathfinder..." << std::endl;
-  pf_tx.solve_region_using_TenX(1000, true);
+  txp.solve_region_using_TenX(1000, true);
 
   ReadPathVec* mPaths = new ReadPathVec();
 
