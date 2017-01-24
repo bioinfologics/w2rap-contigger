@@ -7,6 +7,7 @@
 
 #include "kmers/kmatch/KMatch.h"
 #include "paths/long/ReadPath.h"
+#include "paths/PathFinder.h"
 
 typedef struct {
     int read_id;
@@ -25,14 +26,17 @@ struct linkreg_less_than_pb {
     }
 };
 
-class PacbioPather: public KMatch {
+class PacbioPather: public KMatch, public PathFinder {
 public:
-    PacbioPather(vecbvec* aseqVector, HyperBasevector* ahbv);
+    PacbioPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths);
     ReadPathVec mapReads();
 
+    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths){};
+
+    void PacbioPather::solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation);
 private:
-    vecbvec* seqVector;
-    HyperBasevector* hbv;
+    vecbvec& seqVector;
+    std::vector<BaseVec>& mEdges;
 
     std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
     std::vector<linkReg> readOffsetFilter(std::vector<linkReg> data);

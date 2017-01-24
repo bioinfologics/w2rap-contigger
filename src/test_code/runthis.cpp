@@ -5,11 +5,11 @@
 #include <iostream>
 #include <kmers/kmatch/KMatch.h>
 #include "paths/long/large/ExtractReads.h"
-//#include "pacbio/pacbio_pather.h"
-//#include "pacbio/PathFinder_pb.h"
 
-#include "TenX/TenX_pather.h"
-#include "TenX/PathFinder_tx.h"
+#include "pacbio/pacbio_pather.h"
+
+//#include "TenX/TenX_pather.h"
+//#include "TenX/PathFinder_tx.h"
 
 
 int main(int argc, char *argv[]){
@@ -17,9 +17,7 @@ int main(int argc, char *argv[]){
   InputDataMag dataMag(argv[1], argv[2]);
 //  InputDataMag dataMag("/Users/ggarcia/Documents/arabidopsis_test_ds/configuration_file.config", "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200");
 
-  auto reads = dataMag.mag["TEX"]->rReads;
-  std::cout << "Reads already loaded..." << std::endl;
-  std::cout << reads.size() << " Reads in the vector" << std::endl;
+
 
   std::cout << "Loading hbv file..." << std::endl;
 //  std::string fn = "/Users/ggarcia/Documents/arabidopsis_test_ds/k_200/athal_k200.large_K.clean.hbv";
@@ -29,93 +27,57 @@ int main(int argc, char *argv[]){
   HyperBasevector hbv;
   BinaryReader::readFile(fn, &hbv);
   std::cout << "Objetos en el hbv: " << hbv.EdgeObjectCount() << std::endl;
+
   vec<int> inv;
   inv.clear();
   hbv.Involution(inv);
 
+  std::cout << "despues del inv 1" << std::endl;
   ReadPathVec pathsr;
   VecULongVec paths_inv;
-  LoadReadPathVec(pathsr,argv[4]);
+  std::cout << "despues del inv 2" << std::endl;
+//  LoadReadPathVec(pathsr, argv[4]);
+  std::cout << "despues del inv 3" << std::endl;
+//  paths_inv.clear();
+  std::cout << "despues del inv 4" << std::endl;
+//  invert(pathsr, paths_inv, hbv.EdgeObjectCount());
+
+  std::cout << "despues del inv" << std::endl;
   auto edges = hbv.Edges();
-
-  paths_inv.clear();
-  invert(pathsr, paths_inv, hbv.EdgeObjectCount());
   std::cout << "Size of the paths vector" << pathsr.size() <<" , inverse: " << paths_inv.size() << std::endl;
-  // Create the paths and invert them
-  std::cout << "Starting tenxPather..." << std::endl;
 
-  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
-
-  std::cout<< Date() << " Map creation." << std::endl;
-  txp.createEmptyMap(&hbv);
-
-  std::cout<< Date() << " Map filling with reads..." << std::endl;
-  txp.reads2kmerTagMap();
-  std::cout<< Date() << " Map filling with reads done..." << std::endl;
-  txp.kmerTagDensity();
-
-
-  // Pathfinder
-  std::cout<< Date() << " Starting pathfinder..." << std::endl;
-  std::cout<< Date() << " done pathfinder..." << std::endl;
-  txp.solve_region_using_TenX(1000, true);
-
-  ReadPathVec* mPaths = new ReadPathVec();
-
-  RemoveUnneededVertices2(hbv, inv, *mPaths);
-  Cleanup(hbv, inv, *mPaths);
-  // so all the above numbers add up, and the edge which breaks it is the first new edge
-  // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
-  inv.clear();
-  hbv.Involution(inv);
-  TestInvolution(hbv, inv);
-
-//  // Print the map content
-//  for (auto &t: txp.kmerTagMap){
-//    if (t.second.size()>0) {
-//      std::cout << "Key: " << t.first << ", Count: " << t.second.size() << std::endl;
-//      for (auto tt: t.second){
-//        std::cout << "--->Tag: " << tt.first << "-->" <<tt.second <<std::endl;
-//      }
-//    }
-////  }
-//  std::cout << "Size of the dictionary: " << txp.kmerTagMap.size() << std::endl;
+//  /* ----- TenXpather part ----- */
+//  auto reads = dataMag.mag["TEX"]->rReads;
+//  std::cout << "Reads already loaded..." << std::endl;
+//  std::cout << reads.size() << " Reads in the vector" << std::endl;
 //
-//  // Intersection all vs all
-//  std::cout<<Date()<<" Intersecting:" << std::endl;
-//  auto edges = hbv.Edges();
-//#pragma omp parallel for
-//  for (auto i=0; i<edges.size(); ++i){
-//    for (auto j=0; j<edges.size(); ++j) {
-//      if (edges[i].size()>5000 & edges[j].size()>5000) {
-//        auto interseccion = txp.edgeTagIntersection(edges[i].ToString(), edges[j].ToString(), 500);
-//        if (interseccion.size() > 0) {
-//#pragma omp critical (printest)
-//          std::cout << "Print intersection: " << i << "-" << j << "->" << interseccion.size() << std::endl;
-//        }
-////      for (auto elemento: interseccion){
-////        std::cout << elemento << std::endl;
-////    }
-//      }
-//    }
-//  }
+//  // Create the paths and invert them
+//  std::cout << "Starting tenxPather..." << std::endl;
+//  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
+//
+//  std::cout<< Date() << " Map creation." << std::endl;
+//  txp.createEmptyMap(&hbv);
+//
+//  std::cout<< Date() << " Map filling with reads..." << std::endl;
+//  txp.reads2kmerTagMap();
+//
+//  std::cout<< Date() << " Map filling with reads done..." << std::endl;
+//  txp.kmerTagDensity();
+//
+//  // Pathfinder
+//  std::cout<< Date() << " Starting pathfinder..." << std::endl;
+//  std::cout<< Date() << " done pathfinder..." << std::endl;
+//  txp.solve_region_using_TenX(1000, true);
+//  /* ----- TenXpather part ----- */
 
 
+  auto reads = dataMag.mag["PB1"]->bases;
 
-//  auto tagidx = txp.kmerize_tag("ATCCACCGTGGTGCAA");
-//  std::cout << "Tagkmer: " << tagidx << std::endl;
-//  txp.Hbv2Map(&hbv);
+  PacbioPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
+  pbp.Hbv2Map(&hbv);
+  pbp.mapReads();
+  pbp.untangle_complex_in_out_choices(1000, true);
 
-//  auto histogram = txp.readsTagQc();
-//  for (auto g=0; g<histogram.size(); ++g){
-//    std::cout << g << "," << histogram[g]<<std::endl;
-//  }
-
-//  auto g = txp.getTagLinks();
-
-
-//  PacbioPather pbp(&reads, &hbv);
-//  pbp.Hbv2Map(&hbv);
 //
 //  ReadPathVec pathsr = pbp.mapReads();
 //  VecULongVec invPaths;
