@@ -53,12 +53,13 @@ void step_2(HyperBasevector &hbv,
             unsigned int minFreq,
             unsigned int minQual,
             unsigned int disk_batches,
+            unsigned int mem_batches,
             unsigned int small_K,
             std::string out_dir,
             std::string tmp_dir) {
     bool FILL_JOIN = False;
     buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,
-                    tmp_dir, disk_batches);
+                    tmp_dir, disk_batches, mem_batches);
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
     hbvinv.clear();
     hbv.Involution(hbvinv);
@@ -392,6 +393,7 @@ void step_7(HyperBasevector &hbv,
     vec<int64_t> subsam_starts={0};
     vec<String> subsam_names={"C"};
     FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
+    GFADump(out_prefix+ "_assembly",hbv,hbvinv,paths,MAX_CELL_PATHS,MAX_DEPTH,true);
 }
 
 
@@ -406,7 +408,7 @@ int main(const int argc, const char * argv[]) {
     unsigned int minFreq;
     unsigned int minQual;
     int max_mem;
-    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches, min_input_reads;
+    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches, mem_batches, min_input_reads;
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
@@ -447,6 +449,9 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
                                                  "number of disk batches for step2 (default: 0, 0->in memory)", false, 8, "int", cmd);
+
+        TCLAP::ValueArg<unsigned int> mem_batchesArg("", "mem_batches",
+                                                      "number of memory batches for step2 (default: 4)", false, 4, "int", cmd);
 
         TCLAP::ValueArg<std::string> tmp_dirArg("", "tmp_dir",
                                                       "tmp dir for step2 disk batches (default: workdir)", false, "", "string", cmd);
@@ -498,6 +503,7 @@ int main(const int argc, const char * argv[]) {
         minFreq=minFreqArg.getValue();
         minQual=minQualArg.getValue();
         disk_batches=disk_batchesArg.getValue();
+        mem_batches=mem_batchesArg.getValue();
         tmp_dir=tmp_dirArg.getValue();
         min_input_reads=minInputArg.getValue();
         OutputLogLevel=logLevelArg.getValue();
@@ -614,7 +620,7 @@ int main(const int argc, const char * argv[]) {
                 step_1(bases, quals, out_dir, read_files);
                 break;
             case 2:
-                step_2(hbv, hbvinv, paths, bases, quals, minFreq, minQual, disk_batches, small_K, out_dir, tmp_dir);
+                step_2(hbv, hbvinv, paths, bases, quals, minFreq, minQual, disk_batches, mem_batches, small_K, out_dir, tmp_dir);
                 break;
             case 3:
                 if (run_dv) step_3DV(hbv,hbvinv,paths,large_K,out_dir);
