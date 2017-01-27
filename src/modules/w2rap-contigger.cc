@@ -58,7 +58,11 @@ void step_2(HyperBasevector &hbv,
             std::string out_dir,
             std::string tmp_dir) {
     bool FILL_JOIN = False;
-    buildReadQGraph(bases, quals, FILL_JOIN, FILL_JOIN, minQual, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,
+    vec<uint16_t> rlen;
+    create_read_lengths(rlen,quals,minQual);
+    OutputLog(2)<<"Unloading quals"<<std::endl;
+    quals.destroy();
+    buildReadQGraph(bases, quals, rlen, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,
                     tmp_dir, disk_batches, mem_batches);
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
     hbvinv.clear();
@@ -448,7 +452,7 @@ int main(const int argc, const char * argv[]) {
                                                    "Stop after step (default: 7)", false, 7, &steps, cmd);
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
-                                                 "number of disk batches for step2 (default: 0, 0->in memory)", false, 8, "int", cmd);
+                                                 "number of disk batches for step2 (default: 0, 0->in memory)", false, 0, "int", cmd);
 
         TCLAP::ValueArg<unsigned int> mem_batchesArg("", "mem_batches",
                                                       "number of memory batches for step2 (default: 4)", false, 4, "int", cmd);
@@ -581,12 +585,19 @@ int main(const int argc, const char * argv[]) {
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
-        if ( (2==step or 4==step or 5==step or 6==step) and bases.size()==0){
-            OutputLog(2) << "Loading bases and quals..." << std::endl;
-            bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
-            quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
-            OutputLog(2) << "Reads loaded" << std::endl << std::endl;
+        if ( (2==step or 4==step or 5==step or 6==step) and (quals.size()==0 or bases.size()==0)){
+            if (bases.size()==0) {
+                OutputLog(2) << "Loading bases..." << std::endl;
+                bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
+            }
+            if (quals.size()==0) {
+                OutputLog(2) << "Loading quals..." << std::endl;
+                quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+            }
+            OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
+
+
         //steps that require a graph
         if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
             //Load hbv

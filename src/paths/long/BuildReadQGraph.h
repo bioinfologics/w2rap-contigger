@@ -21,9 +21,9 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
 
-void buildReadQGraph( vecbvec const& reads, VecPQVec const& quals,
-                        bool doFillGaps, bool doJoinOverlaps,
-                        unsigned minQual, unsigned minFreq,
+void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual);
+void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_t> & rlen,
+                        bool doFillGaps, bool doJoinOverlaps, unsigned minFreq,
                         double minFreq2Fract, unsigned maxGapSize,
                         HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir="",
                         std::string tmpdir="", unsigned char disk_batches=0, unsigned char mem_batches=1);
