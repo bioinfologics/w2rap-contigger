@@ -1124,6 +1124,125 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
 
 }
 
+void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen,
+                                        uint64_t batch_size, unsigned minFreq, std::string workdir=""){
+    std::vector<KMerNodeFreq> kmer_list;
+    //Compute how many "batches" will be used. and malloc a structure for them and a bool array to mark them "ready to process".
+    //optionally, there could be a total count of "ready kmers" to set a limit for memory usage, if total count is too high, slaves would wait
+    const uint64_t batches=(rlen.size()+batch_size-1)/batch_size;
+    OutputLog(2)<<"kmer counting in "<<batches<<" batches of "<<batch_size<<" reads"<<std::endl;
+    std::atomic_uint_fast8_t * batch_status;
+    batch_status=(std::atomic_uint_fast8_t *) calloc(sizeof(std::atomic_uint_fast8_t),batches);
+    std::vector<KMerNodeFreq> ** batch_lists;
+    batch_lists=(std::vector<KMerNodeFreq> **) calloc(sizeof(std::vector<KMerNodeFreq> *),batches);
+
+
+
+    //
+    #pragma omp parallel shared(rlen,reads)
+    {
+        //Batch consumer: in-place merging into main list, delete the batch vector, mark done
+        #pragma omp master
+        {
+            uint64_t done_batches=0;
+            while (done_batches<batches) {
+                for (auto batch = 0; batch < batches; ++batch) {
+                    if (batch_status[batch]==1){
+#pragma omp critical
+                        OutputLog(4)<<"merging batch "<<batch<<std::endl;
+                        inplace_count_merge(kmer_list,*batch_lists[batch]);
+                        delete(batch_lists[batch]);
+                        batch_status[batch]++;
+#pragma omp critical
+                        OutputLog(4)<<"batch merged, main list has now "<<kmer_list.size()<<" kmers"<<std::endl;
+                        ++done_batches;
+                    }
+
+                }
+            }
+
+        }
+        #pragma omp for schedule(dynamic)
+        for (auto batch=0;batch<batches;++batch)
+        {
+#pragma omp critical
+            OutputLog(4)<<"counting for batch "<<batch<<std::endl;
+            uint64_t from=batch*batch_size;
+            uint64_t read_count= (batch<batches-1) ? batch_size : rlen.size() - batch_size * (batches-1);
+            uint64_t to=from+read_count;
+            std::vector<KMerNodeFreq> * local_kmer_list=new std::vector<KMerNodeFreq>(read_count);
+            //do the counting, sorting, collapsing.
+            uint64_t total_good_lenght = std::accumulate(rlen.begin()+from,rlen.begin()+to,0);
+            local_kmer_list->reserve(total_good_lenght);
+            //Populate the kmer list
+            for (auto readId = from; readId < to; ++readId) {
+                unsigned len = rlen[readId];
+                if (len > K) {
+                    auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
+                    KMerNodeFreq kkk(beg);
+                    kkk.kc = KMerContext::initialContext(*itr);
+                    kkk.count=1;
+                    local_kmer_list->push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
+                    while ( itr != last )
+                    { unsigned char pred = kkk.front();
+                        kkk.toSuccessor(*itr); ++itr;
+                        kkk.kc = KMerContext(pred,*itr);
+                        local_kmer_list->push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
+                    }
+                    kkk.kc = KMerContext::finalContext(kkk.front());
+                    kkk.toSuccessor(*last);
+                    local_kmer_list->push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
+                }
+            }
+            std::sort(local_kmer_list->begin(), local_kmer_list->end());
+            collapse_entries(*local_kmer_list);
+            batch_lists[batch]=local_kmer_list;
+#pragma omp critical
+            OutputLog(4)<<"batch "<<batch <<" done"<<std::endl;
+            batch_status[batch]=1;
+        }
+
+    }
+
+    free(batch_status);
+    free(batch_lists);
+
+
+    //sort
+    //#pragma omp critical
+    //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", sorting/collapsing "<<kmer_list.size()<<" kmers ..."
+    //          << std::endl;
+
+
+    if (NULL != dict) { //merge sort and return that
+        OutputLog(2) << kmer_list.size() << " kmers counted, filtering..." << std::endl;
+        (*dict) = new BRQ_Dict(kmer_list.size());
+        uint64_t used = 0,not_used=0;
+        uint64_t hist[256];
+        for (auto &h:hist) h=0;
+        for (auto &knf:kmer_list) {
+            ++hist[std::min(255,(int)knf.count)];
+            if (knf.count >= minFreq) {
+                (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
+                used++;
+            } else {
+                not_used++;
+            }
+
+        }
+        OutputLog(2) << used << " / " << kmer_list.size() << " kmers with Freq >= " << minFreq << std::endl;
+        kmer_list.clear();
+        if (""!=workdir) {
+            std::ofstream kff(workdir + "/small_K.freqs");
+            for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
+            kff.close();
+        }
+
+    }
+    //return kmer_list;
+
+}
+
 
 void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const& rlen, unsigned char disk_batches, uint64_t batch_size, unsigned minFreq, std::string workdir="", std::string tmpdir=""){
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
@@ -1308,12 +1427,12 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
                       double minFreq2Fract, unsigned maxGapSize,
                       HyperBasevector* pHBV, ReadPathVec* pPaths,
                       int _K, std::string workdir, std::string tmpdir="",
-                      unsigned char disk_batches=0, unsigned char mem_batches=1 )
+                      unsigned char disk_batches, unsigned char mem_batches, uint64_t count_batch_size )
 {
     OutputLog(2) << "creating kmers from reads..." << std::endl;
     //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
     BRQ_Dict * pDict;
-    #pragma omp parallel shared(pDict,reads,rlen)
+    /*#pragma omp parallel shared(pDict,reads,rlen)
     {
         #pragma omp single
         {
@@ -1322,15 +1441,15 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
             if (1 >= disk_batches) {
                 if (mem_batches > 1)
                     createDictOMPMemBased(&pDict, reads, rlen, mem_batches, 1000000, minFreq, workdir);
-                else
-                    createDictOMPRecursive(&pDict, reads, rlen, 0, reads.size(), 1000000, minFreq, workdir);
-            } else {
+                else*/
+                    createDictOMP(&pDict, reads, rlen, count_batch_size, minFreq, workdir);
+            /*} else {
                 if ("" == tmpdir) tmpdir = workdir;
                 createDictOMPDiskBased(&pDict, reads, rlen, disk_batches, 1000000, minFreq, workdir, tmpdir);
 
             }
         }
-    }
+    }*/
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge

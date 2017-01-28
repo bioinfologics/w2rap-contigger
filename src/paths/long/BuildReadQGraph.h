@@ -26,7 +26,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
                         bool doFillGaps, bool doJoinOverlaps, unsigned minFreq,
                         double minFreq2Fract, unsigned maxGapSize,
                         HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir="",
-                        std::string tmpdir="", unsigned char disk_batches=0, unsigned char mem_batches=1);
+                        std::string tmpdir="", unsigned char disk_batches=0, unsigned char mem_batches=1, uint64_t count_batch_size=10000000);
 
 
 
