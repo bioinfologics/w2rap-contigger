@@ -97,7 +97,7 @@ public:
     static KMerContext NNContext()
     { return KMerContext(0xff); }
 
-private:
+//private:
     explicit KMerContext( unsigned char val ) : mVal(val) {}
 
     static unsigned char pred2Val( unsigned char predCode )

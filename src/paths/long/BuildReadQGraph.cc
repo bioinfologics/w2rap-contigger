@@ -55,17 +55,53 @@ namespace
     typedef KmerDictEntry<K> BRQ_Entry;
     typedef KmerDict<K> BRQ_Dict;
 
+    struct __attribute__((__packed__)) KMerNodeFreq_s {
+        uint64_t kdata[2];
+        uint8_t count;
+        uint8_t kc;
+        inline const operator==(KMerNodeFreq_s const & other) const {
+            //return 0==memcmp(&kdata,&other.kdata,2*sizeof(uint64_t));
+            return (kdata[0]==other.kdata[0] and kdata[1]==other.kdata[1]);
+        }
+        inline const operator<(KMerNodeFreq_s const & other) const{
+            //return -1==memcmp(&kdata,&other.kdata,2*sizeof(uint64_t));
+            if (kdata[0]<other.kdata[0]) return true;
+            if (kdata[0]==other.kdata[0] and kdata[1]<other.kdata[1]) return true;
+            return false;
+        }
+        inline const operator>(KMerNodeFreq_s const & other) const{
+            if (kdata[0]>other.kdata[0]) return true;
+            if (kdata[0]==other.kdata[0] and kdata[1]>other.kdata[1]) return true;
+            return false;
+        }
+        inline void combine(KMerNodeFreq_s const & other){
+            auto newcount=count+other.count;
+            if ( newcount>count) count=newcount;
+            kc|=other.kc;
+        }
+        /*inline const operator=(KMerNodeFreq_s const & other) const {
+            memcpy(&this,&other,sizeof(this));
+        }*/
+    };
+
     class KMerNodeFreq: public KMer<K>{
     public:
         KMerNodeFreq(){};
         template <class Itr>
         explicit KMerNodeFreq( Itr start )
         { assign(start,NopMapper()); }
+
         KMerNodeFreq (const KMerNodeFreq &other){
             *this=other;
             count=other.count;
             kc=other.kc;
         }
+        KMerNodeFreq (const KMerNodeFreq_s &other) {
+            memcpy (&this->mVal,&other.kdata,sizeof(KMer<K>));
+            count=other.count;
+            kc.mVal=other.kc;
+        }
+
         KMerNodeFreq (const KMerNodeFreq &other, bool rc){
             *this=other;
             count=other.count;
@@ -75,10 +111,15 @@ namespace
                 kc=kc.rc();
             }
         }
+        void to_struct (KMerNodeFreq_s &other) const {
+            memcpy (&other.kdata,&this->mVal,sizeof(KMer<K>));
+            other.count=count;
+            other.kc=kc.mVal;
+        }
         unsigned char count;
+
         KMerContext kc;
     };
-
 
 
 
@@ -1005,6 +1046,19 @@ void collapse_entries(std::vector<KMerNodeFreq> &kmer_list){
     kmer_list.resize(okItr - kmer_list.begin());
 }
 
+void collapse_entries(std::vector<KMerNodeFreq_s> &kmer_list){
+    auto okItr = kmer_list.begin();
+    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
+        *okItr = *kItr;
+        ++kItr;
+        while (kItr<kmer_list.end() and *okItr == *kItr) {
+            okItr->combine(*kItr);
+            ++kItr;
+        }
+    }
+    kmer_list.resize(okItr - kmer_list.begin());
+}
+
 void inplace_count_merge(std::vector<KMerNodeFreq> & counts1, std::vector<KMerNodeFreq> & counts2){
     //sync-merge values from counts2 into counts1, if value not int counts1, move it to a top-based position in counts2.
     //std::cout<<"merging counts1("<<counts1.size()<<" kmers) and counts2("<<counts2.size()<<" kmers)"<<std::endl;
@@ -1046,6 +1100,50 @@ void inplace_count_merge(std::vector<KMerNodeFreq> & counts1, std::vector<KMerNo
     counts2.clear();
     counts2.shrink_to_fit();
 }
+
+void inplace_count_merge(std::vector<KMerNodeFreq_s> & counts1, std::vector<KMerNodeFreq_s> & counts2){
+    //sync-merge values from counts2 into counts1, if value not int counts1, move it to a top-based position in counts2.
+    //std::cout<<"merging counts1("<<counts1.size()<<" kmers) and counts2("<<counts2.size()<<" kmers)"<<std::endl;
+    auto itr1=counts1.begin(),end1=counts1.end();
+    auto itr2=counts2.begin(),end2=counts2.end(),itr2w=counts2.begin();
+    //std::cout<<"merging, accumulating on counts1"<<std::endl;
+    while (itr2 !=end2){
+        while (itr1!=end1 and *itr1<*itr2) ++itr1;
+        if (itr1!=end1 and *itr1==*itr2){
+            //combine_Entries(*itr1,*itr2);
+            itr1->combine(*itr2);
+            ++itr1;++itr2;
+        }
+        while (itr2!=end2 and (itr1==end1 or *itr2<*itr1)){
+            *itr2w=*itr2;
+            ++itr2w;++itr2;
+        }
+    }
+    //shrink counts2 to the size of its remaining elements
+    //std::cout<<"merging, resizing counts2 to " << itr2w-counts2.begin() <<std::endl;
+    counts2.resize(itr2w-counts2.begin());
+    counts2.shrink_to_fit();
+    //expand counts1 to allow the insertion of the unique values on counts2
+    //std::cout<<"merging, resizing counts1 to " << counts1.size()+counts2.size() << std::endl;
+    counts1.resize(counts1.size()+counts2.size());
+    //merge-sort from the bottom into count1.
+    //std::cout<<"merging, final merging"<<std::endl;
+    auto writr1=counts1.rbegin(), ritr1=counts1.rbegin()+counts2.size(), rend1=counts1.rend();
+    auto ritr2=counts2.rbegin(), rend2=counts2.rend();
+    while (writr1!=rend1){
+        if (ritr2!=rend2 and (ritr1==rend1 or *ritr2>*ritr1)){
+            memcpy(&(*writr1),&(*ritr2), sizeof(KMerNodeFreq_s));
+            ++ritr2;
+        } else {
+            memcpy(&(*writr1),&(*ritr1), sizeof(KMerNodeFreq_s));
+            ++ritr1;
+        }
+        ++writr1;
+    }
+    counts2.clear();
+    counts2.shrink_to_fit();
+}
+
 
 std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minFreq, std::string workdir=""){
     std::vector<KMerNodeFreq> kmer_list;
@@ -1126,19 +1224,23 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
 
 void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen,
                                         uint64_t batch_size, unsigned minFreq, std::string workdir=""){
-    std::vector<KMerNodeFreq> kmer_list;
+    std::vector<KMerNodeFreq_s> kmer_list;
     //Compute how many "batches" will be used. and malloc a structure for them and a bool array to mark them "ready to process".
     //optionally, there could be a total count of "ready kmers" to set a limit for memory usage, if total count is too high, slaves would wait
     const uint64_t batches=(rlen.size()+batch_size-1)/batch_size;
     OutputLog(2)<<"kmer counting in "<<batches<<" batches of "<<batch_size<<" reads"<<std::endl;
+    OutputLog(2) << "each KMer uses " <<sizeof(KMer<K>)<<" bytes"<<std::endl;
+    OutputLog(2) << "each KMerContext uses " <<sizeof(KMerContext)<<" bytes"<<std::endl;
+    OutputLog(2) << "each KMerNodeFreq uses " <<sizeof(KMerNodeFreq)<<" bytes"<<std::endl;
+    OutputLog(2) << "each KMerNodeFreq_s uses " <<sizeof(KMerNodeFreq_s)<<" bytes"<<std::endl;
+
     std::atomic_uint_fast8_t * batch_status;
     batch_status=(std::atomic_uint_fast8_t *) calloc(sizeof(std::atomic_uint_fast8_t),batches);
-    std::vector<KMerNodeFreq> ** batch_lists;
-    batch_lists=(std::vector<KMerNodeFreq> **) calloc(sizeof(std::vector<KMerNodeFreq> *),batches);
+
+    std::vector<KMerNodeFreq_s> ** batch_lists;
+    batch_lists=(std::vector<KMerNodeFreq_s> **) calloc(sizeof(std::vector<KMerNodeFreq_s> *),batches);
 
 
-
-    //
     #pragma omp parallel shared(rlen,reads)
     {
         //Batch consumer: in-place merging into main list, delete the batch vector, mark done
@@ -1151,10 +1253,12 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
 #pragma omp critical
                         OutputLog(4)<<"merging batch "<<batch<<std::endl;
                         inplace_count_merge(kmer_list,*batch_lists[batch]);
-                        delete(batch_lists[batch]);
-                        batch_status[batch]++;
+
 #pragma omp critical
                         OutputLog(4)<<"batch merged, main list has now "<<kmer_list.size()<<" kmers"<<std::endl;
+                        delete(batch_lists[batch]);
+                        batch_status[batch]++;
+                        OutputLog(4)<<"batch deleted and marked"<<std::endl;
                         ++done_batches;
                     }
 
@@ -1165,12 +1269,13 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
         #pragma omp for schedule(dynamic)
         for (auto batch=0;batch<batches;++batch)
         {
+            KMerNodeFreq_s knfs;
 #pragma omp critical
             OutputLog(4)<<"counting for batch "<<batch<<std::endl;
             uint64_t from=batch*batch_size;
             uint64_t read_count= (batch<batches-1) ? batch_size : rlen.size() - batch_size * (batches-1);
             uint64_t to=from+read_count;
-            std::vector<KMerNodeFreq> * local_kmer_list=new std::vector<KMerNodeFreq>(read_count);
+            std::vector<KMerNodeFreq_s> * local_kmer_list=new std::vector<KMerNodeFreq_s>(read_count);
             //do the counting, sorting, collapsing.
             uint64_t total_good_lenght = std::accumulate(rlen.begin()+from,rlen.begin()+to,0);
             local_kmer_list->reserve(total_good_lenght);
@@ -1180,18 +1285,22 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
                 if (len > K) {
                     auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
                     KMerNodeFreq kkk(beg);
+                    kkk.hash();
                     kkk.kc = KMerContext::initialContext(*itr);
                     kkk.count=1;
-                    local_kmer_list->push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
+                    (kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk).to_struct(knfs);
+                    local_kmer_list->push_back( knfs );
                     while ( itr != last )
                     { unsigned char pred = kkk.front();
                         kkk.toSuccessor(*itr); ++itr;
                         kkk.kc = KMerContext(pred,*itr);
-                        local_kmer_list->push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
+                        (kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk).to_struct(knfs);
+                        local_kmer_list->push_back( knfs );
                     }
                     kkk.kc = KMerContext::finalContext(kkk.front());
                     kkk.toSuccessor(*last);
-                    local_kmer_list->push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
+                    (kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk).to_struct(knfs);
+                    local_kmer_list->push_back( knfs );
                 }
             }
             std::sort(local_kmer_list->begin(), local_kmer_list->end());
@@ -1220,9 +1329,10 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
         uint64_t used = 0,not_used=0;
         uint64_t hist[256];
         for (auto &h:hist) h=0;
-        for (auto &knf:kmer_list) {
-            ++hist[std::min(255,(int)knf.count)];
-            if (knf.count >= minFreq) {
+        for (auto &knfs:kmer_list) {
+            ++hist[std::min(255,(int)knfs.count)];
+            if (knfs.count >= minFreq) {
+                KMerNodeFreq knf(knfs);
                 (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
                 used++;
             } else {
@@ -1381,6 +1491,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
 void createDictOMPMemBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const& rlen, unsigned char batches, uint64_t batch_size, unsigned minFreq, std::string workdir=""){
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
     OutputLog(2) << "mem-based kmer counting with "<<(int) batches<<" batches"<<std::endl;
+
     uint64_t total_kmers_in_batches=0;
 
     std::vector<KMerNodeFreq> all_entries;

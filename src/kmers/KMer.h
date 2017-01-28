@@ -323,7 +323,7 @@ public:
         os << Base::val2Char(*itr);
       return os; }
 
-private:
+//private:
     static unsigned const BITS_PER_BASE = 2;
     static storage_type const STORAGE_1 = storage_type(1);
     static storage_type const BASE_MASK =
