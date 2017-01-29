@@ -1101,11 +1101,12 @@ void inplace_count_merge(std::vector<KMerNodeFreq> & counts1, std::vector<KMerNo
     counts2.shrink_to_fit();
 }
 
-void inplace_count_merge(std::vector<KMerNodeFreq_s> & counts1, std::vector<KMerNodeFreq_s> & counts2){
+void inplace_count_merge(std::shared_ptr<std::vector<KMerNodeFreq_s>> counts1, std::shared_ptr<std::vector<KMerNodeFreq_s>> counts2){
     //sync-merge values from counts2 into counts1, if value not int counts1, move it to a top-based position in counts2.
     //std::cout<<"merging counts1("<<counts1.size()<<" kmers) and counts2("<<counts2.size()<<" kmers)"<<std::endl;
-    auto itr1=counts1.begin(),end1=counts1.end();
-    auto itr2=counts2.begin(),end2=counts2.end(),itr2w=counts2.begin();
+    //std::cout<<"merging"<<std::endl;
+    auto itr1=counts1->begin(),end1=counts1->end();
+    auto itr2=counts2->begin(),end2=counts2->end(),itr2w=counts2->begin();
     //std::cout<<"merging, accumulating on counts1"<<std::endl;
     while (itr2 !=end2){
         while (itr1!=end1 and *itr1<*itr2) ++itr1;
@@ -1121,15 +1122,15 @@ void inplace_count_merge(std::vector<KMerNodeFreq_s> & counts1, std::vector<KMer
     }
     //shrink counts2 to the size of its remaining elements
     //std::cout<<"merging, resizing counts2 to " << itr2w-counts2.begin() <<std::endl;
-    counts2.resize(itr2w-counts2.begin());
-    counts2.shrink_to_fit();
+    counts2->resize(itr2w-counts2->begin());
+    counts2->shrink_to_fit();
     //expand counts1 to allow the insertion of the unique values on counts2
     //std::cout<<"merging, resizing counts1 to " << counts1.size()+counts2.size() << std::endl;
-    counts1.resize(counts1.size()+counts2.size());
+    counts1->resize(counts1->size()+counts2->size());
     //merge-sort from the bottom into count1.
     //std::cout<<"merging, final merging"<<std::endl;
-    auto writr1=counts1.rbegin(), ritr1=counts1.rbegin()+counts2.size(), rend1=counts1.rend();
-    auto ritr2=counts2.rbegin(), rend2=counts2.rend();
+    auto writr1=counts1->rbegin(), ritr1=counts1->rbegin()+counts2->size(), rend1=counts1->rend();
+    auto ritr2=counts2->rbegin(), rend2=counts2->rend();
     while (writr1!=rend1){
         if (ritr2!=rend2 and (ritr1==rend1 or *ritr2>*ritr1)){
             memcpy(&(*writr1),&(*ritr2), sizeof(KMerNodeFreq_s));
@@ -1140,8 +1141,8 @@ void inplace_count_merge(std::vector<KMerNodeFreq_s> & counts1, std::vector<KMer
         }
         ++writr1;
     }
-    counts2.clear();
-    counts2.shrink_to_fit();
+    counts2->clear();
+    counts2->shrink_to_fit();
 }
 
 
@@ -1224,58 +1225,67 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
 
 void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen,
                                         uint64_t batch_size, unsigned minFreq, std::string workdir=""){
-    std::vector<KMerNodeFreq_s> kmer_list;
+
     //Compute how many "batches" will be used. and malloc a structure for them and a bool array to mark them "ready to process".
     //optionally, there could be a total count of "ready kmers" to set a limit for memory usage, if total count is too high, slaves would wait
     const uint64_t batches=(rlen.size()+batch_size-1)/batch_size;
     OutputLog(2)<<"kmer counting in "<<batches<<" batches of "<<batch_size<<" reads"<<std::endl;
-    OutputLog(2) << "each KMer uses " <<sizeof(KMer<K>)<<" bytes"<<std::endl;
-    OutputLog(2) << "each KMerContext uses " <<sizeof(KMerContext)<<" bytes"<<std::endl;
-    OutputLog(2) << "each KMerNodeFreq uses " <<sizeof(KMerNodeFreq)<<" bytes"<<std::endl;
-    OutputLog(2) << "each KMerNodeFreq_s uses " <<sizeof(KMerNodeFreq_s)<<" bytes"<<std::endl;
+    //OutputLog(2) << "each KMer uses " <<sizeof(KMer<K>)<<" bytes"<<std::endl;
+    //OutputLog(2) << "each KMerContext uses " <<sizeof(KMerContext)<<" bytes"<<std::endl;
+    //OutputLog(2) << "each KMerNodeFreq uses " <<sizeof(KMerNodeFreq)<<" bytes"<<std::endl;
+    //OutputLog(2) << "each KMerNodeFreq_s uses " <<sizeof(KMerNodeFreq_s)<<" bytes"<<std::endl;
 
-    std::atomic_uint_fast8_t * batch_status;
-    batch_status=(std::atomic_uint_fast8_t *) calloc(sizeof(std::atomic_uint_fast8_t),batches);
 
-    std::vector<KMerNodeFreq_s> ** batch_lists;
-    batch_lists=(std::vector<KMerNodeFreq_s> **) calloc(sizeof(std::vector<KMerNodeFreq_s> *),batches);
+    std::vector<std::atomic_uint_fast8_t *> batch_status; //level->batch->status
 
+    std::vector<std::vector< std::shared_ptr<std::vector<KMerNodeFreq_s>>>> batch_lists; //level->batch-> pointer to batch
+    uint16_t levels=0;
+    for (auto elements=batches; elements>1; elements=(elements+1)/2){
+        batch_status.push_back((std::atomic_uint_fast8_t *) calloc(sizeof(std::atomic_uint_fast8_t),elements));
+        batch_lists.push_back(std::vector< std::shared_ptr<std::vector<KMerNodeFreq_s> > >());
+        batch_lists.back().resize(elements);
+        OutputLog(2)<<"level "<< levels<<" created with "<<elements<<" elements "<<std::endl;
+        ++levels;
+    }
+    std::atomic_uint_fast8_t level_count[levels]; //level->count
+    for (auto &l:level_count)l=0;
 
     #pragma omp parallel shared(rlen,reads)
     {
         //Batch consumer: in-place merging into main list, delete the batch vector, mark done
-        #pragma omp master
+        /*#pragma omp master
         {
             uint64_t done_batches=0;
             while (done_batches<batches) {
                 for (auto batch = 0; batch < batches; ++batch) {
-                    if (batch_status[batch]==1){
+                    if (batch_status[0][batch]==1){
 #pragma omp critical
                         OutputLog(4)<<"merging batch "<<batch<<std::endl;
-                        inplace_count_merge(kmer_list,*batch_lists[batch]);
+                        inplace_count_merge(kmer_list,*batch_lists[0][batch]);
 
 #pragma omp critical
                         OutputLog(4)<<"batch merged, main list has now "<<kmer_list.size()<<" kmers"<<std::endl;
-                        delete(batch_lists[batch]);
-                        batch_status[batch]++;
-                        OutputLog(4)<<"batch deleted and marked"<<std::endl;
+                        batch_lists[0][batch]->clear();
+                        batch_status[0][batch]++;
+                        OutputLog(4)<<"batch emptied and marked"<<std::endl;
                         ++done_batches;
                     }
 
                 }
             }
 
-        }
+        }*/
         #pragma omp for schedule(dynamic)
         for (auto batch=0;batch<batches;++batch)
         {
             KMerNodeFreq_s knfs;
-#pragma omp critical
-            OutputLog(4)<<"counting for batch "<<batch<<std::endl;
+//#pragma omp critical
+//            OutputLog(4)<<"counting for batch "<<batch<<std::endl;
             uint64_t from=batch*batch_size;
             uint64_t read_count= (batch<batches-1) ? batch_size : rlen.size() - batch_size * (batches-1);
             uint64_t to=from+read_count;
-            std::vector<KMerNodeFreq_s> * local_kmer_list=new std::vector<KMerNodeFreq_s>(read_count);
+
+            std::shared_ptr<std::vector<KMerNodeFreq_s>> local_kmer_list= std::make_shared<std::vector<KMerNodeFreq_s>>(read_count);
             //do the counting, sorting, collapsing.
             uint64_t total_good_lenght = std::accumulate(rlen.begin()+from,rlen.begin()+to,0);
             local_kmer_list->reserve(total_good_lenght);
@@ -1305,16 +1315,61 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
             }
             std::sort(local_kmer_list->begin(), local_kmer_list->end());
             collapse_entries(*local_kmer_list);
-            batch_lists[batch]=local_kmer_list;
-#pragma omp critical
-            OutputLog(4)<<"batch "<<batch <<" done"<<std::endl;
-            batch_status[batch]=1;
+            //TODO: rather than "throwing the list for the master to merge", do the progressive merging
+            //merge_level=0
+            uint16_t merge_level=0;
+            bool just_merged=true;
+            //while (just merged)
+            while (just_merged) {
+                //   insert the list into this merge level's queue
+                uint16_t slot=level_count[merge_level]++;
+
+                //   if insertion number is odd or last batch:
+                if (merge_level<levels-1 and (slot%2==1 or slot==batch_lists[merge_level].size()-1) ) {
+                    //      if insertion number is odd:
+                    if (slot%2==1) {
+                        //          mix with the previous even number (using own list as base, this way we preserve locality)
+                        while (batch_status[merge_level][slot-1]!=1) usleep(10); //wait for the previous batch to be finished.
+//#pragma omp critical
+//                        OutputLog(2)<<"merging level "<<merge_level<<" slots "<<slot-1<<" and "<< slot<<std::endl;
+                        batch_status[merge_level][slot-1]=2;
+                        batch_status[merge_level][slot]=2;
+                        inplace_count_merge(local_kmer_list,batch_lists[merge_level][slot-1]);
+                        batch_lists[merge_level][slot-1].reset();
+                        //batch_lists[merge_level][slot].reset();
+                    }
+                    //      increase level
+                    ++merge_level;
+                    //      just_merged=true
+                    just_merged=true;
+                }
+                //   else:
+                else {
+                    //      just_merged=false
+//#pragma omp critical
+//                    OutputLog(2)<<"thread iteration finished, results on "<<merge_level<<" slot "<<slot<<std::endl;
+                    batch_lists[merge_level][slot]=local_kmer_list;
+                    batch_status[merge_level][slot]=1;
+                    just_merged=false;
+                }
+                //IDEA: fixed partitioning can be used to keep 2*thread-number lists for longer.
+            }
+            batch_lists[0][batch]=local_kmer_list;
+//#pragma omp critical
+//            OutputLog(4)<<"batch "<<batch <<" done"<<std::endl;
+            batch_status[0][batch]=1;
         }
 
     }
-
-    free(batch_status);
-    free(batch_lists);
+    OutputLog(2)<<"Top level merge starting"<<std::endl;
+    inplace_count_merge(batch_lists.back()[0],batch_lists.back()[1]);
+    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmer_list=batch_lists.back()[0];
+    //batch_lists.back()[0].reset();
+    //batch_lists.back()[1].reset();
+    for (auto &bs:batch_status) free(bs);
+    OutputLog(2)<<"Top level merge done"<<std::endl;
+    //free(batch_status[0]);
+    //free(batch_lists[0]);
 
 
     //sort
@@ -1324,12 +1379,12 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
 
 
     if (NULL != dict) { //merge sort and return that
-        OutputLog(2) << kmer_list.size() << " kmers counted, filtering..." << std::endl;
-        (*dict) = new BRQ_Dict(kmer_list.size());
+        OutputLog(2) << kmer_list->size() << " kmers counted, filtering..." << std::endl;
+        (*dict) = new BRQ_Dict(kmer_list->size());
         uint64_t used = 0,not_used=0;
         uint64_t hist[256];
         for (auto &h:hist) h=0;
-        for (auto &knfs:kmer_list) {
+        for (auto &knfs:*kmer_list) {
             ++hist[std::min(255,(int)knfs.count)];
             if (knfs.count >= minFreq) {
                 KMerNodeFreq knf(knfs);
@@ -1340,8 +1395,8 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
             }
 
         }
-        OutputLog(2) << used << " / " << kmer_list.size() << " kmers with Freq >= " << minFreq << std::endl;
-        kmer_list.clear();
+        OutputLog(2) << used << " / " << kmer_list->size() << " kmers with Freq >= " << minFreq << std::endl;
+        kmer_list->clear();
         if (""!=workdir) {
             std::ofstream kff(workdir + "/small_K.freqs");
             for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
