@@ -1223,14 +1223,16 @@ std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const
 
 }
 
-void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen,
-                                        uint64_t batch_size, unsigned minFreq, std::string workdir=""){
 
+
+
+std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, std::vector<uint16_t> const &rlen,
+                                                               uint64_t gfrom, uint64_t gto, uint64_t batch_size=0) {
     //Compute how many "batches" will be used. and malloc a structure for them and a bool array to mark them "ready to process".
     //optionally, there could be a total count of "ready kmers" to set a limit for memory usage, if total count is too high, slaves would wait
-    if (batch_size==0) batch_size=rlen.size()/(4*omp_get_max_threads())+1;
-    const uint64_t batches=(rlen.size()+batch_size-1)/batch_size;
-    OutputLog(2)<<"kmer counting in "<<batches<<" batches of "<<batch_size<<" reads"<<std::endl;
+    if (batch_size == 0) batch_size = (gto - gfrom) / (4 * omp_get_max_threads()) + 1;
+    const uint64_t batches = ((gto - gfrom) + batch_size - 1) / batch_size;
+    OutputLog(3) << "OMP-merge kmer counting in " << batches << " batches of " << batch_size << " reads" << std::endl;
     //OutputLog(2) << "each KMer uses " <<sizeof(KMer<K>)<<" bytes"<<std::endl;
     //OutputLog(2) << "each KMerContext uses " <<sizeof(KMerContext)<<" bytes"<<std::endl;
     //OutputLog(2) << "each KMerNodeFreq uses " <<sizeof(KMerNodeFreq)<<" bytes"<<std::endl;
@@ -1239,145 +1241,114 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
 
     std::vector<std::atomic_uint_fast8_t *> batch_status; //level->batch->status
 
-    std::vector<std::vector< std::shared_ptr<std::vector<KMerNodeFreq_s>>>> batch_lists; //level->batch-> pointer to batch
-    uint16_t levels=0;
-    for (auto elements=batches; elements>1; elements=(elements+1)/2){
-        batch_status.push_back((std::atomic_uint_fast8_t *) calloc(sizeof(std::atomic_uint_fast8_t),elements));
-        batch_lists.push_back(std::vector< std::shared_ptr<std::vector<KMerNodeFreq_s> > >());
+    std::vector<std::vector<std::shared_ptr<std::vector<KMerNodeFreq_s>>>> batch_lists; //level->batch-> pointer to batch
+    uint16_t levels = 0;
+    for (auto elements = batches; elements > 1; elements = (elements + 1) / 2) {
+        batch_status.push_back((std::atomic_uint_fast8_t *) calloc(sizeof(std::atomic_uint_fast8_t), elements));
+        batch_lists.push_back(std::vector<std::shared_ptr<std::vector<KMerNodeFreq_s> > >());
         batch_lists.back().resize(elements);
-        OutputLog(2)<<"level "<< levels<<" created with "<<elements<<" elements "<<std::endl;
+        OutputLog(4) << "level " << levels << " created with " << elements << " elements " << std::endl;
         ++levels;
     }
     std::atomic_uint_fast8_t level_count[levels]; //level->count
-    for (auto &l:level_count)l=0;
+    for (auto &l:level_count)l = 0;
 
-    #pragma omp parallel shared(rlen,reads)
+#pragma omp parallel shared(rlen,reads)
     {
-        //Batch consumer: in-place merging into main list, delete the batch vector, mark done
-        /*#pragma omp master
-        {
-            uint64_t done_batches=0;
-            while (done_batches<batches) {
-                for (auto batch = 0; batch < batches; ++batch) {
-                    if (batch_status[0][batch]==1){
-#pragma omp critical
-                        OutputLog(4)<<"merging batch "<<batch<<std::endl;
-                        inplace_count_merge(kmer_list,*batch_lists[0][batch]);
-
-#pragma omp critical
-                        OutputLog(4)<<"batch merged, main list has now "<<kmer_list.size()<<" kmers"<<std::endl;
-                        batch_lists[0][batch]->clear();
-                        batch_status[0][batch]++;
-                        OutputLog(4)<<"batch emptied and marked"<<std::endl;
-                        ++done_batches;
-                    }
-
-                }
-            }
-
-        }*/
-        #pragma omp for schedule(dynamic)
-        for (auto batch=0;batch<batches;++batch)
-        {
+#pragma omp for schedule(dynamic)
+        for (auto batch = 0; batch < batches; ++batch) {
+            //==== Part 1: actually counting ====
             KMerNodeFreq_s knfs;
-//#pragma omp critical
-//            OutputLog(4)<<"counting for batch "<<batch<<std::endl;
-            uint64_t from=batch*batch_size;
-            uint64_t read_count= (batch<batches-1) ? batch_size : rlen.size() - batch_size * (batches-1);
-            uint64_t to=from+read_count;
+            uint64_t from = gfrom + batch * batch_size;
+            uint64_t read_count = (batch < batches - 1) ? batch_size : (gto - gfrom) - batch_size * (batches - 1);
+            uint64_t to = from + read_count;
 
-            std::shared_ptr<std::vector<KMerNodeFreq_s>> local_kmer_list= std::make_shared<std::vector<KMerNodeFreq_s>>(read_count);
-            //do the counting, sorting, collapsing.
-            uint64_t total_good_lenght = std::accumulate(rlen.begin()+from,rlen.begin()+to,0);
+            std::shared_ptr<std::vector<KMerNodeFreq_s>> local_kmer_list = std::make_shared<std::vector<KMerNodeFreq_s>>(
+                    read_count);
+            uint64_t total_good_lenght = std::accumulate(rlen.begin() + from, rlen.begin() + to, 0);
             local_kmer_list->reserve(total_good_lenght);
             //Populate the kmer list
             for (auto readId = from; readId < to; ++readId) {
                 unsigned len = rlen[readId];
                 if (len > K) {
-                    auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
+                    auto beg = reads[readId].begin(), itr = beg + K, last = beg + (len - 1);
                     KMerNodeFreq kkk(beg);
                     kkk.hash();
                     kkk.kc = KMerContext::initialContext(*itr);
-                    kkk.count=1;
-                    (kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk).to_struct(knfs);
-                    local_kmer_list->push_back( knfs );
-                    while ( itr != last )
-                    { unsigned char pred = kkk.front();
-                        kkk.toSuccessor(*itr); ++itr;
-                        kkk.kc = KMerContext(pred,*itr);
-                        (kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk).to_struct(knfs);
-                        local_kmer_list->push_back( knfs );
+                    kkk.count = 1;
+                    (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(knfs);
+                    local_kmer_list->push_back(knfs);
+                    while (itr != last) {
+                        unsigned char pred = kkk.front();
+                        kkk.toSuccessor(*itr);
+                        ++itr;
+                        kkk.kc = KMerContext(pred, *itr);
+                        (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(knfs);
+                        local_kmer_list->push_back(knfs);
                     }
                     kkk.kc = KMerContext::finalContext(kkk.front());
                     kkk.toSuccessor(*last);
-                    (kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk).to_struct(knfs);
-                    local_kmer_list->push_back( knfs );
+                    (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(knfs);
+                    local_kmer_list->push_back(knfs);
                 }
             }
             std::sort(local_kmer_list->begin(), local_kmer_list->end());
             collapse_entries(*local_kmer_list);
-            //TODO: rather than "throwing the list for the master to merge", do the progressive merging
+
+            //==== Part 2: merging till no results of same level available ====
             //merge_level=0
-            uint16_t merge_level=0;
-            bool just_merged=true;
+            uint16_t merge_level = 0;
+            bool just_merged = true;
             //while (just merged)
             while (just_merged) {
                 //   insert the list into this merge level's queue
-                uint16_t slot=level_count[merge_level]++;
-                if (slot==batch_lists[merge_level].size()-1) {
+                uint16_t slot = level_count[merge_level]++;
+                if (slot == batch_lists[merge_level].size() - 1) {
 #pragma omp critical
-                    OutputLog(4)<<"level "<<merge_level<<" done."<<std::endl;
+                    OutputLog(4) << "level " << merge_level << " done." << std::endl;
                 }
                 //   if insertion number is odd or last batch:
-                if (merge_level<levels-1 and (slot%2==1 or slot==batch_lists[merge_level].size()-1) ) {
-                    //      if insertion number is odd:
-                    if (slot%2==1) {
-                        //          mix with the previous even number (using own list as base, this way we preserve locality)
-                        while (batch_status[merge_level][slot-1]!=1) usleep(10); //wait for the previous batch to be finished.
-//#pragma omp critical
-//                        OutputLog(2)<<"merging level "<<merge_level<<" slots "<<slot-1<<" and "<< slot<<std::endl;
-                        batch_status[merge_level][slot-1]=2;
-                        batch_status[merge_level][slot]=2;
-                        inplace_count_merge(local_kmer_list,batch_lists[merge_level][slot-1]);
-                        batch_lists[merge_level][slot-1].reset();
-                        //batch_lists[merge_level][slot].reset();
+                if (merge_level < levels - 1 and (slot % 2 == 1 or slot == batch_lists[merge_level].size() - 1)) {
+                    // mix with the previous even number (using own list as base, this way we preserve locality)
+                    if (slot % 2 == 1) {
+                        while (batch_status[merge_level][slot - 1] != 1)
+                            usleep(10); //wait for the previous batch to be finished.
+                        batch_status[merge_level][slot - 1] = 2;
+                        batch_status[merge_level][slot] = 2;
+                        inplace_count_merge(local_kmer_list, batch_lists[merge_level][slot - 1]);
+                        batch_lists[merge_level][slot - 1].reset();
                     }
                     //      increase level
                     ++merge_level;
-                    //      just_merged=true
-                    just_merged=true;
-                }
-                //   else:
-                else {
-                    //      just_merged=false
-//#pragma omp critical
-//                    OutputLog(2)<<"thread iteration finished, results on "<<merge_level<<" slot "<<slot<<std::endl;
-                    batch_lists[merge_level][slot]=local_kmer_list;
+                    just_merged = true;
+                } else {
+                    // no batch available for merging, next thread at this level will pick up
+                    batch_lists[merge_level][slot] = local_kmer_list;
                     local_kmer_list.reset();
-                    batch_status[merge_level][slot]=1;
-                    just_merged=false;
+                    batch_status[merge_level][slot] = 1;
+                    just_merged = false;
                 }
                 //IDEA: fixed partitioning can be used to keep 2*thread-number lists for longer.
             }
         }
 
     }
-    OutputLog(2)<<"Top level merge starting"<<std::endl;
-    inplace_count_merge(batch_lists.back()[0],batch_lists.back()[1]);
-    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmer_list=batch_lists.back()[0];
+
+
+    OutputLog(3) << "Top level merge starting" << std::endl;
+    inplace_count_merge(batch_lists.back()[0], batch_lists.back()[1]);
+    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmer_list = batch_lists.back()[0];
     batch_lists.back()[0].reset();
     batch_lists.back()[1].reset();
     for (auto &bs:batch_status) free(bs);
-    OutputLog(2)<<"Top level merge done"<<std::endl;
-    //free(batch_status[0]);
-    //free(batch_lists[0]);
+    OutputLog(3) << "Top level merge done" << std::endl;
+    return kmer_list;
+}
 
+void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen,
+                   uint64_t batch_size, unsigned minFreq, std::string workdir="") {
 
-    //sort
-    //#pragma omp critical
-    //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", sorting/collapsing "<<kmer_list.size()<<" kmers ..."
-    //          << std::endl;
-
+    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmer_list=kmerCountOMP(reads, rlen, 0, rlen.size(), batch_size);
 
     if (NULL != dict) { //merge sort and return that
         OutputLog(2) << kmer_list->size() << " kmers counted, filtering..." << std::endl;
@@ -1409,60 +1380,21 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
 }
 
 
+
 void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const& rlen, unsigned char disk_batches, uint64_t batch_size, unsigned minFreq, std::string workdir="", std::string tmpdir=""){
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
+
     OutputLog(2) << "disk-based kmer counting with "<<(int) disk_batches<<" batches"<<std::endl;
     uint64_t total_kmers_in_batches=0;
     for (auto batch=0;batch < disk_batches;batch++) {
-        uint64_t nkmers=0;
-        //#pragma omp critical
-        //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", splitting..." << std::endl;
         uint64_t to = (batch+1) * reads.size()/disk_batches;
         uint64_t from= batch * reads.size()/disk_batches;
-        uint64_t mid_point = from + (to - from) / 2;
-        std::vector<KMerNodeFreq> entries1, entries2; //TODO: need to not copy but move the reference.
-#pragma omp task shared(reads,rlen,entries1)
-        { entries1 = createDictOMPRecursive(NULL, reads, rlen, from, mid_point, minFreq, batch_size);}
-#pragma omp task shared(reads,rlen,entries2)
-        { entries2 = createDictOMPRecursive(NULL, reads, rlen, mid_point, to, minFreq, batch_size); }
-#pragma omp taskwait
-        auto end1=entries1.end(),end2=entries2.end();
-        auto itr1=entries1.begin(),itr2=entries2.begin();
+        auto kmer_list = kmerCountOMP(reads,rlen,from,to);
         std::ofstream batch_file(tmpdir+"/kmer_count_batch_"+std::to_string((int)batch),std::ios::out | std::ios::trunc | std::ios::binary);
-        KMerNodeFreq knf;
-        while (itr1<end1 and itr2<end2){
-            if (*itr1==*itr2){
-                knf=*itr1;
-                combine_Entries(knf,*itr2);
-                batch_file.write((const char *)&knf,sizeof(knf));
-                ++itr1;
-                ++itr2;
-                ++nkmers;
-            } else if (*itr1<*itr2){
-                batch_file.write((const char *)&(*itr1),sizeof(knf));
-                ++itr1;
-                ++nkmers;
-            } else {
-                batch_file.write((const char *)&(*itr2),sizeof(knf));
-                ++itr2;
-                ++nkmers;
-            }
-        }
-        while (itr1<end1) {
-            batch_file.write((const char *)&(*itr1++),sizeof(knf));
-            ++nkmers;
-        }
-        while (itr2<end2) {
-            batch_file.write((const char *)&(*itr2++),sizeof(knf));
-            ++nkmers;
-        }
-        entries1.clear();
-        entries1.shrink_to_fit();
-        entries2.clear();
-        entries2.shrink_to_fit();
+        batch_file.write((const char *)kmer_list->data(),sizeof(KMerNodeFreq_s)*kmer_list->size());
         batch_file.close();
-        OutputLog(2) << "batch "<<(int) batch<<" done and dumped with "<<nkmers<< " kmers" <<std::endl;
-        total_kmers_in_batches+=nkmers;
+        OutputLog(2) << "batch "<<(int) batch<<" done and dumped with "<<kmer_list->size()<< " kmers" <<std::endl;
+        total_kmers_in_batches+=kmer_list->size();
     }
 
     //now a multi-merge sort between all batch files into the Dict
@@ -1470,16 +1402,16 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
     //open all batch files
     std::ifstream dbf[disk_batches];
     bool dbf_active[disk_batches];
-    KMerNodeFreq next_knf_from_dbf[disk_batches];
+    KMerNodeFreq_s next_knf_from_dbf[disk_batches];
     uint finished_files=0;
     for (auto i=0;i<disk_batches;i++){
         dbf[i].open(tmpdir+"/kmer_count_batch_"+std::to_string((int)i),std::ios::in | std::ios::binary);
-        dbf[i].read((char *)&next_knf_from_dbf[i],sizeof(KMerNodeFreq));
+        dbf[i].read((char *)&next_knf_from_dbf[i],sizeof(KMerNodeFreq_s));
         dbf_active[i]=true;
     }
     //set all finished flags to false
     //TODO: stupid minimum search
-    KMerNodeFreq current_kmer;
+    KMerNodeFreq_s current_kmer;
     //while finished_files<batches
     bool first=true;
     uint min=0;
@@ -1492,7 +1424,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
     uint64_t used = 0,not_used=0;
     uint64_t hist[256];
     for (auto &h:hist) h=0;
-    std::vector<KMerNodeFreq> kmerlist;
+    std::vector<KMerNodeFreq_s> kmerlist;
 
     while (finished_files<disk_batches) {
         //find minimum of the non-finished files
@@ -1512,15 +1444,16 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
             else not_used++;
             current_kmer=next_knf_from_dbf[min];
         } else {
-            combine_Entries(current_kmer,next_knf_from_dbf[min]);
+            current_kmer.combine(next_knf_from_dbf[min]);
         }
         //advance min file
-        dbf[min].read((char *)&next_knf_from_dbf[min],sizeof(KMerNodeFreq));
+        dbf[min].read((char *)&next_knf_from_dbf[min],sizeof(KMerNodeFreq_s));
         if ( dbf[min].eof() ) {
             dbf_active[min]=false;
             ++finished_files;
         }
     }
+
     ++hist[std::min(100,(int)current_kmer.count)];
     if (current_kmer.count>=minFreq) {
         kmerlist.push_back(current_kmer);
@@ -1531,8 +1464,13 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
         dbf[i].close();
         std::remove((tmpdir + "/kmer_count_batch_" +std::to_string((int)i)).c_str());
     }
+
     (*dict)=new BRQ_Dict(kmerlist.size());
-    for (auto &knf: kmerlist) (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
+    for (auto &knfs: kmerlist) {
+        KMerNodeFreq knf(knfs);
+        (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
+    }
+
     OutputLog(2) << used << " / " << used+not_used << " kmers with Freq >= " << minFreq << std::endl;
     if (""!=workdir) {
         std::ofstream kff(workdir + "/small_K.freqs");
@@ -1551,26 +1489,16 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
                       unsigned char disk_batches, uint64_t count_batch_size )
 {
     OutputLog(2) << "creating kmers from reads..." << std::endl;
-    //BRQ_Dict* pDict = createDictOMP(reads,quals,minQual,minFreq);
     BRQ_Dict * pDict;
-    /*#pragma omp parallel shared(pDict,reads,rlen)
-    {
-        #pragma omp single
-        {
+    if (1 >= disk_batches) {
+        createDictOMP(&pDict, reads, rlen, count_batch_size, minFreq, workdir);
+    } else {
+        if ("" == tmpdir) tmpdir = workdir;
+        createDictOMPDiskBased(&pDict, reads, rlen, disk_batches, 1000000, minFreq, workdir, tmpdir);
+
+    }
 
 
-            if (1 >= disk_batches) {
-                if (mem_batches > 1)
-                    createDictOMPMemBased(&pDict, reads, rlen, mem_batches, 1000000, minFreq, workdir);
-                else*/
-                    createDictOMP(&pDict, reads, rlen, count_batch_size, minFreq, workdir);
-            /*} else {
-                if ("" == tmpdir) tmpdir = workdir;
-                createDictOMPDiskBased(&pDict, reads, rlen, disk_batches, 1000000, minFreq, workdir, tmpdir);
-
-            }
-        }
-    }*/
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
