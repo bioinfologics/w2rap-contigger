@@ -207,13 +207,13 @@ add_library(specific_w2rap-contigger OBJECT
         src/BasevectorTools.cc
         src/CompressedSequence.cc
         src/FastaConverter.cc
-        src/FastaFileset.cc
-        src/FastaFilestream.cc
-        src/FastaFilestreamPreview.cc
+        #src/FastaFileset.cc
+        #src/FastaFilestream.cc
+        #src/FastaFilestreamPreview.cc
         src/FastaNameParser.cc
         src/FastaVerifier.cc
         src/Misc.cc
-        src/bam/ReadBAM.cc
+        #src/bam/ReadBAM.cc
         src/pairwise_aligners/SmithWatBanded.cc
         src/paths/MuxGraph.cc
         src/paths/OffsetTracker.cc

@@ -137,7 +137,7 @@ class long_logging_control {
           return p;    }
 
 };
-
+/*
 // stores reads/quals/pairs and load from disk only if necessarily
 class LongProtoReadsQualsPairs{
     //gut of the lazy load mechanism
@@ -223,9 +223,9 @@ private:
     path_or_data<QualVecVec> quals_;
     path_or_data<PairsManager>  pairs_;
 };
-
+*/
 // deals with Tmp directory's file, intended to replace all "TMP" hard coded stuff
-class LongProtoTmpDirManager{
+/*class LongProtoTmpDirManager{
 public:
     typedef LongProtoReadsQualsPairs unit_t;
     typedef std::unique_ptr<unit_t> entry_t;
@@ -266,7 +266,7 @@ private:
     mutable dictionary_t dict_;
     const String tmp_dir_;
 };
-
+*/
 template<int K> void BuildCorrectedReads( const vecbasevector& reads,
      const IAndOsVec& F, const vec<int>& rid,
      VecEFasta& corrected, vec<int>& cid, const ConsensusScoreModel& error_model,

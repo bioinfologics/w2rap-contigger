@@ -166,7 +166,8 @@ FastaFilesetTemplate<vecT,dataT,streamT>::Parse()
 
   // arbitrary overly-large constant :)
   const longlong averageNameSize = 50;
-  m_data.Reserve( this->EstimateVecSize( totalSeqData ), totalSequences );
+  //m_data.Reserve( this->EstimateVecSize( totalSeqData ), totalSequences );
+  m_data.reserve( totalSequences );
   m_names.Reserve( totalSequences * averageNameSize, totalSequences );
 
   for ( unsigned int ii = 0; ii < filestreams.size(); ++ii )
@@ -207,7 +208,7 @@ template bool FastaFilesetTemplate<vecT,dataT,streamT>::GetByName( const String&
 template int FastaFilesetTemplate<vecT,dataT,streamT>::Parse();
 
 INSTANTIATE( veccompseq,CompressedSequence,FastaSequenceFilestream )
-INSTANTIATE( vecqualvector,qualvector,FastaQualityFilestream )
+INSTANTIATE( QualVecVec,QualVec,FastaQualityFilestream )
 
 
 
@@ -364,7 +365,7 @@ void FastFetchReads(vecbasevector & b, vecString * n, const String &file) {
   }
 }
 
-
+/*
 void FastFetchQuals(QualVecVec & q, vecString * n, const String &file) {
   vec<String> fnames;
   fnames.push_back(file);
@@ -387,3 +388,4 @@ void FastFetchQuals(QualVecVec & q, vecString * n, const String &file) {
     if (n) n->push_back_reserve(name);
   }
 }
+*/

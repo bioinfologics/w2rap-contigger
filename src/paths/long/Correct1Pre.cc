@@ -102,7 +102,7 @@ void Correct1Pre( const int K,
                id1x < Min( id1a + batch, (int64_t) use.size( ) ); id1x++ )
           {    int64_t id1 = use[id1x];
                BaseVec& currentBaseVec = bases_loc[id1x];
-               UCharVec& currentCharVec = quals_loc[id1x];
+               QualVec& currentCharVec = quals_loc[id1x];
                currentBaseVec = bases[id1];
                currentCharVec = quals[id1];
 

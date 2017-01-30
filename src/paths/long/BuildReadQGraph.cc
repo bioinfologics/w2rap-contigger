@@ -14,7 +14,7 @@
 
 #include "paths/long/BuildReadQGraph.h"
 #include "Basevector.h"
-#include "FastaFileset.h"
+//#include "FastaFileset.h"
 #include "Intvector.h"
 #include "IteratorRange.h"
 #include "MapReduceEngine.h"
@@ -1536,7 +1536,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
         OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         OutputLog(2) << "Loading quals..." << std::endl;
-        quals.ReadAll(workdir + "/frag_reads_orig.qualp");
+        load_quals(quals,workdir + "/frag_reads_orig.qualp");
         OutputLog(2) << "pathing reads into graph..." << std::endl;
         pPaths->clear();
         pPaths->resize(reads.size());

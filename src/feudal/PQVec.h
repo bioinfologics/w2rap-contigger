@@ -23,7 +23,10 @@
 class PQVec
 {
 public:
-    explicit PQVec( QualVec const& qv ) {
+    PQVec(){
+        mSize=0;
+    }
+     PQVec( QualVec const& qv ) {
         //Encode from qv
         mSize=0;
         if (0==qv.size()) return;
@@ -70,12 +73,9 @@ public:
         unpack(*qv);
     }
 
-    //operator QualVec() const { QualVec qv; unpack(&qv); return qv; }
-
-    // all the rest of this crap is boilerplate
+    operator QualVec() const { QualVec qv; unpack(&qv); return qv; }
 
 
-private:
     uint8_t * mData;
     uint16_t mSize;
 };
@@ -84,6 +84,18 @@ private:
 //using PQVec = PQVecA<>;
 using VecPQVec = std::vector<PQVec>;
 
+template <class Itr> // Itr is a random-access iterator over const qvec's
+void convertAppendParallel( Itr beg, Itr end, VecPQVec& vpqv )
+{
+    //XXX: TODO: not parallel at all!
+    vpqv.reserve(vpqv.size()+(end-beg));
+    for (auto it=beg;it!=end;++it) {
+        vpqv.push_back(PQVec(*it));
+    }
 
+}
+
+void save_quals(VecPQVec const &pqv, std::string filename);
+void load_quals(VecPQVec &pqv, std::string filename);
 
 #endif /* PQVEC_H_ */

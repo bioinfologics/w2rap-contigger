@@ -8,7 +8,6 @@
 
 #include "Basevector.h"
 #include "Qualvector.h"
-#include "feudal/QualNibbleVec.h"
 #include "Bitvector.h"
 #include "FeudalMimic.h"
 #include "math/Functions.h"
@@ -53,17 +52,17 @@ String FECTag(String S = "FEC") { return Date() + " (" + S + "): "; }
 // to 0.
   
 
-template <class QVV_t>
+
 void pre_correct_parallel(const PC_Params  & pcp, 
                           const unsigned     K, 
-                          BaseVecVec       * bases_p, 
-                          QVV_t            * quals_p, 
+                          BaseVecVec       * bases_p,
+                          QualVecVec        * quals_p,
                           KmerSpectrum     * kspec_p, 
                           const int          VERBOSITY,
                           const unsigned     NUM_THREADS, 
                           const size_t       mem_mean_ceil) 
 {
-  typedef typename QVV_t::value_type QV_t;
+  typedef typename QualVecVec::value_type QV_t;
 
   if ( VERBOSITY >= 0 )
        std::cout << FECTag() << "Duplicating 'bases' into 'bases_new'." << std::endl;
@@ -74,7 +73,7 @@ void pre_correct_parallel(const PC_Params  & pcp,
 
   ForceAssertLe(K, 29u);
   if (K <= 29) {
-    PreCorrector<Kmer29H, QVV_t> pre_corrector(pcp, K, *bases_p, *quals_p, & bases_new, kspec_p, NUM_THREADS);
+    PreCorrector<Kmer29H, QualVecVec> pre_corrector(pcp, K, *bases_p, *quals_p, & bases_new, kspec_p, NUM_THREADS);
     naif_kmerize(&pre_corrector, NUM_THREADS, Max(0,VERBOSITY), mem_mean_ceil);
   }
 
@@ -127,7 +126,7 @@ void pre_correct_parallel(const PC_Params  & pcp,
       if (!skip[i]) {
         size_t ib = ibs_corr[i];
         bv.set(ib, bv_new[ib]);
-	    qv.set(ib, 0);
+	    qv[ib]= 0;
         n_corr_applied++;
       }
 
@@ -169,56 +168,19 @@ void pre_correct_parallel(const PC_Params  & pcp,
 }
 
 
-
-// Instantiate QualVec and QualNibbleVec
-
-template void pre_correct_parallel(const PC_Params  & pcp, 
-                                   const unsigned     K_PC, 
-                                   BaseVecVec       * bases_p, 
-                                   QualVecVec       * quals_p, 
-                                   KmerSpectrum     * kspec_p, 
-                                   const int          VERBOSITY,
-                                   const unsigned     NUM_THREADS, 
-                                   const size_t       mem_mean_ceil);
-
-template void pre_correct_parallel(const PC_Params  & pcp, 
-                                   const unsigned     K_PC, 
-                                   BaseVecVec       * bases_p, 
-                                   QualNibbleVecVec * quals_p, 
-                                   KmerSpectrum     * kspec_p, 
-                                   const int          VERBOSITY,
-                                   const unsigned     NUM_THREADS, 
-                                   const size_t       mem_mean_ceil);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ------ Capping quality scores in parallel usiong worklist
 
 
-template<class QVV_t>
 class QualCapperProc
 {
-  QVV_t            * _p_quals;
+  QualVecVec            * _p_quals;
   const size_t       _QUAL_CEIL_RADIUS;
   const size_t       _n_threads;
 
-  typedef typename QVV_t::value_type QV_t;
+  typedef typename QualVecVec::value_type QV_t;
 
 public:
-  QualCapperProc(QVV_t         * p_quals, 
+  QualCapperProc(QualVecVec         * p_quals,
                  const size_t    QUAL_CEIL_RADIUS,
                  const size_t    n_threads)
     : _p_quals(p_quals),
@@ -248,20 +210,19 @@ public:
         qv_new[i_q] = q_min;
       }
       for (size_t i_q = 0; i_q < n_q; i_q++)
-        qv.set(i_q, qv_new[i_q]);
+        qv[i_q]=qv_new[i_q];
     }
   }
 };
 
 
 
-template <class QVV_t>
-void cap_quality_scores(QVV_t        * p_quals,
+void cap_quality_scores(QualVecVec        * p_quals,
 			const size_t   QUAL_CEIL_RADIUS,
                         const size_t   NUM_THREADS)
 			
 {
-  QualCapperProc<QVV_t> capper(p_quals, QUAL_CEIL_RADIUS, NUM_THREADS);
+  QualCapperProc capper(p_quals, QUAL_CEIL_RADIUS, NUM_THREADS);
   parallelFor(0ul,NUM_THREADS,capper,NUM_THREADS);
 }
 
@@ -340,11 +301,10 @@ public:
 
 // ---- Apply all the corrections and compute correction statistics
 
-template<class QVV_t>
 void apply_corrections(const BaseVecVec & bases_new, 
                        const VecBitVec  & base_locked,
                        BaseVecVec       * bases_p, 
-                       QVV_t            * quals_p,
+                       QualVecVec       * quals_p,
                        EF_Stats         * ef_stats_p)
 {
   const size_t n_reads = bases_p->size();
@@ -373,7 +333,7 @@ void apply_corrections(const BaseVecVec & bases_new,
           // process only base locations that are NOT base_locked.
 
           (*bases_p)[i_read].set(i_base, bases_new[i_read][i_base]);
-          (*quals_p)[i_read].set(i_base, 0);
+          (*quals_p)[i_read][i_base]=0;
           ef_stats_p->n_corrections++;
           ef_stats_p->n_corrections_pos[i_base]++;
           ef_stats_p->n_corrections_quals[q]++;
@@ -497,24 +457,24 @@ void find_errors_parallel(const EF_Params  & efp,
 
 // ---- Instantiations
 
-template void find_errors_parallel(const EF_Params  & efp, 
-                                   const size_t       K, 
-                                   BaseVecVec       * bases_p, 
-                                   QualVecVec       * quals_p, 
+/*template void find_errors_parallel(const EF_Params  & efp,
+                                   const size_t       K,
+                                   BaseVecVec       * bases_p,
+                                   QualVecVec       * quals_p,
                                    const size_t       NUM_CYCLES,
                                    const unsigned     VERBOSITY,
-                                   const unsigned     NUM_THREADS, 
+                                   const unsigned     NUM_THREADS,
                                    const size_t       mem_mean_ceil);
 
-template void find_errors_parallel(const EF_Params  & efp, 
-                                   const size_t       K, 
-                                   BaseVecVec       * bases_p, 
-                                   QualNibbleVecVec * quals_p, 
+template void find_errors_parallel(const EF_Params  & efp,
+                                   const size_t       K,
+                                   BaseVecVec       * bases_p,
+                                   QualNibbleVecVec * quals_p,
                                    const size_t       NUM_CYCLES,
                                    const unsigned     VERBOSITY,
-                                   const unsigned     NUM_THREADS, 
+                                   const unsigned     NUM_THREADS,
                                    const size_t       mem_mean_ceil);
-
+*/
 
 
 
@@ -545,14 +505,6 @@ template void find_errors(const EF_Params  & efp,
                           const size_t       K, 
                           BaseVecVec       * bases_p, 
                           QualVecVec       * quals_p, 
-                          const size_t       NUM_CYCLES,
-                          const size_t       VERBOSITY);
-
-
-template void find_errors(const EF_Params  & efp, 
-                          const size_t       K, 
-                          BaseVecVec       * bases_p, 
-                          QualNibbleVecVec * quals_p, 
                           const size_t       NUM_CYCLES,
                           const size_t       VERBOSITY);
 

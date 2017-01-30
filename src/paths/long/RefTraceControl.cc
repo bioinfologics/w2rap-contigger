@@ -12,7 +12,7 @@
 void RefTraceControl::ReadySampleLookup(){ //ready the pair manager
     if (read_head != "" && reads.empty()) {
         reads.ReadAll(read_head + ".fastb");
-        quals.ReadAll(read_head + ".qualb");
+        load_quals(quals,read_head + ".qualb");
         pm.Read(read_head + ".pairs");
         pm.makeCache();
         pm.printLibraryStats(std::cout);

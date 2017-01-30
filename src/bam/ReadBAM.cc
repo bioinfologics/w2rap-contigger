@@ -429,7 +429,7 @@ void readAligns( std::istream& is, const String& bamFile,
 
      // VecPQVec qualsbuf_c;
      const int qbmax = 10000000;
-     vec<QualVec> qualsbuf;
+     QualVecVec qualsbuf;
      for ( int i = 0; i < qbmax; i++ )
           qualsbuf.emplace_back(alloc);
      int qbcount = 0;
@@ -558,7 +558,9 @@ void readAligns( std::istream& is, const String& bamFile,
 
      if ( alnHd.mFlags & BAMAlignHead::FLAG_REVERSED )
      {    seq.ReverseComplement( );
-          quals.ReverseMe( );    }
+          //quals.ReverseMe( );
+          std::reverse(quals.begin(),quals.end());
+     }
 
      // Convert a batch of quality scores.
 
@@ -642,7 +644,8 @@ template <class T> void movePairs( size_t nReads, vecbasevector& reads_b,
      for ( int64_t i = 0; i < ids.jsize( ); i++ )
      {    pVPQV->push_back( reads_q[ readIndices[ ids[i] ] ] );
           pVPQV->push_back( reads_q[ readIndices[ ids[i] + 1 ] ] );    }
-     Destroy(reads_q);    }
+          reads_q.clear();
+          reads_q.shrink_to_fit();}
 
 } // end of anonymous namespace
 

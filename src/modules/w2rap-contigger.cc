@@ -593,7 +593,7 @@ int main(const int argc, const char * argv[]) {
             }
             if (quals.size()==0) {
                 OutputLog(2) << "Loading quals..." << std::endl;
-                quals.ReadAll(out_dir + "/frag_reads_orig.qualp");
+                load_quals(quals, out_dir + "/frag_reads_orig.qualp");
             }
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }

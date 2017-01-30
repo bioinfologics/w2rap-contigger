@@ -26,18 +26,6 @@
 #include "paths/long/large/ExtractReads.h"
 #include "paths/long/large/ReadNameLookup.h"
 
-class rs_meta { // read set meta info
-     public:
-     String type;
-     String sample;
-     String lib;
-     double frac;
-     rs_meta( ) : type("frag"), sample("C"), lib("1"), frac(1) { }
-     friend std::ostream& operator<<( std::ostream& out, const rs_meta& m )
-     {    return out << "type=" << m.type << ",sample=" << m.sample << ",lib=" 
-               << m.lib << ",frac=" << m.frac;    }
-};
-
 void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals )
 {
      vec<String> subsam_names={"C"};
@@ -305,31 +293,23 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
 
                // Parse bam files.
 
-               if (fn.Contains(".bam", -1)) {
-                    bool const UNIQUIFY_NAMES = true;
-                    vecString *pxnames = 0;
-                    BAMReader bamReader(False /*USE_PF_ONLY*/, UNIQUIFY_NAMES,
-                                        infiles_meta[g].frac, long(-1/*READS_TO_USE*/));
-                    bamReader.readBAM(
-                            fn, &xbases, &xquals, pxnames);
-               }
+               //if (fn.Contains(".bam", -1)) {
+               //     bool const UNIQUIFY_NAMES = true;
+               //     vecString *pxnames = 0;
+               //     BAMReader bamReader(False /*USE_PF_ONLY*/, UNIQUIFY_NAMES,
+               //                         infiles_meta[g].frac, long(-1/*READS_TO_USE*/));
+               //     bamReader.readBAM(
+               //             fn, &xbases, &xquals, pxnames);
+               //}
 
                     // Parse fastb/qualb/qualp files.
 
-               else if (fn.Contains(".fastb", -1)) {
-                    String fn2b = fn.RevBefore(".fastb") + ".qualb";
+               //else
+               if (fn.Contains(".fastb", -1)) {
                     String fn2p = fn.RevBefore(".fastb") + ".qualp";
-                    if (IsRegularFile(fn2b)) {
+                    if (IsRegularFile(fn2p)) {
                          xbases.ReadAll(fn, True);
-                         QualVecVec q;
-                         q.ReadAll(fn2b);
-                         convertAppendParallel(q.begin(), q.end(), xquals);
-                         infiles[g][j]
-                                 = fn.Before(".fastb") + ".{fastb,qualb}";
-                    }
-                    else if (IsRegularFile(fn2p)) {
-                         xbases.ReadAll(fn, True);
-                         xquals.ReadAll(fn2p, True);
+                         load_quals(xquals,fn2p);
                          infiles[g][j] = fn.Before(".fastb")
                                          + ".{fastb,qualp}";
                     }
@@ -378,7 +358,7 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                     // Buffer for quality score compression in batches.
 
                     const int qbmax = 10000000;
-                    vec<QualVec> qualsbuf;
+                    QualVecVec qualsbuf;
                     MempoolOwner<char> alloc;
                     for (int i = 0; i < qbmax; i++)
                          qualsbuf.emplace_back(alloc);
