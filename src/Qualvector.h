@@ -24,35 +24,30 @@
 #include <ostream>
 
 /// Logical type for quality scores
-typedef unsigned char qual_t;
+typedef uint8_t qual_t;
 
 /// Vector of quality scores, for example representing the quality of each base
 /// in one read.
 //TODO: BJ modify the vector definition
-typedef UCharVec QualVec;
-typedef QualVec qualvector;
-typedef QualVec qvec;
+typedef std::vector<qual_t> QualVec;
 
 
 /// Vector of vectors of quality scores, for example representing the quality
 /// of each base in each read in a set of reads.
 //TODO: BJ modify the vector definition
-typedef VecUCharVec QualVecVec;
-typedef QualVecVec vecqualvector;
-typedef QualVecVec vecqvec;
-
+typedef std::vector<std::vector<qual_t>> QualVecVec;
 
 ///Produces fasta format quals, mirrors basevector::Print()
-void Print( std::ostream &out, const qualvector &q, const String &name,
+void Print( std::ostream &out, const QualVec &q, const String &name,
             const int scores_per_line = 25 );
 
 /// Returns two strings representing the quality scores stacked vertically
-std::pair <String, String> Stacked(const qualvector& quals) ;
+std::pair <String, String> Stacked(const QualVec& quals) ;
 
 /// Writes two strings representing the quality scores stacked vertically
 /// e.g. 43,31,20,2,2,2 becomes: 432   
 ///                              310222
-void PrintStacked(std::ostream &out , const qualvector& quals) ;
+void PrintStacked(std::ostream &out , const QualVec& quals) ;
 
 
 #endif

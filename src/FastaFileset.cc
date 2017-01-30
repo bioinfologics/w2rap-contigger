@@ -135,9 +135,9 @@ FastaFilesetTemplate<veccompseq,CompressedSequence,FastaSequenceFilestream>::Est
 
 template<>
 longlong
-FastaFilesetTemplate<vecqualvector,qualvector,FastaQualityFilestream>::EstimateVecSize( longlong totalSeqSize )
+FastaFilesetTemplate<QualVecVec,QualVec,FastaQualityFilestream>::EstimateVecSize( longlong totalSeqSize )
 {
-  // average of 2.5 chars per value, 1 value per unit of storage in vecqualvector
+  // average of 2.5 chars per value, 1 value per unit of storage in QualVecVec
   return totalSeqSize*2/5;
 }
 
@@ -224,7 +224,7 @@ FastaPairedFileset::FastaPairedFileset( const vec<String>& sequenceFilenames,
 
 
 bool
-FastaPairedFileset::GetNext( String &name, CompressedSequence &bases, qualvector &quals )
+FastaPairedFileset::GetNext( String &name, CompressedSequence &bases, QualVec &quals )
 {
   // Tie basesName to name, so we don't need to copy it if we're successful.
   String &basesName = name;
@@ -250,7 +250,7 @@ FastaPairedFileset::GetNext( String &name, CompressedSequence &bases, qualvector
 
 
 bool
-FastaPairedFileset::GetByName( const String &name, CompressedSequence &bases, qualvector &quals )
+FastaPairedFileset::GetByName( const String &name, CompressedSequence &bases, QualVec &quals )
 {
   if ( ! m_isParsed ) this->Parse();
 
@@ -365,7 +365,7 @@ void FastFetchReads(vecbasevector & b, vecString * n, const String &file) {
 }
 
 
-void FastFetchQuals(vecqualvector & q, vecString * n, const String &file) {
+void FastFetchQuals(QualVecVec & q, vecString * n, const String &file) {
   vec<String> fnames;
   fnames.push_back(file);
   FullNameParser name_parser;
@@ -378,7 +378,7 @@ void FastFetchQuals(vecqualvector & q, vecString * n, const String &file) {
 
   // now put the data into q and n.
   String name;
-  qualvector tempq;
+  QualVec tempq;
   filestream.Reset();
   const int S = filestream.GetSize();
   for (int i=0; i != S; ++i) {

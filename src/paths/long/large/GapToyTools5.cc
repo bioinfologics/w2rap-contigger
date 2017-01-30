@@ -135,7 +135,7 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
           const int K = hb.K( );
           vec< std::pair<int,int> > qsum( ps.size( ), std::make_pair(0,0) );
           const basevector& r = bases[id];
-          qvec qv;
+          QualVec qv;
           quals[id].unpack(&qv);
           for ( int i = 0; i < ps.isize( ); i++ )
           {    const ReadPath& q = ps[i];
@@ -713,7 +713,7 @@ private:
     VecPQVec const& mQuals;
     ReadPathVec& mPaths;
     vec<Loc> mLocs;
-    qvec mQVec;
+    QualVec mQVec;
 };
 
 }

@@ -202,14 +202,14 @@ class LongProtoReadsQualsPairs{
 public:
     explicit LongProtoReadsQualsPairs(const String& head)
         :reads_(head+".fastb") ,quals_(head+".qualb") ,pairs_(head+".pairs") {}
-    LongProtoReadsQualsPairs(const String& head,vecbasevector const&a,vecqualvector const&b,PairsManager const&c)
+    LongProtoReadsQualsPairs(const String& head,vecbasevector const&a,QualVecVec const&b,PairsManager const&c)
         :reads_(head+".fastb",a) ,quals_(head+".qualb",b) ,pairs_(head+".pairs",c) {}
     vecbasevector const& reads(bool bResetFile=false)const{return reads_.get(bResetFile);}
-    vecqualvector const& quals(bool bResetFile=false)const{return quals_.get(bResetFile);}
+    QualVecVec const& quals(bool bResetFile=false)const{return quals_.get(bResetFile);}
     PairsManager  const& pairs(bool bResetFile=false)const{return pairs_.get(bResetFile);}
 
     vecbasevector& reads(bool bResetFile=false){return reads_.get(bResetFile);}
-    vecqualvector& quals(bool bResetFile=false){return quals_.get(bResetFile);}
+    QualVecVec& quals(bool bResetFile=false){return quals_.get(bResetFile);}
     PairsManager&  pairs(bool bResetFile=false){return pairs_.get(bResetFile);}
     void write(){ reads_.write(); quals_.write(); pairs_.write(); }
     void clearMem()const{
@@ -220,7 +220,7 @@ public:
     bool inMem()const{return reads_.inMem() || quals_.inMem() || pairs_.inMem();};
 private:
     path_or_data<vecbasevector> reads_;
-    path_or_data<vecqualvector> quals_;
+    path_or_data<QualVecVec> quals_;
     path_or_data<PairsManager>  pairs_;
 };
 

@@ -17,14 +17,14 @@
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
 
-void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done );
+void CapQualityScores( QualVecVec& cquals, const vec<Bool>& done );
 
 
 // zero all quality scores associated with corrections (for reads already in memory)
 void ZeroCorrectedQuals( vecbasevector const& readsFile, vecbvec const& creads,
-                            vecqvec* pQuals );
+                            QualVecVec* pQuals );
 
-void CorrectionSuite( vecbasevector& gbases, vecqualvector& gquals, PairsManager& gpairs,
+void CorrectionSuite( vecbasevector& gbases, QualVecVec& gquals, PairsManager& gpairs,
      const long_heuristics& heur,
      //const long_logging& logc, const long_logging_control& log_control,
      vecbasevector& creads, VecEFasta& corrected, vec<int>& cid, 

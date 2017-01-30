@@ -74,13 +74,13 @@ public:
     qual_t getLeftOverPenalty() const { return mLeftOverPenalty; }
 
     void attemptLeftRightExtension( ReadPath& path,
-                                    basevector const& bases, qualvector const& quals );
+                                    basevector const& bases, QualVec const& quals );
 
     bool attemptLeftwardExtension( ReadPath& path,
-                                    basevector const& bases, qualvector const& quals );
+                                    basevector const& bases, QualVec const& quals );
 
     bool attemptRightwardExtension( ReadPath& path,
-                                    basevector const& bases, qualvector const& quals );
+                                    basevector const& bases, QualVec const& quals );
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -88,20 +88,20 @@ public:
     // old compatibility interfaces use an anonymous object
     //////////////////////////////////////////////////////////////////////////
     static void attemptLeftRightExtension(  ReadPath& path, basevector const& bases,
-                                            qualvector const& quals, HyperBasevector const& hbv,
+                                            QualVec const& quals, HyperBasevector const& hbv,
                                             vec<int> const& to_left, vec<int> const& to_right,
                                             const bool debug = false ) {
         ExtendReadPath( hbv, &to_left, &to_right, debug).attemptLeftRightExtension(path,bases,quals);
     }
 
     static bool attemptLeftwardExtension(  ReadPath& path, basevector const& bases,
-                                           qualvector const& quals, HyperBasevector const& hbv,
+                                           QualVec const& quals, HyperBasevector const& hbv,
                                            vec<int> const& to_left, const bool debug = false ) {
         return ExtendReadPath( hbv, &to_left, nullptr, debug).attemptLeftwardExtension(path,bases,quals);
     }
   
     static bool attemptRightwardExtension( ReadPath& path, basevector const& bases,
-                                           qualvector const& quals, HyperBasevector const& hbv,
+                                           QualVec const& quals, HyperBasevector const& hbv,
                                            vec<int> const& to_right, const bool debug = false ) {
         return ExtendReadPath( hbv, nullptr, &to_right, debug).attemptRightwardExtension(path,bases,quals);
     }

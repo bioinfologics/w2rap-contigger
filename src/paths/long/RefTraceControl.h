@@ -50,7 +50,7 @@ public:
     int getSampleID(size_t read_ID)const ;      //get sample index from a read id
     String getSampleName(size_t read_ID)const ; //get sample name from a read id
     const vecbasevector& Reads() const { return reads; }
-    const vecqualvector& Quals() const { return quals; }
+    const QualVecVec& Quals() const { return quals; }
     const PairsManager& GetPM() const { return pm; }
 
 private:
@@ -67,7 +67,7 @@ private:
     bool bPairsManagerInitialized;
     PairsManager pm;
     vecbasevector reads;
-    vecqualvector quals;
+    QualVecVec quals;
 };
 
 #endif

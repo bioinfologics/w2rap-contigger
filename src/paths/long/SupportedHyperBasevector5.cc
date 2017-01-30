@@ -24,7 +24,7 @@ namespace
 {
 
     typedef std::unordered_map<int,int> exact_match_spec_t;
-    void ExactSupports( const basevector& b, const qualvector& q
+    void ExactSupports( const basevector& b, const QualVec& q
                       , const read_place& rp, const HyperBasevector& hb
                       , const exact_match_spec_t& match_spec
                       , vec<int>& matched_edges

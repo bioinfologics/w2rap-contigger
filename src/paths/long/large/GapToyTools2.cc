@@ -165,7 +165,7 @@ template<class H> void DegloopCore( const int mode, H& hb, vec<int>& inv,
                     {    int64_t id = paths_index[x][j];
                          const ReadPath& p = paths[id];
                          const basevector& b = bases[id];
-                         const qualvector& q = qvItr[id];
+                         const QualVec& q = qvItr[id];
 
                          // Set homopolymer base quality to min across it.
 

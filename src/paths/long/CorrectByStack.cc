@@ -18,7 +18,7 @@
 #include "paths/long/ReadStack.h"
 
 void CorrectByStack( StackBaseVecVec& call, StackQualVecVec& callq,
-     basevector& bases_new, qualvector& quals_new, int& trim_to,
+     basevector& bases_new, QualVec& quals_new, int& trim_to,
      vec< triple<int,int,Bool> >& offset_id_rc2, const Bool verbose )
 {
 

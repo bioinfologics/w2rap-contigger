@@ -26,7 +26,7 @@ namespace {
     };
 }
 
-void FindPlaces( const basevector& b, const qualvector& q, const int n, 
+void FindPlaces( const basevector& b, const QualVec& q, const int n,
      const HyperBasevector& hb_fw, const HyperBasevector& hb_rc, 
      const vec<int>& to_right_fw, const vec<int>& to_right_rc, 
      const VecIntPairVec& locs_fw, const VecIntPairVec& locs_rc,
@@ -85,7 +85,7 @@ void FindPlaces( const basevector& b, const qualvector& q, const int n,
      qual_sum = best_qsum;
 }
 
-uint64_t SafeFindPlaces( const basevector& b, const qualvector& q, const int n,
+uint64_t SafeFindPlaces( const basevector& b, const QualVec& q, const int n,
      const HyperBasevector& hb_fw, const HyperBasevector& hb_rc,
      const vec<int>& to_right_fw, const vec<int>& to_right_rc,
      const VecIntPairVec& locs_fw, const VecIntPairVec& locs_rc,
@@ -188,11 +188,11 @@ void EvaluateRead( const int id, const HyperBasevector& hb_A_fw,
      const VecIntPairVec& Alocs_rc,
      const VecIntPairVec& Rlocs_fw,
      const VecIntPairVec& Rlocs_rc, const vecbasevector& bases,
-     const vecqualvector& quals, vec<int>& qual_sum, int& max_perf, 
+     const QualVecVec& quals, vec<int>& qual_sum, int& max_perf,
      const Bool verbose, vec< vec< triple<int,int,char> > >& edits )
 {
      const basevector& b = bases[id];
-     const qualvector& q = quals[id];
+     const QualVec& q = quals[id];
      const int infinity = 1000000000;
      qual_sum.resize_and_set( 2, infinity );
      max_perf = 0;
@@ -257,7 +257,7 @@ void EvaluateRead( const int id, const HyperBasevector& hb_A_fw,
                               basevector brc(b), rrc(r);
                               brc.ReverseComplement( );
                               rrc.ReverseComplement( );
-                              qualvector qrc(q);
+                              QualVec qrc(q);
                               qrc.ReverseMe( );
                               PrintVisualAlignment( True, std::cout, 
                                    brc, rrc, a, qrc );    }    }    }    }
@@ -266,7 +266,7 @@ void EvaluateRead( const int id, const HyperBasevector& hb_A_fw,
           edits[pass].append(edits0);    }    }
 
 void EvalByReads( const HyperBasevector& hb_A, const HyperBasevector& hb_R,
-     const vecbasevector& bases, vecqualvector quals, int& assembly_count,
+     const vecbasevector& bases, QualVecVec quals, int& assembly_count,
      int& reference_count, const Bool print_a, const Bool print_r )
 {
      // Cap quality scores.
@@ -401,7 +401,7 @@ void EvalByReads( const HyperBasevector& hb_A, const HyperBasevector& hb_R,
      assembly_count = favors_assemblyx.size( );
      reference_count = favors_referencex.size( );    }
 
-void ExtendPlacement( const read_place& p, const basevector& b, const qualvector& q,
+void ExtendPlacement( const read_place& p, const basevector& b, const QualVec& q,
      const HyperBasevector& hb_fw, const HyperBasevector& hb_rc, 
      const vec<int>& to_right_fw, const vec<int>& to_right_rc, 
      vec<read_place>& places, int& qual_sum, const int min_qual )

@@ -78,7 +78,7 @@ public:
 class FriendAligner
 {
   public:
-    FriendAligner( vecbvec const& bases, /*vecqvec const& quals,
+    FriendAligner( vecbvec const& bases, /*QualVecVec const& quals,
                     vec<Bool> const& toEdit,
                     String const& friendsCache,*/
                     int MAKE_ALIGN_IMPL, unsigned const K,

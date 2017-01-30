@@ -35,7 +35,7 @@ QualNibbleVec& QualNibbleVec::squash( unsigned radius )
     return *this;
 }
 
-void WriteAll(QualNibbleVecVec const& quals, String const& fn)
+/*void WriteAll(QualNibbleVecVec const& quals, String const& fn)
 {
   IncrementalWriter<QualVec> writer(fn.c_str());
   for (size_t i = 0; i < quals.size(); ++i)
@@ -53,7 +53,7 @@ void LoadQualNibbleVec(const String & fn,
   quals->clear().reserve(vvqv.size());
   for (Itr itr(vvqv.begin()), end(vvqv.end()); itr != end; ++itr )
     quals->push_back(QualNibbleVec(*itr));
-}
+}*/
 
 #include "feudal/OuterVecDefs.h"
 template class OuterVec<QualNibbleVec>;

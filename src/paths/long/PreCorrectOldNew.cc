@@ -55,7 +55,7 @@
 #include "Set.h"
 
 template<int L> void PreCorrectCore( const int flank, const int u, const int l, 
-     const vecbasevector& bases, const vecqualvector& quals,
+     const vecbasevector& bases, const QualVecVec& quals,
      const vec< kmer_record<L,1> >& recs, ulonglong i, ulonglong j, 
      const vec<int>& bs, const vec<int>& total, vecbasevector& bases_new, 
      const vec<int>& trace_ids )
@@ -109,7 +109,7 @@ template<int L> void PreCorrectCore( const int flank, const int u, const int l,
                else
                {    basevector b = bases[id];
                     b.ReverseComplement( );
-                    qualvector q = quals[id];
+                    QualVec q = quals[id];
                     q.ReverseMe( );
                     for ( int z = 0; z < b.isize( ); z++ )
                     {    pbases[row][ z + left_ext - qpos ] = as_base( b[z] );
@@ -190,7 +190,7 @@ template<int L> void PreCorrectCore( const int flank, const int u, const int l,
           else
                bases_new[id].Set( -pos-1+flank, 3 - bs[0] );    }    }    }
 
-void PreCorrectOldNew( vecbasevector* bases, vecqualvector const& quals0,
+void PreCorrectOldNew( vecbasevector* bases, QualVecVec const& quals0,
      const vec<int>& trace_ids )
 {
      // Define constants.

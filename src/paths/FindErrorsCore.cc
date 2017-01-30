@@ -127,7 +127,7 @@ void pre_correct_parallel(const PC_Params  & pcp,
       if (!skip[i]) {
         size_t ib = ibs_corr[i];
         bv.set(ib, bv_new[ib]);
-	qv.set(ib, 0);
+	    qv.set(ib, 0);
         n_corr_applied++;
       }
 
@@ -374,7 +374,6 @@ void apply_corrections(const BaseVecVec & bases_new,
 
           (*bases_p)[i_read].set(i_base, bases_new[i_read][i_base]);
           (*quals_p)[i_read].set(i_base, 0);
-          
           ef_stats_p->n_corrections++;
           ef_stats_p->n_corrections_pos[i_base]++;
           ef_stats_p->n_corrections_quals[q]++;

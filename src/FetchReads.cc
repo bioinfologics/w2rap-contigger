@@ -44,7 +44,7 @@ const int HighQuality = 25;
 const int LowQuality = 1;
 }
 
-void FetchReads( vecbasevector& b, vecqualvector& q, unsigned int n,
+void FetchReads( vecbasevector& b, QualVecVec& q, unsigned int n,
                  String fasta_file, int amb_break, int min_size,
                  std::ostream& out, Bool no_q,
                  const vec<int>* ids_to_read, const Bool allowX )
@@ -53,7 +53,7 @@ void FetchReads( vecbasevector& b, vecqualvector& q, unsigned int n,
              ids_to_read, allowX );
 }
 
-void FetchReads( vecbasevector& b, vecqualvector& q, vecString * names,
+void FetchReads( vecbasevector& b, QualVecVec& q, vecString * names,
                  unsigned int n,  String fasta_file,
                  int amb_break, int min_size, std::ostream& out, Bool no_q,
                  const vec<int>* ids_to_read, const Bool allowX )
@@ -95,7 +95,7 @@ void FetchReads( vecbasevector& b, vecqualvector& q, vecString * names,
   b.Reserve( totalbases/16 + nseq, nseq );
   if ( !no_q ) {
     q.clear();
-    q.Reserve( totalbases, nseq );
+    q.reserve( /*totalbases,*/ nseq );
   }
   if ( nseq == 0 ) {
     std::cout << fasta_file << " has size 0 -- I hope this is OK\n";
@@ -117,7 +117,7 @@ void FetchReads( vecbasevector& b, vecqualvector& q, vecString * names,
   std::vector<char> read;
   read.reserve(1000);
   basevector bx;
-  qualvector qx;
+  QualVec qx;
   unsigned int i, ia = 0;
   for ( i = 0; n == 0 || i < n; i++ ) {
     if ( !text ) {
@@ -208,7 +208,7 @@ void FetchReads( vecbasevector& b, unsigned int n, String fasta_file,
                  int amb_break, int min_size, std::ostream& out,
 		 const vec<int>* ids_to_read, const Bool allowX )
 {
-  vecqualvector q;
+  QualVecVec q;
   FetchReads( b, q, n, fasta_file, amb_break, min_size, out, True,
 	      ids_to_read, allowX );
 }
@@ -217,7 +217,7 @@ void FetchReads( vecbasevector& b, vecString * names, unsigned int n, String fas
                  int amb_break, int min_size, std::ostream& out,
 		 const vec<int>* ids_to_read, const Bool allowX )
 {
-  vecqualvector q;
+  QualVecVec q;
   FetchReads( b, q, names, n, fasta_file, amb_break, min_size, out, True,
 	      ids_to_read, allowX );
 }

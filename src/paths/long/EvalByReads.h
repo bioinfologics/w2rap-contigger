@@ -56,7 +56,7 @@ class read_place {
           return out << " [" << std::setiosflags(std::ios::fixed) << std::setprecision(1)
                << x.Qsum( ) / 1000.0 << std::resetiosflags(std::ios::fixed) << "]";    }
 
-     void ComputeQsum( const basevector& b, const qualvector& q, 
+     void ComputeQsum( const basevector& b, const QualVec& q,
           const HyperBasevector& hb, const int min_qual )
      {    int ei = 0, pos = P( );
           qsum_ = 0;
@@ -70,7 +70,7 @@ class read_place {
                     if ( ei == N( ) ) break;
                     pos = hb.K( ) - 1;    }    }    }
      
-     void ComputeQsum125( const basevector& b, const qualvector& q, 
+     void ComputeQsum125( const basevector& b, const QualVec& q,
           const HyperBasevector& hb, const int min_qual )
      {    int ei = 0, pos = P( );
           qsum_ = 0;
@@ -84,7 +84,7 @@ class read_place {
                     if ( ei == N( ) ) break;
                     pos = hb.K( ) - 1;    }    }    }
 
-     int MaxQ( const basevector& b, const qualvector& q, 
+     int MaxQ( const basevector& b, const QualVec& q,
           const HyperBasevector& hb ) const
      {    int maxq = 0;
           int ei = 0, pos = P( );
@@ -98,7 +98,7 @@ class read_place {
                     pos = hb.K( ) - 1;    }    }
           return maxq;    }
 
-     void AddEdge( const int e, const basevector& b, const qualvector& q, 
+     void AddEdge( const int e, const basevector& b, const QualVec& q,
           const HyperBasevector& hb, const int min_qual )
      {    int ei = 0, l = 0;
           for ( ; ei < N( ); ei++ )
@@ -114,7 +114,7 @@ class read_place {
                pos++;
                if ( pos == hb.EdgeObject( E(ei) ).isize( ) ) break;    }    }
      
-     void AddEdge125( const int e, const basevector& b, const qualvector& q, 
+     void AddEdge125( const int e, const basevector& b, const QualVec& q,
           const HyperBasevector& hb, const int min_qual )
      {    int ei = 0, l = 0;
           for ( ; ei < N( ); ei++ )
@@ -159,7 +159,7 @@ template<> struct Serializability<read_place>
 // WARNING - extra args at end of FindPlaces are not necessarily handled 
 // correctly.  See commented out code at end of FindPlaces in the .cc file.
 
-void FindPlaces( const basevector& b, const qualvector& q, const int n, 
+void FindPlaces( const basevector& b, const QualVec& q, const int n,
      const HyperBasevector& hb_fw, const HyperBasevector& hb_rc, 
      const vec<int>& to_right_fw, const vec<int>& to_right_rc, 
      const VecIntPairVec& locs_fw,
@@ -167,7 +167,7 @@ void FindPlaces( const basevector& b, const qualvector& q, const int n,
      vec<read_place>& places, int& qual_sum, const int min_qual = 3, 
      const double prox = 0, const int max_diff = 1000000000 );
 
-uint64_t SafeFindPlaces( const basevector& b, const qualvector& q, const int n,
+uint64_t SafeFindPlaces( const basevector& b, const QualVec& q, const int n,
      const HyperBasevector& hb_fw, const HyperBasevector& hb_rc,
      const vec<int>& to_right_fw, const vec<int>& to_right_rc,
      const VecIntPairVec& locs_fw,
@@ -176,10 +176,10 @@ uint64_t SafeFindPlaces( const basevector& b, const qualvector& q, const int n,
      const double prox = 0, const int max_diff = 1000000000 );
 
 void EvalByReads( const HyperBasevector& hb_A, const HyperBasevector& hb_R,
-     const vecbasevector& bases, vecqualvector quals, int& assembly_count,
+     const vecbasevector& bases, QualVecVec quals, int& assembly_count,
      int& reference_count, const Bool print_a, const Bool print_r );
 
-void ExtendPlacement( const read_place& p, const basevector& b, const qualvector& q,
+void ExtendPlacement( const read_place& p, const basevector& b, const QualVec& q,
      const HyperBasevector& hb_fw, const HyperBasevector& hb_rc,
      const vec<int>& to_right_fw, const vec<int>& to_right_rc,
      vec<read_place>& places, int& qual_sum, const int min_qual );

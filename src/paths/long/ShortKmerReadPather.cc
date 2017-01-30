@@ -30,7 +30,7 @@ struct SKRPAlignment {
 
 
 std::tuple<unsigned, unsigned, unsigned>  // score, mismatch, length
-ShortKmerReadPather::ScoreEdge( bvec const& bases, qvec const& quals,
+ShortKmerReadPather::ScoreEdge( bvec const& bases, QualVec const& quals,
 		    int offset, bvec const& edge) {
 	
     auto bitr = bases.begin() + (offset > 0 ? 0 : -offset);
@@ -128,7 +128,7 @@ void ShortKmerReadPather::FindPaths(const vecbasevector& bases,
 	{ return (one.second < two.second); };
 
     // Process the kmer aligments
-    qvec qv;
+    QualVec qv;
     size_t success_count = 0;
     auto next_pos = p.begin();
     while (next_pos != p.end()) {

@@ -204,11 +204,11 @@ void FindPidsST(std::vector<int64_t> & pids, const vec<int> &lefts, const vec<in
 
 }
 
-void CreateLocalReadSet(vecbasevector &gbases,vecqualvector &gquals, PairsManager &gpairs, std::vector<int64_t> & pids,
+void CreateLocalReadSet(vecbasevector &gbases,QualVecVec &gquals, PairsManager &gpairs, std::vector<int64_t> & pids,
                         const vecbasevector &bases, VecPQVec const &quals) {
 
 
-        qvec qv;
+        QualVec qv;
         gbases.reserve(2 * pids.size());
         gquals.reserve(2 * pids.size());
 
@@ -325,7 +325,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                 //Local readset
                 std::vector<int64_t> pids;
                 vecbasevector gbases;
-                vecqualvector gquals;
+                QualVecVec gquals;
                 PairsManager gpairs;
 
                 //Corrected reads

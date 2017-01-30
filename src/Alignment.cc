@@ -244,7 +244,7 @@ void alignment::Compactify( int len1, int len2 )
 
 void alignment_plus::Print( Bool abbreviate, std::ostream& out, 
      const basevector& rd1, const basevector& rd2, const basevector& rd2rc, 
-     const qualvector& q1, const qualvector& q2, const qualvector& q2rc, 
+     const QualVec& q1, const QualVec& q2, const QualVec& q2rc,
      int begin, Bool one_frame, Bool highlight_score )
 {    out << "\nAlignment between sequences " << Id1( ) << " and ";
      if (Rc2( )) out << "rc of ";
@@ -262,7 +262,7 @@ void alignment_plus::Print( Bool abbreviate, std::ostream& out,
                one_frame );    }
 
 void alignment_plus::Print( Bool abbreviate, std::ostream& out, const basevector& rd1, 
-          const basevector& rd2, const qualvector& q1, const qualvector& q2, 
+          const basevector& rd2, const QualVec& q1, const QualVec& q2,
           int begin, Bool one_frame, Bool highlight_score )
 {    out << "\nAlignment between reads " << Id1( ) << " and ";
      if (Rc2( )) out << "rc of ";
@@ -280,9 +280,9 @@ void alignment_plus::Print( Bool abbreviate, std::ostream& out, const basevector
      {    basevector rd2rc;
           rd2rc = rd2;
           rd2rc.ReverseComplement( );
-          qualvector q2rc;
+          QualVec q2rc;
           q2rc = q2;
-          ReverseThis(q2rc);
+          std::reverse(q2rc.begin(),q2rc.end());
           PrintVisualAlignment( abbreviate, out, rd1, rd2rc, a, q1, q2rc, begin,
                one_frame );    }    }
 
@@ -335,7 +335,7 @@ std::vector<int> alignment::MutationsGap1Gap2( const basevector& rd1,
      return answer;    }
 
 int alignment::Mutations( const basevector& rd1, const basevector& rd2,
-     const qualvector& q1, int min_score )
+     const QualVec& q1, int min_score )
 {    int answer = 0;
      avector<int> gaps, lengths;
      int pos1, pos2, errors;
@@ -351,7 +351,7 @@ int alignment::Mutations( const basevector& rd1, const basevector& rd2,
      return answer;    }
 
 int alignment::Indels( const basevector& rd1, const basevector& rd2,
-     const qualvector& q1, int min_score )
+     const QualVec& q1, int min_score )
 {    int answer = 0;
      avector<int> gaps, lengths;
      int pos1, pos2, errors;

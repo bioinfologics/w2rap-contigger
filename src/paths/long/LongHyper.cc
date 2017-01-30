@@ -48,7 +48,7 @@ Bool LongHyper(const VecEFasta &correctede, const vec<pairing_info> &cpartner, S
 
     const bool bUseOrgReads = false;
     vecbasevector const &Bases = vecbasevector();
-    vecqualvector const &Quals = vecqualvector();
+    QualVecVec const &Quals = QualVecVec();
     PairsManager const &Pairs = PairsManager();
 
     // Expand correctede.  Note that this is exponential and thus totally unsound.

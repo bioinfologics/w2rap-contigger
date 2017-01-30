@@ -110,7 +110,7 @@ void readstack::Initialize(const int nrows, const int ncols) {
 
 void readstack::Initialize(const int64_t id1, Friends const &aligns,
                            const int64_t start, const int64_t stop, con_type ctype,
-                           const vecbasevector &bases, const vecqualvector &quals,
+                           const vecbasevector &bases, const QualVecVec &quals,
                            const PairsManager &pairs, const Bool use_pairs) {
     int n = stop - start + 1;
     int k = bases[id1].size();
@@ -135,7 +135,7 @@ void readstack::Initialize(const int64_t id1, Friends const &aligns,
             rc2 = aligns[start + j - 1].isRC();
         }
         const basevector &b2 = bases[id2];
-        const qualvector &q2 = quals[id2];
+        const QualVec &q2 = quals[id2];
         for (int p2 = 0; p2 < b2.isize(); p2++) {
             int p1 = p2 + offset;
             if (p1 < 0) continue;
@@ -174,7 +174,7 @@ void readstack::Initialize(const int64_t id1, Friends const &aligns,
         }
     }
     Initialize(n, k);
-    qvec q2;
+    QualVec q2;
     for (int j = 0; j < n; j++) {
         int id2, offset;
         Bool rc2;
@@ -214,7 +214,7 @@ void readstack::Initialize(const int64_t id1, Friends const &aligns,
 }
 
 void readstack::AddToStack(const vec<triple<int, int64_t, Bool> > &offset_id_rc2,
-                           const vecbasevector &bases, const vecqualvector &quals,
+                           const vecbasevector &bases, const QualVecVec &quals,
                            const PairsManager &pairs) {
     int oldlen = bases_.size();
     int newlen = bases_.size() + offset_id_rc2.size();
@@ -232,7 +232,7 @@ void readstack::AddToStack(const vec<triple<int, int64_t, Bool> > &offset_id_rc2
         Bool rc2 = offset_id_rc2[m].third;
         int nm = oldlen + m;
         const basevector &b = bases[id];
-        const qualvector &q = quals[id];
+        const QualVec &q = quals[id];
         bases_[nm].resize(Cols());
         quals_[nm].resize(Cols());
         for (int j = 0; j < Cols(); j++) {
@@ -440,7 +440,7 @@ basevector readstack::Consensus1() const {
     return con;
 }
 
-void readstack::Consensus1(basevector &con, qualvector &conq) const {
+void readstack::Consensus1(basevector &con, QualVec &conq) const {
     con.resize(Cols()), conq.resize(Cols());
     for (int i = 0; i < Cols(); i++) {
         // Compute quality score sum for each base.  Count Q0 as 0.1, Q1 as 0.2,
@@ -466,7 +466,7 @@ void readstack::Consensus1(basevector &con, qualvector &conq) const {
     }
 }
 
-void readstack::StrongConsensus1(basevector &con, qualvector &conq,
+void readstack::StrongConsensus1(basevector &con, QualVec &conq,
                                  const Bool raise_zero) const {
     con.resize(Cols()), conq.resize(Cols());
     for (int i = 0; i < Cols(); i++)
@@ -529,7 +529,7 @@ void readstack::StrongConsensus1(basevector &con, qualvector &conq,
     }
 }
 
-void readstack::StrongConsensus2(basevector &con, qualvector &conq, const Bool raise_zero) const {
+void readstack::StrongConsensus2(basevector &con, QualVec &conq, const Bool raise_zero) const {
     con.resize(Cols()), conq.resize(Cols());
     for (int i = 0; i < Cols(); i++)
         con.Set(i, ColumnConsensus1(i));
@@ -760,7 +760,7 @@ void readstack::Print(std::ostream &out, const vec<basevector> &cons, const int 
 void readstack::Print(std::ostream &out, const int w) const {
     int n = Rows(), k = Cols();
     basevector con;
-    qualvector conq;
+    QualVec conq;
     Consensus1(con, conq);
     vec<basevector> cons;
     cons.push_back(con);
@@ -1193,7 +1193,7 @@ vec<basevector> readstack::Consensuses2(const int K, const int top) const {
 }
 
 void
-readstack::CorrectAllEM3(basevector &b, qualvector &q, int &trim_to, std::vector<double> &pfriend, bool debug) const {
+readstack::CorrectAllEM3(basevector &b, QualVec &q, int &trim_to, std::vector<double> &pfriend, bool debug) const {
     StackBaseVec b_tmp;
     StackQualVec q_tmp;
 
@@ -1209,7 +1209,7 @@ readstack::CorrectAllEM3(basevector &b, qualvector &q, int &trim_to, std::vector
         q[i] = static_cast<unsigned char>(q_tmp[i]);
 }
 
-void readstack::CorrectAll(basevector &b, qualvector &q, int &trim_to,
+void readstack::CorrectAll(basevector &b, QualVec &q, int &trim_to,
                            const Bool verbose) const {
     // Preset.
 
@@ -1279,7 +1279,7 @@ void readstack::CorrectAll(basevector &b, qualvector &q, int &trim_to,
 
 void readstack::Recruit(const int K, const vec<simple_align_data> &aligns,
                         const vec<int64_t> &id1_start, const vecbasevector &bases,
-                        const vecqualvector &quals, const PairsManager &pairs) {
+                        const QualVecVec &quals, const PairsManager &pairs) {
     vec<triple<int, int64_t, Bool> > offset_id_rc2_orig;
     vec<int64_t> expect;
     for (int i = 0; i < Rows(); i++) {
@@ -1690,7 +1690,7 @@ vec<int> GetOffsets1(const readstack &stack1, const readstack &stack2,
 
 template<int K>
 void readstack::RefStack(const basevector &ref,
-                         const vecbasevector &bases, const vecqualvector &quals,
+                         const vecbasevector &bases, const QualVecVec &quals,
                          const PairsManager &pairs) {
     vec<triple<kmer<K>, int, int> > kmers_plus;
     vecbasevector all;
@@ -1721,11 +1721,11 @@ void readstack::RefStack(const basevector &ref,
 }
 
 template void readstack::RefStack<20>(const basevector &ref,
-                                      const vecbasevector &bases, const vecqualvector &quals,
+                                      const vecbasevector &bases, const QualVecVec &quals,
                                       const PairsManager &pairs);
 
 template void readstack::RefStack<40>(const basevector &ref,
-                                      const vecbasevector &bases, const vecqualvector &quals,
+                                      const vecbasevector &bases, const QualVecVec &quals,
                                       const PairsManager &pairs);
 
 Bool cmp23(const triple<int, int64_t, Bool> &x1, const triple<int, int64_t, Bool> &x2) {
@@ -1736,7 +1736,7 @@ Bool cmp23(const triple<int, int64_t, Bool> &x1, const triple<int, int64_t, Bool
 
 template<int K>
 void AddPartnersCore(const int top, readstack &stack,
-                     const vecbasevector &bases, const vecqualvector &quals,
+                     const vecbasevector &bases, const QualVecVec &quals,
                      const PairsManager &pairs) {
     vec<std::pair<int64_t, int> > pids;
     for (int i = 0; i < stack.Rows(); i++)
@@ -1896,7 +1896,7 @@ void AddPartnersCore(const int top, readstack &stack,
 }
 
 void readstack::AddPartners(const int K, const int top, const vecbasevector &bases,
-                            const vecqualvector &quals, const PairsManager &pairs) {
+                            const QualVecVec &quals, const PairsManager &pairs) {
     if (K == 32) AddPartnersCore<32>(top, *this, bases, quals, pairs);
     else if (K == 40) AddPartnersCore<40>(top, *this, bases, quals, pairs);
     else { FatalErr("AddPartners not implemented for K = " << K); }

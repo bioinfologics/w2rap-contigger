@@ -11,11 +11,11 @@
  *  Created on: Aug 25, 2014
  *      Author: tsharpe
  */
-
+/*
 #include "feudal/PQVec.h"
 #include "math/PowerOf2.h"
 
-void PQVecEncoder::init( qvec const& qv )
+void PQVecEncoder::init( QualVec const& qv )
 {
     mpQV = &qv;
     mBlocks.clear();
@@ -189,3 +189,4 @@ void PQVecEncoder::decode( byte const* pqBuf, byte* pQs )
 
 #include "feudal/OuterVecDefs.h"
 template class OuterVec<PQVec>;
+*/

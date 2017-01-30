@@ -129,7 +129,7 @@ inline int MismatchCount(const basevector &query,
 		      unsigned int t_start,
 		      unsigned int length,
 		      int max_mismatches = 1000 * 1000,
-		      const qualvector * quals = 0,
+		      const QualVec * quals = 0,
 		      double expectedQual = 30,
 		      unsigned char minQual = 10
 )
@@ -158,7 +158,7 @@ int MismatchCount(    const BaseComparator & equal,
 		      unsigned int t_start,
 		      unsigned int length,
 		      int max_mismatches = 1000 * 1000,
-		      const qualvector * quals = 0,
+		      const QualVec * quals = 0,
 		      double expectedQual = 30,
 		      unsigned char minQual = 10
 )
@@ -201,7 +201,7 @@ int MismatchScore(BaseComparator equal,
           QueryIterator query_iter,
 		  QueryIterator query_end,
 		  basevector::const_iterator target_iter,
-		  qualvector::const_iterator qual_iter,
+		  QualVec::const_iterator qual_iter,
 		  double maxBad,
 		  double expectedQual = 30,
 		  unsigned char minQual = 10)

@@ -1681,7 +1681,7 @@ align::Sync_to_TACG( const basevector & seq1,
 
 
 int align::Mutations( const basevector& rd1, const basevector& rd2,
-                      const qualvector& q1, int min_score ) const
+                      const QualVec& q1, int min_score ) const
 {
   int answer = 0, j, p1 = pos1( ), p2 = pos2( );
   for ( j = 0; j < Nblocks( ); j++ )
@@ -1807,7 +1807,7 @@ void align::PerfectIntervals2( const fastavector& rd1, const fastavector& rd2,
                perfs.push_back( ho_interval( last+1, p2 ) );    }    }
 
 int align::Indels( const basevector& rd1, const basevector& rd2,
-                   const qualvector& q1, int min_score ) const
+                   const QualVec& q1, int min_score ) const
 {
   int answer = 0, p1 = pos1( ), p2 = pos2( );
   for ( int j = 0; j < Nblocks( ); j++ )

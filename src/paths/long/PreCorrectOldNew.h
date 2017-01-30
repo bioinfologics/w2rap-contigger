@@ -13,7 +13,7 @@
 #include "CoreTools.h"
 #include "Qualvector.h"
 
-void PreCorrectOldNew( vecbasevector* bases, vecqualvector const& quals0,
+void PreCorrectOldNew( vecbasevector* bases, QualVecVec const& quals0,
      const vec<int>& trace_ids );
 
 #endif

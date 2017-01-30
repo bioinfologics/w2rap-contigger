@@ -47,7 +47,7 @@ void append_read( const std::string& filename, size_t serial, const veclike& r)
 }
 
 void Correct1Pre( const int K,
-     vecbasevector& bases, vecqualvector& quals, const PairsManager& pairs,
+     vecbasevector& bases, QualVecVec& quals, const PairsManager& pairs,
      const vec<Bool>& to_edit, vec<int>& trim_to, const vec<int>& trace_ids, 
      /*const long_logging& logc,*/ const long_heuristics& heur )
 {
@@ -79,13 +79,13 @@ void Correct1Pre( const int K,
           if ( to_edit[id1] ) use.push_back(id1);
 
 //     vecbasevector bases_new(bases);
-//     vecqualvector quals_new(quals);
+//     QualVecVec quals_new(quals);
 
      //output buffer, of size use.size(), since base are 2 bits, 4 values,
      // there are not invalid value, so might as well use arbitrary but trackable
      // bases[0] and quals[0] for initial value
      vecbasevector bases_loc(use.size(),bases[0]);
-     vecqualvector quals_loc(use.size(),quals[0]);
+     QualVecVec quals_loc(use.size(),quals[0]);
      TIMELOG_STOP_LOCAL(C1P_InitBasesQuals,in);
 
      //PART3---------

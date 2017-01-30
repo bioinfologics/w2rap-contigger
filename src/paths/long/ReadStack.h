@@ -81,7 +81,7 @@ public:
 
     readstack(const int64_t id1, Friends const &aligns,
               const int64_t start, const int64_t stop, con_type ctype,
-              const vecbasevector &bases, const vecqualvector &quals,
+              const vecbasevector &bases, const QualVecVec &quals,
               const PairsManager &pairs, const Bool use_pairs = True) {
         Initialize(id1, aligns, start, stop, ctype, bases, quals, pairs, use_pairs);
     }
@@ -90,7 +90,7 @@ public:
 
     void Initialize(const int64_t id1, Friends const &aligns,
                     const int64_t start, const int64_t stop, con_type ctype,
-                    const vecbasevector &bases, const vecqualvector &quals,
+                    const vecbasevector &bases, const QualVecVec &quals,
                     const PairsManager &pairs, const Bool use_pairs = True);
 
     void Initialize(const int64_t id1, Friends const &aligns,
@@ -103,7 +103,7 @@ public:
 
     template<int K>
     void RefStack(const basevector &ref,
-                  const vecbasevector &bases, const vecqualvector &quals,
+                  const vecbasevector &bases, const QualVecVec &quals,
                   const PairsManager &pairs);
 
     int CheckSum() const {
@@ -227,21 +227,21 @@ public:
     // AddToStack: add in reads at given offsets.
 
     void AddToStack(const vec<triple<int, int64_t, Bool> > &offset_id_rc2,
-                    const vecbasevector &bases, const vecqualvector &quals,
+                    const vecbasevector &bases, const QualVecVec &quals,
                     const PairsManager &pairs);
 
     // AddPartners: for reads placed in the stack but whose partners are not,
     // recruit the partners based on perfect K-base overlaps.
 
     void AddPartners(const int K, const int top, const vecbasevector &bases,
-                     const vecqualvector &quals, const PairsManager &pairs);
+                     const QualVecVec &quals, const PairsManager &pairs);
 
     // Recruit: bring in reads that align to a read in the stack and overlap
     // the stack by at least K.
 
     void Recruit(const int K, const vec<simple_align_data> &aligns,
                  const vec<int64_t> &id1_start, const vecbasevector &bases,
-                 const vecqualvector &quals, const PairsManager &pairs);
+                 const QualVecVec &quals, const PairsManager &pairs);
 
     // Trim: keep only the columns in [start,stop).
 
@@ -257,11 +257,11 @@ public:
 
     basevector Consensus1() const;
 
-    void Consensus1(basevector &con, qualvector &conq) const;
+    void Consensus1(basevector &con, QualVec &conq) const;
 
-    void StrongConsensus1(basevector &con, qualvector &conq, const Bool raise_zero) const;
+    void StrongConsensus1(basevector &con, QualVec &conq, const Bool raise_zero) const;
 
-    void StrongConsensus2(basevector &con, qualvector &conq, const Bool raise_zero) const;
+    void StrongConsensus2(basevector &con, QualVec &conq, const Bool raise_zero) const;
 
     // Consensuses1: an algorithm for computing multiple consensuses.
 
@@ -307,7 +307,7 @@ public:
 
     // CorrectAll: correct all undisputed columns, and suggest a safe trim point.
 
-    void CorrectAll(basevector &b, qualvector &q, int &trim_to,
+    void CorrectAll(basevector &b, QualVec &q, int &trim_to,
                     const Bool verbose = False) const;
 
     // CorrectAllEM3: correct all columns using draft EM algorithm
@@ -315,7 +315,7 @@ public:
     // accesses bases_ quals_ internally for now.
 
     void
-    CorrectAllEM3(basevector &b, qualvector &q, int &trim_to, std::vector<double> &pfriend, bool debug = false) const;
+    CorrectAllEM3(basevector &b, QualVec &q, int &trim_to, std::vector<double> &pfriend, bool debug = false) const;
 
     // GetOffsets1: compute predicted offsets.
 

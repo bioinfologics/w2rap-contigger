@@ -45,7 +45,7 @@ const vecbasevector& ReadOriginTracker::Reads() const
     return ref_control_.Reads();
 }
 
-const vecqualvector& ReadOriginTracker::Quals() const
+const QualVecVec& ReadOriginTracker::Quals() const
 {
     return ref_control_.Quals();
 }

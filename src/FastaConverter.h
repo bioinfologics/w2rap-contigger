@@ -61,6 +61,6 @@ typedef FastaConverter< CompressedSequence > FastaSequenceConverter;
 // FastaQualityConverter specifically understands how to extract
 // quality data stored in fasta format.
 
-typedef FastaConverter< qualvector > FastaQualityConverter;
+typedef FastaConverter< QualVec > FastaQualityConverter;
 
 #endif

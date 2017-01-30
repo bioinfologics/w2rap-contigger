@@ -1738,7 +1738,7 @@ void EdgesOnRef::DumpBubbleGraph(String filename) const
 }
 
 // Calculate probability of being real for each paths.
-void EdgesOnRef::PathProb(const vecbasevector& bases, const vecqualvector& quals, 
+void EdgesOnRef::PathProb(const vecbasevector& bases, const QualVecVec& quals,
         int verbosity) 
 {
     if (verbosity >= 1) 

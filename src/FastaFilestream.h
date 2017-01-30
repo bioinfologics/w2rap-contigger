@@ -101,7 +101,7 @@ FastaFilestream<veccompseq,CompressedSequence,FastaSequenceConverter,FastaSequen
 FastaSequenceFilestream;
 
 typedef
-FastaFilestream<vecqualvector,qualvector,FastaQualityConverter,FastaQualityVerifier>
+FastaFilestream<QualVecVec,QualVec,FastaQualityConverter,FastaQualityVerifier>
 FastaQualityFilestream;
 
 

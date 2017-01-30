@@ -94,7 +94,7 @@ public:
     void DumpBubbleGraph(String filename) const;
 
     // Calculate probability of being real for each paths.
-    void PathProb(const vecbasevector& bases, const vecqualvector& quals, int verbosity = 0);
+    void PathProb(const vecbasevector& bases, const QualVecVec& quals, int verbosity = 0);
 
     // Call variants. Using bubble graph
     void CallVariantsGroupedWithProb(int gid, vec<VariantCallGroup> *p_groups, 

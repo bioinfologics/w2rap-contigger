@@ -92,8 +92,8 @@ FastaConverter<CompressedSequence>::extractDatumFromBuffer( char* buffer,
 
 template<>
 bool
-FastaConverter<qualvector>::extractDatumFromBuffer( char* buffer,
-                                                    qualvector &sequence )
+FastaConverter<QualVec>::extractDatumFromBuffer( char* buffer,
+                                                    QualVec &sequence )
 {
   static bool initialized = false;
   static int is_number[256];
@@ -165,4 +165,4 @@ template void FastaConverter<sequenceT>::extractAllFromBuffer( char* buffer, Str
 
 INSTANTIATE(CharVec)
 INSTANTIATE(CompressedSequence)
-INSTANTIATE(qualvector)
+INSTANTIATE(QualVec)

@@ -41,7 +41,7 @@ void CorrectByStack(
      // quals_new are the founder.
 
      basevector& bases_new,
-     qualvector& quals_new,
+     QualVec& quals_new,
     
      // The recommended trimmed length of the founder is returned as trim_to.
      // Set it to the length of the founder if it is not to be trimmed at all.

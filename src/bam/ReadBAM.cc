@@ -429,7 +429,7 @@ void readAligns( std::istream& is, const String& bamFile,
 
      // VecPQVec qualsbuf_c;
      const int qbmax = 10000000;
-     vec<qvec> qualsbuf;
+     vec<QualVec> qualsbuf;
      for ( int i = 0; i < qbmax; i++ )
           qualsbuf.emplace_back(alloc);
      int qbcount = 0;
@@ -481,7 +481,7 @@ void readAligns( std::istream& is, const String& bamFile,
                               << alnNo);
               seq.push_back(GeneralizedBase::fromBits(bits).random(rng));    }
   
-        qvec& quals = qualsbuf[qbcount];
+        QualVec& quals = qualsbuf[qbcount];
         qbcount++;
         quals.resize(alnHd.mSeqLen);
         char* qBuf = reinterpret_cast<char*>(&quals.front());
@@ -579,9 +579,9 @@ void readAligns( std::istream& is, const String& bamFile,
 class FunnyIterator
 {
 public:
-    FunnyIterator( qvec const** pVals ) : mpVals(pVals) {}
-    qvec const& operator*() { return **mpVals; }
-    qvec const* operator->() { return *mpVals; }
+    FunnyIterator( QualVec const** pVals ) : mpVals(pVals) {}
+    QualVec const& operator*() { return **mpVals; }
+    QualVec const* operator->() { return *mpVals; }
     FunnyIterator& operator++() { ++mpVals; return *this; }
     friend FunnyIterator operator+( FunnyIterator const& fi, size_t off )
     { return FunnyIterator(fi.mpVals+off); }
@@ -591,7 +591,7 @@ public:
     { return fi1.mpVals != fi2.mpVals; }
 
 private:
-    qvec const** mpVals;
+    QualVec const** mpVals;
 };
 
 template <class T> void movePairs( size_t nReads, vecbasevector& reads_b, 

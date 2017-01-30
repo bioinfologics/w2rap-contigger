@@ -321,7 +321,7 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                     String fn2p = fn.RevBefore(".fastb") + ".qualp";
                     if (IsRegularFile(fn2b)) {
                          xbases.ReadAll(fn, True);
-                         vecqualvector q;
+                         QualVecVec q;
                          q.ReadAll(fn2b);
                          convertAppendParallel(q.begin(), q.end(), xquals);
                          infiles[g][j]
@@ -378,7 +378,7 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                     // Buffer for quality score compression in batches.
 
                     const int qbmax = 10000000;
-                    vec<qvec> qualsbuf;
+                    vec<QualVec> qualsbuf;
                     MempoolOwner<char> alloc;
                     for (int i = 0; i < qbmax; i++)
                          qualsbuf.emplace_back(alloc);
@@ -452,8 +452,8 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
 
                          // Save.
 
-                         qvec &q1 = qualsbuf[qbcount++];
-                         qvec &q2 = qualsbuf[qbcount++];
+                         QualVec &q1 = qualsbuf[qbcount++];
+                         QualVec &q2 = qualsbuf[qbcount++];
                          q1.resize(line1.size()), q2.resize(line2.size());
                          if (qbcount == qbmax) {
                               convertAppendParallel(qualsbuf.begin(),
@@ -474,7 +474,7 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
                     // Parse unpaired fastq files.
 
                else if (infiles_rn[g][j] != "") {
-                    vecqualvector Q;
+                    QualVecVec Q;
                     const String &fn = infiles[g][j];
                     String command = "cat " + fn;
                     if (fn.Contains(".gz", -1)) command = "z" + command;
@@ -541,7 +541,7 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
 
                          // Save.
 
-                         qualvector q(line.size());
+                         QualVec q(line.size());
                          for (int i = 0; i < line.isize(); i++)
                               q[i] = line[i] - 33;
                          xbases.push_back(b);

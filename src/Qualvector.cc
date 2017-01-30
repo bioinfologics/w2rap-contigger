@@ -9,11 +9,11 @@
 #include "CoreTools.h"
 #include "Qualvector.h"
 
-void Print( std::ostream &out, const qualvector &q, const String &name,
+void Print( std::ostream &out, const QualVec &q, const String &name,
             const int scores_per_line )
 {
     out << '>' << name;
-    for ( qvec::size_type i = 0; i < q.size(); ++i )
+    for ( QualVec::size_type i = 0; i < q.size(); ++i )
     {
         if (i % scores_per_line)
         {
@@ -28,7 +28,7 @@ void Print( std::ostream &out, const qualvector &q, const String &name,
     out << '\n';
 }
 
-std::pair <String, String> Stacked( const qualvector& quals) {
+std::pair <String, String> Stacked( const QualVec& quals) {
   uint read_length = quals.size();
   String line1(read_length, '9'), line2(read_length, '9'); // Max value displayed is 99, no real quality score should exceed this.
   for (uint i = 0; i < read_length; i++ ) {
@@ -45,7 +45,7 @@ std::pair <String, String> Stacked( const qualvector& quals) {
 }
 
 
-void PrintStacked( std::ostream &out ,const qualvector& quals) {
+void PrintStacked( std::ostream &out ,const QualVec& quals) {
   std::pair <String, String> qualities = Stacked(quals);
   out << qualities.first << std::endl << qualities.second << std::endl;
 }

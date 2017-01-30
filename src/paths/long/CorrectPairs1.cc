@@ -41,7 +41,7 @@ Bool cmp_ho_start_stop( const ho_interval& h1, const ho_interval& h2 )
 } // close anonymous namespace
 
 void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
-     vecqualvector& quals, const PairsManager& pairs, const vec<Bool>& to_edit, 
+     QualVecVec& quals, const PairsManager& pairs, const vec<Bool>& to_edit,
      const vec<int>& trace_ids, const long_heuristics& heur, 
      //const long_logging_control& log_control, const long_logging& logc,
      VecEFasta& corrected )
@@ -166,7 +166,7 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
 
           stack2.Reverse();
           basevector con1, con2;
-          qualvector conq1, conq2;
+          QualVec conq1, conq2;
           stack1.Consensus1(con1, conq1);
           stack2.Consensus1(con2, conq2);
           const int L = 20;
@@ -182,7 +182,7 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
           // For each offset, create the merged stack associated to it.
           TIMELOG_START_LOCAL(CP1_Correct, Loop);
           vec<basevector> closures;
-          vec<qualvector> closuresq;
+          vec<QualVec> closuresq;
           vec<int> closureso;
 
           for (int oj = 0; oj < offsets.isize(); oj++) {
@@ -230,12 +230,12 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
                // Create and edit consensus.
 
                /*basevector con,con2;
-               qualvector conq,conq2;
+               QualVec conq,conq2;
                stack.StrongConsensus1( con, conq, heur.CP_RAISE_ZERO );
                stack.StrongConsensus2( con2, conq2, heur.CP_RAISE_ZERO );
                if (con!=con2 || conq!=conq2) (FatalErr("StrongConsensus2 is WRONG!!!"));*/
                basevector con;
-               qualvector conq;
+               QualVec conq;
                stack.StrongConsensus2(con, conq, heur.CP_RAISE_ZERO);
 
 

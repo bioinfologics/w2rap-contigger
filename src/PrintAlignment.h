@@ -22,8 +22,8 @@ void PrintBases( std::ostream& out, const BASEVEC& rd, int from, int to );
 template<class BASEVEC1, class BASEVEC2>
 void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const BASEVEC1& rd1, 
      const BASEVEC2& rd2, const align& a, 
-     const qualvector& scores1 = qualvector(0), 
-     const qualvector& scores2 = qualvector(0), 
+     const QualVec& scores1 = QualVec(0),
+     const QualVec& scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbeviate_poor = False, float min_fract_poor = 2.0,
      Bool abbreviate_good = False, float max_fract_good = 0.05,
@@ -35,8 +35,8 @@ void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const BASEVEC1& r
 template<class BASEVEC1, class BASEVEC2>
 void PrintVisualAlignmentClean( Bool abbreviate, std::ostream& out, const BASEVEC1& rd1, 
      const BASEVEC2& rd2, const align& a, 
-     const qualvector& scores1 = qualvector(0), 
-     const qualvector& scores2 = qualvector(0), 
+     const QualVec& scores1 = QualVec(0),
+     const QualVec& scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbeviate_poor = False, float min_fract_poor = 2.0,
      Bool abbreviate_good = False, float max_fract_good = 0.05,
@@ -66,7 +66,7 @@ void PrintVisualAlignmentClean( Bool abbreviate, std::ostream& out, const BASEVE
 template<class BASEVEC1, class BASEVEC2>
 void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out, 
      const BASEVEC1& rd1, BASEVEC2 rd2, const align& a, 
-     const qualvector& scores1 = qualvector(0), qualvector scores2 = qualvector(0),
+     const QualVec& scores1 = QualVec(0), QualVec scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbeviate_poor = False, float min_fract_poor = 2.0,
      Bool abbreviate_good = False, float max_fract_good = 0.05, const int pw = 80 );
@@ -74,8 +74,8 @@ void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out,
 template<class BASEVEC1, class BASEVEC2>
 inline void PrintVisualAlignment( Bool abbreviate, std::ostream& out, 
      const BASEVEC1& rd1, const BASEVEC2& rd2, const alignment& a, 
-     const qualvector& scores1 = qualvector(0), 
-     const qualvector& scores2 = qualvector(0),
+     const QualVec& scores1 = QualVec(0),
+     const QualVec& scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbreviate_poor = False, float min_fract_poor = 2.0, const int pw = 80 )
 {    PrintVisualAlignment( abbreviate, out, rd1, rd2, align(packalign(a)),
@@ -85,8 +85,8 @@ inline void PrintVisualAlignment( Bool abbreviate, std::ostream& out,
 template<class BASEVEC1, class BASEVEC2>
 inline void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out, 
      const BASEVEC1& rd1, BASEVEC2 rd2, const alignment& a, 
-     const qualvector& scores1 = qualvector(0),
-     qualvector scores2 = qualvector(0),
+     const QualVec& scores1 = QualVec(0),
+     QualVec scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbreviate_poor = False, float min_fract_poor = 2.0, const int pw = 80 )
 {    PrintVisualAlignment( rd2_is_rc, abbreviate, out, rd1, rd2, 
@@ -97,10 +97,10 @@ void PrintAlignment( std::ostream& out, const basevector& rd1,
      const basevector& rd2, const alignment& a );
 void PrintAlignment( Bool rd2_is_rc, std::ostream& out, const basevector& rd1, 
      basevector rd2, const alignment& a );
-void PrintReadWithScores( basevector& B, qualvector& Q, std::ostream& out,
+void PrintReadWithScores( basevector& B, QualVec& Q, std::ostream& out,
      const int pw = 80 );
 void PrintErrorsInAlignment(std::ostream& out, const basevector& rd1, 
-     const basevector& rd2, const alignment& a, const qualvector& scores1,
-     const qualvector& scores2 );
+     const basevector& rd2, const alignment& a, const QualVec& scores1,
+     const QualVec& scores2 );
 
 #endif

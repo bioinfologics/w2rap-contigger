@@ -118,12 +118,12 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
 
 void ExtendPath( ReadPath& p, const int64_t i, const HyperBasevector& hb, 
      const vec<int>& to_right, const bvec& bases,
-     const qvec& quals, const int min_gain, const Bool verbose,
+     const QualVec& quals, const int min_gain, const Bool verbose,
      const int mode );
 
 void ExtendPath2( ReadPath& p, const int64_t i, const HyperBasevector& hb, 
      const vec<int>& to_left, const vec<int>& to_right, const bvec& bases,
-     const qvec& quals, const int min_gain, const Bool verbose,
+     const QualVec& quals, const int min_gain, const Bool verbose,
      const int mode );
 
 // a class for dealing with bubbles and support
@@ -177,11 +177,11 @@ public:
     // if one or more edges in rp is part of a bubble, perform gap-free alignment on the path as the alternate path
     // and collect the result
     // returns true if at any point (qsum of alt path) < (qsum of orig path)
-    bool log_read(basevector const&read, qualvector const&qual, ReadPath const&rp, bool bVerbose=false);
+    bool log_read(basevector const&read, QualVec const&qual, ReadPath const&rp, bool bVerbose=false);
 
     //do a gap-free alignment of the read against the graph according to rp
     //returns the sum of read-quality-score at the position the sequence mismatches
-    int getQ(basevector const&read, qualvector const&qual, ReadPath const&rp, const qualvector::value_type min_q=4);
+    int getQ(basevector const&read, QualVec const&qual, ReadPath const&rp, const QualVec::value_type min_q=4);
 
     // assign weight to the bubble-branch of an edge
     void addWeight(int edge,bubble_data_t::support_t const&weight){

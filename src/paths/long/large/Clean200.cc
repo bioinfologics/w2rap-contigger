@@ -104,7 +104,7 @@ void Clean200x( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
                               for ( int l = 0; l < j; l++ )
                                    start -= hb.Kmers( p[l] );
                               pi.push( id, start );    }    }    }    }
-          qvec qv;
+          QualVec qv;
           for ( int i = 0; i < pi.isize( ); i++ )
           {    int64_t id = pi[i].first; 
                int start = pi[i].second;

@@ -556,10 +556,10 @@ class align {
                                  int from2, int to2 ) const;
 
   int Mutations( const basevector& rd1, const basevector& rd2,
-                 const qualvector& q1, int min_score ) const;
+                 const QualVec& q1, int min_score ) const;
   void PrintMutations( const basevector& rd1, const basevector& rd2, std::ostream& log, const bool zero_based=true) const;
   int Indels( const basevector& rd1, const basevector& rd2,
-              const qualvector& q1, int min_score ) const;
+              const QualVec& q1, int min_score ) const;
   int MatchingBases( const basevector& rd1, const basevector& rd2 );
 
   // PerfectIntervals1, PerfectIntervals2: return vector containing intervals of 

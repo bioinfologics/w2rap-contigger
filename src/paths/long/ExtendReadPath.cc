@@ -12,7 +12,7 @@
 
 namespace {     // ANONYMOUS NAMESPACE
 
-unsigned scoreRightOverlap( bvec const& bases, qvec const& quals,
+unsigned scoreRightOverlap( bvec const& bases, QualVec const& quals,
 						   size_t start, bvec const& edge, int K,
 						   double pDecay,
 						   qual_t mapQ2,
@@ -60,7 +60,7 @@ unsigned scoreRightOverlap( bvec const& bases, qvec const& quals,
 }
 
 
-unsigned scoreLeftOverlap( bvec const& bases, qvec const& quals,
+unsigned scoreLeftOverlap( bvec const& bases, QualVec const& quals,
 						  size_t start, bvec const& edge, int K,
 						   double pDecay,
 						   qual_t mapQ2,
@@ -112,7 +112,7 @@ unsigned scoreLeftOverlap( bvec const& bases, qvec const& quals,
 
 /////////// CLASS METHODS //////////////
 
-void ExtendReadPath::attemptLeftRightExtension(  ReadPath& path, basevector const& bases, qualvector const& quals )
+void ExtendReadPath::attemptLeftRightExtension(  ReadPath& path, basevector const& bases, QualVec const& quals )
 {
     
     while( attemptLeftwardExtension( path, bases, quals) );
@@ -122,7 +122,7 @@ void ExtendReadPath::attemptLeftRightExtension(  ReadPath& path, basevector cons
 
 
 bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
-                        basevector const& bases, qualvector const& quals )
+                        basevector const& bases, QualVec const& quals )
 {
     if ( !path.size() ) return false;
 
@@ -231,7 +231,7 @@ bool ExtendReadPath::attemptLeftwardExtension(  ReadPath& path,
 
 
 bool ExtendReadPath::attemptRightwardExtension( ReadPath& path, basevector const& bases,
-						       qualvector const& quals )
+						       QualVec const& quals )
 {
     if ( !path.size() ) return false;
     

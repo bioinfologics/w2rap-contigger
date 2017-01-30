@@ -849,7 +849,7 @@ namespace
             BRQ_Pather mPather(dict,edges);
             ReadPath mPath;
             ExtendReadPath mExtender(hbv,&toLeft,&toRight);
-            qvec mQV;
+            QualVec mQV;
 
             #pragma omp for
             for (size_t readId=0;readId<reads.size();++readId){
@@ -975,7 +975,7 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
     OutputLog(2) << "Creating read lengths for "<<qsize<<" reads at quality >= " << minQual << std::endl;
     #pragma omp parallel shared(rlen,quals)
     {
-        qvec uq;
+        QualVec uq;
         #pragma omp for
         for (auto i = 0; i < qsize; ++i) {
             quals[i].unpack(&uq);
@@ -996,7 +996,7 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
 uint64_t count_good_lengths(std::vector<uint16_t> &good_lenghts, VecPQVec const& quals, uint64_t from, uint64_t to, unsigned _K, unsigned minQual){
     //Computes the length in _K-mers til hitting minQual on each qual[from-to], returns the total count of goof kmers
     uint64_t nKmers=0;
-    qvec uq;
+    QualVec uq;
     auto itr = uq.end();
     auto beg = uq.begin();
     unsigned good = 0;

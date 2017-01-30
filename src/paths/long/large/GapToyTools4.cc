@@ -175,7 +175,7 @@ void AddNewStuff( vecbvec& new_stuff, HyperBasevector& hb, vec<int>& inv2,
 
 void ExtendPath( ReadPath& p, const int64_t i, const HyperBasevector& hb, 
      const vec<int>& to_right, const bvec& bases,
-     const qvec& quals, const int min_gain, const Bool verbose,
+     const QualVec& quals, const int min_gain, const Bool verbose,
      const int mode )
 {    if ( p.size( ) == 0 ) return;
      int K = hb.K( );
@@ -256,7 +256,7 @@ void ExtendPath( ReadPath& p, const int64_t i, const HyperBasevector& hb,
 
 void ExtendPath2( ReadPath& p, const int64_t i, const HyperBasevector& hb, 
      const vec<int>& to_left, const vec<int>& to_right, const bvec& bases,
-     const qvec& quals, const int min_gain, const Bool verbose,
+     const QualVec& quals, const int min_gain, const Bool verbose,
      const int mode )
 {    if ( p.size( ) == 0 ) return;
      int K = hb.K( );
@@ -351,7 +351,7 @@ void bubble_logger::bubble_data_t::addSupport(size_t branch, bubble_logger::bubb
 // if one or more edges in rp is part of a bubble, perform gap-free alignment on the path as the alternate path
 // and collect the result
 // returns true if at any point (qsum of alt path) < (qsum of orig path)
-bool bubble_logger::log_read(basevector const&read, qualvector const&qual, ReadPath const&rp, bool bVerbose){
+bool bubble_logger::log_read(basevector const&read, QualVec const&qual, ReadPath const&rp, bool bVerbose){
     bool bErr = false;
     for(size_t rr=0;rr<rp.size();++rr){
         const int edge = rp[rr];
@@ -469,7 +469,7 @@ bubble_logger::bubble_logger(const HyperBasevector& hb, const vec<int>& inv)
 
 //do a gap-free alignment of the read against the graph according to rp
 //returns the sum of read-quality-score at the position the sequence mismatches
-int bubble_logger::getQ(basevector const&read, qualvector const&qual, ReadPath const&rp, const qualvector::value_type min_q){
+int bubble_logger::getQ(basevector const&read, QualVec const&qual, ReadPath const&rp, const QualVec::value_type min_q){
     int out=0;
     int bp=0;
     int shift=rp.getOffset();
@@ -536,7 +536,7 @@ class LogBubblesProcessor
 {
 public:
     LogBubblesProcessor( bubble_logger& logger
-                       , vecbasevector const&bases, vecqualvector const&quals, ReadPathVec const& paths2)
+                       , vecbasevector const&bases, QualVecVec const&quals, ReadPathVec const& paths2)
                        : logger_(logger)
                        , bases_(bases)
                        , quals_(quals)
@@ -557,7 +557,7 @@ public:
 private:
     bubble_logger& logger_;
     vecbasevector const& bases_;
-    vecqualvector const& quals_;
+    QualVecVec const& quals_;
     ReadPathVec const&paths2_;
     static const size_t nMaxVerbose=10;
     static SpinLockedData message_lock;

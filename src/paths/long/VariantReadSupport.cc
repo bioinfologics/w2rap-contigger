@@ -755,7 +755,7 @@ void FindVariantProb(const ReadOriginTracker* p_read_tracker,
         std::cout << Date() << ": Finding probabilities for each variant" << std::endl;
 
     const vecbasevector& bases = p_read_tracker->Reads();
-    const vecqualvector& quals = p_read_tracker->Quals();
+    const QualVecVec& quals = p_read_tracker->Quals();
     int nsamples = p_read_tracker->getSampleList().size();
 
     std::map<Variant, std::set<std::pair<int,int>>> var_group_branch;
@@ -1461,7 +1461,7 @@ std::cout << "WARNING: imminent crashing/ill-defined behavior in current variant
 // Performe gapless alignment of reads to hyperbasevector and report the
 // preference of reads aligned to each edge as calculated by qualsum difference
 // between best in-edge placement and best out-edge placement.
-void FindReadHomesBest(const vecbasevector& bases, const vecqualvector& quals, 
+void FindReadHomesBest(const vecbasevector& bases, const QualVecVec& quals,
         const HyperBasevector& bubble_graph,
         vec< vec< std::pair<int,int> > >* homes_index,
         vec<int> edges_to_show_supports,

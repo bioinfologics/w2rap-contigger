@@ -17,14 +17,14 @@
 #include "ScoreAlignment.h"
 
 // These functors exist to prevent duplication of code to handle rc'ed
-// elements.  If the qual() method is handed an empty qualvector, it
+// elements.  If the qual() method is handed an empty QualVec, it
 // presumes the base is of infinite (255) quality.
 
 struct null_coord_xform 
 {
   char base( const basevector& bv, const int coord ) const
     { return bv[ coord ]; }
-  unsigned char qual( const qualvector& qv, const int coord ) const
+  unsigned char qual( const QualVec& qv, const int coord ) const
     { return ( qv.size() == 0 ? 255 : qv[ coord ] ); }
 };
   
@@ -32,7 +32,7 @@ struct rc_coord_xform
 {
   char base( const basevector& bv, const int coord ) const
     { return 3 - bv[ bv.size() - coord - 1]; }
-  unsigned char qual( const qualvector& qv, const int coord ) const
+  unsigned char qual( const QualVec& qv, const int coord ) const
     { return ( qv.size() == 0 ? 255 : qv[ qv.size() - coord - 1 ] ); }
 };
   
@@ -62,8 +62,8 @@ float Prob( unsigned char q )
 
 template< class rd2_transform >
 float ScoreMatch( unsigned int p1, unsigned int p2,
-		  const basevector& rd1, const qualvector& scores1, 
-		  const basevector& rd2, const qualvector& scores2,
+		  const basevector& rd1, const QualVec& scores1,
+		  const basevector& rd2, const QualVec& scores2,
 		  const rd2_transform& trans )
 {
   if ( rd1[p1] == trans.base(rd2,p2) ) 
@@ -109,8 +109,8 @@ float ScoreMatch( unsigned int p1, unsigned int p2,
 
 template< class rd1_transform, class rd2_transform >
 float ScoreGapOnFirstRead( int p1, int p2, int gap,
-			   const basevector& rd1, const qualvector& scores1, 
-			   const basevector& rd2, const qualvector& scores2,
+			   const basevector& rd1, const QualVec& scores1,
+			   const basevector& rd2, const QualVec& scores2,
 			   const rd1_transform& rd1_trans, 
 			   const rd2_transform& rd2_trans )
 {
@@ -146,8 +146,8 @@ float ScoreGapOnFirstRead( int p1, int p2, int gap,
 
 template< class rd1_transform, class rd2_transform >
 float ScoreGapOnSecondRead( int p1, int p2, int gap,
-			    const basevector& rd1, const qualvector& scores1, 
-			    const basevector& rd2, const qualvector& scores2,
+			    const basevector& rd1, const QualVec& scores1,
+			    const basevector& rd2, const QualVec& scores2,
 			    const rd1_transform& rd1_trans, 
 			    const rd2_transform& rd2_trans )
 {
@@ -163,8 +163,8 @@ float ScoreGapOnSecondRead( int p1, int p2, int gap,
 
 template< class rd2_transform >
 float ScoreAlignment( const align& a, 
-		      const basevector& rd1, const qualvector& scores1, 
-		      const basevector& rd2, const qualvector& scores2,
+		      const basevector& rd1, const QualVec& scores1,
+		      const basevector& rd2, const QualVec& scores2,
 		      const rd2_transform& trans, int start1, int stop1,
                       int start2, int stop2, Bool ignore_gaps )
 
@@ -233,8 +233,8 @@ float ScoreAlignment( const align& a,
      return answer;    }
 
 float ScoreAlignment( const align& a, 
-		      const basevector& rd1, const qualvector& scores1, 
-		      const basevector& rd2, const qualvector& scores2,
+		      const basevector& rd1, const QualVec& scores1,
+		      const basevector& rd2, const QualVec& scores2,
                       int start1, int stop1, int start2, int stop2,
                       Bool ignore_gaps )
 {
@@ -243,8 +243,8 @@ float ScoreAlignment( const align& a,
 }
 			 
 float ScoreAlignment( Bool rd2_is_rc, const align& a, 
-		      const basevector& rd1, const qualvector& scores1, 
-		      const basevector& rd2, const qualvector& scores2,
+		      const basevector& rd1, const QualVec& scores1,
+		      const basevector& rd2, const QualVec& scores2,
                       int start1, int stop1, int start2, int stop2,
                       Bool ignore_gaps )
 {    
@@ -264,8 +264,8 @@ float ScoreAlignment( Bool rd2_is_rc, const align& a,
 
 template< class rd2_transform >
 int ScoreAlignmentPoly( const align& a, 
-		      const basevector& rd1, const qualvector& scores1, 
-		      const basevector& rd2, const qualvector& scores2,
+		      const basevector& rd1, const QualVec& scores1,
+		      const basevector& rd2, const QualVec& scores2,
 		      const rd2_transform& trans, int start1, int stop1,
                       int start2, int stop2 )
 
@@ -310,8 +310,8 @@ int ScoreAlignmentPoly( const align& a,
      return (int) mismatches.size( ) - i;    }
 
 int ScoreAlignmentPoly( const align& a, 
-		      const basevector& rd1, const qualvector& scores1, 
-		      const basevector& rd2, const qualvector& scores2,
+		      const basevector& rd1, const QualVec& scores1,
+		      const basevector& rd2, const QualVec& scores2,
                       int start1, int stop1, int start2, int stop2 )
 {
   return ScoreAlignmentPoly( a, rd1, scores1, rd2, scores2, null_coord_xform(),
@@ -319,8 +319,8 @@ int ScoreAlignmentPoly( const align& a,
 }
 			 
 int ScoreAlignmentPoly( Bool rd2_is_rc, const align& a, 
-		      const basevector& rd1, const qualvector& scores1, 
-		      const basevector& rd2, const qualvector& scores2,
+		      const basevector& rd1, const QualVec& scores1,
+		      const basevector& rd2, const QualVec& scores2,
                       int start1, int stop1, int start2, int stop2 )
 {    
   if (rd2_is_rc) 
@@ -343,8 +343,8 @@ int ScoreAlignmentPoly( Bool rd2_is_rc, const align& a,
 
 template< class rd2_transform >
 void Regap( align& a, 
-	    const basevector& rd1, const qualvector& scores1,
-	    const basevector& rd2, const qualvector& scores2,
+	    const basevector& rd1, const QualVec& scores1,
+	    const basevector& rd2, const QualVec& scores2,
 	    const rd2_transform& trans )
 
 {    Bool changed = False;
@@ -537,16 +537,16 @@ void Regap( align& a,
 
 
 void Regap( align& a, 
-	    const basevector& rd1, const qualvector& scores1, 
-	    const basevector& rd2, const qualvector& scores2 )
+	    const basevector& rd1, const QualVec& scores1,
+	    const basevector& rd2, const QualVec& scores2 )
 {
   Regap( a, rd1, scores1, rd2, scores2, null_coord_xform() );    
 }
 
 void Regap( Bool rd2_is_rc, 
 	    align& a, 
-	    const basevector& rd1, const qualvector& scores1, 
-	    const basevector& rd2, const qualvector& scores2 )
+	    const basevector& rd1, const QualVec& scores1,
+	    const basevector& rd2, const QualVec& scores2 )
 {
   if (rd2_is_rc) 
     Regap( a, rd1, scores1, rd2, scores2, rc_coord_xform() );

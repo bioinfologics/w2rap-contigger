@@ -369,7 +369,7 @@ void AssessAssembly( const String& SAMPLE, const SupportedHyperBasevector& shb,
      {    double eclock = WallClockTime( );
           Bool print_a = False;
           vecbasevector bases( TMP + "/frag_reads_orig.fastb" );
-          vecqualvector quals( TMP + "/frag_reads_orig.qualb" );
+          QualVecVec quals( TMP + "/frag_reads_orig.qualb" );
           vec<basevector> R;
           for ( int g = 0; g < (int) G.size( ); g++ )
                R.push_back( G[g] );
@@ -536,7 +536,7 @@ void CountCov( const SupportedHyperBasevector& shb, const String& TMP,
 
      for ( int f = 0; f < fcount; f++ )
      {    vecbasevector bases( TMP + "/" +ToString(f) + ".fastb" );
-          vecqualvector quals( TMP + "/" +ToString(f) + ".qualb" );
+          QualVecVec quals( TMP + "/" +ToString(f) + ".qualb" );
           int gid = ( f < gp1 ? 0 : 1 );
 
           // Align reads.

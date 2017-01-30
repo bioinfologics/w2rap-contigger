@@ -124,8 +124,8 @@ void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,
 // to switch between VirtualMasterVec<bvec> and vecbasevector. The former cannot be const&
 template<typename T>
 struct ZeroCorrectedQuals_impl{
-    static void do_it(T oreads, vecbvec const& creads, vecqvec* pQuals){
-        vecqvec& cquals = *pQuals;
+    static void do_it(T oreads, vecbvec const& creads, QualVecVec* pQuals){
+        QualVecVec& cquals = *pQuals;
         ForceAssertEq(oreads.size(),creads.size());
         ForceAssertEq(oreads.size(),cquals.size());
         auto iOBV = oreads.begin();
@@ -135,7 +135,7 @@ struct ZeroCorrectedQuals_impl{
         {
             bvec const& bvOrig = *iOBV;
             bvec const& bvCorr = *iCBV;
-            qvec& qv = *iQV;
+            QualVec& qv = *iQV;
             ForceAssertEq(bvOrig.size(), bvCorr.size());
             ForceAssertEq(bvOrig.size(), qv.size());
             auto iO = bvOrig.cbegin();
@@ -149,12 +149,12 @@ struct ZeroCorrectedQuals_impl{
 
 // zero all quality scores associated with corrections (for reads already in memory)
 void ZeroCorrectedQuals( vecbasevector const& oreads, vecbvec const& creads,
-                            vecqvec* pQuals )
+                            QualVecVec* pQuals )
 {
     ZeroCorrectedQuals_impl<decltype(oreads)>::do_it(oreads,creads,pQuals);
 }
 
-void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done )
+void CapQualityScores( QualVecVec& cquals, const vec<Bool>& done )
 {    const int cap_radius = 4;
      for ( int64_t id = 0; id < (int64_t) cquals.size( ); id++ )
      {    if ( done[id] ) continue;
@@ -168,7 +168,7 @@ void CapQualityScores( vecqualvector& cquals, const vec<Bool>& done )
                cquals[id][j] = q[j];    }    }
 
 
-void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager &gpairs,
+void CorrectionSuite(vecbasevector &gbases, QualVecVec &gquals, PairsManager &gpairs,
                      const long_heuristics &heur,
                      vecbasevector &creads,
                      VecEFasta &corrected, vec<int> &cid, vec<pairing_info> &cpartner,
@@ -187,13 +187,13 @@ void CorrectionSuite(vecbasevector &gbases, vecqualvector &gquals, PairsManager 
 
     const String sFragReadsOrig = "frag_reads_orig";
 
-    vecqualvector cquals;
+    QualVecVec cquals;
     creads = gbases;
     cquals = gquals;
     size_t nReads = creads.size();
     ForceAssertEq(nReads, cquals.size());
     size_t nBases = 0, qualSum = 0;
-    for (qvec const &qv : cquals) {
+    for (QualVec const &qv : cquals) {
         nBases += qv.size();
         qualSum = std::accumulate(qv.begin(), qv.end(), qualSum);
     }

@@ -58,7 +58,7 @@ void PrintBases( std::ostream& out, int blanks, const vec<char>& rd, int from, i
           out << rd[i];
      out << "\n";    }
 
-void PrintScores1( std::ostream& out, int blanks, const qualvector& s, int from, int to )
+void PrintScores1( std::ostream& out, int blanks, const QualVec& s, int from, int to )
 {    PrintBlanks(out, blanks);
      for ( int i = from; i < to; i++ )
      {    if ( s[i] >= 100 ) out << 'H';
@@ -66,7 +66,7 @@ void PrintScores1( std::ostream& out, int blanks, const qualvector& s, int from,
           else out << (unsigned char)(s[i] + '0');    }
      out << "\n";    }
 
-void PrintScores2( std::ostream& out, int blanks, const qualvector& s, int from, int to )
+void PrintScores2( std::ostream& out, int blanks, const QualVec& s, int from, int to )
 {    PrintBlanks(out, blanks);
      for ( int i = from; i < to; i++ )
      {    if ( s[i] >= 100 ) out << 'H';
@@ -115,8 +115,8 @@ Bool Equal( const fastavector& b1, const int j1,
 
 template<class BASEVEC1, class BASEVEC2>
 void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const BASEVEC1& rd1,
-     const BASEVEC2& rd2, const align& a, const qualvector& scores1,
-     const qualvector& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
+     const BASEVEC2& rd2, const align& a, const QualVec& scores1,
+     const QualVec& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
      Bool abbreviate_poor, float min_fract_poor,
      Bool abbreviate_good, float max_fract_good, Bool print_heads_and_tails,
      const Bool CtoT_special, const int pw )
@@ -447,7 +447,7 @@ void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const BASEVEC1& r
 template<class BASEVEC1, class BASEVEC2>
 void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out,
      const BASEVEC1& rd1, BASEVEC2 rd2, const align& a,
-     const qualvector& scores1, qualvector scores2, int begin, Bool one_frame,
+     const QualVec& scores1, QualVec scores2, int begin, Bool one_frame,
      int min_score_to_abbrev, Bool abbreviate_poor, float min_fract_poor,
      Bool abbreviate_good, float max_fract_good, const int pw )
 {    if (rd2_is_rc)
@@ -459,46 +459,46 @@ void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out,
 
 template
 void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const basevector& rd1,
-     const basevector& rd2, const align& a, const qualvector& scores1,
-     const qualvector& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
+     const basevector& rd2, const align& a, const QualVec& scores1,
+     const QualVec& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
      Bool abbreviate_poor, float min_fract_poor,
      Bool abbreviate_good, float max_fract_good, Bool print_heads_and_tails,
      const Bool CtoT_special, const int pw );
 
 template
 void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const vec<char>& rd1,
-     const basevector& rd2, const align& a, const qualvector& scores1,
-     const qualvector& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
+     const basevector& rd2, const align& a, const QualVec& scores1,
+     const QualVec& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
      Bool abbreviate_poor, float min_fract_poor,
      Bool abbreviate_good, float max_fract_good, Bool print_heads_and_tails,
      const Bool CtoT_special, const int pw );
 
 template
 void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const fastavector& rd1,
-     const basevector& rd2, const align& a, const qualvector& scores1,
-     const qualvector& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
+     const basevector& rd2, const align& a, const QualVec& scores1,
+     const QualVec& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
      Bool abbreviate_poor, float min_fract_poor,
      Bool abbreviate_good, float max_fract_good, Bool print_heads_and_tails,
      const Bool CtoT_special, const int pw );
 
 template
 void PrintVisualAlignment( Bool abbreviate, std::ostream& out, const fastavector& rd1,
-     const fastavector& rd2, const align& a, const qualvector& scores1,
-     const qualvector& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
+     const fastavector& rd2, const align& a, const QualVec& scores1,
+     const QualVec& scores2, int begin, Bool one_frame, int min_score_to_abbrev,
      Bool abbreviate_poor, float min_fract_poor,
      Bool abbreviate_good, float max_fract_good, Bool print_heads_and_tails,
      const Bool CtoT_special, const int pw );
 
 template void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out, 
      const basevector& rd1, basevector rd2, const align& a, 
-     const qualvector& scores1 = qualvector(0), qualvector scores2 = qualvector(0),
+     const QualVec& scores1 = QualVec(0), QualVec scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbeviate_poor = False, float min_fract_poor = 2.0,
      Bool abbreviate_good = False, float max_fract_good = 0.05, const int pw );
 
 template void PrintVisualAlignment( Bool rd2_is_rc, Bool abbreviate, std::ostream& out, 
      const fastavector& rd1, fastavector rd2, const align& a, 
-     const qualvector& scores1 = qualvector(0), qualvector scores2 = qualvector(0),
+     const QualVec& scores1 = QualVec(0), QualVec scores2 = QualVec(0),
      int begin = 0, Bool one_frame = false, int min_score_to_abbrev = 0,
      Bool abbeviate_poor = False, float min_fract_poor = 2.0,
      Bool abbreviate_good = False, float max_fract_good = 0.05, const int pw );
@@ -541,7 +541,7 @@ void PrintAlignment( Bool rd2_is_rc, std::ostream& out, const basevector& rd1,
 {    if (rd2_is_rc) rd2.ReverseComplement( );
      PrintAlignment( out, rd1, rd2, a );    }
 
-void PrintReadWithScores( basevector& B, qualvector& Q, std::ostream& out, const int pw )
+void PrintReadWithScores( basevector& B, QualVec& Q, std::ostream& out, const int pw )
 {    Assert( B.size( ) == Q.size( ) );
      int n = B.size( );
      std::vector<char> b(2*n), s1(2*n), s2(2*n);
@@ -567,8 +567,8 @@ void PrintReadWithScores( basevector& B, qualvector& Q, std::ostream& out, const
           ++j;    }    }
 
 void PrintErrorsInAlignment(std::ostream& out, const basevector& rd1,
-     const basevector& rd2, const alignment& a, const qualvector& scores1,
-     const qualvector& scores2 )
+     const basevector& rd2, const alignment& a, const QualVec& scores1,
+     const QualVec& scores2 )
 {    avector<int> gaps, lengths;
      int pos1, pos2, errors;
      a.Unpack( pos1, pos2, errors, gaps, lengths );

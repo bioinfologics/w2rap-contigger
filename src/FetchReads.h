@@ -26,23 +26,23 @@
 ///
 /// The vector b is cleared first.
 
-void FetchReads( vecbasevector& b, vecqualvector& q, vecString * names,
+void FetchReads( vecbasevector& b, QualVecVec& q, vecString * names,
                  unsigned int n, String fasta_file,
                  int amb_break = 0, int min_size = 0,
                  std::ostream& out = std::cout,
                  Bool no_q = False, const vec<int>* ids_to_read = 0, const Bool allowX = False );
 
 inline void FetchReads( vecbasevector& b, vecString& names, String fasta_file )
-{    vecqualvector q;
+{    QualVecVec q;
      FetchReads( b, q, &names, 0, fasta_file, 0, 0, std::cout, True );    }
 
 inline void FetchReads( vecbasevector& b, vecString& names, String fasta_file, const Bool allowX )
-{    vecqualvector q;
+{    QualVecVec q;
      FetchReads( b, q, &names, 0, fasta_file, 0, 0, std::cout, True, 0, allowX );    }
 
 ///Put reads from a fasta file into a vecbasevector.
 /// Ambiguous bases are saved as random bases.
-void FetchReads( vecbasevector& b, vecqualvector& q, unsigned int n,
+void FetchReads( vecbasevector& b, QualVecVec& q, unsigned int n,
                  String fasta_file, int amb_break = 0, int min_size = 0,
                  std::ostream& out = std::cout,
                  Bool no_q = False, const vec<int>* ids_to_read = 0, const Bool allowX = False );

@@ -89,7 +89,7 @@ template<int L> void ImprovePath( const vec<int>& rstarts,
      const vec< std::pair<int64_t, std::pair<int,int> > >& locsx,
      const ReadPathVec& paths, const int64_t xi, ReadPath& p, const int id,
      const HyperBasevector& hb, const vec<int>& inv, const vec<int>& to_left,
-     const vec<int>& to_right, const basevector& b, const qualvector& q,
+     const vec<int>& to_right, const basevector& b, const QualVec& q,
      const vec< triple<kmer<L>,int,int> >& kmers_plus, const path_improver& pimp,
      path_improver::path_status& status )
 {

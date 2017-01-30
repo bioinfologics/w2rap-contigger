@@ -113,9 +113,9 @@ class alignment : public packalign {
      std::vector<int> MutationsGap1Gap2( const basevector& rd1,
           int from1, int to1, const basevector& rd2, int from2, int to2 );
      int Mutations( const basevector& rd1, const basevector& rd2,
-          const qualvector& q1, int min_score );
+          const QualVec& q1, int min_score );
      int Indels( const basevector& rd1, const basevector& rd2,
-          const qualvector& q1, int min_score );
+          const QualVec& q1, int min_score );
 
      void Compactify( int len1, int len2 ); // Remove zero gaps and lengths.
 
@@ -192,13 +192,13 @@ class alignment_plus {
 
      void Print( Bool abbreviate, std::ostream& out, const basevector& rd1,
           const basevector& rd2, const basevector& rd2rc,
-          const qualvector& q1, const qualvector& q2,
-          const qualvector& q2rc, int begin = 0, Bool one_frame = False,
+          const QualVec& q1, const QualVec& q2,
+          const QualVec& q2rc, int begin = 0, Bool one_frame = False,
           Bool highlight_score = False );
 
      void Print( Bool abbreviate, std::ostream& out, const basevector& rd1,
-          const basevector& rd2, const qualvector& q1,
-          const qualvector& q2, int begin = 0, Bool one_frame = False,
+          const basevector& rd2, const QualVec& q1,
+          const QualVec& q2, int begin = 0, Bool one_frame = False,
           Bool highlight_score = False );
 
      // Swap converts a given alignment_plus between id1 and id2 into the

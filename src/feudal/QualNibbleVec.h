@@ -160,8 +160,8 @@ public:
   QualNibbleVec( QualNibbleVec const& q )
   : BaseT(q) {}
 
-  // Construct from an 8 bit qualvector
-  explicit QualNibbleVec( qualvector const & qv )
+  // Construct from an 8 bit QualVec
+  explicit QualNibbleVec( QualVec const & qv )
   { assign(qv.begin(),qv.end(),QualMapper()); }
 
   QualNibbleVec& operator=( QualNibbleVec const& q )
@@ -224,16 +224,16 @@ public:
   void readBinary( BinaryReader& reader ) { BaseT::readBinary(reader); }
   static size_t externalSizeof() { return 0; }
   //
-  // Converstions to and from 8 bit qualvector
+  // Converstions to and from 8 bit QualVec
   //
 
-  // Initialize QualNibbleVec from an 8 bit qualvector
-  void SetFromQualvector( const qualvector& q )
+  // Initialize QualNibbleVec from an 8 bit QualVec
+  void SetFromQualvector( const QualVec& q )
   { assign(q.begin(),q.end(),QualMapper()); }
 
-  // Convert QualNibbleVec to an 8 bit qualvector
-  qualvector GetQualvector() const
-  { qualvector qv; qv.reserve(size());
+  // Convert QualNibbleVec to an 8 bit QualVec
+  QualVec GetQualvector() const
+  { QualVec qv; qv.reserve(size());
     for (size_type i = 0; i < size(); ++i) qv.push_back( (*this)[i] );
     return qv; }
 

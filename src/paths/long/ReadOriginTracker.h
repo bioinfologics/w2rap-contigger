@@ -26,7 +26,7 @@ public:
     String getSampleName(size_t read_ID) const;
 
     const vecbasevector& Reads() const;
-    const vecqualvector& Quals() const;
+    const QualVecVec& Quals() const;
 
     // return the direction of the read +1 or -1. 0 for unknown
     enum READ_DIR {PLUS, MINUS, UNKNOWN};

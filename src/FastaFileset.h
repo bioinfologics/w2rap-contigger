@@ -34,7 +34,7 @@ inline void LoadReads(vecbasevector & reads, const String & fname) {
 }
 
 /// Put qualities and names from qual file into vecqualvector and vecString.
-void FastFetchQuals(vecqualvector & q, vecString * n, const String &file);
+void FastFetchQuals(QualVecVec & q, vecString * n, const String &file);
 
 
 /// Simple struct to pair names with data.
@@ -127,7 +127,7 @@ class FastaFilesetTemplate
 typedef FastaFilesetTemplate<veccompseq,CompressedSequence,FastaSequenceFilestream> 
 FastaSequenceFileset;
 
-typedef FastaFilesetTemplate<vecqualvector,qualvector,FastaQualityFilestream> 
+typedef FastaFilesetTemplate<QualVecVec,QualVec,FastaQualityFilestream>
 FastaQualityFileset;
 
 
@@ -150,13 +150,13 @@ class FastaPairedFileset {
   /// Retrieve the next parsed sequence for which there is both base
   /// and qual data, returning true if such a sequence was found.
   /// Sequences are ordered alphabetically by name.
-  bool GetNext( String &name, CompressedSequence &bases, qualvector &quals );
+  bool GetNext( String &name, CompressedSequence &bases, QualVec &quals );
  
   /// If the parsed sequences contain exactly one set each of bases and
   /// quals with the given name, copy them to the parameters and return
   /// true.  Otherwise, return false.  Has no effect on iteration via
   /// GetNext().
-  bool GetByName( const String &name, CompressedSequence &bases, qualvector &quals );
+  bool GetByName( const String &name, CompressedSequence &bases, QualVec &quals );
 
   void GetUnmatchedSequenceNames( vec<String> &unmatchedNames );
   void GetUnmatchedQualityNames( vec<String> &unmatchedNames );
