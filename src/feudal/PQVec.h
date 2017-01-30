@@ -26,7 +26,18 @@ public:
     PQVec(){
         mSize=0;
     }
-     PQVec( QualVec const& qv ) {
+    PQVec(PQVec & other){
+        mSize=other.mSize;
+        mData=(uint8_t *)malloc(mSize);
+        for (auto i=0;i<mSize;++i) mData[i]=other.mData[i];
+    }
+    PQVec(PQVec && other){
+        mSize=other.mSize;
+        mData=other.mData;
+        other.mSize=0;
+        other.mData= nullptr;
+    }
+    PQVec( QualVec const& qv ) {
         //Encode from qv
         mSize=0;
         if (0==qv.size()) return;
@@ -74,7 +85,6 @@ public:
     }
 
     operator QualVec() const { QualVec qv; unpack(&qv); return qv; }
-
 
     uint8_t * mData;
     uint16_t mSize;

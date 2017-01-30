@@ -10,7 +10,7 @@
 #include "Qualvector.h"
 
 void RefTraceControl::ReadySampleLookup(){ //ready the pair manager
-    if (read_head != "" && reads.empty()) {
+    /*if (read_head != "" && reads.empty()) {
         reads.ReadAll(read_head + ".fastb");
         load_quals(quals,read_head + ".qualb");
         pm.Read(read_head + ".pairs");
@@ -21,7 +21,7 @@ void RefTraceControl::ReadySampleLookup(){ //ready the pair manager
         ForceAssertEq(reads.size(), pm.nReads());
         std::cout << Date() << ": Loaded " << reads.size() << " reads from " << 
             read_head << std::endl;
-    }
+    }*/
 }
 
 vec<String> RefTraceControl::getSampleList()const{ //get a list of library names

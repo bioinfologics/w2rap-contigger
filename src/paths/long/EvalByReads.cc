@@ -258,7 +258,7 @@ void EvaluateRead( const int id, const HyperBasevector& hb_A_fw,
                               brc.ReverseComplement( );
                               rrc.ReverseComplement( );
                               QualVec qrc(q);
-                              qrc.ReverseMe( );
+                              std::reverse(qrc.begin(), qrc.end() );
                               PrintVisualAlignment( True, std::cout, 
                                    brc, rrc, a, qrc );    }    }    }    }
 

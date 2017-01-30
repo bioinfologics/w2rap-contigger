@@ -211,11 +211,10 @@ public:
 // to 0.
   
 
-template<class QVV_t>
-void pre_correct_parallel(const PC_Params  & pcp, 
+void pre_correct_parallel(const PC_Params  & pcp,
                           const unsigned     K,
                           BaseVecVec       * bases_p, 
-                          QVV_t            * quals_p, 
+                          QualVecVec       * quals_p,
                           KmerSpectrum     * kspec_p, 
                           const int          VERBOSITY,
                           const unsigned     NUM_THREADS, 
@@ -227,48 +226,8 @@ void pre_correct_parallel(const PC_Params  & pcp,
 
 
 
-
-template<class QVV_t>
-void find_errors_parallel(const EF_Params  & efp, 
-                          const size_t       K, 
-                          BaseVecVec       * bases_p, 
-                          QVV_t            * quals_p, 
-                          const size_t       NUM_CYCLES,
-                          const unsigned     VERBOSITY,
-                          const unsigned     NUM_THREADS, 
-                          const size_t       mem_mean_ceil = 0);
-
-
-
-
 // ---- Single thread call to find errors
 //      Useful when correcting small local read sets in modules other than FindErrors
-
-template<class QVV_t>
-void find_errors(const EF_Params  & efp, 
-                 const size_t       K, 
-                 BaseVecVec       * bases_p, 
-                 QVV_t            * quals_p, 
-                 const size_t       NUM_CYCLES,
-                 const size_t       VERBOSITY);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

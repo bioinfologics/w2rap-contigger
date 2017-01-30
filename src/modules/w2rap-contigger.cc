@@ -61,7 +61,8 @@ void step_2(HyperBasevector &hbv,
     vec<uint16_t> rlen;
     create_read_lengths(rlen,quals,minQual);
     OutputLog(2)<<"Unloading quals"<<std::endl;
-    quals.destroy();
+    quals.clear();
+    quals.shrink_to_fit();
     buildReadQGraph(bases, quals, rlen, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,
                     tmp_dir, disk_batches, count_batch_size);
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
@@ -589,11 +590,11 @@ int main(const int argc, const char * argv[]) {
         if ( (2==step or 4==step or 5==step or 6==step) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
                 OutputLog(2) << "Loading bases..." << std::endl;
-                bases.ReadAll(out_dir + "/frag_reads_orig.fastb");
+                bases.ReadAll(out_dir + "/pe_data.fastb");
             }
             if (quals.size()==0) {
                 OutputLog(2) << "Loading quals..." << std::endl;
-                load_quals(quals, out_dir + "/frag_reads_orig.qualp");
+                load_quals(quals, out_dir + "/pe_data.cqual");
             }
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
@@ -664,9 +665,9 @@ int main(const int argc, const char * argv[]) {
 
         if (1==step and (to_step<6 or dump_all)) {
             //TODO: dump reads
-            OutputLog(2) << "Dumping reads in fastb/qualp format..." << std::endl;
-            bases.WriteAll(out_dir + "/frag_reads_orig.fastb");
-            quals.WriteAll(out_dir + "/frag_reads_orig.qualp");
+            OutputLog(2) << "Dumping reads in fastb/cqual format..." << std::endl;
+            bases.WriteAll(out_dir + "/pe_data.fastb");
+            save_quals(quals,out_dir + "/pe_data.cqual");
             OutputLog(2) << "DONE!" << std::endl;
         } else {
             if (step_outputg_prefix[step-1]!="" and (dump_all or step==to_step)){

@@ -1536,7 +1536,7 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
         OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
         OutputLog(2) << "Loading quals..." << std::endl;
-        load_quals(quals,workdir + "/frag_reads_orig.qualp");
+        load_quals(quals,workdir + "/pe_data.cqual");
         OutputLog(2) << "pathing reads into graph..." << std::endl;
         pPaths->clear();
         pPaths->resize(reads.size());

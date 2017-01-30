@@ -110,7 +110,7 @@ template<int L> void PreCorrectCore( const int flank, const int u, const int l,
                {    basevector b = bases[id];
                     b.ReverseComplement( );
                     QualVec q = quals[id];
-                    q.ReverseMe( );
+                    std::reverse(q.begin(),q.end());
                     for ( int z = 0; z < b.isize( ); z++ )
                     {    pbases[row][ z + left_ext - qpos ] = as_base( b[z] );
                          qbases[row][ z + left_ext - qpos ] = q[z];    }    }
