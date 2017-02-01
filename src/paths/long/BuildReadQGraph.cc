@@ -55,7 +55,7 @@ namespace
     typedef KmerDictEntry<K> BRQ_Entry;
     typedef KmerDict<K> BRQ_Dict;
 
-    struct __attribute__((__packed__)) KMerNodeFreq_s {
+    typedef struct __attribute__((__packed__)) KMerNodeFreq_s {
         uint64_t kdata[2];
         uint8_t count;
         uint8_t kc;
@@ -1121,9 +1121,8 @@ void inplace_count_merge(std::shared_ptr<std::vector<KMerNodeFreq_s>> counts1, s
         }
     }
     //shrink counts2 to the size of its remaining elements
-    //std::cout<<"merging, resizing counts2 to " << itr2w-counts2.begin() <<std::endl;
     counts2->resize(itr2w-counts2->begin());
-    counts2->shrink_to_fit();
+    //counts2->shrink_to_fit();
     //expand counts1 to allow the insertion of the unique values on counts2
     //std::cout<<"merging, resizing counts1 to " << counts1.size()+counts2.size() << std::endl;
     counts1->resize(counts1->size()+counts2->size());
@@ -1142,89 +1141,8 @@ void inplace_count_merge(std::shared_ptr<std::vector<KMerNodeFreq_s>> counts1, s
         ++writr1;
     }
     counts2->clear();
-    counts2->shrink_to_fit();
+    //counts2->shrink_to_fit();
 }
-
-
-std::vector<KMerNodeFreq> createDictOMPRecursive(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen, uint64_t from, uint64_t to, uint64_t batch_size, unsigned minFreq, std::string workdir=""){
-    std::vector<KMerNodeFreq> kmer_list;
-    //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
-    if (to - from > batch_size) {
-        uint64_t mid_point = from + (to - from) / 2;
-        #pragma omp task shared(reads,rlen,kmer_list)
-        { kmer_list = createDictOMPRecursive(NULL, reads, rlen, from, mid_point, batch_size, minFreq);}
-        std::vector<KMerNodeFreq> entries2;
-        #pragma omp task shared(reads,rlen,entries2)
-        { entries2 = createDictOMPRecursive(NULL, reads, rlen, mid_point, to, batch_size, minFreq); }
-        #pragma omp taskwait
-        inplace_count_merge(kmer_list,entries2);
-
-    } else { //just do the kmer creation and sort/collapse
-        //#pragma omp critical
-        //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", counting..." << std::endl;
-        uint64_t total_good_lenght = std::accumulate(rlen.begin()+from,rlen.begin()+to,0);
-        kmer_list.clear();
-        kmer_list.reserve(total_good_lenght);
-        //Populate the kmer list
-        for (auto readId = from; readId < to; ++readId) {
-            unsigned len = rlen[readId];
-            if (len > K) {
-                auto beg = reads[readId].begin(), itr=beg+K, last=beg+(len-1);
-                KMerNodeFreq kkk(beg);
-                kkk.kc = KMerContext::initialContext(*itr);
-                kkk.count=1;
-                kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
-                while ( itr != last )
-                { unsigned char pred = kkk.front();
-                    kkk.toSuccessor(*itr); ++itr;
-                    kkk.kc = KMerContext(pred,*itr);
-                    kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
-                }
-                kkk.kc = KMerContext::finalContext(kkk.front());
-                kkk.toSuccessor(*last);
-                kmer_list.push_back( kkk.isRev() ? KMerNodeFreq(kkk,true) : kkk);
-            }
-        }
-        std::sort(kmer_list.begin(), kmer_list.end());
-        collapse_entries(kmer_list);
-    }
-    //sort
-    //#pragma omp critical
-    //std::cout << "createDictOMPRecursive (thread "<<omp_get_thread_num()<<") from " << from << " to " << to << ", sorting/collapsing "<<kmer_list.size()<<" kmers ..."
-    //          << std::endl;
-
-
-    if (NULL != dict) { //merge sort and return that
-        OutputLog(2) << kmer_list.size() << " kmers counted, filtering..." << std::endl;
-        (*dict) = new BRQ_Dict(kmer_list.size());
-        uint64_t used = 0,not_used=0;
-        uint64_t hist[256];
-        for (auto &h:hist) h=0;
-        for (auto &knf:kmer_list) {
-            ++hist[std::min(255,(int)knf.count)];
-            if (knf.count >= minFreq) {
-                (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
-                used++;
-            } else {
-                not_used++;
-            }
-
-        }
-        OutputLog(2) << used << " / " << kmer_list.size() << " kmers with Freq >= " << minFreq << std::endl;
-        kmer_list.clear();
-        if (""!=workdir) {
-            std::ofstream kff(workdir + "/small_K.freqs");
-            for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
-            kff.close();
-        }
-
-    }
-    return kmer_list;
-
-}
-
-
-
 
 std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, std::vector<uint16_t> const &rlen,
                                                                uint64_t gfrom, uint64_t gto, uint64_t batch_size=0) {
@@ -1233,11 +1151,6 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, 
     if (batch_size == 0) batch_size = (gto - gfrom) / (4 * omp_get_max_threads()) + 1;
     const uint64_t batches = ((gto - gfrom) + batch_size - 1) / batch_size;
     OutputLog(3) << "OMP-merge kmer counting in " << batches << " batches of " << batch_size << " reads" << std::endl;
-    //OutputLog(2) << "each KMer uses " <<sizeof(KMer<K>)<<" bytes"<<std::endl;
-    //OutputLog(2) << "each KMerContext uses " <<sizeof(KMerContext)<<" bytes"<<std::endl;
-    //OutputLog(2) << "each KMerNodeFreq uses " <<sizeof(KMerNodeFreq)<<" bytes"<<std::endl;
-    //OutputLog(2) << "each KMerNodeFreq_s uses " <<sizeof(KMerNodeFreq_s)<<" bytes"<<std::endl;
-
 
     std::vector<std::atomic_uint_fast8_t *> batch_status; //level->batch->status
 
@@ -1258,7 +1171,6 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, 
 #pragma omp for schedule(dynamic)
         for (auto batch = 0; batch < batches; ++batch) {
             //==== Part 1: actually counting ====
-            KMerNodeFreq_s knfs;
             uint64_t from = gfrom + batch * batch_size;
             uint64_t read_count = (batch < batches - 1) ? batch_size : (gto - gfrom) - batch_size * (batches - 1);
             uint64_t to = from + read_count;
@@ -1266,8 +1178,9 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, 
             std::shared_ptr<std::vector<KMerNodeFreq_s>> local_kmer_list = std::make_shared<std::vector<KMerNodeFreq_s>>(
                     read_count);
             uint64_t total_good_lenght = std::accumulate(rlen.begin() + from, rlen.begin() + to, 0);
-            local_kmer_list->reserve(total_good_lenght);
+            local_kmer_list->resize(total_good_lenght);
             //Populate the kmer list
+            uint64_t last_kmer=0;
             for (auto readId = from; readId < to; ++readId) {
                 unsigned len = rlen[readId];
                 if (len > K) {
@@ -1276,22 +1189,23 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, 
                     kkk.hash();
                     kkk.kc = KMerContext::initialContext(*itr);
                     kkk.count = 1;
-                    (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(knfs);
-                    local_kmer_list->push_back(knfs);
+                    (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( local_kmer_list->data()[last_kmer] );
+                    ++last_kmer;
                     while (itr != last) {
                         unsigned char pred = kkk.front();
                         kkk.toSuccessor(*itr);
                         ++itr;
                         kkk.kc = KMerContext(pred, *itr);
-                        (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(knfs);
-                        local_kmer_list->push_back(knfs);
+                        (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( local_kmer_list->data()[last_kmer] );
+                        ++last_kmer;
                     }
                     kkk.kc = KMerContext::finalContext(kkk.front());
                     kkk.toSuccessor(*last);
-                    (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(knfs);
-                    local_kmer_list->push_back(knfs);
+                    (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( local_kmer_list->data()[last_kmer] );
+                    ++last_kmer;
                 }
             }
+            local_kmer_list->resize(last_kmer);
             std::sort(local_kmer_list->begin(), local_kmer_list->end());
             collapse_entries(*local_kmer_list);
 

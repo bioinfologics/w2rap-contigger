@@ -131,11 +131,12 @@ public:
     {}
 
     bvec const* mpBV;
+    size_t mHash;
     unsigned mOffset;
     bool mRC;
     bool mAssigned;
     KMerContext mContext;
-    size_t mHash;
+
 };
 
 

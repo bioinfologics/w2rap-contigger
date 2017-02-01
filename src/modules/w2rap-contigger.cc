@@ -28,6 +28,7 @@
 #include <paths/long/large/ImprovePath.h>
 #include <paths/long/large/GraphImprover.h>
 #include <paths/long/large/ConsensusChecker.h>
+#include <kmers/BigKMer.h>
 #include "GFADump.h"
 #include "util/OutputLog.h"
 
