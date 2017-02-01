@@ -26,17 +26,25 @@ public:
     PQVec(){
         mSize=0;
     }
-    PQVec(PQVec & other){
+    PQVec(PQVec const & other){
         mSize=other.mSize;
         mData=(uint8_t *)malloc(mSize);
         for (auto i=0;i<mSize;++i) mData[i]=other.mData[i];
     }
-    PQVec(PQVec && other){
+
+    PQVec(PQVec && other) noexcept{
         mSize=other.mSize;
         mData=other.mData;
         other.mSize=0;
         other.mData= nullptr;
     }
+    PQVec& PQVec::operator=(const PQVec& other){
+        mSize=other.mSize;
+        mData=(uint8_t *)malloc(mSize);
+        for (auto i=0;i<mSize;++i) mData[i]=other.mData[i];
+    };
+
+
     PQVec( QualVec const& qv ) {
         //Encode from qv
         mSize=0;
@@ -85,6 +93,16 @@ public:
     }
 
     operator QualVec() const { QualVec qv; unpack(&qv); return qv; }
+
+    bool operator< (PQVec &other) const {
+        if (mSize!=other.mSize) return mSize<other.mSize;
+        return -1==memcmp(mData,other.mData,mSize);
+    }
+
+    bool operator== (PQVec &other) const {
+        if (mSize!=other.mSize) return false;
+        return 0==memcmp(mData,other.mData,mSize);
+    }
 
     uint8_t * mData;
     uint16_t mSize;
