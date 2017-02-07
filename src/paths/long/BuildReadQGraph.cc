@@ -1382,9 +1382,10 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> buildKMerCount( vecbvec const& read
                 ++witr;
                 ++used;
             }
-            OutputLog(2)<< used << "/" << spectrum->size() << " kmers with Freq >= " << minCount << std::endl;
-            spectrum->resize(used);
+
         }
+        OutputLog(2)<< used << "/" << spectrum->size() << " kmers with Freq >= " << minCount << std::endl;
+        spectrum->resize(used);
         std::ofstream kff(workdir + "/small_K.freqs");
         for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
         kff.close();
