@@ -46,33 +46,39 @@ void step_1(vecbvec & bases,
     ExtractReads(read_files, out_dir, &bases, &quals);
 }
 
-void step_2(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            vecbvec &bases,
-            VecPQVec &quals,
-            unsigned int minFreq,
-            unsigned int minQual,
-            unsigned int disk_batches,
-            uint64_t count_batch_size,
-            unsigned int small_K,
-            std::string out_dir,
-            std::string tmp_dir) {
-    bool FILL_JOIN = False;
+void step_2(std::shared_ptr<std::vector<KMerNodeFreq_s>> & kmercounts, vecbvec const& reads, VecPQVec &quals,
+            unsigned int minQual, unsigned minCount,
+            std::string workdir, std::string tmpdir, unsigned char disk_batches, uint64_t count_batch_size) {
     vec<uint16_t> rlen;
     create_read_lengths(rlen,quals,minQual);
     OutputLog(2)<<"Unloading quals"<<std::endl;
     quals.clear();
     quals.shrink_to_fit();
-    buildReadQGraph(bases, quals, rlen, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K, out_dir,
-                    tmp_dir, disk_batches, count_batch_size);
+    kmercounts=buildKMerCount( reads, rlen, minCount, workdir, tmpdir, disk_batches, count_batch_size );
+    dumpkmers(kmercounts,workdir+"/raw_kmers.data");
+    OutputLog(2) << "Kmer counting done and dumped with "<<kmercounts->size()<< " kmers" <<std::endl;
+}
+
+void step_3(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            vecbvec &bases,
+            VecPQVec &quals,
+            std::shared_ptr<std::vector<KMerNodeFreq_s>> & kmercounts,
+            unsigned int minFreq,
+            unsigned int small_K,
+            std::string out_dir) {
+    bool FILL_JOIN = False;
+
+    buildReadQGraph(bases, quals, kmercounts, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K);
+    kmercounts.reset();
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
     hbvinv.clear();
     hbv.Involution(hbvinv);
     FragDist(hbv, hbvinv, paths, out_dir + "/small_K.frags.dist");
 }
 
-void step_3DV(HyperBasevector &hbv,
+void step_4DV(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             unsigned int large_K,
@@ -97,17 +103,17 @@ void step_3DV(HyperBasevector &hbv,
     FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 }
 
-void step_3(HyperBasevector &hbv,
+void step_4(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             unsigned int large_K,
             std::string out_dir){
-    step_3DV(hbv,hbvinv,paths,large_K,out_dir);
+    step_4DV(hbv,hbvinv,paths,large_K,out_dir);
 }
 
 
 
-void step_3EXP(HyperBasevector &hbv,
+void step_4EXP(HyperBasevector &hbv,
                vec<int> &hbvinv,
                ReadPathVec &paths,
                unsigned int large_K,
@@ -148,7 +154,7 @@ void step_3EXP(HyperBasevector &hbv,
 
 }
 
-void step_4(HyperBasevector &hbv,
+void step_5(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             vecbvec &bases,
@@ -161,7 +167,7 @@ void step_4(HyperBasevector &hbv,
 
 }
 
-void step_5(HyperBasevector &hbv,
+void step_6(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             vecbvec &bases,
@@ -192,7 +198,7 @@ void step_5(HyperBasevector &hbv,
 
 }
 
-void step_6DV(HyperBasevector &hbv,
+void step_7DV(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             vecbvec &bases,
@@ -240,7 +246,7 @@ void step_6DV(HyperBasevector &hbv,
 
 }
 
-void step_6(HyperBasevector &hbv,
+void step_7(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             vecbvec &bases,
@@ -308,7 +314,7 @@ void step_6(HyperBasevector &hbv,
 
 }
 
-void step_6EXP(HyperBasevector &hbv,
+void step_7EXP(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             vecbvec &bases,
@@ -376,7 +382,7 @@ void step_6EXP(HyperBasevector &hbv,
 
 }
 
-void step_7(HyperBasevector &hbv,
+void step_8(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             std::string out_dir,
@@ -411,7 +417,7 @@ int main(const int argc, const char * argv[]) {
     std::string out_dir;
     std::string tmp_dir;
     unsigned int threads;
-    unsigned int minFreq;
+    unsigned int minFreq,minCount;
     unsigned int minQual;
     int max_mem;
     uint64_t count_batch_size;
@@ -466,8 +472,11 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> minQualArg("", "min_qual",
                                                  "minimum quality for small k-mers (default: 7)", false, 7, "int", cmd);
 
+        TCLAP::ValueArg<unsigned int> minCountArg("", "min_count",
+                                                 "minimum frequency for k-mers counting (default: 3)", false, 3, "int", cmd);
+
         TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
-                                                 "minimum frequency for small k-mers (default: 4)", false, 4, "int", cmd);
+                                                 "minimum frequency for small k-mer graph (default: 4)", false, 4, "int", cmd);
 
         TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
              "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
@@ -508,6 +517,7 @@ int main(const int argc, const char * argv[]) {
         to_step=toStep_Arg.getValue();
         pair_sample=pairSampleArg.getValue();
         minFreq=minFreqArg.getValue();
+        minCount=minCountArg.getValue();
         minQual=minQualArg.getValue();
         disk_batches=disk_batchesArg.getValue();
         count_batch_size=count_batchArg.getValue();
@@ -542,8 +552,9 @@ int main(const int argc, const char * argv[]) {
     SetThreads(threads, False);
     SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
     //TODO: try to find out max memory on the system to default to.
-    std::string step_names[7]={
+    std::string step_names[8]={
             "Processing read files",
+            "Kmer counting",
             "Small K graph construction",
             "Large K graph construction",
             "Large K graph cleanup",
@@ -551,7 +562,8 @@ int main(const int argc, const char * argv[]) {
             "Final graph cleanup",
             "Paired-end scaffolding"
     };
-    std::string step_outputg_prefix[7]={
+    std::string step_outputg_prefix[8]={
+            "",
             "",
             "small_K",
             "large_K",
@@ -561,7 +573,8 @@ int main(const int argc, const char * argv[]) {
             "large_K_final"
     };
 
-    std::string step_inputg_prefix[7]={
+    std::string step_inputg_prefix[8]={
+            "",
             "",
             "",
             "small_K",
@@ -581,14 +594,14 @@ int main(const int argc, const char * argv[]) {
     HyperBasevector hbv;
     vec<int> hbvinv;
     ReadPathVec paths;
-
+    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts;
 
 
 
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
-        if ( (2==step or 4==step or 5==step or 6==step) and (quals.size()==0 or bases.size()==0)){
+        if ( (2==step or 3==step or 4==step or 5==step or 6==step) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
                 OutputLog(2) << "Loading bases..." << std::endl;
                 bases.ReadAll(out_dir + "/pe_data.fastb");
@@ -599,7 +612,9 @@ int main(const int argc, const char * argv[]) {
             }
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
-
+        if ( 3==step and kmercounts.get()==NULL){
+            loadkmers(kmercounts,out_dir+"/raw_kmers.data");
+        }
 
         //steps that require a graph
         if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
@@ -634,26 +649,29 @@ int main(const int argc, const char * argv[]) {
                 step_1(bases, quals, out_dir, read_files);
                 break;
             case 2:
-                step_2(hbv, hbvinv, paths, bases, quals, minFreq, minQual, disk_batches, count_batch_size, small_K, out_dir, tmp_dir);
+                step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
                 break;
             case 3:
-                if (run_dv) step_3DV(hbv,hbvinv,paths,large_K,out_dir);
-                else if (run_exp) step_3EXP(hbv,hbvinv,paths,large_K,out_dir);
-                else step_3(hbv,hbvinv,paths,large_K,out_dir);
+                step_3(hbv,hbvinv,paths,bases,quals,kmercounts,minFreq,small_K,out_dir);
                 break;
             case 4:
-                step_4(hbv, hbvinv, paths, bases, quals, min_size);
+                if (run_dv) step_4DV(hbv,hbvinv,paths,large_K,out_dir);
+                else if (run_exp) step_4EXP(hbv,hbvinv,paths,large_K,out_dir);
+                else step_4(hbv,hbvinv,paths,large_K,out_dir);
                 break;
             case 5:
-                step_5(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
+                step_5(hbv, hbvinv, paths, bases, quals, min_size);
                 break;
             case 6:
-                if (run_dv) step_6DV(hbv, hbvinv, paths, bases, quals, out_dir, out_prefix);
-                else if (run_exp) step_6EXP(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
-                else step_6(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                step_6(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
                 break;
             case 7:
-                step_7(hbv, hbvinv, paths, out_dir, out_prefix);
+                if (run_dv) step_7DV(hbv, hbvinv, paths, bases, quals, out_dir, out_prefix);
+                else if (run_exp) step_7EXP(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                else step_7(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                break;
+            case 8:
+                step_8(hbv, hbvinv, paths, out_dir, out_prefix);
                 break;
         }
 

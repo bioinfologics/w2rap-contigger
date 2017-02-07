@@ -54,35 +54,8 @@ namespace
     typedef KMer<K-1> BRQ_SubKmer;
     typedef KmerDictEntry<K> BRQ_Entry;
     typedef KmerDict<K> BRQ_Dict;
+    //we can reduce this usage by storing blocks of kmers and using a difference with the previous. we would need slightly more complex heuristics.
 
-    typedef struct __attribute__((__packed__)) KMerNodeFreq_s {
-        uint64_t kdata[2];
-        uint8_t count;
-        uint8_t kc;
-        inline const operator==(KMerNodeFreq_s const & other) const {
-            //return 0==memcmp(&kdata,&other.kdata,2*sizeof(uint64_t));
-            return (kdata[0]==other.kdata[0] and kdata[1]==other.kdata[1]);
-        }
-        inline const operator<(KMerNodeFreq_s const & other) const{
-            //return -1==memcmp(&kdata,&other.kdata,2*sizeof(uint64_t));
-            if (kdata[0]<other.kdata[0]) return true;
-            if (kdata[0]==other.kdata[0] and kdata[1]<other.kdata[1]) return true;
-            return false;
-        }
-        inline const operator>(KMerNodeFreq_s const & other) const{
-            if (kdata[0]>other.kdata[0]) return true;
-            if (kdata[0]==other.kdata[0] and kdata[1]>other.kdata[1]) return true;
-            return false;
-        }
-        inline void combine(KMerNodeFreq_s const & other){
-            auto newcount=count+other.count;
-            if ( newcount>count) count=newcount;
-            kc|=other.kc;
-        }
-        /*inline const operator=(KMerNodeFreq_s const & other) const {
-            memcpy(&this,&other,sizeof(this));
-        }*/
-    };
 
     class KMerNodeFreq: public KMer<K>{
     public:
@@ -1140,7 +1113,7 @@ void inplace_count_merge(std::shared_ptr<std::vector<KMerNodeFreq_s>> counts1, s
         }
         ++writr1;
     }
-    counts2->clear();
+    counts2.reset();
     //counts2->shrink_to_fit();
 }
 
@@ -1294,8 +1267,9 @@ void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t>
 }
 
 
+std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMPDiskBased(vecbvec const& reads, std::vector<uint16_t> const &rlen, unsigned minCount,
+                                                                   std::string tmpdir, std::string workdir, unsigned char disk_batches=8, uint64_t batch_size=0) {
 
-void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const& rlen, unsigned char disk_batches, uint64_t batch_size, unsigned minFreq, std::string workdir="", std::string tmpdir=""){
     //If size larger than batch (or still not enough cpus used, or whatever), Lauch 2 tasks to sort the 2 halves, with minFreq=0
 
     OutputLog(2) << "disk-based kmer counting with "<<(int) disk_batches<<" batches"<<std::endl;
@@ -1350,7 +1324,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
         //larger than current kmer?
         if (next_knf_from_dbf[min] > current_kmer) {
             ++hist[std::min(255,(int)current_kmer.count)];
-            if (current_kmer.count>=minFreq) {
+            if (current_kmer.count>=minCount) {
                 //(*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) current_kmer, current_kmer.kc));
                 kmerlist.push_back(current_kmer);
                 used++;
@@ -1368,8 +1342,8 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
         }
     }
 
-    ++hist[std::min(100,(int)current_kmer.count)];
-    if (current_kmer.count>=minFreq) {
+    ++hist[(int)current_kmer.count];
+    if (current_kmer.count>=minCount) {
         kmerlist.push_back(current_kmer);
         used++;
     }
@@ -1378,14 +1352,7 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
         dbf[i].close();
         std::remove((tmpdir + "/kmer_count_batch_" +std::to_string((int)i)).c_str());
     }
-
-    (*dict)=new BRQ_Dict(kmerlist.size());
-    for (auto &knfs: kmerlist) {
-        KMerNodeFreq knf(knfs);
-        (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
-    }
-
-    OutputLog(2) << used << " / " << used+not_used << " kmers with Freq >= " << minFreq << std::endl;
+    OutputLog(2)<< used << "/" << used+not_used << " kmers with Freq >= " << minCount << std::endl;
     if (""!=workdir) {
         std::ofstream kff(workdir + "/small_K.freqs");
         for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
@@ -1394,24 +1361,76 @@ void createDictOMPDiskBased(BRQ_Dict ** dict, vecbvec const& reads, std::vector<
 
 }
 
-void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_t> & rlen,
-                      bool doFillGaps, bool doJoinOverlaps,
-                      unsigned minFreq,
-                      double minFreq2Fract, unsigned maxGapSize,
-                      HyperBasevector* pHBV, ReadPathVec* pPaths,
-                      int _K, std::string workdir, std::string tmpdir="",
-                      unsigned char disk_batches, uint64_t count_batch_size )
+
+std::shared_ptr<std::vector<KMerNodeFreq_s>> buildKMerCount( vecbvec const& reads,
+                                                                std::vector<uint16_t> & rlen, unsigned minCount,
+                                                                std::string workdir, std::string tmpdir,
+                                                                unsigned char disk_batches, uint64_t count_batch_size )
 {
+    std::shared_ptr<std::vector<KMerNodeFreq_s>> spectrum;
     OutputLog(2) << "creating kmers from reads..." << std::endl;
-    BRQ_Dict * pDict;
     if (1 >= disk_batches) {
-        createDictOMP(&pDict, reads, rlen, count_batch_size, minFreq, workdir);
+        uint64_t hist[256]={0};
+        uint64_t used=0;
+        spectrum=kmerCountOMP(reads, rlen, 0, rlen.size(), count_batch_size);
+        auto witr=spectrum->begin();
+        auto send=spectrum->end();
+        for (auto itr=spectrum->begin();itr!=send;++itr){
+            ++hist[itr->count];
+            if (hist[itr->count]>=minCount) {
+                (*witr)=(*itr);
+                ++witr;
+                ++used;
+            }
+            OutputLog(2)<< used << "/" << spectrum->size() << " kmers with Freq >= " << minCount << std::endl;
+            spectrum->resize(used);
+        }
+        std::ofstream kff(workdir + "/small_K.freqs");
+        for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
+        kff.close();
+        //todo: filter kmers to minCount
     } else {
         if ("" == tmpdir) tmpdir = workdir;
-        createDictOMPDiskBased(&pDict, reads, rlen, disk_batches, 1000000, minFreq, workdir, tmpdir);
-
+        spectrum=kmerCountOMPDiskBased(reads, rlen, minCount, tmpdir, workdir, disk_batches, count_batch_size);
     }
 
+    return spectrum;
+}
+
+void dumpkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> const kmercounts, std::string filename) {
+    std::ofstream batch_file(filename,std::ios::out | std::ios::trunc | std::ios::binary);
+    uint64_t total_kmers=kmercounts->size();
+    batch_file.write((const char *)total_kmers,sizeof(uint64_t));
+    batch_file.write((const char *)kmercounts->data(),sizeof(KMerNodeFreq_s)*kmercounts->size());
+    batch_file.close();
+}
+
+void loadkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts, std::string filename) {
+    std::ifstream batch_file(filename,std::ios::in | std::ios::binary);
+    uint64_t total_kmers;
+    batch_file.read((char *)total_kmers,sizeof(uint64_t));
+    kmercounts=std::make_shared<std::vector<KMerNodeFreq_s>>();
+    kmercounts->resize(total_kmers);
+    batch_file.read(( char *)kmercounts->data(),sizeof(KMerNodeFreq_s)*kmercounts->size());
+    batch_file.close();
+}
+
+void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerlist,
+                      bool doFillGaps, bool doJoinOverlaps,
+                      unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
+                      ReadPathVec* pPaths, int _K)
+{
+    OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
+    uint64_t kc=0;
+    for (auto &knfs: *kmerlist) if (knfs.count>=minFreq) ++kc;
+    BRQ_Dict * pDict = new BRQ_Dict(kc);
+    for (auto &knfs: *kmerlist) {
+        if (knfs.count>=minFreq) {
+            KMerNodeFreq knf(knfs);
+            pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
+        }
+    }
+    OutputLog(2) << kc << "/" << " kmers with freq >= "<< minFreq << std::endl;
 
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
@@ -1449,8 +1468,6 @@ void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_
     {
         OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
-        OutputLog(2) << "Loading quals..." << std::endl;
-        load_quals(quals,workdir + "/pe_data.cqual");
         OutputLog(2) << "pathing reads into graph..." << std::endl;
         pPaths->clear();
         pPaths->resize(reads.size());
