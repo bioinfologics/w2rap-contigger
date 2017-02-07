@@ -1368,6 +1368,7 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> buildKMerCount( vecbvec const& read
                                                                 unsigned char disk_batches, uint64_t count_batch_size )
 {
     std::shared_ptr<std::vector<KMerNodeFreq_s>> spectrum;
+    spectrum=std::make_shared<std::vector<KMerNodeFreq_s>>();
     OutputLog(2) << "creating kmers from reads..." << std::endl;
     if (1 >= disk_batches) {
         uint64_t hist[256]={0};
@@ -1377,7 +1378,7 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> buildKMerCount( vecbvec const& read
         auto send=spectrum->end();
         for (auto itr=spectrum->begin();itr!=send;++itr){
             ++hist[itr->count];
-            if (hist[itr->count]>=minCount) {
+            if (itr->count>=minCount) {
                 (*witr)=(*itr);
                 ++witr;
                 ++used;
@@ -1401,19 +1402,22 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> buildKMerCount( vecbvec const& read
 void dumpkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> const kmercounts, std::string filename) {
     std::ofstream batch_file(filename,std::ios::out | std::ios::trunc | std::ios::binary);
     uint64_t total_kmers=kmercounts->size();
-    batch_file.write((const char *)total_kmers,sizeof(uint64_t));
+    batch_file.write((const char *)&total_kmers,sizeof(uint64_t));
     batch_file.write((const char *)kmercounts->data(),sizeof(KMerNodeFreq_s)*kmercounts->size());
     batch_file.close();
 }
 
-void loadkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts, std::string filename) {
+std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename) {
+    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts;
+    kmercounts=std::make_shared<std::vector<KMerNodeFreq_s>>();
     std::ifstream batch_file(filename,std::ios::in | std::ios::binary);
     uint64_t total_kmers;
-    batch_file.read((char *)total_kmers,sizeof(uint64_t));
+    batch_file.read((char *)&total_kmers,sizeof(uint64_t));
     kmercounts=std::make_shared<std::vector<KMerNodeFreq_s>>();
     kmercounts->resize(total_kmers);
     batch_file.read(( char *)kmercounts->data(),sizeof(KMerNodeFreq_s)*kmercounts->size());
     batch_file.close();
+    return kmercounts;
 }
 
 void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerlist,
@@ -1422,8 +1426,11 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
                       ReadPathVec* pPaths, int _K)
 {
     OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
+    OutputLog(2) << "Kmercounts has "<<std::endl;
+    OutputLog(2) << kmerlist->size() << " kmers" << std::endl;
     uint64_t kc=0;
     for (auto &knfs: *kmerlist) if (knfs.count>=minFreq) ++kc;
+    OutputLog(2) << kc << "/" << " kmers with freq >= "<< minFreq << std::endl;
     BRQ_Dict * pDict = new BRQ_Dict(kc);
     for (auto &knfs: *kmerlist) {
         if (knfs.count>=minFreq) {
@@ -1431,7 +1438,7 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
             pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
         }
     }
-    OutputLog(2) << kc << "/" << " kmers with freq >= "<< minFreq << std::endl;
+    OutputLog(2) << "Dict created" << std::endl;
 
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;

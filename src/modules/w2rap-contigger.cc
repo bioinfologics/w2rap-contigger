@@ -64,13 +64,14 @@ void step_3(HyperBasevector &hbv,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
-            std::shared_ptr<std::vector<KMerNodeFreq_s>> & kmercounts,
+            std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts,
             unsigned int minFreq,
             unsigned int small_K,
             std::string out_dir) {
     bool FILL_JOIN = False;
 
     buildReadQGraph(bases, quals, kmercounts, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K);
+
     kmercounts.reset();
     OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
     hbvinv.clear();
@@ -425,7 +426,7 @@ int main(const int argc, const char * argv[]) {
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
-    std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7};
+    std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7,8};
     bool dump_detailed_gfa,dump_all,run_dv,run_exp;
 
     //========== Command Line Option Parsing ==========
@@ -458,7 +459,7 @@ int main(const int argc, const char * argv[]) {
                                                  "Start on step (default: 1)", false, 1, &steps, cmd);
 
         TCLAP::ValueArg<unsigned int> toStep_Arg("", "to_step",
-                                                   "Stop after step (default: 7)", false, 7, &steps, cmd);
+                                                   "Stop after step (default: 8)", false, 8, &steps, cmd);
 
         TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
                                                  "number of disk batches for step2 (default: 0, 0->in memory)", false, 0, "int", cmd);
@@ -473,7 +474,7 @@ int main(const int argc, const char * argv[]) {
                                                  "minimum quality for small k-mers (default: 7)", false, 7, "int", cmd);
 
         TCLAP::ValueArg<unsigned int> minCountArg("", "min_count",
-                                                 "minimum frequency for k-mers counting (default: 3)", false, 3, "int", cmd);
+                                                 "minimum frequency for k-mers counting (default: 4)", false, 4, "int", cmd);
 
         TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
                                                  "minimum frequency for small k-mer graph (default: 4)", false, 4, "int", cmd);
@@ -601,7 +602,7 @@ int main(const int argc, const char * argv[]) {
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
-        if ( (2==step or 3==step or 4==step or 5==step or 6==step) and (quals.size()==0 or bases.size()==0)){
+        if ( (2==step or 3==step or 4==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
                 OutputLog(2) << "Loading bases..." << std::endl;
                 bases.ReadAll(out_dir + "/pe_data.fastb");
@@ -613,7 +614,7 @@ int main(const int argc, const char * argv[]) {
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
         if ( 3==step and kmercounts.get()==NULL){
-            loadkmers(kmercounts,out_dir+"/raw_kmers.data");
+            kmercounts=loadkmers(out_dir+"/raw_kmers.data");
         }
 
         //steps that require a graph

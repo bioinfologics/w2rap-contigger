@@ -63,7 +63,7 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
                       unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
                       ReadPathVec* pPaths, int _K);
 void dumpkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> const kmercounts, std::string filename);
-void loadkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts, std::string filename);
+std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename);
 
 std::shared_ptr<std::vector<KMerNodeFreq_s>> buildKMerCount( vecbvec const& reads,
                                                              std::vector<uint16_t> & rlen, unsigned minCount,
