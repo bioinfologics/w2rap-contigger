@@ -186,10 +186,7 @@ void step_6(HyperBasevector &hbv,
     if (hbv.K()>=224) k2floor_sequence.push_back(224);
     if (hbv.K()>=240) k2floor_sequence.push_back(240);
     if (hbv.K()>=260) k2floor_sequence.push_back(260);
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-    AssembleGaps2(hbv, hbvinv, paths, pathsinv, bases, quals, out_dir, k2floor_sequence,
+    AssembleGaps2(hbv, hbvinv, paths, bases, quals, out_dir, k2floor_sequence,
                   new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
     int MIN_GAIN = 5;
     int EXT_MODE = 1;

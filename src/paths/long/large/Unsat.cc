@@ -134,6 +134,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
            const String &work_dir, const int A2V) {
      OutputLog(2)<<"Finding unsatisfied path clusters" << std::endl;
      // Heuristics.
+
      //TODO: Hardcoded Parameters
      const int max_depth = 15;
      const int max_verts = 50;

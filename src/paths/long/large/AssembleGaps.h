@@ -17,7 +17,7 @@
 #include "paths/long/large/GapToyTools.h"
 
 void AssembleGaps2( HyperBasevector& hb, vec<int>& inv2, ReadPathVec& paths2, 
-     VecULongVec& paths2_index, const vecbasevector& bases, VecPQVec const& quals,
+     const vecbasevector& bases, VecPQVec const& quals,
      const String& work_dir, std::vector<int>,
      vecbvec& new_stuff, const Bool CYCLIC_SAVE,
      const int A2V, const int MAX_PROX_LEFT,

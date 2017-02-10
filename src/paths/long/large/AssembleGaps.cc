@@ -236,7 +236,7 @@ void CreateLocalReadSet(vecbasevector &gbases,QualVecVec &gquals, PairsManager &
 }
 
 void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
-                   VecULongVec &paths2_index, const vecbasevector &bases, VecPQVec const &quals,
+                   const vecbasevector &bases, VecPQVec const &quals,
                    const String &work_dir, std::vector<int> k2floor_sequence,
                    vecbvec &new_stuff, const Bool CYCLIC_SAVE,
                    const int A2V, const int MAX_PROX_LEFT,
@@ -283,6 +283,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         EraseIf(LR, lrd);
     }
     OutputLog(2) << LR.size() << " unique clusters to be processed as blobs" << std::endl;
+    OutputLog(2) << LR.size() << "laying out reads" << std::endl;
     // Some setup stuff.
 
     int nedges = hb.EdgeObjectCount();
