@@ -283,7 +283,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         EraseIf(LR, lrd);
     }
     OutputLog(2) << LR.size() << " unique clusters to be processed as blobs" << std::endl;
-    OutputLog(2) << LR.size() << "laying out reads" << std::endl;
+    OutputLog(2) << "laying out reads" << std::endl;
     // Some setup stuff.
 
     int nedges = hb.EdgeObjectCount();
@@ -305,17 +305,18 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //std::cout << Date() << ": processing " << LR.size() << " blobs" << std::endl;
     double clockp1 = WallClockTime();
     int nblobs = LR.size();
-    std::atomic_uint_fast64_t solved(0);
-    std::atomic_uint_fast64_t solutionK[500];
-    for (auto &sk:solutionK) sk=0;
+    uint64_t solved=0;
+    //uint64_t solutionK[500];
+    //for (auto &sk:solutionK) sk=0;
 
     //TODO: check local variable usage, should be made minimal!!!
     //Init readstacks, we'll need them!
     readstack::init_LUTs();
+    OutputLog(2) << "processing blobs" << std::endl;
 #define BATCH_SIZE 5000
 
     for (uint64_t bstart = 0; bstart < nblobs; bstart += BATCH_SIZE) {
-        #pragma omp parallel
+        #pragma omp parallel reduction(+:solved)
         {
             #pragma omp for schedule(dynamic,1)
             for (uint64_t bl = bstart; bl < bstart + BATCH_SIZE; ++bl) {
@@ -463,7 +464,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                             bpathsx.push_back(bpaths[l]);
                         BasesToGraph(bpathsx, K, *mhbp_t);
                         ++solved;
-                        ++solutionK[xshb.K()];
+                        //++solutionK[xshb.K()];
                     }
                 }
                 //}//---OMP TASK END---
@@ -473,8 +474,8 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
         OutputLog(3)<< std::min(bstart+BATCH_SIZE,(uint64_t)nblobs) <<" blobs processed, paths found for " << solved << std::endl;
     }
     OutputLog(2)<< TimeSince(clockp1) << " spent in local assemblies." << std::endl;
-    for (auto i=0;i<500;++i)
-        if (solutionK[i]>0) OutputLog(2)<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
+    //for (auto i=0;i<500;++i)
+    //    if (solutionK[i]>0) OutputLog(2)<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
 
     TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
     TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);
