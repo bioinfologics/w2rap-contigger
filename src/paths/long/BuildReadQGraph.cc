@@ -931,16 +931,6 @@ inline void combine_Entries( KMerNodeFreq & dest, KMerNodeFreq & source )
     dest.count= (c<255 ? c:255);
 }
 
-
-void print_results_status(uint nthreads, bool results[]){
-#pragma omp critical
-    {
-        std::cout<< "Results status: [ ";
-        for (auto i=0;i<nthreads;++i) std::cout<<results[i]<<" ";
-        std::cout<<" ]"<<std::endl;
-    }
-}
-
 void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual){
 
     uint64_t qsize=quals.size();
@@ -965,32 +955,6 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
         }
     }
     OutputLog(2) << "Read lengths created"<<std::endl;
-}
-uint64_t count_good_lengths(std::vector<uint16_t> &good_lenghts, VecPQVec const& quals, uint64_t from, uint64_t to, unsigned _K, unsigned minQual){
-    //Computes the length in _K-mers til hitting minQual on each qual[from-to], returns the total count of goof kmers
-    uint64_t nKmers=0;
-    QualVec uq;
-    auto itr = uq.end();
-    auto beg = uq.begin();
-    unsigned good = 0;
-
-    for (auto i = from; i < to; ++i) {
-        quals[i].unpack(&uq);
-        itr = uq.end();
-        beg = uq.begin();
-        good = 0;
-        while (itr != beg) {
-            if (*--itr < minQual) good = 0;
-            else if (++good == _K) {
-                good_lenghts[i-from] = (itr - beg) + _K;
-                break;
-            }
-        }
-        nKmers += good_lenghts[i-from];
-
-    }
-    return nKmers;
-
 }
 
 void collapse_entries(std::vector<BRQ_Entry> &kmer_list){
@@ -1030,48 +994,6 @@ void collapse_entries(std::vector<KMerNodeFreq_s> &kmer_list){
         }
     }
     kmer_list.resize(okItr - kmer_list.begin());
-}
-
-void inplace_count_merge(std::vector<KMerNodeFreq> & counts1, std::vector<KMerNodeFreq> & counts2){
-    //sync-merge values from counts2 into counts1, if value not int counts1, move it to a top-based position in counts2.
-    //std::cout<<"merging counts1("<<counts1.size()<<" kmers) and counts2("<<counts2.size()<<" kmers)"<<std::endl;
-    auto itr1=counts1.begin(),end1=counts1.end();
-    auto itr2=counts2.begin(),end2=counts2.end(),itr2w=counts2.begin();
-    //std::cout<<"merging, accumulating on counts1"<<std::endl;
-    while (itr2 !=end2){
-        while (itr1!=end1 and *itr1<*itr2) ++itr1;
-        if (itr1!=end1 and *itr1==*itr2){
-            combine_Entries(*itr1,*itr2);
-            ++itr1;++itr2;
-        }
-        while (itr2!=end2 and (itr1==end1 or *itr2<*itr1)){
-            *itr2w=*itr2;
-            ++itr2w;++itr2;
-        }
-    }
-    //shrink counts2 to the size of its remaining elements
-    //std::cout<<"merging, resizing counts2 to " << itr2w-counts2.begin() <<std::endl;
-    counts2.resize(itr2w-counts2.begin());
-    counts2.shrink_to_fit();
-    //expand counts1 to allow the insertion of the unique values on counts2
-    //std::cout<<"merging, resizing counts1 to " << counts1.size()+counts2.size() << std::endl;
-    counts1.resize(counts1.size()+counts2.size());
-    //merge-sort from the bottom into count1.
-    //std::cout<<"merging, final merging"<<std::endl;
-    auto writr1=counts1.rbegin(), ritr1=counts1.rbegin()+counts2.size(), rend1=counts1.rend();
-    auto ritr2=counts2.rbegin(), rend2=counts2.rend();
-    while (writr1!=rend1){
-        if (ritr2!=rend2 and *ritr2>*ritr1){
-            *writr1=*ritr2;
-            ++ritr2;
-        } else {
-            *writr1=*ritr1;
-            ++ritr1;
-        }
-        ++writr1;
-    }
-    counts2.clear();
-    counts2.shrink_to_fit();
 }
 
 void inplace_count_merge(std::shared_ptr<std::vector<KMerNodeFreq_s>> counts1, std::shared_ptr<std::vector<KMerNodeFreq_s>> counts2){
@@ -1232,39 +1154,7 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMP(vecbvec const& reads, 
     return kmer_list;
 }
 
-void createDictOMP(BRQ_Dict ** dict, vecbvec const& reads, std::vector<uint16_t> const &rlen,
-                   uint64_t batch_size, unsigned minFreq, std::string workdir="") {
 
-    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmer_list=kmerCountOMP(reads, rlen, 0, rlen.size(), batch_size);
-
-    if (NULL != dict) { //merge sort and return that
-        OutputLog(2) << kmer_list->size() << " kmers counted, filtering..." << std::endl;
-        (*dict) = new BRQ_Dict(kmer_list->size());
-        uint64_t used = 0,not_used=0;
-        uint64_t hist[256];
-        for (auto &h:hist) h=0;
-        for (auto &knfs:*kmer_list) {
-            ++hist[std::min(255,(int)knfs.count)];
-            if (knfs.count >= minFreq) {
-                KMerNodeFreq knf(knfs);
-                (*dict)->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer)knf,knf.kc));
-                used++;
-            } else {
-                not_used++;
-            }
-
-        }
-        OutputLog(2) << used << " / " << kmer_list->size() << " kmers with Freq >= " << minFreq << std::endl;
-        kmer_list->clear();
-        if (""!=workdir) {
-            std::ofstream kff(workdir + "/small_K.freqs");
-            for (auto i = 1; i < 256; i++) kff << i << ", " << hist[i] << std::endl;
-            kff.close();
-        }
-
-    }
-
-}
 
 
 std::shared_ptr<std::vector<KMerNodeFreq_s>> kmerCountOMPDiskBased(vecbvec const& reads, std::vector<uint16_t> const &rlen, unsigned minCount,
