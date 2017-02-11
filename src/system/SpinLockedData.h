@@ -9,7 +9,7 @@
  * \file SpinLockedData.h
  * \author tsharpe
  * \date Nov 16, 2011
- *
+ * \new spinlock by bj on Feb 11, 2016
  * \brief
  */
 #ifndef SYSTEM_SPINLOCKEDDATA_H_
@@ -19,47 +19,17 @@
 #include <atomic>
 #include <iostream>
 
-#ifdef NDEBUG
+
 /// A spin-lock.
 class SpinLockedData
 {
+    std::atomic_flag m_flag = ATOMIC_FLAG_INIT;
+
 public:
-    SpinLockedData() : mLockByte(false) {}
-    SpinLockedData( SpinLockedData const& )=delete;
-    SpinLockedData& operator=( SpinLockedData const& )=delete;
-    void lock() { while ( mLockByte.exchange(true) ) {} }
-    void unlock() { mLockByte = false; }
-
-private:
-    std::atomic_bool mLockByte;
+    void lock()     noexcept {   while(m_flag.test_and_set(std::memory_order_acquire)); }
+    void unlock()   noexcept {         m_flag.clear(std::memory_order_release);         }
+    bool try_lock() noexcept { return !m_flag.test_and_set(std::memory_order_acquire);  }
 };
-#else
-/// A spin-lock.
-class SpinLockedData
-{
-public:
-    SpinLockedData() : mLockByte(false), mBusyCount(0) {}
-    SpinLockedData( SpinLockedData const& )=delete;
-    SpinLockedData& operator=( SpinLockedData const& )=delete;
-
-    ~SpinLockedData()
-    { AssertEq(bool(mLockByte),false);
-      if ( mBusyCount >= 1024 )
-        std::cout << "Busy spin lock: " << mBusyCount << std::endl; }
-
-    void lock()
-    { size_t count = 0;
-      while ( mLockByte.exchange(true) )
-      { ++count; }
-      mBusyCount += count >> 10; }
-
-    void unlock() { AssertEq(bool(mLockByte),true); mLockByte = false; }
-
-private:
-    std::atomic_bool mLockByte;
-    unsigned mBusyCount;
-};
-#endif
 
 /// Something that operates a spin-lock, and never forgets to unlock it.
 class SpinLocker
