@@ -46,7 +46,7 @@ void step_1(vecbvec & bases,
     ExtractReads(read_files, out_dir, &bases, &quals);
 }
 
-void step_2(std::shared_ptr<std::vector<KMerNodeFreq_s>> & kmercounts, vecbvec const& reads, VecPQVec &quals,
+void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec &quals,
             unsigned int minQual, unsigned minCount,
             std::string workdir, std::string tmpdir, unsigned char disk_batches, uint64_t count_batch_size) {
     vec<uint16_t> rlen;
@@ -55,8 +55,8 @@ void step_2(std::shared_ptr<std::vector<KMerNodeFreq_s>> & kmercounts, vecbvec c
     quals.clear();
     quals.shrink_to_fit();
     kmercounts=buildKMerCount( reads, rlen, minCount, workdir, tmpdir, disk_batches, count_batch_size );
-    dumpkmers(kmercounts,workdir+"/raw_kmers.data");
-    OutputLog(2) << "Kmer counting done and dumped with "<<kmercounts->size()<< " kmers" <<std::endl;
+    kmercounts->dump(workdir+"/raw_kmers.data");
+    OutputLog(2) << "Kmer counting done and dumped with "<<kmercounts->size<< " kmers" <<std::endl;
 }
 
 void step_3(HyperBasevector &hbv,
@@ -64,7 +64,7 @@ void step_3(HyperBasevector &hbv,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
-            std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts,
+            std::shared_ptr<KmerList> kmercounts,
             unsigned int minFreq,
             unsigned int small_K,
             std::string out_dir) {
@@ -592,7 +592,7 @@ int main(const int argc, const char * argv[]) {
     HyperBasevector hbv;
     vec<int> hbvinv;
     ReadPathVec paths;
-    std::shared_ptr<std::vector<KMerNodeFreq_s>> kmercounts;
+    std::shared_ptr<KmerList> kmercounts=std::make_shared<KmerList>();
 
 
 
@@ -611,8 +611,9 @@ int main(const int argc, const char * argv[]) {
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
         if ( 3==step and kmercounts.get()==NULL){
-            kmercounts=loadkmers(out_dir+"/raw_kmers.data");
+            kmercounts->load(out_dir+"/raw_kmers.data");
         }
+        if ( 4==step ) kmercounts.reset(); //cleanup just in case
 
         //steps that require a graph
         if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
