@@ -916,23 +916,6 @@ namespace
 
 
 
-inline void combine_Entries( BRQ_Entry & dest, BRQ_Entry & source )
-{
-    KDef& kDef = dest.getKDef();
-    KMerContext kc=dest.getKDef().getContext();
-    kc|=source.getKDef().getContext();
-    kDef.setContext(kc);
-    kDef.setCount(kDef.getCount()+source.getKDef().getCount());
-}
-
-inline void combine_Entries( KMerNodeFreq & dest, KMerNodeFreq & source )
-{
-    dest.kc|=source.kc;
-    uint16_t c = dest.count;
-    c+=source.count;
-    dest.count= (c<255 ? c:255);
-}
-
 void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual){
 
     uint64_t qsize=quals.size();
@@ -958,89 +941,6 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
     }
     OutputLog(2) << "Read lengths created"<<std::endl;
 }
-
-void collapse_entries(std::vector<BRQ_Entry> &kmer_list){
-    auto okItr = kmer_list.begin();
-    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
-        *okItr = *kItr;
-        ++kItr;
-        while (kItr<kmer_list.end() and *okItr == *kItr) {
-            combine_Entries(*okItr,*kItr);
-            ++kItr;
-        }
-    }
-    kmer_list.resize(okItr - kmer_list.begin());
-}
-
-void collapse_entries(std::vector<KMerNodeFreq> &kmer_list){
-    auto okItr = kmer_list.begin();
-    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
-        *okItr = *kItr;
-        ++kItr;
-        while (kItr<kmer_list.end() and *okItr == *kItr) {
-            combine_Entries(*okItr,*kItr);
-            ++kItr;
-        }
-    }
-    kmer_list.resize(okItr - kmer_list.begin());
-}
-
-void collapse_entries(std::vector<KMerNodeFreq_s> &kmer_list){
-    auto okItr = kmer_list.begin();
-    for (auto kItr = kmer_list.begin(); kItr < kmer_list.end(); ++okItr) {
-        *okItr = *kItr;
-        ++kItr;
-        while (kItr<kmer_list.end() and *okItr == *kItr) {
-            okItr->combine(*kItr);
-            ++kItr;
-        }
-    }
-    kmer_list.resize(okItr - kmer_list.begin());
-}
-
-void inplace_count_merge(std::shared_ptr<std::vector<KMerNodeFreq_s>> counts1, std::shared_ptr<std::vector<KMerNodeFreq_s>> counts2){
-    //sync-merge values from counts2 into counts1, if value not int counts1, move it to a top-based position in counts2.
-    //std::cout<<"merging counts1("<<counts1.size()<<" kmers) and counts2("<<counts2.size()<<" kmers)"<<std::endl;
-    //std::cout<<"merging"<<std::endl;
-    auto itr1=counts1->begin(),end1=counts1->end();
-    auto itr2=counts2->begin(),end2=counts2->end(),itr2w=counts2->begin();
-    //std::cout<<"merging, accumulating on counts1"<<std::endl;
-    while (itr2 !=end2){
-        while (itr1!=end1 and *itr1<*itr2) ++itr1;
-        if (itr1!=end1 and *itr1==*itr2){
-            //combine_Entries(*itr1,*itr2);
-            itr1->combine(*itr2);
-            ++itr1;++itr2;
-        }
-        while (itr2!=end2 and (itr1==end1 or *itr2<*itr1)){
-            *itr2w=*itr2;
-            ++itr2w;++itr2;
-        }
-    }
-    //shrink counts2 to the size of its remaining elements
-    counts2->resize(itr2w-counts2->begin());
-    //counts2->shrink_to_fit();
-    //expand counts1 to allow the insertion of the unique values on counts2
-    //std::cout<<"merging, resizing counts1 to " << counts1.size()+counts2.size() << std::endl;
-    counts1->resize(counts1->size()+counts2->size());
-    //merge-sort from the bottom into count1.
-    //std::cout<<"merging, final merging"<<std::endl;
-    auto writr1=counts1->rbegin(), ritr1=counts1->rbegin()+counts2->size(), rend1=counts1->rend();
-    auto ritr2=counts2->rbegin(), rend2=counts2->rend();
-    while (writr1!=rend1){
-        if (ritr2!=rend2 and (ritr1==rend1 or *ritr2>*ritr1)){
-            memcpy(&(*writr1),&(*ritr2), sizeof(KMerNodeFreq_s));
-            ++ritr2;
-        } else {
-            memcpy(&(*writr1),&(*ritr1), sizeof(KMerNodeFreq_s));
-            ++ritr1;
-        }
-        ++writr1;
-    }
-    counts2.reset();
-    //counts2->shrink_to_fit();
-}
-
 
 //a kmerlist class, replaces an std::vector with faster methods for the merge-sort
 KmerList::~KmerList() {
