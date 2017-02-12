@@ -1103,16 +1103,9 @@ void KmerList::merge(KmerList &other) {
     //std::cout<<"merge done, new size "<<size<<std::endl;
 }
 
+
 void KmerList::sort() {
-    qsort(kmers, size, sizeof(KMerNodeFreq_s), [](const KMerNodeFreq_s &a, const KMerNodeFreq_s &b) {
-        if (a.kdata[0] != b.kdata[0]) {
-            if (a.kdata[0] > b.kdata[0]) return 1;
-            return -1;
-        }
-        if (a.kdata[1] == b.kdata[1]) return 0;
-        if (a.kdata[1] > b.kdata[1]) return 1;
-        return -1;
-    });
+    std::sort(kmers,kmers+size);
 }
 
 void KmerList::uniq() {
