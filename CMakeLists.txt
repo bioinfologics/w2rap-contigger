@@ -1,4 +1,20 @@
 cmake_minimum_required (VERSION 2.8)
+
+IF (MY_COMPILER_OPTION STREQUAL "Intel")
+  FIND_PROGRAM(ICPC_PROGRAM icpc ...)
+  IF(ICPC_PROGRAM)
+    MESSAGE(STATUS "** Compiling with Intel settings **")
+    IF(ENV{CXX})
+      MESSAGE(WARNING "Overwriting CXX envvar")
+    ENDIF()
+    SET(ENV{CXX} "${ICPC_PROGRAM}")
+    SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -w")
+    SET(CMAKE_CXX_FLAGS_DEBUG "-g")
+  ELSE()
+    MESSAGE(FATAL_ERROR "Intel compiler not found")
+  ENDIF()
+ENDIF ()
+
 project (w2rap-contigger)
 
 ## Compiler flags
