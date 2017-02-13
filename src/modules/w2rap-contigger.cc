@@ -610,8 +610,10 @@ int main(const int argc, const char * argv[]) {
             }
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
-        if ( 3==step and kmercounts.get()==NULL){
+        if ( 3==step and 0==kmercounts->size){
+            OutputLog(2) << "Loading kmer counts..." << std::endl;
             kmercounts->load(out_dir+"/raw_kmers.data");
+            OutputLog(2) << "Kmer count data loaded" << std::endl << std::endl;
         }
         if ( 4==step ) kmercounts.reset(); //cleanup just in case
 

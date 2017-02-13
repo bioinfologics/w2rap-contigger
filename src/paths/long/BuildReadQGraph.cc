@@ -1339,8 +1339,6 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
                       ReadPathVec* pPaths, int _K)
 {
     OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
-    OutputLog(2) << "Kmercounts has "<<std::endl;
-    OutputLog(2) << kmerlist->size << " kmers" << std::endl;
     uint64_t kc=0;
     for (auto i=0;i<kmerlist->size;++i) if (kmerlist->kmers[i].count>=minFreq) ++kc;
     OutputLog(2) << kc << "/" << " kmers with freq >= "<< minFreq << std::endl;
@@ -1351,8 +1349,8 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
             pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
         }
     }
-    OutputLog(2) << "Dict created" << std::endl;
-
+    OutputLog(2) << "Dict created, freeing kmer counts" << std::endl;
+    kmerlist->clear();
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
