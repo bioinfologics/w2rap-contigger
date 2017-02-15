@@ -1341,15 +1341,16 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
     OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
     uint64_t kc=0;
     for (auto i=0;i<kmerlist->size;++i) if (kmerlist->kmers[i].count>=minFreq) ++kc;
-    OutputLog(2) << kc << "/" << " kmers with freq >= "<< minFreq << std::endl;
+    OutputLog(2) << kc << " kmers with freq >= "<< minFreq << std::endl;
     BRQ_Dict * pDict = new BRQ_Dict(kc);
+    OutputLog(2) << kc << "Dict created, populating "<< minFreq << std::endl;
     for (auto i=0;i<kmerlist->size;++i) {
         if (kmerlist->kmers[i].count>=minFreq) {
             KMerNodeFreq knf(kmerlist->kmers[i]);
             pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
         }
     }
-    OutputLog(2) << "Dict created, freeing kmer counts" << std::endl;
+    OutputLog(2) << "Dict populated, freeing kmer counts" << std::endl;
     kmerlist->clear();
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;

@@ -599,7 +599,7 @@ int main(const int argc, const char * argv[]) {
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
-        if ( (2==step or 3==step or 4==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
+        if ( (2==step or 3==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
                 OutputLog(2) << "Loading bases..." << std::endl;
                 bases.ReadAll(out_dir + "/pe_data.fastb");
