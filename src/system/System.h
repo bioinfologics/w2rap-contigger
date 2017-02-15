@@ -369,7 +369,7 @@ void OpenOfstream( std::ofstream& o, String const& s, String const& f,
 
 // The following PRINT macros are intended primarily for debugging.
 
-#define PRCORE(X) #X " = " << X
+#define PRCORE(X) #X << " = " << X
 #define PRINT(X) std::cout << PRCORE(X) << std::endl;
 #define PRINT2(X, Y) std::cout << PRCORE(X) << ", " << PRCORE(Y) << std::endl;
 #define PRINT3(X, Y, Z) std::cout << PRCORE(X) << ", " << PRCORE(Y) << ", " \

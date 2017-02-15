@@ -31,6 +31,7 @@
 #include <kmers/BigKMer.h>
 #include "GFADump.h"
 #include "util/OutputLog.h"
+#include <omp.h>
 
 //TODO: stupid globals!
 
@@ -541,9 +542,14 @@ int main(const int argc, const char * argv[]) {
         return 1;
     }
 
+#if __GNUC__ > 4 || \
+              (__GNUC__ == 4 && (__GNUC_MINOR__ > 9 || \
+                                 (__GNUC_MINOR__ == 2 && \
+                                  __GNUC_PATCHLEVEL__ > 0)))
+
     if (omp_get_proc_bind()==omp_proc_bind_false) std::cout<< "WARNING: you are running the code with omp_proc_bind_false, parallel performance may suffer"<<std::endl;
     if (omp_get_proc_bind()==omp_proc_bind_master) std::cout<< "WARNING: you are running the code with omp_proc_bind_master, parallel performance may suffer"<<std::endl;
-
+#endif
 
 
     //== Set computational resources ===
