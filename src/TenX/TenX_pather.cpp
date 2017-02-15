@@ -2,6 +2,7 @@
 // Created by Gonzalo Garcia (TGAC) on 16/12/2016.
 //
 
+#include <kmers/kmatch/KMatch.h>
 #include "TenX_pather.h"
 #include "paths/PathFinder.h"
 
@@ -57,21 +58,21 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
   }
 
   //store all kmers in an std::vector
-  std::vector<std::pair<uint64_t, std::map<tagktype, int>>> all_kmers;
+  std::vector<std::pair<uint64_t, tbb::concurrent_unordered_multiset<tagktype>>> all_kmers;
   all_kmers.reserve(kcount);
   std::cout << Date() << ": Number of kmers: " << kcount <<std::endl;
 
 
 //  for (auto e = 0; e<edges.size(); ++e) {
 #pragma omp parallel for
-  for (auto e=0; e<10000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
+  for (auto e=0; e<1000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
     auto seq = edges[e].ToString();
     if (seq.length()>min_edge_length){
       auto kv = ProduceKmers(seq);
       for (auto k: kv) {
-        std::map<tagktype, int> partest;
+        tbb::concurrent_unordered_multiset<tagktype> empty_multiset;
 #pragma omp critical (vectorpush)
-        all_kmers.push_back(std::make_pair(k.kmer, partest));
+        all_kmers.push_back(std::make_pair(k.kmer, empty_multiset));
       }
     }
   }
@@ -86,52 +87,50 @@ int TenXPather::reads2kmerTagMap(){
 #pragma omp parallel for
   for (auto e = 0; e < seqVector.size(); ++e){
     auto tag = kmerize_tag(seqVector[e].tag.ToString());
-//    std::cout << "Tga: " << tag<<std::endl;
+//    std::cout << "Tag: " << tag<<std::endl;
 
     auto seq = seqVector[e].r1.ToString();
-    auto kv = ProduceKmers(seq);
-    // for each kmer
-    for (auto const& k: kv){
-      if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
-#pragma omp critical (taginsert)
-        kmerTagMap[k.kmer][tag]++;
-      }
-    }
+    insert_kmertags_in_edgemap(tag, seq);
 
     seq = seqVector[e].r2.ToString();
-    kv = ProduceKmers(seq);
-    // for each kmer
-    for (auto const& k: kv){
-      if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
-#pragma omp critical (taginsert)
-        kmerTagMap[k.kmer][tag]++;
-      }
-    }
+    insert_kmertags_in_edgemap(tag, seq);
+
   }
   std::cout << Date() << ": Done filling the maps" << std::endl;
   return 0;
 }
 
-std::vector<TenXPather::tagktype> TenXPather::getSequenceTags(std::string seq){
-  // Given a sequence returns the tags asociated with those edge kmers in the kmerTagMap
+void TenXPather::insert_kmertags_in_edgemap(const TenXPather::tagktype tag, const String &seq) {
+  auto kv = ProduceKmers(seq);
+  // for each kmer
+  for (auto const& k: kv){
+      const auto klookup(kmerTagMap.find(k.kmer));
+      // Reduce the number of lookups by storing the found iterator and inserting there rather than looking it up again with "at"
+      if (klookup != kmerTagMap.cend()){
+        klookup->second.insert(tag);
+      }
+    }
+}
+
+std::vector<TenXPather::tagktype> TenXPather::getSequenceTags(const std::string seq){
+  // Given a sequence returns the tags associated with those edge kmers in the kmerTagMap
 
   std::vector<TenXPather::tagktype> tags;
-  auto kmers = ProduceKmers(seq);
-  for (auto k: kmers){
-    if (kmerTagMap.find(k.kmer) != kmerTagMap.end()){
-      for (auto tag: kmerTagMap[k.kmer]){
-        tags.push_back(tag.first);
+  const auto kmers = ProduceKmers(seq);
+  for (const auto &k: kmers){
+    const auto klookup(kmerTagMap.find(k.kmer));
+    if (klookup != kmerTagMap.cend()){
+      for (const auto tag: klookup->second){
+        tags.push_back(tag);
       }
     }
   }
   return tags;
 }
 
-float TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, int roi) {
+float TenXPather::edgeTagIntersection(const string edgeFrom, const string edgeTo, const int roi) {
   // Given 2 edges as strings will return the set of tags that are common to both edges
   // Directional, edgeFrom (tail roi), edgeTo(head roi), takes the end of the first edge and the tail of the second
-
-  std::vector<TenXPather::tagktype> intersection_tagset;
 
   // Set rois in both edges
   std::string edgeFrom_roi;
@@ -151,10 +150,11 @@ float TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, 
   auto tagsFrom = getSequenceTags(edgeFrom_roi);
   auto tagsTo = getSequenceTags(edgeTo_roi);
 
-  // [GONZA] TODO: check if this sort is really necesary with the set intersection!
+  // [GONZA] TODO: check if this sort is really necessary with the set intersection!
   std::sort(tagsFrom.begin(), tagsFrom.end());
   std::sort(tagsTo.begin(), tagsTo.end());
 
+  std::vector<TenXPather::tagktype> intersection_tagset;
   std::set_intersection(tagsFrom.begin(), tagsFrom.end(), tagsTo.begin(), tagsTo.end(), std::back_inserter(intersection_tagset));
 
   // Calculate the intersection score as the density of tags/kmer
@@ -162,14 +162,12 @@ float TenXPather::edgeTagIntersection(std::string edgeFrom, std::string edgeTo, 
   return intersection_score;
 }
 
+//TODO: Esto no anda...
 float TenXPather::kmerTagDensity(){
-  // Get the tag kmer map and create a histogram of tag count, then choose a treshold
+  // Get the tag kmer map and create a histogram of tag count, then choose a threshold
   std::vector<int> histogram (255, 0);
   for (auto kt: kmerTagMap){
-    int count = 0;
-    for (auto tagcount: kt.second){
-      count += tagcount.second;
-    }
+    int count (kt.second.size());
     if (count > 255){
       count = 255;
     }
@@ -225,10 +223,11 @@ std::vector<uint64_t> TenXPather::choose_best_path(std::vector<std::vector<uint6
 }
 
 
-void TenXPather::solve_region_using_TenX(uint64_t large_frontier_size, bool verbose_separation, float score_threshold) {
+void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, const bool verbose_separation,
+                                         const float score_threshold) {
   //find a complex path
   // [GOnza] TODO: separate this function into 2 differets, one to create the map an the other to test the permutations
-  auto edges = mHBV.Edges();
+  const auto edges = mHBV.Edges();
 
   uint64_t qsf=0,qsf_paths=0;
   uint64_t msf=0,msf_paths=0;
@@ -238,6 +237,7 @@ void TenXPather::solve_region_using_TenX(uint64_t large_frontier_size, bool verb
   std::vector<std::vector<uint64_t>> paths_to_separate;
   int solved_regions = 0;
   int unsolved_regions = 0;
+  //TODO: EdgeObjectCount can overflow
   for (int e = 0; e < mHBV.EdgeObjectCount(); ++e) {
     if (e < mInv[e] && mHBV.EdgeObject(e).size() < large_frontier_size) {
       // Get the frontiers fo the edge
@@ -246,7 +246,8 @@ void TenXPather::solve_region_using_TenX(uint64_t large_frontier_size, bool verb
       if (f[0].size()>1 and f[1].size()>1 and f[0].size() == f[1].size() and seen_frontiers.count(f)==0){
         seen_frontiers.insert(f);
         bool single_dir=true;
-        std::map<std::string, float> shared_paths;
+
+        std::unordered_map<std::string, float> shared_paths;
         for (auto in_e:f[0]) for (auto out_e:f[1]) if (in_e==out_e) {single_dir=false;break;}
 
         if (single_dir) {
@@ -264,15 +265,14 @@ void TenXPather::solve_region_using_TenX(uint64_t large_frontier_size, bool verb
               auto out_e=f[1][out_i];
 
               int edges_in_path;
-              std::string pid;
-              auto in_e_seq = edges[in_e].ToString();
-              auto out_e_seq = edges[out_e].ToString();
+              const auto in_e_seq = edges[in_e].ToString();
+              const auto out_e_seq = edges[out_e].ToString();
 
               // Intersect the tags for the edges
               auto intersection_score = edgeTagIntersection(in_e_seq, out_e_seq, 1500);
               if (intersection_score>score_threshold){
                 // if the edges overlap in the tagspace thay are added to the map and the combination is markes in the used edges
-                pid = std::to_string(in_e) + "-" + std::to_string(out_e);
+                const std::string pid(std::to_string(in_e) + "-" + std::to_string(out_e));
                 shared_paths[pid] += intersection_score; // This should score the link based in the number of tags that tha pair shares
                 out_used[out_i]++;
                 in_used[in_i]++;

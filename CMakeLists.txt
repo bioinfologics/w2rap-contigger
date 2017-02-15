@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 project (w2rap-contigger)
 
+set(CMAKE_MODULE_PATH
+        ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
+
 ## Compiler flags
 SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
 #SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -O0 -DNDEBUG -lz")
@@ -31,6 +34,12 @@ endif()
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
   include_directories(${ZLIB_INCLUDE_DIRS})
+endif()
+
+find_package(TBB)
+if (TBB_FOUND)
+    MESSAGE("Sucess?!")
+    include_directories(${TBB_INCLUDE_DIRS})
 endif()
 
 ## Include directories
@@ -401,6 +410,10 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
 add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/pacbio/PathFinder_pb.cc
         src/kmers/kmatch/KMatch.cc src/pacbio/pacbio_pather.cpp $<TARGET_OBJECTS:hb_base_libs> src/TenX/TenX_pather.cpp src/TenX/TenX_pather.h src/TenX/PathFinder_tx.cc
         src/paths/local/LocalPather.cpp)
+
+if(TBB_FOUND)
+    target_link_libraries(runthis ${TBB_LIBRARIES})
+endif()
 
 ##Zlib link
 if (ZLIB_FOUND)

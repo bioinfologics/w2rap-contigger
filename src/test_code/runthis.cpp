@@ -8,8 +8,8 @@
 
 #include "pacbio/pacbio_pather.h"
 
-//#include "TenX/TenX_pather.h"
-//#include "TenX/PathFinder_tx.h"
+#include "TenX/TenX_pather.h"
+#include "TenX/PathFinder_tx.h"
 
 
 int main(int argc, char *argv[]){
@@ -46,37 +46,37 @@ int main(int argc, char *argv[]){
   auto edges = hbv.Edges();
   std::cout << "Size of the paths vector" << pathsr.size() <<" , inverse: " << paths_inv.size() << std::endl;
 
-//  /* ----- TenXpather part ----- */
-//  auto reads = dataMag.mag["TEX"]->rReads;
-//  std::cout << "Reads already loaded..." << std::endl;
-//  std::cout << reads.size() << " Reads in the vector" << std::endl;
-//
-//  // Create the paths and invert them
-//  std::cout << "Starting tenxPather..." << std::endl;
-//  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
-//
-//  std::cout<< Date() << " Map creation." << std::endl;
-//  txp.createEmptyMap(&hbv);
-//
-//  std::cout<< Date() << " Map filling with reads..." << std::endl;
-//  txp.reads2kmerTagMap();
-//
-//  std::cout<< Date() << " Map filling with reads done..." << std::endl;
-//  txp.kmerTagDensity();
-//
-//  // Pathfinder
-//  std::cout<< Date() << " Starting pathfinder..." << std::endl;
-//  std::cout<< Date() << " done pathfinder..." << std::endl;
-//  txp.solve_region_using_TenX(1000, true);
-//  /* ----- TenXpather part ----- */
+  /* ----- TenXpather part ----- */
+  auto reads = dataMag.mag["TEX"]->rReads;
+  std::cout << "Reads already loaded..." << std::endl;
+  std::cout << reads.size() << " Reads in the vector" << std::endl;
+
+  // Create the paths and invert them
+  std::cout << "Starting tenxPather..." << std::endl;
+  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
+
+  std::cout<< Date() << " Map creation." << std::endl;
+  txp.createEmptyMap(&hbv);
+
+  std::cout<< Date() << " Map filling with reads..." << std::endl;
+  txp.reads2kmerTagMap();
+
+  std::cout<< Date() << " Map filling with reads done..." << std::endl;
+  txp.kmerTagDensity();
+
+  // Pathfinder
+  std::cout<< Date() << " Starting pathfinder..." << std::endl;
+  std::cout<< Date() << " done pathfinder..." << std::endl;
+  txp.solve_region_using_TenX(1000, true);
+  /* ----- TenXpather part ----- */
 
 
-  auto reads = dataMag.mag["PB1"]->bases;
-
-  PacbioPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
-  pbp.Hbv2Map(&hbv);
-  pbp.mapReads();
-  pbp.untangle_complex_in_out_choices(1000, true);
+//  auto reads = dataMag.mag["PB1"]->bases;
+//
+//  PacbioPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
+//  pbp.Hbv2Map(&hbv);
+//  pbp.mapReads();
+//  pbp.untangle_complex_in_out_choices(1000, true);
 
 //
 //  ReadPathVec pathsr = pbp.mapReads();
