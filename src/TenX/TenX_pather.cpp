@@ -47,6 +47,7 @@ TenXPather::tagktype TenXPather::kmerize_tag(std::string seq){
 
 int TenXPather::createEmptyMap(HyperBasevector* hbv){
   // Create empty kmer map from the edges.
+  std::cout << Date() << ": Create empty map Begins" << std::endl;
   int min_edge_length = 1500;
   auto & edges = hbv->Edges();
   auto kcount=0;
@@ -63,9 +64,10 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
   std::cout << Date() << ": Number of kmers: " << kcount <<std::endl;
 
 
+  std::cout  << Date() << ": Creating the kmer:set pair to insert" << std::endl;
 //  for (auto e = 0; e<edges.size(); ++e) {
 #pragma omp parallel for
-  for (auto e=0; e<1000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
+  for (auto e=0; e<10000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
     auto seq = edges[e].ToString();
     if (seq.length()>min_edge_length){
       auto kv = ProduceKmers(seq);
@@ -77,7 +79,9 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
     }
   }
 
+  std::cout  << Date() << ": Inserting pairs in the map" << std::endl;
   kmerTagMap.insert(all_kmers.begin(), all_kmers.end());
+  std::cout  << Date() << ": Done, number of keys in the vector: "<< all_kmers.size() << ", Keys in th map: " << kmerTagMap.size() << std::endl;
   return 0;
 }
 
@@ -105,6 +109,7 @@ void TenXPather::insert_kmertags_in_edgemap(const TenXPather::tagktype tag, cons
   // for each kmer
   for (auto const& k: kv){
       const auto klookup(kmerTagMap.find(k.kmer));
+
       // Reduce the number of lookups by storing the found iterator and inserting there rather than looking it up again with "at"
       if (klookup != kmerTagMap.cend()){
         klookup->second.insert(tag);
@@ -274,6 +279,7 @@ void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, con
                 // if the edges overlap in the tagspace thay are added to the map and the combination is markes in the used edges
                 const std::string pid(std::to_string(in_e) + "-" + std::to_string(out_e));
                 shared_paths[pid] += intersection_score; // This should score the link based in the number of tags that tha pair shares
+//                std::cout << " from-to edges: " << pid << "= " << intersection_score << std::endl;
                 out_used[out_i]++;
                 in_used[in_i]++;
               }
@@ -288,7 +294,7 @@ void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, con
 
           std::vector<int> max_score_permutation;
           do {
-            // Vectors to count seen edges (check that all edges are included in th solution)
+            // Vectors to count seen edges (to check that all edges are included in th solution)
             std::vector<int> seen_in(in_frontiers.size(), 0);
             std::vector<int> seen_out(in_frontiers.size(), 0);
 
@@ -334,10 +340,8 @@ void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, con
             }
             std::cout << "--------------------" << std::endl;
 
-            // Fill intermediate nodes
-//            LocalPaths_TX lp (mHBV, wining_permutation, mToRight, mEdges);
+            // Get all paths between the solved pair of edges and get the best one for each pair
             auto all_paths_found = find_all_solution_paths(wining_permutation);
-
             std::cout << "All paths done" << std::endl;
             for (auto spi = 0; spi<all_paths_found.size(); ++spi){
               auto sv = all_paths_found[spi];

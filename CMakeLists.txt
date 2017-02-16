@@ -5,8 +5,8 @@ set(CMAKE_MODULE_PATH
         ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
-#SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -O0 -DNDEBUG -lz")
+#SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -O0 -DNDEBUG -lz")
 
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
@@ -413,6 +413,7 @@ add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C 
 
 if(TBB_FOUND)
     target_link_libraries(runthis ${TBB_LIBRARIES})
+    target_link_libraries(w2rap-contigger ${TBB_LIBRARIES})
 endif()
 
 ##Zlib link

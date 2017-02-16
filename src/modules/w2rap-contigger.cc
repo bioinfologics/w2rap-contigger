@@ -33,7 +33,7 @@
 //#include "pacbio/pacbio_pather.h"
 
 #include "TenX/TenX_pather.h"
-#include "TenX/PathFinder_tx.h"
+//#include "TenX/PathFinder_tx.h"
 
 std::string checkpoint_perf_time(const std::string section_name){
     static double wtimer, cputimer;
@@ -292,7 +292,7 @@ int main(const int argc, const char * argv[]) {
 
             std::cout << Date() << ": PathFinder_tx: Separating solved single-flow repeats" << std::endl;
 
-            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
+//            PathFinder(hbvr,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
             std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
             RemoveUnneededVertices2(hbvr,inv,pathsr);
             Cleanup( hbvr, inv, pathsr );
@@ -660,7 +660,7 @@ int main(const int argc, const char * argv[]) {
         //vecbasevector G;
         //FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix + "_contigs", MAX_CELL_PATHS, MAX_DEPTH, G);
         GFADump(out_dir +"/"+ out_prefix + "_contigs", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
-        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
+//        PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
 
     }
     if (from_step==7){
@@ -700,19 +700,24 @@ int main(const int argc, const char * argv[]) {
         std::cout << "Reads already loaded..." << std::endl;
         std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
 
-        TenXPather txp (&tx_reads, &hbvr);
+//        TenXPather txp (&tx_reads, &hbvr);
+        // TODO: check this bit
+        auto edges = hbvr.Edges();
+        TenXPather txp (tx_reads, hbvr, inv, 5, edges, pathsr, paths_inv);
+
         std::cout<< Date() << " Map creation." << std::endl;
         txp.createEmptyMap(&hbvr);
         std::cout<< Date() << " Map creation done..." << std::endl;
         std::cout<< Date() << " Map filling with reads..." << std::endl;
         txp.reads2kmerTagMap();
         std::cout<< Date() << " Map filling with reads done..." << std::endl;
+        txp.solve_region_using_TenX(5000, true);
 
-        // execute pathfinder here
-        std::cout<< Date() << " Starting pathfinder..." << std::endl;
-        PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
-        std::cout<< Date() << " done pathfinder..." << std::endl;
-        pf_tx.solve_region_using_TenX(3000, true);
+//        // execute pathfinder here
+//        std::cout<< Date() << " Starting pathfinder..." << std::endl;
+//        PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
+//        std::cout<< Date() << " done pathfinder..." << std::endl;
+//        pf_tx.solve_region_using_TenX(3000, true);
 
         RemoveUnneededVertices2(hbvr, inv, pathsr);
         Cleanup(hbvr, inv, pathsr);

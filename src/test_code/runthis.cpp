@@ -32,17 +32,9 @@ int main(int argc, char *argv[]){
   inv.clear();
   hbv.Involution(inv);
 
-  std::cout << "despues del inv 1" << std::endl;
   ReadPathVec pathsr;
   VecULongVec paths_inv;
-  std::cout << "despues del inv 2" << std::endl;
-//  LoadReadPathVec(pathsr, argv[4]);
-  std::cout << "despues del inv 3" << std::endl;
-//  paths_inv.clear();
-  std::cout << "despues del inv 4" << std::endl;
-//  invert(pathsr, paths_inv, hbv.EdgeObjectCount());
-
-  std::cout << "despues del inv" << std::endl;
+  invert(pathsr, paths_inv, hbv.EdgeObjectCount());
   auto edges = hbv.Edges();
   std::cout << "Size of the paths vector" << pathsr.size() <<" , inverse: " << paths_inv.size() << std::endl;
 
@@ -67,7 +59,7 @@ int main(int argc, char *argv[]){
   // Pathfinder
   std::cout<< Date() << " Starting pathfinder..." << std::endl;
   std::cout<< Date() << " done pathfinder..." << std::endl;
-  txp.solve_region_using_TenX(1000, true);
+  txp.solve_region_using_TenX(5000, true);
   /* ----- TenXpather part ----- */
 
 

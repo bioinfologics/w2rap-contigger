@@ -932,7 +932,7 @@ bool PathFinder::join_edges_in_path(std::vector<uint64_t> p){
 
 //
 std::vector<std::vector<uint64_t>> PathFinder::find_all_solution_paths(std::vector<std::vector<uint64_t>> pair_solutions){
-  // Get each one of the pairs for the frontier solutions finded and fill the edges and return every possible path
+  // Get each one of the pairs for the frontier solutions found and fill the edges and return every possible path
   // between the ends of each pair
   ins.clear();
   outs.clear();
