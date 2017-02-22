@@ -361,18 +361,19 @@ void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, con
   std::cout << "Solved regions: " << solved_regions << ", Unsolved regions: " << unsolved_regions << " --> " << (float)solved_regions / (float)(solved_regions + unsolved_regions) * 100 << " %" << std::endl;
   std::cout << "========================" << std::endl;
 
+  auto deduplicated_pats = deduplicate_paths(paths_to_separate);
   std::cout << "List of paths to separate" << std::endl;
-  for (auto ss: paths_to_separate){
+  for (auto ss: deduplicated_pats){
     for (auto sx: ss){
       std::cout << sx << ",";
     }
     std::cout << std::endl;
   }
-  std::cout << "Paths to separate: " << paths_to_separate.size() << std::endl;
+  std::cout << "Paths to separate: " << deduplicated_pats.size() << std::endl;
 
   uint64_t sep=0;
   std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
-  for (auto p: paths_to_separate){
+  for (auto p: deduplicated_pats){
     if (old_edges_to_new.count(p.front()) > 0 or old_edges_to_new.count(p.back()) > 0) {
       std::cout<<"WARNING: path starts or ends in an already modified edge, skipping"<<std::endl;
       continue;
@@ -393,4 +394,51 @@ void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, con
 //        migrate_readpaths(old_edges_to_new);
 //    }
   std::cout<<" "<<sep<<" paths separated!"<<std::endl;
+}
+
+std::vector<std::vector<uint64_t>> TenXPather::deduplicate_paths(std::vector<std::vector<uint64_t>> paths_to_separate){
+    // check that no paths have the same edge
+    std::cout << Date() << ": Deduplicating paths..." << std::endl;
+
+    // Map to store the edge and in what path is stored
+    std::unordered_map<uint64_t, std::vector<uint64_t>> edge_in_path;
+    int cont =0;
+    for (const auto &path: paths_to_separate){
+        auto first_edge = path[0];
+        auto last_edge = path[path.size()-1];
+
+        edge_in_path[first_edge].push_back(cont);
+        edge_in_path[mInv[first_edge]].push_back(cont);
+
+        edge_in_path[last_edge].push_back(cont);
+        edge_in_path[mInv[last_edge]].push_back(cont);
+        cont++;
+    }
+
+    // get edges that are used more than once
+    std::vector<uint64_t> repeated_edges;
+    for (const auto &edge_count: edge_in_path){
+        if (edge_count.second.size() > 1){
+            std::cout << "Edge used twice: " << edge_count.first << ": " << edge_count.second.size() << std::endl;
+            repeated_edges.push_back(edge_count.first);
+        }
+    }
+
+
+    // Delete paths with edges "malditos"
+    std::vector<std::vector<uint64_t>> good_paths;
+    for (const auto &path: paths_to_separate){
+        bool bad_edge = false;
+        for (const auto &edge: path){
+            if (std::find(repeated_edges.begin(), repeated_edges.end(), edge) != repeated_edges.end()){
+                bad_edge=true;
+            }
+        }
+        if (!bad_edge){
+            good_paths.push_back(path);
+        }
+    }
+
+    std::cout << Date() << ": Done deduplicating paths" << std::endl;
+    return good_paths;
 }

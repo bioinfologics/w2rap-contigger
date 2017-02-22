@@ -64,6 +64,7 @@ private:
     std::vector<BaseVec>& mEdges;
 
     void insert_kmertags_in_edgemap(const tagktype tag, const String &seq);
+    std::vector<std::vector<uint64_t>> deduplicate_paths(std::vector<std::vector<uint64_t>> paths_to_separate);
 };
 
 #endif //W2RAP_CONTIGGER_TENX_PATHER_H

@@ -32,6 +32,17 @@ int main(int argc, char *argv[]){
   inv.clear();
   hbv.Involution(inv);
 
+  std::ofstream inversions_file("/Users/ggarcia/Documents/notebooks/edgeinvolutions.txt", std::ios::out);
+  int cont = 0;
+  std::cout << "Edges ad involutions" << std::endl;
+  for (auto a: inv){
+//    std::cout << cont << ":" << a << std::endl;
+    inversions_file << cont << ":" << a << std::endl;
+    cont++;
+  }
+  inversions_file.close();
+  std::cout << "Edges ad involutions" << std::endl;
+
   ReadPathVec pathsr;
   VecULongVec paths_inv;
   invert(pathsr, paths_inv, hbv.EdgeObjectCount());
