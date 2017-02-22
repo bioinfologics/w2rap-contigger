@@ -67,7 +67,7 @@ int TenXPather::createEmptyMap(HyperBasevector* hbv){
   std::cout  << Date() << ": Creating the kmer:set pair to insert" << std::endl;
 //  for (auto e = 0; e<edges.size(); ++e) {
 #pragma omp parallel for
-  for (auto e=0; e<10000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
+  for (auto e=0; e<50000; ++e) { // TODO: [GONZA] fix this to run in a bigger machine, is like this for the map to fit in my laptop :/
     auto seq = edges[e].ToString();
     if (seq.length()>min_edge_length){
       auto kv = ProduceKmers(seq);
