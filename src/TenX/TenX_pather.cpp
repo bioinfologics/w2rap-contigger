@@ -390,9 +390,9 @@ void TenXPather::solve_region_using_TenX(const uint64_t large_frontier_size, con
       std::cout << "separated_paths: " << sep << std::endl;
     }
   }
-//    if (old_edges_to_new.size()>0) {
-//        migrate_readpaths(old_edges_to_new);
-//    }
+    if (old_edges_to_new.size()>0) {
+        migrate_readpaths(old_edges_to_new);
+    }
   std::cout<<" "<<sep<<" paths separated!"<<std::endl;
 }
 
