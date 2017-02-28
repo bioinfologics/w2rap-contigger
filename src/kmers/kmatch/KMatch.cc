@@ -3,7 +3,7 @@
 #include <thread>
 #include <paths/HyperBasevector.h>
 
-KMatch::KMatch(int kv){
+KMatch::KMatch(const int kv=31){
   if (kv > 31){
     std::cout << "Kmer value is too big for this, using 31 instead... " << std::endl;
     K = 31;
@@ -11,7 +11,7 @@ KMatch::KMatch(int kv){
   K = kv;
 }
 
-std::vector<pKmer> KMatch::ProduceKmers(std::string seq){
+std::vector<pKmer> KMatch::ProduceKmers(const std::string &seq) const {
   // get a sequence a produce the set of kmers ()
   std::vector<pKmer> kmer_vector;
 
@@ -59,7 +59,7 @@ std::vector<pKmer> KMatch::ProduceKmers(std::string seq){
   return kmer_vector;
 }
 
-void KMatch::Hbv2Map(HyperBasevector* hbv){
+void KMatch::Hbv2Map(const HyperBasevector *hbv){
   //  std::vector<kmer_position_t> karray;
 
   std::map<uint64_t, std::vector<edgeKmerPosition>> edgeDict;
@@ -68,8 +68,8 @@ void KMatch::Hbv2Map(HyperBasevector* hbv){
   auto edges = hbv->Edges();
 
   for (auto seqN=0; seqN<edges.size(); ++seqN) {
-    auto seq = edges[seqN].ToString();
-    auto kv = ProduceKmers(seq);
+    const auto seq = edges[seqN].ToString();
+    const auto kv (ProduceKmers(seq));
 
     for (auto a=0; a<kv.size(); ++a){
       if (edgeMap.find(kv[a].kmer) == edgeMap.end()){
@@ -93,17 +93,17 @@ void KMatch::Hbv2Map(HyperBasevector* hbv){
   }
 }
 
-std::vector<edgeKmerPosition> KMatch::lookupRead(std::string read){
+std::vector<edgeKmerPosition> KMatch::lookupRead(const std::string &read){
   // produce kmers
-  auto rkms = ProduceKmers(read);
+  const auto rkms (ProduceKmers(read));
 
   // look kmers in the dictionary
   std::vector<edgeKmerPosition> mapped_edges;
   int cont = 0; // Cont to hold the kmer offset in the read
-  for (auto a: rkms){
+  for (const auto &a: rkms){
     std::map<uint64_t, std::vector<edgeKmerPosition>>::iterator tt = edgeMap.find(a.kmer);
     if (tt != edgeMap.end()){
-      for (auto p: tt->second){
+      for (const auto &p: tt->second){
         edgeKmerPosition x;
         x.edge_id = p.edge_id;
         x.edge_offset = p.edge_offset;

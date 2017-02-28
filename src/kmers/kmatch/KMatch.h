@@ -34,15 +34,15 @@ typedef struct {
 
 class KMatch {
   public:
-    KMatch(int K);
-    void Hbv2Map(HyperBasevector* hbv);
+    KMatch(const int K);
+    void Hbv2Map(const HyperBasevector *hbv);
 
-    std::vector<pKmer> ProduceKmers(std::string seq);
+    std::vector<pKmer> ProduceKmers(const std::string &seq) const;
 
     std::map<uint64_t, std::vector<edgeKmerPosition>> edgeMap;
 
 //    std::vector<int> MapReads(vecbvec seqVector, HyperBasevector *hbv);
-    std::vector<edgeKmerPosition> lookupRead(std::string read);
+    std::vector<edgeKmerPosition> lookupRead(const std::string &read);
 
   private:
     uint8_t K;
