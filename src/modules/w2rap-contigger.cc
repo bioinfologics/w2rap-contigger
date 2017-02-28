@@ -576,7 +576,6 @@ int main(const int argc, const char * argv[]) {
         bool UNWIND3 = True;
 
 
-        //////
         //[GONZA]: append the pacbio paths to this vector as a first test
 //        auto pb_bases = dataMag.mag["PB1"]->bases;
 
@@ -683,18 +682,6 @@ int main(const int argc, const char * argv[]) {
         bool SCAFFOLD_VERBOSE = False;
         bool GAP_CLEANUP = True;
 
-        //GFADump(out_dir +"/"+ out_prefix + "_prePF", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH);
-        //PathFinder(hbvr,inv,pathsr,paths_inv).classify_forks();
-        //PathFinder(hbvr,inv,pathsr,paths_inv).unroll_loops();
-        //std::cout<<"refreshing all structures as precaution"<<std::endl;
-        //inv.clear();
-        //hbvr.Involution(inv);
-        //paths_inv.clear();
-        //invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        //std::cout<<"all structures refreshed"<<std::endl;
-        //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_pins();
-        //PathFinder(hbvr,inv,pathsr,paths_inv).untangle_complex_in_out_choices();
-
         // construct tenx dict here
         auto tx_reads = dataMag.mag["TEX"]->rReads;
         std::cout << "Reads already loaded..." << std::endl;
@@ -709,28 +696,30 @@ int main(const int argc, const char * argv[]) {
         std::cout << "Reads already loaded..." << std::endl;
         std::cout << tenx_reads.size() << " Reads in the vector" << std::endl;
 
-        // Create the paths and invert them
-        std::cout << "Starting tenxPather..." << std::endl;
-        TenXPather txp (tenx_reads, hbvr, inv, 5, edges, pathsr, paths_inv);
+        for (auto pass=0; pass<=2; ++pass){
+            // Create the paths and invert them
+            std::cout << "Starting tenxPather..." << std::endl;
+            TenXPather txp (tenx_reads, hbvr, inv, 5, edges, pathsr, paths_inv);
 
-        std::cout<< Date() << " Map creation." << std::endl;
-        txp.createEmptyMap(&hbvr);
+            std::cout<< Date() << " Map creation." << std::endl;
+            txp.createEmptyMap(&hbvr);
 
-        std::cout<< Date() << " Map filling with reads..." << std::endl;
-        txp.reads2kmerTagMap();
+            std::cout<< Date() << " Map filling with reads..." << std::endl;
+            txp.reads2kmerTagMap();
 
-        // Pathfinder
-        std::cout<< Date() << " Starting pathfinder..." << std::endl;
-        std::cout<< Date() << " done pathfinder..." << std::endl;
-        txp.solve_region_using_TenX(5000, true);
+            // Pathfinder
+            std::cout<< Date() << " Starting pathfinder..." << std::endl;
+            std::cout<< Date() << " done pathfinder..." << std::endl;
+            txp.solve_region_using_TenX(5000, true);
 
-        RemoveUnneededVertices2(hbvr, inv, pathsr);
-        Cleanup(hbvr, inv, pathsr);
-        // so all the above numbers add up, and the edge which breaks it is the first new edge
-        // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
-        inv.clear();
-        hbvr.Involution(inv);
-        TestInvolution(hbvr, inv);
+            RemoveUnneededVertices2(hbvr, inv, pathsr);
+            Cleanup(hbvr, inv, pathsr);
+            // so all the above numbers add up, and the edge which breaks it is the first new edge
+            // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
+            inv.clear();
+            hbvr.Involution(inv);
+            TestInvolution(hbvr, inv);
+        }
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);
@@ -742,7 +731,6 @@ int main(const int argc, const char * argv[]) {
         FinalFiles(hbvr, inv, pathsr, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
         GFADump(out_dir +"/"+ out_prefix + "_assembly", hbvr, inv, pathsr, MAX_CELL_PATHS, MAX_DEPTH, true);
         if (dump_perf) perf_file << checkpoint_perf_time("FinalFiles") << std::endl;
-
 
     }
     if (dump_perf) perf_file.close();
