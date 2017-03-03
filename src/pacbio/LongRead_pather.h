@@ -19,21 +19,21 @@ typedef struct {
     int kmer;
 } linkReg;
 
-struct linkreg_less_than_pb {
+struct linkreg_less_than_lr {
     inline bool operator() (const linkReg& struct1, const linkReg& struct2)
     {
       return (struct1.read_offset < struct2.read_offset);
     }
 };
 
-class PacbioPather: public KMatch, public PathFinder {
+class LongReadPather: public KMatch, public PathFinder {
 public:
-    PacbioPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths);
+    LongReadPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths);
     ReadPathVec mapReads();
 
     std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths){};
 
-    void PacbioPather::solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation);
+    void solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation);
 private:
     vecbvec& seqVector;
     std::vector<BaseVec>& mEdges;

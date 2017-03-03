@@ -2,26 +2,33 @@
 // Created by Gonzalo Garcia (TGAC) on 04/11/2016.
 //
 
-#include "pacbio_pather.h"
+#include "LongRead_pather.h"
 
 
-PacbioPather::PacbioPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths)
+LongReadPather::LongReadPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths)
     : KMatch(31), seqVector(aseqVector), mEdges(edges), PathFinder(ahbv, ainv, apaths, ainvPaths, 5) { }
 
-std::vector<std::vector<linkReg>> PacbioPather::getReadsLinks(bool output_to_file=true){
+std::vector<std::vector<linkReg>> LongReadPather::getReadsLinks(bool output_to_file=true){
+  /* Look for the reads in the edgeMap and create links between reads and edges (map reads to edges)
+   *
+   * each vector<linkReg> stores the matched kmers between the read and the edges (lookupRead). One kmer can be matched with many edges at this point
+   * each vector of linkRegs are all the matches for the read in the index position (index in seqVector = index in links)
+   * */
+  //
+
   // Get the reads
   std::vector<std::vector<linkReg>> links;
 
   std::cout<< Date() << ": Size of the dictionary: " << edgeMap.size() << std::endl;
 
   std::cout<< Date() << ": loading edges and involution." << std::endl;
+  // TODO: Is this used for something here?? (edges and involutions) clean
   auto edges = mHBV.Edges();
   std::cout << "edges loaded" << std::endl;
   vec<int> inv;
   mHBV.Involution(inv);
 
   std::cout<< Date() << ": processing edges" << std::endl;
-//  int cont = 0;
   links.resize(seqVector.size());
 #pragma omp parallel for
   for (auto v=0; v<seqVector.size(); ++v){
@@ -46,9 +53,11 @@ std::vector<std::vector<linkReg>> PacbioPather::getReadsLinks(bool output_to_fil
   return links;
 }
 
-std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data){
-  // Count the number of edges_id that map to each kmer in the read, filter out the edges that map to a position that has more than one edge mapped to it
-  // input is a vector with all the links for a specific read
+std::vector<linkReg> LongReadPather::readOffsetFilter(std::vector<linkReg> data){
+  /* Count the number of edges_id that map to each kmer in the read. Filter out the edges that map to a position
+   * that has more than one edge mapped to it.
+   * Input is a vector with all the links for a specific read. output is a vector of the same type but filtered.
+   * */
 
   std::vector<linkReg> links;
   std::map<int, unsigned int> pos_count;
@@ -67,21 +76,25 @@ std::vector<linkReg> PacbioPather::readOffsetFilter(std::vector<linkReg> data){
   return links;
 }
 
-std::vector<linkReg> PacbioPather::matchLengthFilter(std::vector<linkReg> data){
-  // Filter matches by length of the match
+std::vector<linkReg> LongReadPather::matchLengthFilter(std::vector<linkReg> data){
+  /*
+   * Filter matches by length of the match.
+   * */
+
 
   std::map<std::string, int> index_map;
   for (auto l: data){
-    // juntar la lectura y el eje en el mismo string concatenando asi pueod indexar por los dos
+    // Concatente the readid and the edge id to index the joint appearance
     std::string key = l.read_id + "-" +l.edge_id;
     index_map[key] += 1;
   }
 
-  // contar los links por lectura y por edge
+  // Count the links by read and edge, if the links are more than the treshold
+  int threshold = 10;
   std::vector<std::string> filtered_links;
   for (std::map<std::string, int>::iterator k=index_map.begin(); k != index_map.end(); ++k){
     //
-    if (k->second > 10) {
+    if (k->second > threshold) {
       filtered_links.push_back(k->first);
     }
   }
@@ -99,18 +112,20 @@ std::vector<linkReg> PacbioPather::matchLengthFilter(std::vector<linkReg> data){
   return good_links;
 }
 
-ReadPathVec PacbioPather::mapReads(){
-  // get the reads and map them to the graph using the dictionary
+ReadPathVec LongReadPather::mapReads(){
+  /* Map the reads, looks for the reads kmer in the map with the graph kmers.  */
+
   // returns a vector of paths
   std::cout << Date()<<": Executing getReadsLines..." << std::endl;
+  // Get the raw links between the reads and the graph links is std::vector<std::vector<linkReg>>
   auto links = getReadsLinks(true);
   std::cout << Date() << ": Done, " << links.size() << " raw links recovered" << std::endl;
 
-  // To store the paths
+  // To store the new generated paths
   ReadPath pb_paths_temp[seqVector.size()];
   ReadPathVec pb_paths;
 
-  // for each read
+  // For each read
   std::cout<<Date()<<": pathing "<<seqVector.size()<<" PacBio reads..."<<std::endl;
   std::atomic_uint_fast64_t pr(0),ppr(0);
   //#pragma omp parallel for
@@ -126,7 +141,7 @@ ReadPathVec PacbioPather::mapReads(){
     auto minmatchFilter = matchLengthFilter(offset_filter);
 
     // sort the vector
-    std::sort(minmatchFilter.begin(), minmatchFilter.end(), linkreg_less_than_pb());
+    std::sort(minmatchFilter.begin(), minmatchFilter.end(), linkreg_less_than_lr());
 
     // Create vector of unique edge_ids
     std::vector<int> presentes;
@@ -158,7 +173,7 @@ ReadPathVec PacbioPather::mapReads(){
   return pb_paths;
 }
 
-void PacbioPather::solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation) {
+void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation) {
   //find a complex path
   uint64_t qsf=0,qsf_paths=0;
   uint64_t msf=0,msf_paths=0;

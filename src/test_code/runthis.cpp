@@ -6,7 +6,7 @@
 #include <kmers/kmatch/KMatch.h>
 #include "paths/long/large/ExtractReads.h"
 
-#include "pacbio/pacbio_pather.h"
+#include "pacbio/LongRead_pather.h"
 
 #include "TenX/TenX_pather.h"
 #include "TenX/PathFinder_tx.h"
@@ -49,53 +49,54 @@ int main(int argc, char *argv[]){
   auto edges = hbv.Edges();
   std::cout << "Size of the paths vector" << pathsr.size() <<" , inverse: " << paths_inv.size() << std::endl;
 
-  /* ----- TenXpather part ----- */
-  auto reads = dataMag.mag["TEX"]->rReads;
-  std::cout << "Reads already loaded..." << std::endl;
-  std::cout << reads.size() << " Reads in the vector" << std::endl;
-
-  // Create the paths and invert them
-  std::cout << "Starting tenxPather..." << std::endl;
-  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
-
-  std::cout<< Date() << " Map creation." << std::endl;
-  txp.createEmptyMap(&hbv);
-
-  std::cout<< Date() << " Map filling with reads..." << std::endl;
-  txp.reads2kmerTagMap();
-
-  std::cout<< Date() << " Map filling with reads done..." << std::endl;
-  txp.kmerTagDensity();
-
-  // Pathfinder
-  std::cout<< Date() << " Starting pathfinder..." << std::endl;
-  std::cout<< Date() << " done pathfinder..." << std::endl;
-  txp.solve_region_using_TenX(5000, true);
-  /* ----- TenXpather part ----- */
-
-
-//  auto reads = dataMag.mag["PB1"]->bases;
+//  /* ----- TenXpather part ----- */
+//  auto reads = dataMag.mag["TEX"]->rReads;
+//  std::cout << "Reads already loaded..." << std::endl;
+//  std::cout << reads.size() << " Reads in the vector" << std::endl;
 //
-//  PacbioPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
-//  pbp.Hbv2Map(&hbv);
-//  pbp.mapReads();
-//  pbp.untangle_complex_in_out_choices(1000, true);
-
+//  // Create the paths and invert them
+//  std::cout << "Starting tenxPather..." << std::endl;
+//  TenXPather txp (reads, hbv, inv, 5, edges, pathsr, paths_inv);
 //
-//  ReadPathVec pathsr = pbp.mapReads();
+//  std::cout<< Date() << " Map creation." << std::endl;
+//  txp.createEmptyMap(&hbv);
+//
+//  std::cout<< Date() << " Map filling with reads..." << std::endl;
+//  txp.reads2kmerTagMap();
+//
+//  std::cout<< Date() << " Map filling with reads done..." << std::endl;
+//  txp.kmerTagDensity();
+//
+//  // Pathfinder
+//  std::cout<< Date() << " Starting pathfinder..." << std::endl;
+//  std::cout<< Date() << " done pathfinder..." << std::endl;
+//  txp.solve_region_using_TenX(5000, true);
+//  /* ----- TenXpather part ----- */
+
+
+
+  auto reads = dataMag.mag["PB1"]->bases;
+
+  LongReadPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
+  pbp.Hbv2Map(&hbv);
+  pbp.mapReads();
+  pbp.solve_using_long_read(1000, true);
+
+
+//  pathsr = pbp.mapReads();
 //  VecULongVec invPaths;
 //
 //
 //  invert(pathsr, invPaths, hbv.EdgeObjectCount());
 
-  // pathfinders
+//   pathfinders
 //  PathFinder_tx(hbv, inv, pathsr, invPaths).unroll_loops(800);
 //  PathFinder_tx(hbv,inv,pathsr,invPaths).untangle_pins();
 //  PathFinder_tx(hbv,inv,pathsr,invPaths).untangle_complex_in_out_choices(700, true);
 
 //  RemoveUnneededVertices2(hbv, inv, pathsr);
 //  Cleanup(hbv, inv, pathsr);
-//
-//  BinaryWriter::writeFile("/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.hbv", hbv);
-//  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.paths");
+
+  BinaryWriter::writeFile("/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.hbv", hbv);
+  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.paths");
 }

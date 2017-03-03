@@ -16,7 +16,7 @@
 #include "feudal/PQVec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
-#include "pacbio/pacbio_pather.h"
+#include "pacbio/LongRead_pather.h"
 
 
 void SimplifyWpb( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,

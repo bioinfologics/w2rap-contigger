@@ -60,6 +60,14 @@ std::vector<pKmer> KMatch::ProduceKmers(const std::string &seq) const {
 }
 
 void KMatch::Hbv2Map(const HyperBasevector *hbv){
+  /* Takes the HBV and produces a map of kmer:edge
+   * Each kmer is matched with a edgeKmerPostion object that stores extra information like:
+   * - edge id
+   * - position of the kmer in the edge
+   * - position of the kmer in the read
+   * - Kmer sequence
+   * */
+
   //  std::vector<kmer_position_t> karray;
 
   std::map<uint64_t, std::vector<edgeKmerPosition>> edgeDict;
@@ -72,7 +80,7 @@ void KMatch::Hbv2Map(const HyperBasevector *hbv){
     const auto kv (ProduceKmers(seq));
 
     for (auto a=0; a<kv.size(); ++a){
-      if (edgeMap.find(kv[a].kmer) == edgeMap.end()){
+      if (edgeMap.find(kv[a].kmer) == edgeMap.end()){ // Not there, add the map entry (TODO: fix this, looks too complicated)
         std::vector<edgeKmerPosition> temp_vector;
         edgeKmerPosition tmatch;
         tmatch.edge_id = seq_index;
@@ -80,7 +88,7 @@ void KMatch::Hbv2Map(const HyperBasevector *hbv){
         temp_vector.push_back(tmatch);
         edgeMap[kv[a].kmer] = temp_vector;
 
-      } else {
+      } else {                                      // is there, first get the current content and then reattach (TODO: fix this, looks too complicated)
         auto temp_vector = edgeMap[kv[a].kmer];
         edgeKmerPosition tmatch;
         tmatch.edge_id = seq_index;
@@ -94,6 +102,11 @@ void KMatch::Hbv2Map(const HyperBasevector *hbv){
 }
 
 std::vector<edgeKmerPosition> KMatch::lookupRead(const std::string &read){
+  /* Find the kmers on the reads in the edges of the graph.
+   * Each match produces a edgeKmerPosition object that stores the info of the match
+   * returns all matches, one read can have multiple edges matching at this point
+   * */
+
   // produce kmers
   const auto rkms (ProduceKmers(read));
 

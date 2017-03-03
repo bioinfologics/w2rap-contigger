@@ -175,7 +175,7 @@ void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         }
         
         // Create the paths just before the event
-//        PacbioPather pbp(&pb_bases, &hb);
+//        LongReadPather pbp(&pb_bases, &hb);
 //        pbp.Hbv2Map(&hb);
 //        auto pb_paths = pbp.mapReads();
 
