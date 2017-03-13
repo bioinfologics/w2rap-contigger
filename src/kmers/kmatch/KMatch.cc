@@ -1,6 +1,7 @@
 #include "KMatch.h"
 #include <sys/time.h>
 #include <thread>
+#include <unordered_map>
 #include <paths/HyperBasevector.h>
 
 KMatch::KMatch(const int kv=31){
@@ -59,8 +60,8 @@ std::vector<pKmer> KMatch::ProduceKmers(const std::string &seq) const {
   return kmer_vector;
 }
 
-void KMatch::Hbv2Map(const HyperBasevector *hbv){
-  /* Takes the HBV and produces a map of kmer:edge
+void KMatch::Hbv2Map(const HyperBasevector &hbv){
+  /* Takes the HBV and produces a map of kmer:edgeKmerPostion (is the position in the edge)
    * Each kmer is matched with a edgeKmerPostion object that stores extra information like:
    * - edge id
    * - position of the kmer in the edge
@@ -70,59 +71,46 @@ void KMatch::Hbv2Map(const HyperBasevector *hbv){
 
   //  std::vector<kmer_position_t> karray;
 
-  std::map<uint64_t, std::vector<edgeKmerPosition>> edgeDict;
+  std::unordered_map<uint64_t, std::vector<edgeKmerPosition>> edgeDict;
   uint32_t seq_index=0;
 
-  auto edges = hbv->Edges();
+  const auto &edges = hbv.Edges();
 
   for (auto seqN=0; seqN<edges.size(); ++seqN) {
     const auto seq = edges[seqN].ToString();
-    const auto kv (ProduceKmers(seq));
+    const auto kmer_vector (ProduceKmers(seq));
 
-    for (auto a=0; a<kv.size(); ++a){
-      if (edgeMap.find(kv[a].kmer) == edgeMap.end()){ // Not there, add the map entry (TODO: fix this, looks too complicated)
+    for (const auto & kmer: kmer_vector){
+      if (edgeMap.find(kmer.kmer) == edgeMap.cend()){
         std::vector<edgeKmerPosition> temp_vector;
-        edgeKmerPosition tmatch;
-        tmatch.edge_id = seq_index;
-        tmatch.edge_offset = kv[a].offset;
-        temp_vector.push_back(tmatch);
-        edgeMap[kv[a].kmer] = temp_vector;
-
-      } else {                                      // is there, first get the current content and then reattach (TODO: fix this, looks too complicated)
-        auto temp_vector = edgeMap[kv[a].kmer];
-        edgeKmerPosition tmatch;
-        tmatch.edge_id = seq_index;
-        tmatch.edge_offset = kv[a].offset;
-        temp_vector.push_back(tmatch);
-        edgeMap[kv[a].kmer] = temp_vector;
+        temp_vector.push_back(edgeKmerPosition (kmer.kmer, seq_index, kmer.offset));
+        edgeMap[kmer.kmer] = temp_vector;
+      } else {
+        edgeMap[kmer.kmer].push_back(edgeKmerPosition (kmer.kmer, seq_index, kmer.offset));
       }
     }
     seq_index++;
   }
+  std::cout << Date() << ": Done creating the hbv map. Keys: " << edgeMap.size() << std::endl;
 }
 
-std::vector<edgeKmerPosition> KMatch::lookupRead(const std::string &read){
+std::vector<edgeKmerPosition> KMatch::lookupRead(const std::string &read) const{
   /* Find the kmers on the reads in the edges of the graph.
    * Each match produces a edgeKmerPosition object that stores the info of the match
    * returns all matches, one read can have multiple edges matching at this point
    * */
 
   // produce kmers
-  const auto rkms (ProduceKmers(read));
+  const auto read_kmers (ProduceKmers(read));
 
   // look kmers in the dictionary
   std::vector<edgeKmerPosition> mapped_edges;
   int cont = 0; // Cont to hold the kmer offset in the read
-  for (const auto &a: rkms){
-    std::map<uint64_t, std::vector<edgeKmerPosition>>::iterator tt = edgeMap.find(a.kmer);
-    if (tt != edgeMap.end()){
-      for (const auto &p: tt->second){
-        edgeKmerPosition x;
-        x.edge_id = p.edge_id;
-        x.edge_offset = p.edge_offset;
-        x.read_offset = cont;
-        x.kmer = a.kmer;
-        mapped_edges.push_back(x);
+  for (const auto &kmer: read_kmers){
+    const auto kmer_in_graph = edgeMap.find(kmer.kmer);
+    if (kmer_in_graph != edgeMap.end()){
+      for (const auto &p: kmer_in_graph->second){
+        mapped_edges.push_back(edgeKmerPosition (kmer.kmer, p.edge_id, p.edge_offset, cont));
       }
     }
     cont++;

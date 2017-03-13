@@ -4,7 +4,8 @@
 
 #include "PathFinder.h"
 
-PathFinder::PathFinder(HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads)
+PathFinder::PathFinder(HyperBasevector &hbv, vec<int> &inv, ReadPathVec &paths, VecULongVec &invPaths,
+                       const int min_reads)
     : mHBV(hbv),
       mInv(inv),
       mPaths(paths),
@@ -15,7 +16,7 @@ PathFinder::PathFinder(HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, 
   hbv.ToRight(mToRight);
 }
 
-std::string PathFinder::edge_pstr(uint64_t e){
+const std::string PathFinder::edge_pstr(const uint64_t e){
     return "e"+std::to_string(e)+"("+std::to_string(mHBV.EdgeObject(e).size())+"bp "+std::to_string(paths_per_kbp(e))+"ppk)";
 };
 

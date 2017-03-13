@@ -5,7 +5,8 @@
 #include "LongRead_pather.h"
 
 
-LongReadPather::LongReadPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths)
+LongReadPather::LongReadPather(const vecbvec &aseqVector, HyperBasevector &ahbv, vec<int> &ainv, const int min_reads,
+                               std::vector<BaseVec> &edges, ReadPathVec &apaths, VecULongVec &ainvPaths)
     : KMatch(31), seqVector(aseqVector), mEdges(edges), PathFinder(ahbv, ainv, apaths, ainvPaths, 5) { }
 
 std::vector<std::vector<linkReg>> LongReadPather::getReadsLinks(bool output_to_file=true){
@@ -23,17 +24,18 @@ std::vector<std::vector<linkReg>> LongReadPather::getReadsLinks(bool output_to_f
 
   std::cout<< Date() << ": loading edges and involution." << std::endl;
   // TODO: Is this used for something here?? (edges and involutions) clean
-  auto edges = mHBV.Edges();
+  const auto& edges = mHBV.Edges();
   std::cout << "edges loaded" << std::endl;
+  // TODO: Not recompute the involution, get it from the args when i create the long pather
   vec<int> inv;
   mHBV.Involution(inv);
 
   std::cout<< Date() << ": processing edges" << std::endl;
   links.resize(seqVector.size());
-#pragma omp parallel for
+//#pragma omp parallel for
   for (auto v=0; v<seqVector.size(); ++v){
     std::string read = seqVector[v].ToString();
-    auto g = lookupRead(read);
+    auto g = lookupRead(read); // TODO: edgeKmerthing and linkReg are the same, pick one, keep one
     if (g.size()>0){
       for (size_t a=0; a<g.size(); ++a){
         linkReg temp_link;
@@ -44,7 +46,7 @@ std::vector<std::vector<linkReg>> LongReadPather::getReadsLinks(bool output_to_f
         temp_link.edge_offset = g[a].edge_offset;
         temp_link.inv_edge_id = inv[g[a].edge_id];
         temp_link.kmer = g[a].kmer;
-#pragma omp critical
+//#pragma omp critical
         links[v].push_back(temp_link);
       }
     }
@@ -53,58 +55,50 @@ std::vector<std::vector<linkReg>> LongReadPather::getReadsLinks(bool output_to_f
   return links;
 }
 
-std::vector<linkReg> LongReadPather::readOffsetFilter(std::vector<linkReg> data){
+std::vector<linkReg> LongReadPather::readOffsetFilter(const vector<linkReg> &data) const {
   /* Count the number of edges_id that map to each kmer in the read. Filter out the edges that map to a position
    * that has more than one edge mapped to it.
    * Input is a vector with all the links for a specific read. output is a vector of the same type but filtered.
    * */
 
   std::vector<linkReg> links;
-  std::map<int, unsigned int> pos_count;
+  std::unordered_map<int, unsigned int> pos_count;
 
-  for (auto l: data){
-      // Aumentar el contador, valores son inicializados a 0!?
-      pos_count[l.read_offset] += 1;
+  for (const auto &link: data){
+      pos_count[link.read_offset] += 1;
   }
 
   // Solo seleccionados lo que estan en offsets de la lectura con un solo edge mapeado
-  for (auto l: data){
-      if (pos_count[l.read_offset] == 1){
-        links.push_back(l);
+  for (const auto& link: data){
+      if (pos_count[link.read_offset] == 1){
+        links.push_back(link);
       }
   }
   return links;
 }
 
-std::vector<linkReg> LongReadPather::matchLengthFilter(std::vector<linkReg> data){
+std::vector<linkReg> LongReadPather::minCoverageFilter(const vector<linkReg> &data) const {
   /*
    * Filter matches by length of the match.
    * */
 
 
-  std::map<std::string, int> index_map;
-  for (auto l: data){
+  std::unordered_map<uint64_t , int> index_map;
+  for (const auto& link: data){
     // Concatente the readid and the edge id to index the joint appearance
-    std::string key = l.read_id + "-" +l.edge_id;
+    const auto key = ((link.read_id<<32)||link.edge_id);
     index_map[key] += 1;
   }
 
   // Count the links by read and edge, if the links are more than the treshold
   int threshold = 10;
-  std::vector<std::string> filtered_links;
-  for (std::map<std::string, int>::iterator k=index_map.begin(); k != index_map.end(); ++k){
-    //
-    if (k->second > threshold) {
-      filtered_links.push_back(k->first);
-    }
-  }
 
   // Filtrar los que no pegan mas del limite
   std::vector<linkReg> good_links;
-  for (auto l: data){
-    std::string key = l.read_id + "-" +l.edge_id;
-    if (std::find(filtered_links.begin(), filtered_links.end(), key) != filtered_links.end()){
-      good_links.push_back(l);
+  for (const auto &link: data){
+    const auto key = ((link.read_id<<32)||link.edge_id);
+    if (index_map[key] > threshold){
+      good_links.push_back(link);
     }
   }
 
@@ -113,7 +107,9 @@ std::vector<linkReg> LongReadPather::matchLengthFilter(std::vector<linkReg> data
 }
 
 ReadPathVec LongReadPather::mapReads(){
-  /* Map the reads, looks for the reads kmer in the map with the graph kmers.  */
+  /*
+   * Map the reads, looks for the read kmers in the map with the graph kmers.
+   * */
 
   // returns a vector of paths
   std::cout << Date()<<": Executing getReadsLines..." << std::endl;
@@ -122,31 +118,33 @@ ReadPathVec LongReadPather::mapReads(){
   std::cout << Date() << ": Done, " << links.size() << " raw links recovered" << std::endl;
 
   // To store the new generated paths
-  ReadPath pb_paths_temp[seqVector.size()];
-  ReadPathVec pb_paths;
+  ReadPath longread_paths_temp[seqVector.size()];
+  ReadPathVec longread_paths;
 
   // For each read
-  std::cout<<Date()<<": pathing "<<seqVector.size()<<" PacBio reads..."<<std::endl;
+  std::cout<<Date()<<": pathing "<<seqVector.size()<<" Long reads..."<<std::endl;
   std::atomic_uint_fast64_t pr(0),ppr(0);
   //#pragma omp parallel for
   for (std::uint32_t r=0; r<seqVector.size(); ++r){
 
     // get the links for this reads
-    auto read_links = links[r];
+    auto read_links = links[r]; //TODO: calcular los links aca de a uno en lugar de todos juntos antes
 
     // filter the shared roffsets
     auto offset_filter = readOffsetFilter(read_links);
 
     // filter the min match length
-    auto minmatchFilter = matchLengthFilter(offset_filter);
+    auto minCovFilter = minCoverageFilter(offset_filter);
+
+    // TODO: Falta el filtro de largo de coverage (implementar aca)
 
     // sort the vector
-    std::sort(minmatchFilter.begin(), minmatchFilter.end(), linkreg_less_than_lr());
+    std::sort(minCovFilter.begin(), minCovFilter.end(), LongReadPather::less_than());
 
     // Create vector of unique edge_ids
     std::vector<int> presentes;
     std::vector<linkReg> s_edges;
-    for (auto a: minmatchFilter){
+    for (auto a: minCovFilter){
       if (std::find(presentes.begin(), presentes.end(), a.edge_id) == presentes.end()){
         s_edges.push_back(a);
         presentes.push_back(a.edge_id);
@@ -162,15 +160,15 @@ ReadPathVec LongReadPather::mapReads(){
       for (auto s: s_edges) {
         temp_path.push_back(s.edge_id);
       }
-      pb_paths_temp[ppr++]=ReadPath(poffset, temp_path);
+      longread_paths_temp[ppr++]=ReadPath(poffset, temp_path);
     }
     ++pr;
   }
   std::cout<<Date()<<": "<<pr<<" reads processed, "<<ppr<<" pathed"<<std::endl;
-  pb_paths.reserve(ppr);
-  for (auto i=0;i<ppr;++i) pb_paths.push_back(pb_paths_temp[i]);
+  longread_paths.reserve(ppr);
+  for (auto i=0;i<ppr;++i) longread_paths.push_back(longread_paths_temp[i]);
   
-  return pb_paths;
+  return longread_paths;
 }
 
 void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation) {
@@ -269,7 +267,7 @@ void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool ve
             if (current_score>max_score and all_used){
               max_score = current_score;
               max_score_permutation.clear();
-              for (auto aix: out_frontiers){
+              for (const auto& aix: out_frontiers){
                 max_score_permutation.push_back(aix);
               }
             }

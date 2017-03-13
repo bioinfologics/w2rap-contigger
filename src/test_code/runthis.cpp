@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
   auto reads = dataMag.mag["PB1"]->bases;
 
   LongReadPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
-  pbp.Hbv2Map(&hbv);
+  pbp.Hbv2Map(hbv);
   pbp.mapReads();
   pbp.solve_using_long_read(1000, true);
 

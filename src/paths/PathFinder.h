@@ -14,7 +14,7 @@
 
 class PathFinder {
 public:
-    PathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5 );
+    PathFinder(HyperBasevector &hbv, vec<int> &inv, ReadPathVec &paths, VecULongVec &invPaths, const int min_reads = 5);
 
     //Graph-related methods
     std::vector<std::vector<uint64_t>> AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length);
@@ -34,7 +34,7 @@ public:
     void init_prev_next_vectors();
     std::vector<std::vector<uint64_t>> is_unrollable_loop(uint64_t e,uint64_t min_side_sizes);//returns size of the unrolled loop
     uint64_t paths_per_kbp(uint64_t e);
-    std::string edge_pstr(uint64_t e);
+    const std::string edge_pstr(const uint64_t e);
     std::string path_str(std::vector<uint64_t> e);
     std::map<uint64_t,std::vector<uint64_t>> separate_path(std::vector<uint64_t> p, bool verbose_separation=false);
     bool join_edges_in_path(std::vector<uint64_t> p);

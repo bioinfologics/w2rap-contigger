@@ -19,28 +19,32 @@ typedef struct {
     int kmer;
 } linkReg;
 
-struct linkreg_less_than_lr {
-    inline bool operator() (const linkReg& struct1, const linkReg& struct2)
-    {
-      return (struct1.read_offset < struct2.read_offset);
-    }
-};
+
 
 class LongReadPather: public KMatch, public PathFinder {
 public:
-    LongReadPather(vecbvec& aseqVector, HyperBasevector& ahbv, vec<int>& ainv, int min_reads, std::vector<BaseVec>& edges, ReadPathVec& apaths, VecULongVec& ainvPaths);
+    LongReadPather(const vecbvec &aseqVector, HyperBasevector &ahbv, vec<int> &ainv, const int min_reads,
+                   std::vector<BaseVec> &edges, ReadPathVec &apaths, VecULongVec &ainvPaths);
     ReadPathVec mapReads();
 
     std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths){};
 
     void solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation);
 private:
-    vecbvec& seqVector;
+
+    struct less_than {
+        inline bool operator() (const linkReg& struct1, const linkReg& struct2) const
+        {
+            return (struct1.read_offset < struct2.read_offset);
+        }
+    };
+
+    const vecbvec& seqVector;
     std::vector<BaseVec>& mEdges;
 
     std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
-    std::vector<linkReg> readOffsetFilter(std::vector<linkReg> data);
-    std::vector<linkReg> matchLengthFilter(std::vector<linkReg> data);
+    std::vector<linkReg> readOffsetFilter(const vector<linkReg> &data) const;
+    std::vector<linkReg> minCoverageFilter(const vector<linkReg> &data) const;
 };
 
 
