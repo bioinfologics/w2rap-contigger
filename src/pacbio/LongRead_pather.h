@@ -25,11 +25,12 @@ class LongReadPather: public KMatch, public PathFinder {
 public:
     LongReadPather(const vecbvec &aseqVector, HyperBasevector &ahbv, vec<int> &ainv, const int min_reads,
                    std::vector<BaseVec> &edges, ReadPathVec &apaths, VecULongVec &ainvPaths);
-    ReadPathVec mapReads();
+    void mapReads();
 
-    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths){};
+//    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>>* alternative_paths){};
 
     void solve_using_long_read(uint64_t large_frontier_size, bool verbose_separation);
+    std::vector<uint64_t> choose_best_path(std::vector<std::vector<uint64_t>> *alternative_paths);
 private:
 
     struct less_than {
@@ -41,10 +42,18 @@ private:
 
     const vecbvec& seqVector;
     std::vector<BaseVec>& mEdges;
+    std::vector<std::vector<int>> longReadsPaths;
+    std::unordered_map<int, std::vector<int>> edge2Paths;
 
-    std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
+//    std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
+    std::vector<linkReg> getReadsLinks(std::string read, bool output_to_file=true);
     std::vector<linkReg> readOffsetFilter(const vector<linkReg> &data) const;
     std::vector<linkReg> minCoverageFilter(const vector<linkReg> &data) const;
+
+    // Build the map to get the padths ids from the edges
+    void buildEdgeToPathMap();
+    // Choose the best local
+
 };
 
 

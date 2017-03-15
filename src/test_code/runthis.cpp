@@ -32,16 +32,16 @@ int main(int argc, char *argv[]){
   inv.clear();
   hbv.Involution(inv);
 
-  std::ofstream inversions_file("/Users/ggarcia/Documents/notebooks/edgeinvolutions.txt", std::ios::out);
-  int cont = 0;
-  std::cout << "Edges ad involutions" << std::endl;
-  for (auto a: inv){
-//    std::cout << cont << ":" << a << std::endl;
-    inversions_file << cont << ":" << a << std::endl;
-    cont++;
-  }
-  inversions_file.close();
-  std::cout << "Edges ad involutions" << std::endl;
+//  std::ofstream inversions_file("/Users/ggarcia/Documents/notebooks/edgeinvolutions.txt", std::ios::out);
+//  int cont = 0;
+//  std::cout << "Edges ad involutions" << std::endl;
+//  for (auto a: inv){
+////    std::cout << cont << ":" << a << std::endl;
+//    inversions_file << cont << ":" << a << std::endl;
+//    cont++;
+//  }
+//  inversions_file.close();
+//  std::cout << "Edges ad involutions" << std::endl;
 
   ReadPathVec pathsr;
   VecULongVec paths_inv;
@@ -80,6 +80,8 @@ int main(int argc, char *argv[]){
   LongReadPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
   pbp.Hbv2Map(hbv);
   pbp.mapReads();
+
+
   pbp.solve_using_long_read(1000, true);
 
 
@@ -97,6 +99,6 @@ int main(int argc, char *argv[]){
 //  RemoveUnneededVertices2(hbv, inv, pathsr);
 //  Cleanup(hbv, inv, pathsr);
 
-  BinaryWriter::writeFile("/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.hbv", hbv);
-  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/test_dataset/test_ecoli_pb/pf_after_loops.paths");
+  BinaryWriter::writeFile("/Users/ggarcia/Documents/ecoli_test_dataset/k_200/pf_after_loops.hbv", hbv);
+  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/ecoli_test_dataset/k_200/pf_after_loops.paths");
 }
