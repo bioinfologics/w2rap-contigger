@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH
 
 ## Compiler flags
 #SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -O0 -DNDEBUG -lz")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
 
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})

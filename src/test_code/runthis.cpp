@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
   pbp.mapReads();
 
 
-  pbp.solve_using_long_read(1000, true);
+  pbp.solve_using_long_read(5000, true);
 
 
 //  pathsr = pbp.mapReads();

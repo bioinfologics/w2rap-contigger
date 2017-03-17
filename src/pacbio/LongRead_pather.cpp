@@ -382,6 +382,7 @@ std::vector<uint64_t> LongReadPather::choose_best_path(std::vector<std::vector<u
     float best_path = 0.0;
     float best_path_score = 0.0;
     float cpath_score_index = 0.0;
+    std::vector<int> read_bridge;
 
     for (auto path_index = 0; path_index < alternative_paths->size(); ++path_index) {
       float cpath_score = 0;
@@ -404,6 +405,10 @@ std::vector<uint64_t> LongReadPather::choose_best_path(std::vector<std::vector<u
                               std::inserter(intersection, intersection.begin()));
 
         cpath_score += intersection.size();
+
+//         //this will push back the reads index in the paths vector that supports the path.
+//        read_bridge.push_back(intersection.begin(), intersection.end());
+
         /////-----------------------------------------------------------------------------------------------------------
 
       }
