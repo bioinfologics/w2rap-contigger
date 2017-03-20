@@ -528,7 +528,7 @@ int main(const int argc, const char * argv[]) {
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
-        std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
+        std::cerr << "error: " << e.error() << " for argument " << e.argId() << std::endl;
         return 1;
     }
 
@@ -619,7 +619,7 @@ int main(const int argc, const char * argv[]) {
         if ( 3==step and 0==kmercounts->size){
             OutputLog(2) << "Loading kmer counts..." << std::endl;
             kmercounts->load(out_dir+"/raw_kmers.data");
-            OutputLog(2) << "Kmer count data loaded" << std::endl << std::endl;
+            OutputLog(2) << "kmer count data loaded" << std::endl << std::endl;
         }
         if ( 4==step ) kmercounts.reset(); //cleanup just in case
 
