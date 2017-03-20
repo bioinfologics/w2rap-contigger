@@ -3,6 +3,8 @@ CMakeCache*
 Makefile
 .project
 .cproject
+build/*
+.settings
 cmake_install.cmake
 bin/*
 src/**/*.fastq
