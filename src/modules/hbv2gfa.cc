@@ -48,7 +48,7 @@ int main(const int argc, const char * argv[]) {
     vec<int> inv;
 
     std::cout << "Reading graph and paths..." << std::endl;
-    BinaryReader::readFile(in_prefix + ".hbv", &hbv);
+    BinaryReader::readFile(in_prefix + ".hbv", &hbv); // TODO: Check that this is not the problem
     hbv.Involution(inv);
     TestInvolution(hbv,inv);
     LoadReadPathVec(paths,(in_prefix + ".paths").c_str());
