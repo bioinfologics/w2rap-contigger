@@ -501,7 +501,7 @@ int main(const int argc, const char * argv[]) {
                                                                "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
         TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
         TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump detailed GFA for every graph (default: 0)", false,"none", &gfaOutputOptions,cmd);
+                                                         "Dump detailed GFA for every graph (default: 0)", false,"basic", &gfaOutputOptions,cmd);
 
         cmd.parse(argc, argv);
         // Get the value parsed by each arg.
@@ -692,7 +692,7 @@ int main(const int argc, const char * argv[]) {
         //TODO: Report time, memory, etc
 
 
-        if (1==step and (to_step<6 or dump_all)) {
+        if (1==step) {
             //TODO: dump reads
             OutputLog(2) << "Dumping reads in fastb/cqual format..." << std::endl;
             bases.WriteAll(out_dir + "/pe_data.fastb");
