@@ -829,7 +829,6 @@ public:
 class BiValidator
 {
 public:
-  virtual
   bool operator()(const size_t xA, const size_t xB) const;
 };
 
