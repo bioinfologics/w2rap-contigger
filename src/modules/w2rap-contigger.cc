@@ -226,21 +226,19 @@ void step_7DV(HyperBasevector &hbv,
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
     // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    {
-        vec<int> llens, npairs;
-        GetLineLengths(hbv, lines, llens);
-        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+    vec<int> llens;
+    GetLineLengths(hbv, lines, llens);
+    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
 
-        vec<vec<covcount>> covs;
-        vec<int64_t> subsam_starts={0};
-        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+    vec<vec<covcount>> covs;
+    vec<int64_t> subsam_starts={0};
+    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
 
-        //TODO: maybe Report some similar to CN stats ???
-        //double cn_frac_good = CNIntegerFraction(hbv, covs);
-        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-    }
+    //TODO: maybe Report some similar to CN stats ???
+    //double cn_frac_good = CNIntegerFraction(hbv, covs);
+    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
@@ -360,21 +358,19 @@ void step_7EXP(HyperBasevector &hbv,
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
     // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    {
-        vec<int> llens, npairs;
-        GetLineLengths(hbv, lines, llens);
-        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+    vec<int> llens;
+    GetLineLengths(hbv, lines, llens);
+    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
 
-        vec<vec<covcount>> covs;
-        vec<int64_t> subsam_starts={0};
-        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+    vec<vec<covcount>> covs;
+    vec<int64_t> subsam_starts={0};
+    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
 
-        //TODO: maybe Report some similar to CN stats ???
-        //double cn_frac_good = CNIntegerFraction(hbv, covs);
-        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-    }
+    //TODO: maybe Report some similar to CN stats ???
+    //double cn_frac_good = CNIntegerFraction(hbv, covs);
+    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
