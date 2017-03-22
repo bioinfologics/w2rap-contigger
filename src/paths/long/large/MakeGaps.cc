@@ -19,10 +19,19 @@
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Simplify.h"
 
-void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
-     VecULongVec& edgeToPathIds, const int MIN_LINE, const int MIN_LINK_COUNT, 
-     const String& work_dir, const String& FIN, const Bool verbose,
-     const Bool GAP_CLEANUP )
+void MakeGaps(
+    HyperBasevector& hb,
+    vec<int>& inv,
+    vec<vec<vec<vec<int>>>> &lines,
+    vec<int> &npairs,
+    ReadPathVec& paths,
+    VecULongVec& edgeToPathIds,
+    const int MIN_LINE,
+    const int MIN_LINK_COUNT,
+    const String& work_dir,
+    const String& FIN,
+    const Bool verbose,
+    const Bool GAP_CLEANUP )
 {
      graph_status(hb);
      // Set up data structures.
@@ -30,11 +39,8 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      double clock = WallClockTime( );
      vec<int> to_left, to_right;
      hb.ToLeft(to_left), hb.ToRight(to_right);
-     vec<vec<vec<vec<int>>>> lines;
-     BinaryReader::readFile( work_dir + "/" + FIN + ".fin.lines", &lines );
-     vec<int> llens, npairs;
+     vec<int> llens;
      GetLineLengths( hb, lines, llens );
-     BinaryReader::readFile( work_dir + "/" + FIN + ".fin.lines.npairs", &npairs );
      vec<double> cov( lines.size( ) );
      for ( int i = 0; i < lines.isize( ); i++ )
           cov[i] = 100.0 * double(npairs[i]) / double(llens[i]);

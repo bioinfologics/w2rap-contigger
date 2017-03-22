@@ -199,6 +199,8 @@ void step_6(HyperBasevector &hbv,
 
 void step_7DV(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
@@ -219,9 +221,6 @@ void step_7DV(HyperBasevector &hbv,
     VecULongVec pathsinv;
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    // Find lines and write files.
-    vec<vec<vec<vec<int>>>> lines;
 
     FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
@@ -247,6 +246,8 @@ void step_7DV(HyperBasevector &hbv,
 
 void step_7(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
@@ -289,32 +290,31 @@ void step_7(HyperBasevector &hbv,
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
     // Find lines and write files.
-    vec<vec<vec<vec<int>>>> lines;
 
     FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
     // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    {
-        vec<int> llens, npairs;
-        GetLineLengths(hbv, lines, llens);
-        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+      vec<int> llens;
+      GetLineLengths(hbv, lines, llens);
+      GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+      BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
 
-        vec<vec<covcount>> covs;
-        vec<int64_t> subsam_starts={0};
-        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+      vec<vec<covcount>> covs;
+      vec<int64_t> subsam_starts={0};
+      ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
 
-        //TODO: maybe Report some similar to CN stats ???
-        //double cn_frac_good = CNIntegerFraction(hbv, covs);
-        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-    }
+      //TODO: maybe Report some similar to CN stats ???
+      //double cn_frac_good = CNIntegerFraction(hbv, covs);
+      //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+      //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
 void step_7EXP(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
@@ -356,9 +356,6 @@ void step_7EXP(HyperBasevector &hbv,
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
-    // Find lines and write files.
-    vec<vec<vec<vec<int>>>> lines;
-
     FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
@@ -383,6 +380,8 @@ void step_7EXP(HyperBasevector &hbv,
 
 void step_8(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             std::string out_dir,
             std::string out_prefix){
@@ -396,7 +395,7 @@ void step_8(HyperBasevector &hbv,
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
-    MakeGaps(hbv, hbvinv, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
+    MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
 
     // Carry out final analyses and write final assembly files.
 
@@ -605,6 +604,10 @@ int main(const int argc, const char * argv[]) {
 
 
 
+    // This is only needed by step 7 and 8
+    vec<vec<vec<vec<int>>>> lines;
+    vec<int> npairs;
+
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
@@ -676,13 +679,19 @@ int main(const int argc, const char * argv[]) {
                 step_6(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
                 break;
             case 7:
-                if (run_dv) step_7DV(hbv, hbvinv, paths, bases, quals, out_dir, out_prefix);
-                else if (run_exp) step_7EXP(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
-                else step_7(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                if (run_dv) step_7DV(hbv, hbvinv, lines, npairs, paths, bases, quals, out_dir, out_prefix);
+                else if (run_exp) step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
                 break;
             case 8:
-                step_8(hbv, hbvinv, paths, out_dir, out_prefix);
-                break;
+              if (lines.empty()) {
+                BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines", &lines );
+              }
+              if (npairs.empty()) {
+                BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines.npairs", &npairs );
+              }
+              step_8(hbv, hbvinv, lines, npairs, paths, out_dir, out_prefix);
+              break;
         }
 
 
