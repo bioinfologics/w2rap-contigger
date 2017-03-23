@@ -625,6 +625,15 @@ int main(const int argc, const char * argv[]) {
         }
         if ( 4==step ) kmercounts.reset(); //cleanup just in case
 
+        if ( 8==step ) {
+          if (lines.empty()) {
+            BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines", &lines );
+          }
+          if (npairs.empty()) {
+            BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines.npairs", &npairs );
+          }
+        }
+
         //steps that require a graph
         if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
             //Load hbv
@@ -680,12 +689,6 @@ int main(const int argc, const char * argv[]) {
                 else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
                 break;
             case 8:
-              if (lines.empty()) {
-                BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines", &lines );
-              }
-              if (npairs.empty()) {
-                BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines.npairs", &npairs );
-              }
               step_8(hbv, hbvinv, lines, npairs, paths, out_dir, out_prefix);
               break;
         }
