@@ -3,6 +3,8 @@ CMakeCache*
 Makefile
 .project
 .cproject
+build/*
+.settings
 cmake_install.cmake
 bin/*
 src/**/*.fastq
@@ -19,3 +21,4 @@ src/modules/02_qgraph
 src/modules/01_unipaths
 src/unipaths
 src/libDiscovarDeNovo.a
+/build/

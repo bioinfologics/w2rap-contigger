@@ -95,7 +95,7 @@ public:
     { vec<ReadLocOnUnipath> locvec;
       PathOneRead( readId, &locvec );
       // Check for bad alignments
-      return GetAlignsOneReadUnsorted( readId, locvec, pFriends ); }
+      GetAlignsOneReadUnsorted( readId, locvec, pFriends ); }
 
 private:
 

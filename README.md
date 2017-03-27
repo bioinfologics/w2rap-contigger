@@ -17,7 +17,7 @@ This is a big-ish codebase to compile, so we recomment using the `-j` flag on ma
 ```
 git clone https://github.com/gonzalogacc/w2rap-contigger.git
 cd w2rap-contigger
-cmake -D CMAKE_CXX_COMPILER=g++ .  
+cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -D CMAKE_CXX_COMPILER=g++ .  
 make -j 4
 ```
 

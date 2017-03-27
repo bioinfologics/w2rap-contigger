@@ -199,6 +199,8 @@ void step_6(HyperBasevector &hbv,
 
 void step_7DV(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
@@ -220,33 +222,30 @@ void step_7DV(HyperBasevector &hbv,
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
-    // Find lines and write files.
-    vec<vec<vec<vec<int>>>> lines;
-
     FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
     // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    {
-        vec<int> llens, npairs;
-        GetLineLengths(hbv, lines, llens);
-        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+    vec<int> llens;
+    GetLineLengths(hbv, lines, llens);
+    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
 
-        vec<vec<covcount>> covs;
-        vec<int64_t> subsam_starts={0};
-        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+    vec<vec<covcount>> covs;
+    vec<int64_t> subsam_starts={0};
+    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
 
-        //TODO: maybe Report some similar to CN stats ???
-        //double cn_frac_good = CNIntegerFraction(hbv, covs);
-        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-    }
+    //TODO: maybe Report some similar to CN stats ???
+    //double cn_frac_good = CNIntegerFraction(hbv, covs);
+    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
 void step_7(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
@@ -289,32 +288,31 @@ void step_7(HyperBasevector &hbv,
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
     // Find lines and write files.
-    vec<vec<vec<vec<int>>>> lines;
 
     FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
     // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    {
-        vec<int> llens, npairs;
-        GetLineLengths(hbv, lines, llens);
-        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+      vec<int> llens;
+      GetLineLengths(hbv, lines, llens);
+      GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+      BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
 
-        vec<vec<covcount>> covs;
-        vec<int64_t> subsam_starts={0};
-        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+      vec<vec<covcount>> covs;
+      vec<int64_t> subsam_starts={0};
+      ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
 
-        //TODO: maybe Report some similar to CN stats ???
-        //double cn_frac_good = CNIntegerFraction(hbv, covs);
-        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-    }
+      //TODO: maybe Report some similar to CN stats ???
+      //double cn_frac_good = CNIntegerFraction(hbv, covs);
+      //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+      //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
 void step_7EXP(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
@@ -356,33 +354,30 @@ void step_7EXP(HyperBasevector &hbv,
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
-    // Find lines and write files.
-    vec<vec<vec<vec<int>>>> lines;
-
     FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
     BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
 
     // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    {
-        vec<int> llens, npairs;
-        GetLineLengths(hbv, lines, llens);
-        GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-        BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
+    vec<int> llens;
+    GetLineLengths(hbv, lines, llens);
+    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
 
-        vec<vec<covcount>> covs;
-        vec<int64_t> subsam_starts={0};
-        ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
+    vec<vec<covcount>> covs;
+    vec<int64_t> subsam_starts={0};
+    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
 
-        //TODO: maybe Report some similar to CN stats ???
-        //double cn_frac_good = CNIntegerFraction(hbv, covs);
-        //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-        //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
-    }
+    //TODO: maybe Report some similar to CN stats ???
+    //double cn_frac_good = CNIntegerFraction(hbv, covs);
+    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
+    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
 void step_8(HyperBasevector &hbv,
             vec<int> &hbvinv,
+            vec<vec<vec<vec<int>>>> &lines,
+            vec<int> &npairs,
             ReadPathVec &paths,
             std::string out_dir,
             std::string out_prefix){
@@ -396,7 +391,7 @@ void step_8(HyperBasevector &hbv,
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
 
-    MakeGaps(hbv, hbvinv, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
+    MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
 
     // Carry out final analyses and write final assembly files.
 
@@ -424,8 +419,10 @@ int main(const int argc, const char * argv[]) {
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
+    std::vector<std::string> validGFAOpts({"none", "basic", "detailed", "abyss"});
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7,8};
-    bool dump_detailed_gfa,dump_all,run_dv,run_exp;
+    std::string dump_detailed_gfa;
+    bool dump_all,run_dv,run_exp;
 
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
@@ -442,7 +439,7 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<std::string> read_filesArg("r", "read_files",
              "Input sequences (reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
 
-        TCLAP::ValueArg<std::string> out_dirArg("o", "out_dir", "Output dir path", true, "", "string", cmd);
+        TCLAP::ValueArg<std::string> out_dirArg("o", "out_dir", "Output directory path", true, "", "string", cmd);
         TCLAP::ValueArg<std::string> out_prefixArg("p", "prefix",
              "Prefix for the output files", true, "", "string", cmd);
 
@@ -497,8 +494,9 @@ int main(const int argc, const char * argv[]) {
 
         TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
                                                                "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump detailed GFA for every graph (default: 0)", false,false,"bool",cmd);
+        TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
+        TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
+                                                         "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
 
         cmd.parse(argc, argv);
         // Get the value parsed by each arg.
@@ -528,7 +526,7 @@ int main(const int argc, const char * argv[]) {
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
-        std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
+        std::cerr << "error: " << e.error() << " for argument " << e.argId() << std::endl;
         return 1;
     }
 
@@ -602,6 +600,10 @@ int main(const int argc, const char * argv[]) {
 
 
 
+    // This is only needed by step 7 and 8
+    vec<vec<vec<vec<int>>>> lines;
+    vec<int> npairs;
+
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
         //First make sure all needed data is there.
@@ -619,9 +621,18 @@ int main(const int argc, const char * argv[]) {
         if ( 3==step and 0==kmercounts->size){
             OutputLog(2) << "Loading kmer counts..." << std::endl;
             kmercounts->load(out_dir+"/raw_kmers.data");
-            OutputLog(2) << "Kmer count data loaded" << std::endl << std::endl;
+            OutputLog(2) << "kmer count data loaded" << std::endl << std::endl;
         }
         if ( 4==step ) kmercounts.reset(); //cleanup just in case
+
+        if ( 8==step ) {
+          if (lines.empty()) {
+            BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines", &lines );
+          }
+          if (npairs.empty()) {
+            BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines.npairs", &npairs );
+          }
+        }
 
         //steps that require a graph
         if (step_inputg_prefix[step-1]!="" and hbv.N()==0) {
@@ -673,13 +684,13 @@ int main(const int argc, const char * argv[]) {
                 step_6(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
                 break;
             case 7:
-                if (run_dv) step_7DV(hbv, hbvinv, paths, bases, quals, out_dir, out_prefix);
-                else if (run_exp) step_7EXP(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
-                else step_7(hbv, hbvinv, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                if (run_dv) step_7DV(hbv, hbvinv, lines, npairs, paths, bases, quals, out_dir, out_prefix);
+                else if (run_exp) step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
                 break;
             case 8:
-                step_8(hbv, hbvinv, paths, out_dir, out_prefix);
-                break;
+              step_8(hbv, hbvinv, lines, npairs, paths, out_dir, out_prefix);
+              break;
         }
 
 
@@ -689,7 +700,7 @@ int main(const int argc, const char * argv[]) {
         //TODO: Report time, memory, etc
 
 
-        if (1==step and (to_step<6 or dump_all)) {
+        if (1==step) {
             //TODO: dump reads
             OutputLog(2) << "Dumping reads in fastb/cqual format..." << std::endl;
             bases.WriteAll(out_dir + "/pe_data.fastb");
@@ -703,9 +714,17 @@ int main(const int argc, const char * argv[]) {
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1] +".paths").c_str());
                 OutputLog(2) << "DONE!" << std::endl;
             }
-            if (dump_detailed_gfa){
-                //TODO:
+
+            if (dump_detailed_gfa == validGFAOpts[1]){
+                GFADump(std::string(out_dir+"/"+out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv, paths, 0, 0, true);
             }
+            else if (dump_detailed_gfa == validGFAOpts[2]){
+                GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv);
+            }
+            else if (dump_detailed_gfa == validGFAOpts[3]){
+                GFADumpAbyss(std::string(out_dir+"/"+out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv, paths, 0, 0, true);
+            }
+
         }
         OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl<<std::endl;
         if (step_outputg_prefix[step-1]!=""){
