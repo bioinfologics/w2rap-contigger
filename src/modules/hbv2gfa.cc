@@ -12,9 +12,11 @@ int main(const int argc, const char * argv[]) {
     std::string out_prefix;
     std::string in_prefix;
     bool find_lines, stats_only;
+    std::string dump_detailed_gfa;
 
     uint64_t genome_size;
     //========== Command Line Option Parsing ==========
+    std::vector<std::string> validGFAOpts({"basic", "abyss"});
 
     std::cout << "hbv2gfa from w2rap-contigger" << std::endl;
     try {
@@ -29,6 +31,9 @@ int main(const int argc, const char * argv[]) {
                                                             "Find lines", false,false,"bool",cmd);
         TCLAP::ValueArg<bool>         statsOnly_Arg        ("","stats_only",
                                                             "Compute stats only (do not dump GFA)", false,false,"bool",cmd);
+        TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
+        TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
+                                                         "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
         cmd.parse(argc, argv);
 
         // Get the value parsed by each arg.
@@ -37,6 +42,7 @@ int main(const int argc, const char * argv[]) {
         find_lines = find_linesArg.getValue();
         genome_size = 1000UL * genomeSize_Arg.getValue();
         stats_only = statsOnly_Arg.getValue();
+        dump_detailed_gfa=dumpDetailedGFAArg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -93,7 +99,8 @@ int main(const int argc, const char * argv[]) {
     int MAX_DEPTH = 10;
     if (!stats_only) {
         std::cout << "Dumping gfa" << std::endl;
-        GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);
+        if (validGFAOpts[0] == dump_detailed_gfa) {GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
+        else if (validGFAOpts[1] == dump_detailed_gfa) {GFADumpAbyss(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
     }
 
     return 0;

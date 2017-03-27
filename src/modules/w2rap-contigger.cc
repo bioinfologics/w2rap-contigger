@@ -419,7 +419,7 @@ int main(const int argc, const char * argv[]) {
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
-    std::vector<std::string> validGFAOpts({"none", "basic", "detailed"});
+    std::vector<std::string> validGFAOpts({"none", "basic", "detailed", "abyss"});
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7,8};
     std::string dump_detailed_gfa;
     bool dump_all,run_dv,run_exp;
@@ -496,7 +496,7 @@ int main(const int argc, const char * argv[]) {
                                                                "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
         TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
         TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump detailed GFA for every graph (default: 0)", false,"basic", &gfaOutputOptions,cmd);
+                                                         "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
 
         cmd.parse(argc, argv);
         // Get the value parsed by each arg.
@@ -714,13 +714,17 @@ int main(const int argc, const char * argv[]) {
                 WriteReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1] +".paths").c_str());
                 OutputLog(2) << "DONE!" << std::endl;
             }
-            if (validGFAOpts[0] != dump_detailed_gfa){
-              if (validGFAOpts[1] == dump_detailed_gfa){
-                GFADump(std::string(out_dir+"/"+out_prefix), hbv, hbvinv, paths, 0, 0, true);
-              } else if (validGFAOpts[2] == dump_detailed_gfa) {
-                GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv);
-              }
+
+            if (dump_detailed_gfa == validGFAOpts[1]){
+                GFADump(std::string(out_dir+"/"+out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv, paths, 0, 0, true);
             }
+            else if (dump_detailed_gfa == validGFAOpts[2]){
+                GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv);
+            }
+            else if (dump_detailed_gfa == validGFAOpts[3]){
+                GFADumpAbyss(std::string(out_dir+"/"+out_prefix + "." + step_outputg_prefix[step-1]), hbv, hbvinv, paths, 0, 0, true);
+            }
+
         }
         OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl<<std::endl;
         if (step_outputg_prefix[step-1]!=""){
