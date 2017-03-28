@@ -262,20 +262,24 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
 
   // header line
   gfa_raw_out << "H\tVN:Z:1.0" << std::endl;
-
+  std::set<int> forbidden_nodes;
   for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
       auto eo=hb.EdgeObject(ei);
       if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
 
-      gfa_raw_out << "S\t" << ei << "\t*"
-      << "\tLN:i:" << eo.isize()
-      << "\tKC:i:" << invPaths.at(ei).size()
-      << "\tCL:Z:" << (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
-      << "\tUR:Z:" << prefix << "_raw_abyss.fasta"
-      << std::endl;
+      if (0 != eo.isize()){
+        gfa_raw_out << "S\t" << ei << "\t*"
+        << "\tLN:i:" << eo.isize()
+        << "\tKC:i:" << invPaths.at(ei).size()
+        << "\tCL:Z:" << (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
+        << "\tUR:Z:" << prefix << "_raw_abyss.fasta"
+        << std::endl;
 
-      // write seq to FASTA
-      fasta_raw_out << ">" << ei << " " << eo.isize() << " " << invPaths.at(ei).size() << std::endl << eo << std::endl;
+        // write seq to FASTA
+        fasta_raw_out << ">" << ei << " " << eo.isize() << " " << invPaths.at(ei).size() << std::endl << eo << std::endl;
+      } else {
+        forbidden_nodes.insert(ei);
+      }
   }
 
   std::cout<<"Dumping connections"<<std::endl;
@@ -314,7 +318,10 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
 
           uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
           if (cn<e) continue;
-          gfa_raw_out << "L\t" << e << "\t+\t" << cn << (cn==n ? "\t+" : "\t-") << "\t" << overlap_length << "M" << std::endl;
+          if (forbidden_nodes.find(e) == forbidden_nodes.end()
+              && forbidden_nodes.find(cn) == forbidden_nodes.end()) {
+            gfa_raw_out << "L\t" << e << "\t+\t" << cn << (cn==n ? "\t+" : "\t-") << "\t" << overlap_length << "M" << std::endl;
+          }
       }
 
       std::set<uint64_t> all_prev;
@@ -325,7 +332,10 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
           //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
           uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
           if (cp<e) continue;
-          gfa_raw_out << "L\t" << e << "\t-\t" << cp << (cp==p ? "\t-" : "\t+") << "\t" << overlap_length << "M" << std::endl;
+          if (forbidden_nodes.find(e) == forbidden_nodes.end()
+              && forbidden_nodes.find(cp) == forbidden_nodes.end()) {
+            gfa_raw_out << "L\t" << e << "\t-\t" << cp << (cp==p ? "\t-" : "\t+") << "\t" << overlap_length << "M" << std::endl;
+          }
       }
   }
 
