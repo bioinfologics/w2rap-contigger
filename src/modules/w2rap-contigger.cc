@@ -606,7 +606,7 @@ int main(const int argc, const char * argv[]) {
 
     //Step-by-step execution loop
     for (auto step=from_step; step <=to_step; ++step){
-        int step_1 = step-1;
+        int ostep = step-1;
         //First make sure all needed data is there.
         if ( (2==step or 3==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
@@ -636,17 +636,17 @@ int main(const int argc, const char * argv[]) {
         }
 
         //steps that require a graph
-        if (step_inputg_prefix[step_1]!="" and hbv.N()==0) {
+        if (step_inputg_prefix[ostep]!="" and hbv.N()==0) {
             //Load hbv
             OutputLog(2) <<"Loading graph..." << std::endl;
-            BinaryReader::readFile(out_dir + "/" + out_prefix + "." + step_inputg_prefix[step_1] + ".hbv", &hbv);
+            BinaryReader::readFile(out_dir + "/" + out_prefix + "." + step_inputg_prefix[ostep] + ".hbv", &hbv);
             //Create inversion
             OutputLog(4) <<"Creating graph involution..." << std::endl;
             hbvinv.clear();
             hbv.Involution(hbvinv);
             //load paths
             OutputLog(2) <<"Loading paths..." << std::endl;
-            LoadReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_inputg_prefix[step_1] + ".paths").c_str());
+            LoadReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_inputg_prefix[ostep] + ".paths").c_str());
             //create path inversion
             OutputLog(2) << "Graph and paths loaded" << std::endl << std::endl;
             graph_status(hbv);
@@ -657,7 +657,7 @@ int main(const int argc, const char * argv[]) {
         //Print step header and start timers and memory metrics
 
 
-        OutputLog(1,false) << std::endl << "--== Step " << step << ": " << step_names[step_1] <<" ";
+        OutputLog(1,false) << std::endl << "--== Step " << step << ": " << step_names[ostep] <<" ";
         OutputLog(1)<< " ==--"<< std::endl << std::endl;
         auto step_time=WallClockTime();
         //TODO: reset memory metrics?
@@ -713,32 +713,32 @@ int main(const int argc, const char * argv[]) {
             save_quals(quals,out_dir + "/pe_data.cqual");
             OutputLog(2) << "DONE!" << std::endl;
         } else {
-            if (step_outputg_prefix[step_1]!="") {
+            if (step_outputg_prefix[ostep]!="") {
                 if (dump_all or step == to_step) {
                     //TODO: dump graph and paths
                     OutputLog(2) << "Dumping graph and paths..." << std::endl;
-                    BinaryWriter::writeFile(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step_1] + ".hbv",
+                    BinaryWriter::writeFile(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep] + ".hbv",
                                             hbv);
-                    WriteReadPathVec(paths, (out_dir + "/" + out_prefix + "." + step_outputg_prefix[step_1] +
+                    WriteReadPathVec(paths, (out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep] +
                                              ".paths").c_str());
                     OutputLog(2) << "DONE!" << std::endl;
                 }
 
                 if (dump_detailed_gfa == validGFAOpts[1]) {
-                    GFADump(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step_1]), hbv, hbvinv,
+                    GFADump(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv,
                             paths, 0, 0, true);
                 } else if (dump_detailed_gfa == validGFAOpts[2]) {
-                    GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step_1]), hbv,
+                    GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
                                   hbvinv);
                 } else if (dump_detailed_gfa == validGFAOpts[3]) {
-                    GFADumpAbyss(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[step_1]), hbv,
+                    GFADumpAbyss(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
                                  hbvinv, paths, 0, 0, true);
                 }
             }
 
         }
         OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl<<std::endl;
-        if (step_outputg_prefix[step_1]!=""){
+        if (step_outputg_prefix[ostep]!=""){
             graph_status(hbv);
             path_status(paths);
             OutputLog(2,false)<<std::endl;
