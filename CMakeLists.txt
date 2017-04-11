@@ -115,7 +115,6 @@ add_library(base_libs OBJECT
         src/math/PowerOf2.cc
         src/pairwise_aligners/SmithWatBandedA.cc
         src/pairwise_aligners/SmithWatFree.cc
-        src/paths/BigMapTools.cc
         src/paths/FindErrorsCore.cc
         src/paths/HyperBasevector.cc
         src/paths/HyperEfasta.cc
@@ -175,27 +174,17 @@ add_library(base_libs OBJECT
         src/paths/UnibaseUtils.cc
         src/paths/Unipath.cc
         src/paths/long/AssessBestAlignCore.cc
-        src/paths/long/CleanEfasta.cc
         src/paths/long/CreateGenome.cc
         src/paths/long/DigraphFromWords.cc
         src/paths/long/EvalByReads.cc
         src/paths/long/KmerCount.cc
         src/paths/long/LongHyper.cc
-        src/paths/long/ReadOriginTracker.cc
-        src/paths/long/RefTrace.cc
-        src/paths/long/RefTraceControl.cc
-        src/paths/long/RefTraceTools.cc
         src/paths/long/SupportedHyperBasevector.cc
         src/paths/long/SupportedHyperBasevector3.cc
         src/paths/long/SupportedHyperBasevector4.cc
         src/paths/long/SupportedHyperBasevector5.cc
         src/paths/long/SupportedHyperBasevector6.cc
         src/paths/long/SupportedHyperBasevector7.cc
-        src/paths/long/VariantCallTools.cc
-        src/paths/long/VariantFilters.cc
-        src/paths/long/VariantPostProcess.cc
-        src/paths/long/VariantReadSupport.cc
-        src/paths/long/Variants.cc
         src/paths/long/large/CN1PeakFinder.cc
         src/paths/long/large/GapToyTools.cc
         src/paths/long/large/GapToyTools3.cc
@@ -214,10 +203,7 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/ultra/ConsensusScoreModel.cc
         src/paths/long/ultra/FounderAlignment.cc
         src/paths/long/ultra/GetFriendsAndAlignsInitial.cc
-        src/paths/long/ultra/MakeBlocks.cc
         src/paths/long/ultra/MultipleAligner.cc
-        src/paths/long/ultra/Prefab.cc
-        src/paths/long/ultra/ThreadedBlocks.cc
         src/paths/long/OverlapReads.cc
         src/paths/long/KmerAlign.cc
         src/paths/long/Friends.cc
@@ -230,13 +216,9 @@ add_library(specific_w2rap-contigger OBJECT
         src/BasevectorTools.cc
         src/CompressedSequence.cc
         src/FastaConverter.cc
-        #src/FastaFileset.cc
-        #src/FastaFilestream.cc
-        #src/FastaFilestreamPreview.cc
         src/FastaNameParser.cc
         src/FastaVerifier.cc
         src/Misc.cc
-        #src/bam/ReadBAM.cc
         src/pairwise_aligners/SmithWatBanded.cc
         src/paths/MuxGraph.cc
         src/paths/OffsetTracker.cc

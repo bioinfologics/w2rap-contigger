@@ -34,7 +34,6 @@
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadPath.h"
-#include "paths/long/RefTrace.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/large/GapToyTools.h"
 #include "random/Random.h"

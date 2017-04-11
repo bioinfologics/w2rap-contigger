@@ -10,21 +10,13 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include "Basevector.h"
-#include "CoreTools.h"
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
 #include "PrintAlignment.h"
-#include "Qualvector.h"
 #include "efasta/EfastaTools.h"
-#include "math/Functions.h"
-#include "pairwise_aligners/SmithWatBandedA.h"
-#include "paths/BigMapTools.h"
 #include "paths/long/CorrectPairs1.h"
-#include "paths/long/LongProtoTools.h"
 #include "paths/long/FriendAligns.h"
-#include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadStack.h"
-#include "random/Bernoulli.h"
 #include "util/w2rap_timers.h"
 TIMELOG_CREATE_GLOBAL(CP1_Align);
 TIMELOG_CREATE_GLOBAL(CP1_MakeStacks);
@@ -347,7 +339,6 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
                }
 
                const int qfloor = 20;
-               vec<placementy> p;
 
                // Probably doesn't do anything:
 

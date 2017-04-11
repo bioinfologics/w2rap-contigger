@@ -12,7 +12,6 @@
 #include "Basevector.h"
 #include "CoreTools.h"
 #include "Qualvector.h"
-#include "paths/BigMapTools.h"
 #include "paths/long/CorrectByStack.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadStack.h"
