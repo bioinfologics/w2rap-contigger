@@ -14,7 +14,6 @@
 
 #include "paths/long/BuildReadQGraph.h"
 #include "Basevector.h"
-//#include "FastaFileset.h"
 #include "Intvector.h"
 #include "IteratorRange.h"
 #include "MapReduceEngine.h"
@@ -25,7 +24,6 @@
 #include "dna/Bases.h"
 #include "feudal/BinaryStream.h"
 #include "feudal/VirtualMasterVec.h"
-//#include "kmers/BigKPather.h"
 #include "kmers/ReadPatherDefs.h"
 #include "math/Functions.h"
 #include "paths/KmerBaseBroker.h"

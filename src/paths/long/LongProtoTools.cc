@@ -6,32 +6,13 @@
 //   Institute is not responsible for its use, misuse, or functionality.     //
 ///////////////////////////////////////////////////////////////////////////////
 
-// MakeDepend: library OMP
-// MakeDepend: cflags OMP_FLAGS
-
-#include <omp.h>
-
 #include "Basevector.h"
-#include "CoreTools.h"
-#include "FastIfstream.h"
-#include "PairsManager.h"
-#include "ParseSet.h"
 #include "ParallelVecUtilities.h"
-#include "TokenizeString.h"
 #include "efasta/EfastaTools.h"
 #include "kmers/KmerRecord.h"
-#include "reporting/PerfStat.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/Friends.h"
 #include "paths/long/ultra/GetFriendsAndAlignsInitial.h"
 #include "paths/long/LargeKDispatcher.h"
-#include "paths/long/LongProtoTools.h"
-#include "paths/long/MakeKmerStuff.h"
-#include "paths/long/SupportedHyperBasevector.h"
-#include "paths/long/DiscovarTools.h"
-#include "paths/long/ultra/ConsensusScoreModel.h"
-#include "reporting/PerfStat.h"
-#include "system/ParsedArgs.h"
 
 void ReportPeakMem( const String msg )
 {    std::cout << Date( ) << ": " << msg << ( msg != "" ? ", " : "" ) 

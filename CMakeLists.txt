@@ -122,10 +122,8 @@ add_library(base_libs OBJECT
         src/paths/KmerPath.cc
         src/paths/KmerPathInterval.cc
         src/paths/LongReadTools.cc
-        src/paths/ProcessGap.cc
         src/paths/Sepdev.cc
         src/paths/UnipathScaffold.cc
-        src/paths/Uniseq.cc
         src/paths/long/Correct1Pre.cc
         src/paths/long/CorrectByStack.cc
         src/paths/long/CorrectPairs1.cc
@@ -176,7 +174,7 @@ add_library(base_libs OBJECT
         src/paths/long/AssessBestAlignCore.cc
         src/paths/long/CreateGenome.cc
         src/paths/long/DigraphFromWords.cc
-        src/paths/long/EvalByReads.cc
+        #src/paths/long/EvalByReads.cc
         src/paths/long/KmerCount.cc
         src/paths/long/LongHyper.cc
         src/paths/long/SupportedHyperBasevector.cc
@@ -189,7 +187,6 @@ add_library(base_libs OBJECT
         src/paths/long/large/GapToyTools.cc
         src/paths/long/large/GapToyTools3.cc
         src/paths/long/large/Lines.cc
-        src/paths/simulation/VCF.cc
         src/random/NormalDistribution.cc
         src/GFADump.cc
         src/util/TextTable.cc
@@ -215,13 +212,8 @@ add_library(specific_w2rap-contigger OBJECT
         src/VecString.cc
         src/BasevectorTools.cc
         src/CompressedSequence.cc
-        src/FastaConverter.cc
-        src/FastaNameParser.cc
-        src/FastaVerifier.cc
         src/Misc.cc
         src/pairwise_aligners/SmithWatBanded.cc
-        src/paths/MuxGraph.cc
-        src/paths/OffsetTracker.cc
         src/paths/long/large/AssembleGaps.cc
         src/paths/long/large/GapToyTools2.cc
         src/paths/long/large/Unsat.cc

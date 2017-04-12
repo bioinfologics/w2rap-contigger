@@ -10,35 +10,19 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include "Basevector.h"
-#include "CoreTools.h"
-#include "FetchReads.h"
-#include "Intvector.h"
-#include "IteratorRange.h"
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
-#include "Qualvector.h"
-#include "TokenizeString.h"
 #include "efasta/EfastaTools.h"
 #include "feudal/HashSet.h"
-#include "graph/DigraphTemplate.h"
-#include "kmers/KMerHasher.h"
 #include "paths/HyperBasevector.h"
 #include "paths/ReadsToPathsCoreX.h"
 #include "paths/RemodelGapTools.h"
 #include "paths/Unipath.h"
-//#include "paths/long/EvalAssembly.h"
 #include "paths/long/Heuristics.h"
 #include "paths/long/LoadCorrectCore.h"
-#include "paths/long/Logging.h"
 #include "paths/long/LongHyper.h"
-#include "paths/long/LongProtoTools.h"
-#include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadPath.h"
-#include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/large/GapToyTools.h"
-#include "random/Random.h"
-#include <fstream>
-#include <ctime>
 
 PerfStatLogger PerfStatLogger::gInst;
 
