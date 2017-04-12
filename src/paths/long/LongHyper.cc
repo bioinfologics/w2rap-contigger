@@ -351,7 +351,6 @@ Bool LongHyper(const VecEFasta &correctede, const vec<pairing_info> &cpartner, S
     REPORT_TIME(z1clock, "used after tracing");
     shb.FixWeights(logc);
     shb.TestValid(logc);
-    shb.DumpFilesStandard(log_control, logc, 1);
 
     return True;
 }

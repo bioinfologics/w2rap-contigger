@@ -12,14 +12,9 @@
 #include "CoreTools.h"
 
 #include "paths/long/EvalByReads.h"
-#include "paths/long/LargeKDispatcher.h"
 #include "paths/long/MakeKmerStuff.h"
-#include "paths/long/RefTrace.h"
 #include "paths/long/SupportedHyperBasevector.h"
-#include "random/Bernoulli.h"
-#include "reporting/PerfStat.h"
-#include "util/NullOStream.h"
-#include "paths/long/ReadOriginTracker.h"
+
 
 namespace { // open anonymous namespace
 

@@ -17,7 +17,6 @@
 #include "Fastavector.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/Logging.h"
-#include "paths/long/RefTrace.h"
 #include "paths/long/RefTraceControl.h"
 
 namespace DiscovarTools{

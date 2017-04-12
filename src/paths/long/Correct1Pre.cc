@@ -14,7 +14,6 @@
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
 #include "Qualvector.h"
-#include "paths/BigMapTools.h"
 #include "paths/long/Correct1Pre.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/FriendAligns.h"
