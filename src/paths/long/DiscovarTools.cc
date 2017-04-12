@@ -41,12 +41,6 @@ void ExitPathsEmpty( )
           << "Discovar complete.  Have a nice day.\n\n";
      Scram( );    }
 
-void ExitNoReads( )
-{    // DISCOVAR MESSAGE
-     std::cout << "\nDear user, we are sad to report that no reads were found.\n"
-          << "Further assembly is thus impossible.\n"
-          << "Discovar complete.  Have a nice day.\n\n";
-     Scram( );    }
 
 void ExitNoCorrectedReads( )
 {    // DISCOVAR MESSAGE
@@ -56,10 +50,7 @@ void ExitNoCorrectedReads( )
           << "Discovar complete.  Have a nice day.\n\n";
      Scram( );    }
 
-void ExitSamtoolsFailed( )
-{    // DISCOVAR MESSAGE
-     std::cout << "\nSamtools failed, Discovar cannot proceed.\n" << std::endl;
-     Scram(1);    }
+
 
 void ExitShortReads(const String& additional_info )
 {
@@ -70,106 +61,6 @@ void ExitShortReads(const String& additional_info )
     std::cout << "\nDiscovar complete.  Have a nice day.\n\n";
     Scram( );    }
 
-void CheckDiscovarSystemRequirements( )
-{
-     // Check samtools existence and version.
-
-     if ( System( "which samtools > /dev/null 2>&1" ) != 0 )
-     {    // DISCOVAR MESSAGE
-          std::cout << "I can't find the samtools executable.  It may be that you need\n"
-               << "to install it on your system.  Or perhaps you just need to add\n"
-               << "it to your path.\n";
-          DiscovarUnhappy( );    }
-     String samvs = StringOfOutput( "samtools 2>&1 | grep Version", 2 );
-
-     // Parse samvs as v1.v2.v3... where v1-3 are nonnegative integers and ... is 
-     // anything.  Or read as v1.v2.
-
-     int samv1 = 0, samv2 = 0, samv3 = 0;
-     const triple<int,int,int> min_samv = {0,1,18};
-     Bool confused = False;
-
-     // First deal with the v1.v2 case.
-
-     if ( samvs.Contains( "." ) && samvs.Before( "." ).IsInt( )
-          && samvs.After( "." ).IsInt( ) && !samvs.After( "." ).Contains( "." ) )
-     {    samv1 = samvs.Before( "." ).Int( ), samv2 = samvs.After( "." ).Int( );    }
-
-     // Now the other cases.
-
-     else
-     {    if ( !samvs.Contains( "." ) || !samvs.After( "." ).Contains( "." )
-               || !samvs.Before( "." ).IsInt( ) 
-               || !samvs.Between( ".", "." ).IsInt( ) )
-          {    confused = True;    }
-          String samt;
-          if ( !confused )
-          {    samt = samvs.After( "." ).After( "." );
-               int n;
-               for ( n = 0; n < samt.isize( ); n++ )
-                    if ( !isdigit( samt[n] ) ) break;
-               samt.resize(n);
-               if ( samt.empty( ) || !samt.IsInt( ) ) confused = True;   }
-          if (confused)
-          {    std::cout << "I can't determine which version of samtools you're using.\n";
-               std::cout << "Version read as: " << samvs << "." << std::endl;
-               std::cout << "Perhaps you have an old version." << std::endl;
-               std::cout << "Please use at least version " << min_samv.first << "."
-                    << min_samv.second << "." << min_samv.third << "." << std::endl;
-               DiscovarUnhappy( );    }
-          samv1 = samvs.Before( "." ).Int( );
-          samv2 = samvs.Between( ".", "." ).Int( );
-          samv3 = samt.Int( );    }
-     triple<int,int,int> samv = {samv1,samv2,samv3};
-     if ( samv < min_samv )
-     {    // DISCOVAR MESSAGE
-          std::cout << "You appear to have version " << samvs << " of samtools.\n"
-               << "Please use at least version " << min_samv.first << "."
-               << min_samv.second << "." << min_samv.third << "." << std::endl;
-          DiscovarUnhappy( );    }    }
-
-void CheckDiscovarBams( const vec<String>& bams )
-{    for ( const String& b : bams )
-     {    if ( !b.Contains( ".bam", -1 ) )
-          {    // DISCOVAR MESSAGE
-               std::cout << "The file " << b << " that you provided as part of READS "
-                    << "does not end in .bam.\n";
-               DiscovarUnhappy( );    }
-          if ( !IsRegularFile(b) )
-          {    // DISCOVAR MESSAGE
-               std::cout << "I can't find the file " << b << " that you provided as "
-                    << "part of READS.\n";
-               DiscovarUnhappy( );    }
-          if ( System( "samtools view -H " + b + " > /dev/null 2>&1" ) != 0 )
-          {    // DISCOVAR MESSAGE
-               std::cout << "When I try to view " << b << " with samtools, something\n"
-                    << "goes wrong.  Please check to see that your input files\n"
-                    << "have been created correctly." << std::endl;
-               DiscovarUnhappy( );    }    }    }
-
-void CheckDiscovarOutHead( const String& OUT_HEAD ){
-    if( OUT_HEAD.Contains("/")){
-      String directory = OUT_HEAD.SafeBeforeLast("/");
-      if( ! IsDirectory(directory)){
-        std::cout << "The directory " << directory << " in OUT_HEAD=" << OUT_HEAD << " does not exist."<< std::endl;
-        DiscovarUnhappy();
-      }
-    }
-}
-
-void CheckDiscovarTmp( const String& TMP ){
-    if ( IsRegularFile(TMP) ){
-        std::cout << "Temporarily directory TMP="<<TMP << " already exists as a regular file."<< std::endl;
-        DiscovarUnhappy();
-    }
-}
-
-void CheckDiscovarReads( const String& READS ){
-    if ( READS.Contains("~") ){
-        std::cout << "The READS argument cannot contain '~'. Please use full paths instead." << std::endl;
-        DiscovarUnhappy();
-    }
-}
 
 void CheckDiscovarRegions( const String& REGIONS )
 {    vec<String> regions;
@@ -206,87 +97,6 @@ void CheckDiscovarRegions( const String& REGIONS )
      CheckRegionSize(region_size);
 }
                
-void TestDiscovarRegionsBamsCompatibility( const String& REGIONS, 
-     const vec<String>& bams )
-{    vec<String> regions;
-     ParseStringSet( "{" + REGIONS + "}", regions );
-     size_t totalFileSize=0;
-     for ( auto b : bams )
-     {    SAM::BAMFile bf( b, "", true );
-          vec<RefDesc> rd = bf.getRefDescs( );
-          vec<String> refnames;
-          vec<int> reflens;
-          for ( int i = 0; i < rd.isize( ); i++ )
-          {    refnames.push_back( rd[i].getName( ) );
-               reflens.push_back( rd[i].getLength( ) );    }
-          UniqueSortSync( refnames, reflens );
-
-          size_t region_size=0;
-          for ( auto region : regions )
-          {    String ref = region;
-               if ( ref.Contains( ":" ) ) ref = region.Before( ":" );
-               int p = BinPosition( refnames, ref );
-               if ( p < 0 )
-               {    // DISCOVAR MESSAGE
-                    std::cout << "There appears to be an incompatibility between your "
-                         << "READS and REGIONS arguments.\nSpecifically, the "
-                         << "region " << region << " refers to reference record\n"
-                         << ref << ", which is not declared in the header for bam "
-                         << "file\n\n" << b << "." << "\n" << std::endl;
-                    DiscovarUnhappy( );    }
-               if ( region.Contains( ":" ) )
-               {    String range = region.After( ":" );
-                    int64_t stop = range.After( "-" ).Int( );
-                    if ( stop > reflens[p] )
-                    {    // DISCOVAR MESSAGE
-                         std::cout << "It would appear that the stop position for region "
-                              << region << "\nextends beyond the end of the "
-                              << "reference sequence." << std::endl;
-                         DiscovarUnhappy( );    }
-                    region_size += stop-region.After(":").Before("-").Int();
-               }
-               else{
-                    region_size += reflens[p];
-               }
-          }
-
-          {
-              std::ifstream file(b.c_str(),std::ios::in|std::ios::binary|std::ios::ate);
-              totalFileSize+=file.tellg();
-              file.close();
-          }
-          CheckRegionSize(region_size);
-     }
-     CheckBAMSize(totalFileSize,REGIONS);
-}
-
-          /*
-          // fast_pipe_ifstream in( "samtools view -H " + b );
-          // String line;
-          // while(1)
-          // {    getline( in, line );
-          //      if ( in.
-          */
-
-               // }    }
-
-//size_t DiscovarRefTraceControl::MIN_LENGTH = 1000;
-
-void CheckReferenceInput( const String& REFERENCE, const String& OUT_HEAD ){
-    if(REFERENCE=="") return;
-    if ( !IsRegularFile(REFERENCE) ){
-        std::cout << "REFERENCE=" << REFERENCE << " is not a regular file."<< std::endl;
-        DiscovarUnhappy();
-    }
-    String REF_BARE = REFERENCE.SafeAfterLast("/");
-    String OUT_BARE = OUT_HEAD.SafeAfterLast("/");
-    if(REF_BARE.Contains(".")){
-        if( REF_BARE.SafeBeforeLast(".") == OUT_BARE){
-            std::cout << "Please refrain from naming REFERENCE with a prefix identical to OUT_HEAD, as it might get overwritten.\n" << std::endl;
-            DiscovarUnhappy( );
-        }
-    }
-};
 
 void DiscovarRefTraceControl::CheckConsistency() const{
     bool bConsistent =   getRefSeqs().size()==getRefTags().size()
@@ -435,14 +245,7 @@ void CheckRegionSize(size_t size, const String& sPrefix){
     }
 }
 
-void CheckDiscovarRegionsInput(const String& REGIONS){
 
-    if( REGIONS==""){
-        std::cout << "REGIONS cannot be an empty string." << std::endl;
-        DiscovarUnhappy();
-    }
-
-}
 
 void CheckBAMSize(size_t size, const String& REGIONS){
     if( size > DiscovarTools::MaxBAMSize && (REGIONS=="" || REGIONS=="all")){
@@ -452,17 +255,7 @@ void CheckBAMSize(size_t size, const String& REGIONS){
     }
 }
 
-void DiscovarRefTraceControl::AssertEqual(const DiscovarRefTraceControl&other){
-    ForceAssert(bRefTraceOn==other.bRefTraceOn);
-    ForceAssert(getRefTags()==other.getRefTags());
-    ForceAssert(getRefSeqs()==other.getRefSeqs());
-    ForceAssert(getRefSeqs().size()==other.getRefSeqs().size());
-    ForceAssert(ref_seqs_ext==other.ref_seqs_ext);
-    ForceAssert(ref_seqs_ext_ext==other.ref_seqs_ext_ext);
-    ForceAssert(getRefStart()==other.getRefStart());
-    ForceAssert(ref_length==other.ref_length);
-    ForceAssert(getRefIndex()==other.getRefIndex());
-};
+
 }
 
 void SetThreads( uint& NUM_THREADS, const Bool malloc_per_thread_check ) {

@@ -13,7 +13,7 @@
 #include "ParallelVecUtilities.h"
 #include "Set.h"
 #include "VecUtilities.h"
-#include "fastg/FastgGraph.h"
+//#include "fastg/FastgGraph.h"
 #include "math/Functions.h"
 #include "paths/HyperBasevector.h"
 

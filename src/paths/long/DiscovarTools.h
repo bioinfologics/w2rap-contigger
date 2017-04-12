@@ -14,7 +14,7 @@
 #define DISCOVAR_TOOLS_H
 
 #include "CoreTools.h"
-#include "Fastavector.h"
+//#include "Fastavector.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/Logging.h"
 #include "paths/long/RefTraceControl.h"
@@ -33,31 +33,8 @@ namespace DiscovarTools{
 
     void DiscovarUnhappy( );
 
-    void CheckDiscovarSystemRequirements( );
-
-    void CheckDiscovarBams( const vec<String>& bams );
-
-    //check if REGIONS input is valid or not
-    void CheckDiscovarRegionsInput(const String& REGIONS);
-
     //check if parsed REGIONS input is valid or not
     void CheckDiscovarRegions( const String& REGIONS );
-
-    //check if parsed OUT_HEAD input is valid or not
-    void CheckDiscovarOutHead( const String& OUT_HEAD );
-
-    //check if parsed TMP input is valid or not
-    void CheckDiscovarTmp( const String& TMP );
-
-    //check if parsed READS input is valid or not
-    void CheckDiscovarReads( const String& READS );
-
-    void TestDiscovarRegionsBamsCompatibility( const String& REGIONS,
-         const vec<String>& bams );
-
-    void ExitSamtoolsFailed( );
-
-    void CheckReferenceInput( const String& REFERENCE, const String& OUT_HEAD );
 
     // Forbids region longer than certain length
     const size_t MaxRegionSize=50000000; // Maximum allowable region size
@@ -81,13 +58,7 @@ namespace DiscovarTools{
         //ForceAssert that data size are consistent
         void CheckConsistency() const;
 
-        bool IsRefTraceOn()const {return bRefTraceOn;}
-        const vec<fastavector>& getRefSeqsExt()const{return ref_seqs_ext;}
-        const vec<size_t>& getRefSeqsExtExt()const{return ref_seqs_ext_ext;}
-        const vec<size_t>& getRefLength()const{return ref_length;}
-        const vec<size_t>& getChromIdx()const{return RefTraceControl::getRefIndex();}
 
-        void AssertEqual(const DiscovarRefTraceControl&other);
 
     private:
         bool bRefTraceOn;              //if Ref Trace functionality is on or not
