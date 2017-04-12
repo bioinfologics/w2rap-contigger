@@ -23,7 +23,7 @@
 #include "paths/UnibaseUtils.h"
 #include "paths/Unipath.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/EvalByReads.h"
+//#include "paths/long/EvalByReads.h"
 #include "paths/long/LongHyper.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/LongReadsToPaths.h"

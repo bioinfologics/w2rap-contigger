@@ -7,7 +7,6 @@
 #include <paths/long/large/MakeGaps.h>
 #include <paths/long/large/FinalFiles.h>
 #include "FastIfstream.h"
-#include "FetchReads.h"
 #include "MainTools.h"
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"

@@ -11,7 +11,6 @@
 
 #include "CoreTools.h"
 
-#include "paths/long/EvalByReads.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/SupportedHyperBasevector.h"
 
@@ -154,21 +153,6 @@ void SupportedHyperBasevector::DeleteUnusedPaths( )
                     if ( p[j] >= 0 && !used[ p[j] ] ) to_delete[i] = True;    }    }
      EraseIf( PairsMutable( ), to_delete );
      EraseIf( PairDataMutable( ), to_delete );    }
-
-void SupportedHyperBasevector::RemoveDeadEdgeObjects0( )
-{    vec<Bool> used;
-     Used(used);
-     vec<int> to_new_id( used.size( ), -1 );
-     {    int count = 0;
-          for ( int i = 0; i < used.isize( ); i++ )
-               if ( used[i] ) to_new_id[i] = count++;    }
-     vec<int> inv2;
-     for ( int i = 0; i < EdgeObjectCount( ); i++ )
-     {    if ( !used[i] ) continue;
-          if ( !InvDef(i) ) inv2.push_back(-1);
-          else inv2.push_back( to_new_id[ Inv(i) ] );    }
-     InvMutable( ) = inv2;
-     HyperBasevector::RemoveDeadEdgeObjects( );    }
 
 void SupportedHyperBasevector::RemoveDeadEdgeObjects( )
 {    vec<Bool> used;

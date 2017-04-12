@@ -12,22 +12,15 @@
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
 #include "PrintAlignment.h"
-#include "Qualvector.h"
 #include "graphics/BasicGraphics.h"
 #include "kmers/LongReadPather.h"
 #include "paths/HyperBasevector.h"
-#include "paths/ReadsToPathsCoreX.h"
 #include "paths/RemodelGapTools.h"
-#include "paths/Unipath.h"
 #include "paths/long/Correct1Pre.h"
 #include "paths/long/FriendAligns.h"
-#include "paths/long/HBVFromEdges.h"
-#include "paths/long/LongReadsToPaths.h"
 #include "paths/long/ReadPath.h"
 #include "paths/long/ReadPathTools.h"
-#include "paths/long/ReadStack.h"
 #include "paths/long/large/GapToyTools.h"
-#include <ctime>
 #include <util/OutputLog.h>
 
 

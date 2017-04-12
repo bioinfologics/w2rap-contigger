@@ -11,7 +11,7 @@
 #include "PackAlign.h"
 #include "pairwise_aligners/ClusterAligner.h"
 #include "pairwise_aligners/SmithWatBandedA.h"
-#include "paths/LongReadTools.h"
+//#include "paths/LongReadTools.h"
 
 class kmer_cluster {
 

@@ -12,21 +12,24 @@
 #include <sys/time.h>
 
 #include "Basevector.h"
-#include "CoreTools.h"
-#include "FastIfstream.h"
-#include "FetchReads.h"
 #include "ParallelVecUtilities.h"
-#include "ParseSet.h"
-#include "TokenizeString.h"
-#include "math/Functions.h"
 #include "paths/HyperBasevector.h"
-#include "paths/LongReadTools.h"
+//#include "paths/LongReadTools.h"
 #include "paths/long/CreateGenome.h"
 #include "paths/long/LongProtoTools.h"
 
 
 namespace
 {
+    int KmerId(const basevector& b, const int L, const int p)
+    {
+        int n = 0;
+        for (int l = 0; l < L; l++) {
+            n <<= 2;  // same as *= 4
+            n += b[p + l];
+        }
+        return n;
+    }
 
 struct WorkItem
 {

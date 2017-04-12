@@ -11,79 +11,11 @@
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
-#include "math/Functions.h"
 #include "pairwise_aligners/SmithWatFree.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/EvalByReads.h"
-#include "paths/long/LargeKDispatcher.h"
 #include "paths/long/SupportedHyperBasevector.h"
-#include "random/Bernoulli.h"
 #include "Map.h"
 
-namespace
-{
-
-    typedef std::unordered_map<int,int> exact_match_spec_t;
-    void ExactSupports( const basevector& b, const QualVec& q
-                      , const read_place& rp, const HyperBasevector& hb
-                      , const exact_match_spec_t& match_spec
-                      , vec<int>& matched_edges
-                      , int iFlank=0
-                      , const int min_qual=3) {
-        iFlank=abs(iFlank);
-        matched_edges.clear();
-          
-        const auto& edge_list=rp.E();
-        bool bHasBubbleEdge=false;
-        for(size_t ee=0;!bHasBubbleEdge&&ee<edge_list.size();++ee){
-            bHasBubbleEdge=match_spec.find(edge_list[ee])!=match_spec.end();
-        }
-        if(!bHasBubbleEdge) return;
-//        int qsum=0;
-        int ei = 0, pos = rp.P( );
-        
-        int tgt_edge=-1;
-        int tgt_pos=-1;
-        auto itr=match_spec.find(edge_list[ei]);
-        if(itr!=match_spec.end()){
-            tgt_edge=(*itr).first;
-            tgt_pos=(*itr).second;
-        }
-        for ( int l = 0; l < b.isize( ); l++ ){
-            if(tgt_edge>=0 && tgt_edge==edge_list[ei] && tgt_pos==pos){
-                const auto& tgt_edge_object=hb.EdgeObject(tgt_edge);
-                bool bMatch= l-iFlank>=0 && l+iFlank < b.isize() && pos-iFlank >=0 && pos+iFlank<tgt_edge_object.isize();
-                for(int ss=-iFlank ; bMatch && ss <= iFlank; ++ss){
-                    bMatch = b[l+ss] == tgt_edge_object[tgt_pos+ss] ;
-                }
-                if(bMatch){
-                    matched_edges.push_back(tgt_edge);
-                }
-            }
-//            if ( b[l] != hb.EdgeObject( edge_list[ei] )[pos] )
-//            {    if ( q[l] >= min_qual ) qsum += q[l] * 1000;
-//                 else qsum += q[l];    }
-            pos++;
-            if ( pos == hb.EdgeObject( edge_list[ei] ).isize( ) ){
-                ei++;
-                itr=match_spec.find(edge_list[ei]);
-                if(itr==match_spec.end()){
-                    tgt_edge=-1;
-                    tgt_pos=-1;
-                }
-                else{
-                    tgt_edge=(*itr).first;
-                    tgt_pos=(*itr).second;
-                }
-                if ( ei == rp.N( ) ) break;
-                pos = hb.K( ) - 1;
-            }
-        }
-//        ForceAssert(qsum==rp.Qsum());
-    };
-
-
-} // end of anonymous namespace
 
 void SupportedHyperBasevector::FixWeights( const long_logging& logc )
 {    double clock = WallClockTime( );
