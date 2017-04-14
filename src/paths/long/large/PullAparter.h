@@ -197,6 +197,8 @@ class PullAparter {
                ReverseSortSync(scores,index);
                int sum1 = scores[0] + scores[1];
 
+
+              // Support validation
                if ( sum1 < mMinReads ||
                          sum1 < mMinMult*scores[2] ||
                          sum1 < mMinMult*scores[3] ) {
@@ -211,6 +213,7 @@ class PullAparter {
                     return false;
                }
 
+              // Path compatibility testing
                unsigned int pathMask = ( 1 << index[0] ) | ( 1 << index[1] );
 
                if ( mDebug ) std::cout << "pathMask=" << pathMask << std::endl;
