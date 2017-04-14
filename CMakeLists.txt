@@ -29,7 +29,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -w -Wno-deprecated -std=c++
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
-#SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
 
 ## To move the bins to the final location
@@ -44,13 +43,6 @@ if (MALLOC_LIBRARY)
     ## Link directories
     link_directories(${LIBSO_PATH})
 endif()
-
-#if (DEFINED ZLIB_PATH)
-#  include_directories("${ZLIB_PATH}/include")
-#  link_directories("${ZLIB_PATH}/lib")
-#else()
-#    set(ZLIB_PATH "/usr/lib" CACHE FILEPATH "ZLIB Library path")
-#endif()
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -262,4 +254,3 @@ if (DEFINED MALLOC_LIBRARY)
         target_link_libraries(w2rap-contigger ${LIBSO_NAME})
     endif()
 endif()
-
