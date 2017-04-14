@@ -78,7 +78,6 @@ add_library(base_libs OBJECT
         src/Vec.cc
         src/VecAlignmentPlus.cc
         src/dna/Bases.cc
-        src/efasta/AmbiguityScore.cc
         src/efasta/EfastaTools.cc
         src/feudal/BaseVec.cc
         src/feudal/BinaryStream.cc
@@ -152,7 +151,6 @@ add_library(base_libs OBJECT
         src/system/file/FileWriter.cc
         src/system/file/TempFile.cc
         src/util/Logger.cc
-        src/fastg/FastgGraph.cc
         src/graphics/BasicGraphics.cc
         src/kmers/kmer_parcels/KmerParcelsBuilder.cc
         src/math/IntDistribution.cc

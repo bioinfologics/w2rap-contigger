@@ -10,10 +10,7 @@
 // MakeDepend: cflags OMP_FLAGS
 
 #include "Basevector.h"
-#include "MainTools.h"
-#include "fastg/FastgGraph.h"
 #include "paths/HyperBasevector.h"
-//#include "paths/long/CleanEfasta.h"
 #include "paths/long/LargeKDispatcher.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/SupportedHyperBasevector.h"
