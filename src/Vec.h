@@ -722,10 +722,13 @@ inline bool Nonnegative( const vec<int,A>& v )
 //
 // Destroy - returns the memory used by a vector, more or less
 //
-
 // Method given in Stroustrup's book, The C++ Programming Language, Special 
 // Edition (2000), p. 457.
+// TODO: There's an errata on the book for this method, check change to better:
+// vector tmp = v; // copy of v with default capacity
+// v.swap(tmp); // now v has the default capacity
 
+///////////////////////////////////////////////////////////////////////////////
 template<class T,class A>
 inline void Destroy( vec<T,A>& v )
 { vec<T,A> empty; swap(v,empty); }

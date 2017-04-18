@@ -33,6 +33,15 @@
 #include "util/OutputLog.h"
 #include <omp.h>
 
+
+ // Dummy defines, this should come from CMakeLists.txt
+#ifndef GIT_COMMIT_HASH
+#define GIT_COMMIT_HASH "dummy"
+#endif
+#ifndef GIT_BRANCH
+#define GIT_BRANCH "dummy"
+#endif
+
 //TODO: stupid globals!
 
 int MAX_CELL_PATHS = 50;
@@ -406,6 +415,8 @@ void step_8(HyperBasevector &hbv,
 
 int main(const int argc, const char * argv[]) {
 
+
+	std::cout << "Version: " << GIT_BRANCH << "  " << GIT_COMMIT_HASH << std::endl;
     std::string out_prefix;
     std::string read_files;
     std::string out_dir;
