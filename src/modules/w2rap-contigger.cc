@@ -114,16 +114,6 @@ void step_4DV(HyperBasevector &hbv,
     FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 }
 
-void step_4(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            unsigned int large_K,
-            std::string out_dir){
-    step_4DV(hbv,hbvinv,paths,large_K,out_dir);
-}
-
-
-
 void step_4EXP(HyperBasevector &hbv,
                vec<int> &hbvinv,
                ReadPathVec &paths,
@@ -163,6 +153,14 @@ void step_4EXP(HyperBasevector &hbv,
     hbv.Involution(hbvinv);
     FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 
+}
+
+void step_4(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            unsigned int large_K,
+            std::string out_dir){
+    step_4DV(hbv,hbvinv,paths,large_K,out_dir);
 }
 
 void step_5(HyperBasevector &hbv,
