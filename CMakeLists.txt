@@ -5,8 +5,7 @@ set(CMAKE_MODULE_PATH
         ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
 
 ## Compiler flags
-#SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
-SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -Ofast -DNDEBUG -lz")
+SET(CMAKE_CXX_FLAGS "-g -fopenmp -fpermissive -w -Wno-deprecated -std=c++11 -DNDEBUG -lz")
 
 #SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
 add_definitions(${CMAKE_CXX_FLAGS})
@@ -407,8 +406,8 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
 add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:hb_base_libs>)
 
-add_executable(runthis src/test_code/runthis.cpp src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/pacbio/PathFinder_pb.cc
-        src/kmers/kmatch/KMatch.cc src/pacbio/LongRead_pather.cpp $<TARGET_OBJECTS:hb_base_libs> src/TenX/TenX_pather.cpp src/TenX/TenX_pather.h src/TenX/PathFinder_tx.cc
+add_executable(runthis src/test_code/runthis.cpp $<TARGET_OBJECTS:hb_base_libs> src/system/gzstream/gzstream.C src/paths/long/large/ExtractReads.cc src/paths/PathFinder.cc src/pacbio/PathFinder_pb.cc
+        src/kmers/kmatch/KMatch.cc src/pacbio/LongRead_pather.cpp src/TenX/TenX_pather.cpp src/TenX/TenX_pather.h src/TenX/PathFinder_tx.cc
         src/paths/local/LocalPather.cpp)
 
 if(TBB_FOUND)

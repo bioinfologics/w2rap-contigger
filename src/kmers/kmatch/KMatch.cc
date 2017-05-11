@@ -69,8 +69,6 @@ void KMatch::Hbv2Map(const HyperBasevector &hbv){
    * - Kmer sequence
    * */
 
-  //  std::vector<kmer_position_t> karray;
-
   std::unordered_map<uint64_t, std::vector<edgeKmerPosition>> edgeDict;
   uint32_t seq_index=0;
 

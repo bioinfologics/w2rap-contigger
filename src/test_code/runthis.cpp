@@ -8,6 +8,8 @@
 
 #include "pacbio/LongRead_pather.h"
 
+#include <paths/long/large/Simplify.h>
+
 #include "TenX/TenX_pather.h"
 #include "TenX/PathFinder_tx.h"
 
@@ -73,21 +75,63 @@ int main(int argc, char *argv[]){
 //  txp.solve_region_using_TenX(5000, true);
 //  /* ----- TenXpather part ----- */
 
-
-
   auto reads = dataMag.mag["PB1"]->bases;
 
   LongReadPather pbp(reads, hbv, inv, 5, edges, pathsr, paths_inv);
+  std::cout << Date() << ": Object created" << std::endl;
+
+  std::cout << Date() << ": Creating hbv map" << std::endl;
   pbp.Hbv2Map(hbv);
+  std::cout << Date() << ": Hbv2Map ready ->("<< pbp.edgeMap.size() << " keys)" << std::endl;
+
+  std::cout << Date() << ": Mapping reads" << std::endl;
   pbp.mapReads();
+  std::cout << Date() << ": Reads mapped." << std::endl;
 
 
-  pbp.solve_using_long_read(5000, true);
+  pbp.solve_using_long_read(1000, true);
 
+  std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
+//  RemoveUnneededVertices2(hbv,inv,pathsr);
+//  Cleanup(hbv, inv, pathsr );
 
+  std::string out_dir = "/Users/ggarcia/Documents/ecoli_test_dataset/test";
+  auto bases = dataMag.mag["PE1"]->bases;
+  auto quals = dataMag.mag["PE1"]->quals;
+
+  //==Simplify
+  int MAX_SUPP_DEL = 0;
+  bool TAMP_EARLY_MIN = True;
+  int MIN_RATIO2 = 8;
+  int MAX_DEL2 = 200;
+  bool ANALYZE_BRANCHES_VERBOSE2 = False;
+  const String TRACE_SEQ = "";
+  bool DEGLOOP = True;
+  bool EXT_FINAL = True;
+  int EXT_FINAL_MODE = 1;
+  bool PULL_APART_VERBOSE = False;
+  //const String PULL_APART_TRACE="{}";
+  const vec<int> PULL_APART_TRACE;
+  int DEGLOOP_MODE = 1;
+  float DEGLOOP_MIN_DIST = 2.5;
+  bool IMPROVE_PATHS = True;
+  bool IMPROVE_PATHS_LARGE = False;
+  bool FINAL_TINY = True;
+  bool UNWIND3 = True;
+
+  bool run_pathfinder = true;
+  bool dump_pf = true;
+
+  Simplify(out_dir, hbv, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
+         ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
+         PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
+         IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
+
+  RemoveUnneededVertices2(hbv,inv,pathsr);
+  Cleanup(hbv, inv, pathsr );
+  
 //  pathsr = pbp.mapReads();
 //  VecULongVec invPaths;
-//
 //
 //  invert(pathsr, invPaths, hbv.EdgeObjectCount());
 
@@ -99,6 +143,6 @@ int main(int argc, char *argv[]){
 //  RemoveUnneededVertices2(hbv, inv, pathsr);
 //  Cleanup(hbv, inv, pathsr);
 
-  BinaryWriter::writeFile("/Users/ggarcia/Documents/ecoli_test_dataset/k_200/pf_after_loops.hbv", hbv);
-  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/ecoli_test_dataset/k_200/pf_after_loops.paths");
+  BinaryWriter::writeFile("/Users/ggarcia/Documents/ecoli_test_dataset/test/pf_after_loops.hbv", hbv);
+  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/ecoli_test_dataset/test/pf_after_loops.paths");
 }

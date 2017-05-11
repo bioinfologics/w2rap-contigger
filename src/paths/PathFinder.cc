@@ -815,6 +815,8 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
 
     //creates a copy of each node but the first and the last, connects only linearly to the previous copy,
     //std::cout<<std::endl<<"Separating path"<<std::endl;
+
+    // Inserts all edges and involutions in the sets (TODO: para que hace esto??)
     std::set<uint64_t> edges_fw;
     std::set<uint64_t> edges_rev;
     for (auto e:p){//TODO: this is far too astringent...
@@ -824,10 +826,13 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
         if (edges_fw.count(mInv[e]) ||edges_rev.count(e) ){ //std::cout<<"PALINDROME edge detected, aborting!!!!"<<std::endl;
             return {};}
     }
-    //create two new vertices (for the FW and BW path)
-    uint64_t current_vertex_fw=mHBV.N(),current_vertex_rev=mHBV.N()+1;
+
+    //create two new vertices (for the FW and BW path) and adds the vx to the graph
+    uint64_t current_vertex_fw=mHBV.N();
+    uint64_t current_vertex_rev=mHBV.N()+1;
     mHBV.AddVertices(2);
-    //migrate connections (dangerous!!!)
+
+    //migrate connections to the new vxs both in the fw and the involution edges (dangerous!!!)
     if (verbose_separation) std::cout<<"Migrating edge "<<p[0]<<" To node old: "<<mToRight[p[0]]<<" new: "<<current_vertex_fw<<std::endl;
     mHBV.GiveEdgeNewToVx(p[0],mToRight[p[0]],current_vertex_fw);
     if (verbose_separation) std::cout<<"Migrating edge "<<mInv[p[0]]<<" From node old: "<<mToLeft[mInv[p[0]]]<<" new: "<<current_vertex_rev<<std::endl;
@@ -836,7 +841,10 @@ std::map<uint64_t,std::vector<uint64_t>> PathFinder::separate_path(std::vector<u
 
     for (auto ei=1;ei<p.size()-1;++ei){
         //add a new vertex for each of FW and BW paths
-        uint64_t prev_vertex_fw=current_vertex_fw,prev_vertex_rev=current_vertex_rev;
+        // The vertexes are stored in the prev vx spot now
+        uint64_t prev_vertex_fw=current_vertex_fw;
+        uint64_t prev_vertex_rev=current_vertex_rev;
+
         //create two new vertices (for the FW and BW path)
         current_vertex_fw=mHBV.N();
         current_vertex_rev=mHBV.N()+1;
@@ -885,14 +893,14 @@ void PathFinder::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edge
         for (auto i=0;i<p.size();++i){
             if (edgemap.count(p[i])) {
                 possible_new_edges.push_back(edgemap[p[i]]);
-                if (not translated) translated=true;
-                if (possible_new_edges.back().size()>1) ambiguous=true;
+                if (not translated) translated=true; // Que es un eje trasladado
+                if (possible_new_edges.back().size()>1) ambiguous=true; // El eje en el que estaba mapeado se convirtio en mas de un eje en el resultado
             }
             else possible_new_edges.push_back({p[i]});
         }
         if (translated){
             if (not ambiguous){ //just straigh forward translation
-                for (auto i=0;i<p.size();++i) p[i]=possible_new_edges[i][0];
+                for (auto i=0;i<p.size();++i) p[i]=possible_new_edges[i][0]; // Si no es ambiguo cambia el nombre del eje en el path
             }
             else {
                 //ok, this is the complicated case, we first generate all possible combinations
@@ -982,7 +990,7 @@ bool PathFinder::find_all_pair_conecting_paths(uint64_t edge_name , std::vector<
 
     return true;
 
-  } else if (find(outs.begin(), outs.end(), edge_name) != outs.end()) {
+  } else if (find(outs.begin(), outs.end(), edge_name) != outs.end()) { // If leaving region from other out edge return false
     return false;
   }
 

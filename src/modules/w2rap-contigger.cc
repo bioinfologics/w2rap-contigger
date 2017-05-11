@@ -577,12 +577,30 @@ int main(const int argc, const char * argv[]) {
 
 
         //[GONZA]: append the pacbio paths to this vector as a first test
-//        auto pb_bases = dataMag.mag["PB1"]->bases;
+        auto pb_bases = dataMag.mag["PB1"]->bases;
+        auto edges = hbvr.Edges();
 
-//        SimplifyWpb(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
-//                 ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
-//                 PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-//                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf, pb_bases);
+        LongReadPather pbp(pb_bases, hbvr, inv, 5, edges, pathsr, paths_inv);
+        std::cout << Date() << ": Object created" << std::endl;
+
+        std::cout << Date() << ": Creating hbv map" << std::endl;
+        pbp.Hbv2Map(hbvr);
+        std::cout << Date() << ": Hbv2Map ready ->("<< pbp.edgeMap.size() << " keys)" << std::endl;
+
+        std::cout << Date() << ": Mapping reads" << std::endl;
+        pbp.mapReads();
+        std::cout << Date() << ": Reads mapped." << std::endl;
+
+        pbp.solve_using_long_read(1000, true);
+
+        std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
+        RemoveUnneededVertices2(hbvr,inv,pathsr);
+        Cleanup(hbvr, inv, pathsr );
+
+        Simplify(out_dir, hbvr, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
+                 ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
+                 PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
+                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
 
 //        // construct tenx dict here
 //        auto tx_reads = dataMag.mag["TEX"]->rReads;
@@ -682,44 +700,44 @@ int main(const int argc, const char * argv[]) {
         bool SCAFFOLD_VERBOSE = False;
         bool GAP_CLEANUP = True;
 
-        // construct tenx dict here
-        auto tx_reads = dataMag.mag["TEX"]->rReads;
-        std::cout << "Reads already loaded..." << std::endl;
-        std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
+//        // construct tenx dict here
+//        auto tx_reads = dataMag.mag["TEX"]->rReads;
+//        std::cout << "Reads already loaded..." << std::endl;
+//        std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
+//
+////        TenXPather txp (&tx_reads, &hbvr);
+//        // TODO: check this bit
+//        auto edges = hbvr.Edges();
 
-//        TenXPather txp (&tx_reads, &hbvr);
-        // TODO: check this bit
-        auto edges = hbvr.Edges();
-
-        // TenX Test
-        auto tenx_reads = dataMag.mag["TEX"]->rReads;
-        std::cout << "Reads already loaded..." << std::endl;
-        std::cout << tenx_reads.size() << " Reads in the vector" << std::endl;
-
-        for (auto pass=0; pass<=2; ++pass){
-            // Create the paths and invert them
-            std::cout << "Starting tenxPather..." << std::endl;
-            TenXPather txp (tenx_reads, hbvr, inv, 5, edges, pathsr, paths_inv);
-
-            std::cout<< Date() << " Map creation." << std::endl;
-            txp.createEmptyMap(&hbvr);
-
-            std::cout<< Date() << " Map filling with reads..." << std::endl;
-            txp.reads2kmerTagMap();
-
-            // Pathfinder
-            std::cout<< Date() << " Starting pathfinder..." << std::endl;
-            std::cout<< Date() << " done pathfinder..." << std::endl;
-            txp.solve_region_using_TenX(5000, true);
-
-            RemoveUnneededVertices2(hbvr, inv, pathsr);
-            Cleanup(hbvr, inv, pathsr);
-            // so all the above numbers add up, and the edge which breaks it is the first new edge
-            // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
-            inv.clear();
-            hbvr.Involution(inv);
-            TestInvolution(hbvr, inv);
-        }
+//        // TenX Test
+//        auto tenx_reads = dataMag.mag["TEX"]->rReads;
+//        std::cout << "Reads already loaded..." << std::endl;
+//        std::cout << tenx_reads.size() << " Reads in the vector" << std::endl;
+//
+//        for (auto pass=0; pass<=2; ++pass){
+//            // Create the paths and invert them
+//            std::cout << "Starting tenxPather..." << std::endl;
+//            TenXPather txp (tenx_reads, hbvr, inv, 5, edges, pathsr, paths_inv);
+//
+//            std::cout<< Date() << " Map creation." << std::endl;
+//            txp.createEmptyMap(&hbvr);
+//
+//            std::cout<< Date() << " Map filling with reads..." << std::endl;
+//            txp.reads2kmerTagMap();
+//
+//            // Pathfinder
+//            std::cout<< Date() << " Starting pathfinder..." << std::endl;
+//            std::cout<< Date() << " done pathfinder..." << std::endl;
+//            txp.solve_region_using_TenX(5000, true);
+//
+//            RemoveUnneededVertices2(hbvr, inv, pathsr);
+//            Cleanup(hbvr, inv, pathsr);
+//            // so all the above numbers add up, and the edge which breaks it is the first new edge
+//            // the first mismatch between the string and the rc is at position 27, which is smaller than small k, so i'm completely confused
+//            inv.clear();
+//            hbvr.Involution(inv);
+//            TestInvolution(hbvr, inv);
+//        }
 
         MakeGaps(hbvr, inv, pathsr, paths_inv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE,
                  GAP_CLEANUP);

@@ -15,52 +15,37 @@ std::vector<linkReg> LongReadPather::getReadsLinks(std::string read, bool output
    * each vector<linkReg> stores the matched kmers between the read and the edges (lookupRead). One kmer can be matched with many edges at this point
    * each vector of linkRegs are all the matches for the read in the index position (index in seqVector = index in links)
    * */
-  //
 
   // Get the reads
   std::vector<linkReg> links;
 
-//  std::cout<< Date() << ": Size of the dictionary: " << edgeMap.size() << std::endl;
-
-//  std::cout<< Date() << ": loading edges and involution." << std::endl;
-  // TODO: Is this used for something here?? (edges and involutions) clean
-//  const auto& edges = mHBV.Edges();
-//  std::cout << "edges loaded" << std::endl;
-//   TODO: Not recompute the involution, get it from the args when i create the long pather
-//  vec<int> inv;
-//  mHBV.Involution(inv);
-
-//  std::cout<< Date() << ": processing edges" << std::endl;
-//  links.resize(seqVector.size());
-//#pragma omp parallel for
-//  for (auto v=0; v<seqVector.size(); ++v){
-//    std::string read = seqVector[v].ToString();
   auto read_matches = lookupRead(read); // TODO: edgeKmerthing and linkReg are the same, pick one, keep one
   if (read_matches.size()>0){
     for ( const auto& match: read_matches){
-//    for (size_t a=0; a<g.size(); ++a){
       linkReg temp_link;
-//      temp_link.read_id = v;
       temp_link.read_size = read.size();
       temp_link.read_offset = match.read_offset;
       temp_link.edge_id = match.edge_id;
       temp_link.edge_offset = match.edge_offset;
       temp_link.inv_edge_id = mInv[match.edge_id];
       temp_link.kmer = match.kmer;
-//#pragma omp critical
       links.push_back(temp_link);
       }
     }
-//  }
   return links;
 }
 
 std::vector<linkReg> LongReadPather::readOffsetFilter(const vector<linkReg> &data) const {
-  /* Count the number of edges_id that map to each kmer in the read. Filter out the edges that map to a position
-   * that has more than one edge mapped to it.
+  /* Filter out the links that map to a position in the read the is repetitive, that is has more than one edge mapped
+   * to it.
+   *
+   * Thi goes link by link and if one position has more than one link the position is discarded
+   * TODO: esto elimina posiciones si la lectura va y vuelve (Consenso circular!!), agregar que chequee que cuando hay mas de un link en una posicion se fije si pertenecen a diferentes edges !!!
+   *
    * Input is a vector with all the links for a specific read. output is a vector of the same type but filtered.
    * */
 
+//  std::cout << Date() << ": Links Before the filter" << std::endl;
   std::vector<linkReg> links;
   std::unordered_map<int, unsigned int> pos_count;
 
@@ -68,20 +53,35 @@ std::vector<linkReg> LongReadPather::readOffsetFilter(const vector<linkReg> &dat
       pos_count[link.read_offset] += 1;
   }
 
-  // Solo seleccionados lo que estan en offsets de la lectura con un solo edge mapeado
+  // Only keep the matches that map uniquely to one edge
   for (const auto& link: data){
       if (pos_count[link.read_offset] == 1){
         links.push_back(link);
       }
   }
+//  std::cout << Date() << ": Links remaining after the filter" << std::endl;
   return links;
 }
 
-std::vector<linkReg> LongReadPather::minCoverageFilter(const vector<linkReg> &data) const {
+std::vector<linkReg> LongReadPather::minCoverageFilter(const vector<linkReg> &data, const int threshold = 10) const {
   /*
+   * TODO: this is not going to work in the current format (read by read). This needs to be changed to a matchlength filter
+   * TODO: integrate this filter with the match continuiti filter as well.
+   * TODO: move the min coverage part to the pathfinder
    * Filter matches by length of the match.
    * */
 
+  //  typedef struct {
+  //      int read_id;
+  //      int read_size;
+  //      int edge_id;
+  //      int inv_edge_id;
+  //      int edge_offset;
+  //      int read_offset;
+  //      int kmer;
+  //  } linkReg;
+
+//  std::cout << Date() << ": Before match length filter (" << data.size()<< ")" << ", threshold value: " << threshold << std::endl;
 
   std::unordered_map<uint64_t , int> index_map;
   for (const auto& link: data){
@@ -90,10 +90,7 @@ std::vector<linkReg> LongReadPather::minCoverageFilter(const vector<linkReg> &da
     index_map[key] += 1;
   }
 
-  // Count the links by read and edge, if the links are more than the treshold
-  int threshold = 10;
-
-  // Filtrar los que no pegan mas del limite
+  // Count the links by read and edge, keep the links
   std::vector<linkReg> good_links;
   for (const auto &link: data){
     const auto key = ((link.read_id<<32)||link.edge_id);
@@ -102,6 +99,7 @@ std::vector<linkReg> LongReadPather::minCoverageFilter(const vector<linkReg> &da
     }
   }
 
+//  std::cout << Date() << ": After match length filter (" << good_links.size()<< ")" << std::endl;
   //devolver la lista de filtrados
   return good_links;
 }
@@ -121,6 +119,12 @@ void LongReadPather::mapReads(){
   ReadPath longread_paths_temp[seqVector.size()];
   ReadPathVec longread_paths;
 
+  // True if you want to output all the mapped reads to a file
+
+  std::ofstream longpath_file;
+  longpath_file.open("/Users/ggarcia/Documents/ecoli_test_dataset/longread_paths.txt");
+
+
   // For each read
   std::cout<<Date()<<": pathing "<<seqVector.size()<<" Long reads..."<<std::endl;
   std::atomic_uint_fast64_t pr(0),ppr(0);
@@ -134,9 +138,9 @@ void LongReadPather::mapReads(){
     if (read_links.size() == 0){
       continue;
     }
+
     // filter the shared roffsets
     auto offset_filter = readOffsetFilter(read_links);
-//    std::cout << "Links remaining: " << offset_filter.size() << std::endl;
 
     if (offset_filter.size() == 0){
       continue;
@@ -144,7 +148,6 @@ void LongReadPather::mapReads(){
 
     // filter the min match length
     auto minCovFilter = minCoverageFilter(offset_filter);
-//    std::cout << "Links remaining: " << minCovFilter.size() << std::endl;
 
     if (minCovFilter.size() == 0){
       continue;
@@ -152,10 +155,11 @@ void LongReadPather::mapReads(){
 
     // TODO: Falta el filtro de largo de coverage (implementar aca)
 
-    // sort the vector
+    // sort the vector by read offset
     std::sort(minCovFilter.begin(), minCovFilter.end(), LongReadPather::less_than());
 
     // Create vector of unique edge_ids
+    // TODO: this part its redundant with the previous readOffsetFilter (shouldent filter anything)??
     std::vector<int> presentes;
     std::vector<linkReg> s_edges;
     for (auto a: minCovFilter){
@@ -176,11 +180,23 @@ void LongReadPather::mapReads(){
       }
 //      longread_paths_temp[ppr++]=ReadPath(poffset, temp_path);
 //      longReadsPaths[ppr++]=temp_path;
+      // Each path is the threaded edges using a read accordin to the filters above
       longReadsPaths.push_back(temp_path);
+
+      // Write path to file
+      longpath_file << ">" << r << " ";
+      for (const auto & edge: temp_path) {
+          longpath_file << edge << ",";
+      }
+      longpath_file << std::endl;
+      longpath_file << seqVector[r].ToString() << std::endl;
     }
     ++pr;
   }
   std::cout<<Date()<<": "<<pr<<" reads processed, "<<ppr<<" pathed"<<std::endl;
+
+  longpath_file.close();
+
 //  longread_paths.reserve(ppr);
 //  for (auto i=0;i<ppr;++i) longread_paths.push_back(longread_paths_temp[i]);
 
@@ -233,6 +249,8 @@ void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool ve
           std::vector<std::vector<uint64_t>> first_full_paths;
           bool reversed = false;
 
+          // For all combinations of ins and outs the number of paths sharing each combination it's added to the index
+          // The index count it's the number of reads bridging the edges (TODO: check this 100% in the filling of longReadsPaths)
           for (auto in_i = 0; in_i < f[0].size(); ++in_i) {
             auto in_e = f[0][in_i];
             for (auto out_i = 0; out_i < f[1].size(); ++out_i) {
@@ -253,18 +271,19 @@ void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool ve
                                    out_p.begin(), out_p.end(),
                                    std::inserter(intersection, intersection.begin()));
 
+              // Builds a map of the ends of the region and the amount of paths shared
               int threshold = 2;
-              if (intersection.size() > threshold) {
+              if (intersection.size() >= threshold) {
                 pid = std::to_string(in_e) + "-" + std::to_string(out_e);
                 shared_paths[pid] += intersection.size();
-                std::cout << "voting: " << pid << " " << shared_paths[pid] << std::endl;
+                std::cout << "voting: " << pid << ", adding:  " << intersection.size() << ", accumulated: " << shared_paths[pid] << std::endl;
                 out_used[out_i]++;
                 in_used[in_i]++;
               }
               // TODO: add the inverse resolution here or the canonical strategy (WARNING!!!)
             }
           }
-            if (shared_paths.size() > 0) {
+          if (shared_paths.size() > 0) {
 
             // Here all combinations are counted, now i need to get the best configuration between nodes
             auto in_frontiers = f[0];
@@ -282,6 +301,8 @@ void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool ve
 //              std::cout << "-----------------------------Testing permutaiton ------------------" << std::endl;
               for (auto pi = 0; pi < in_frontiers.size(); ++pi) {
                 std::string index = std::to_string(in_frontiers[pi]) + "-" + std::to_string(out_frontiers[pi]);
+
+                // The combination exists in the index map with more than threshold paths
                 if (shared_paths.find(index) != shared_paths.end()) {
                   // Mark the pair as seen in this iteration
 //                  std::cout << "Index: " << index << " " << shared_paths[index] << std::endl;
@@ -357,8 +378,10 @@ void LongReadPather::solve_using_long_read(uint64_t large_frontier_size, bool ve
     auto oen=separate_path(p, verbose_separation);
     if (oen.size()>0) {
       for (auto et:oen){
+        // If the old edge is not in the old_edges_to_new map inserts the edge witha empty array
         if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
         for (auto ne:et.second) old_edges_to_new[et.first].push_back(ne);
+        migrate_readpaths(old_edges_to_new);
       }
       sep++;
     }

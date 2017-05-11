@@ -414,8 +414,7 @@ void AlignToGenomePerf( const HyperBasevector& hb, const vecbasevector& genome,
      LogTime( clock, "aligning to genome perf" );    }
 
 void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
-     ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals )
-{
+     ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals ) {
      // Create indices.
 
      double clock = WallClockTime( );
@@ -430,9 +429,10 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
 
      int improveds = 0;
      #pragma omp parallel for schedule(dynamic, 1000)
-     for ( int64_t id = 0; id < (int64_t) paths.size( ); id++ )
-     {    ReadPath& p = paths[id];
-          // Only consider full placements.
+     for ( int64_t id = 0; id < (int64_t) paths.size( ); id++ ) {
+          ReadPath& p = paths[id];
+          // Only consider full placements, full placement is both ends of the read land inside an edge
+          // Does not need to be the same edge, mena s there are no hanging ends of the read.
 
           if ( p.size( ) == 0 ) continue;
           if ( p.getOffset( ) < 0 ) continue;
@@ -444,44 +444,49 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
           if ( s.back( ) + n > hb.EdgeLengthBases( p.back( ) ) ) continue;
 
           // Find possible starts for the read.
-
           vec< std::pair<int,int> > starts = { std::make_pair( p[0], p.getOffset( ) ) };
           std::set< std::pair<int,int> > startsx;
           startsx.insert( std::make_pair( p[0], p.getOffset( ) ) );
           vec<int> depth = {0};
-          for ( int i = 0; i < starts.isize( ); i++ )
-          {    if ( depth[i] == max_depth ) continue;
-               int e = starts[i].first, start = starts[i].second;
-               int v = to_left[e], w = to_right[e];
-               for ( int j = 0; j < hb.To(v).isize( ); j++ )
-               {    int ex = hb.EdgeObjectIndexByIndexTo( v, j );
-                    int startx = start + hb.EdgeLengthKmers(ex);
-                    if ( !Member( startsx, std::make_pair( ex, startx ) ) )
-                    {    starts.push( ex, startx );
-                         startsx.insert( std::make_pair( ex, startx ) );
-                         depth.push_back( depth[i] + 1 );    }    }
-               for ( int j = 0; j < hb.From(w).isize( ); j++ )
-               {    int ex = hb.EdgeObjectIndexByIndexFrom( w, j );
-                    int startx = start - hb.EdgeLengthKmers(e);
-                    if ( !Member( startsx, std::make_pair( ex, startx ) ) )
-                    {    starts.push( ex, startx );
-                         startsx.insert( std::make_pair( ex, startx ) );
-                         depth.push_back( depth[i] + 1 );    }    }    }
+         for (int i = 0; i < starts.isize(); i++) {
+             if (depth[i] == max_depth) continue;
+             int e = starts[i].first;
+             int start = starts[i].second;
+             int v = to_left[e];
+             int w = to_right[e];
+             for (int j = 0; j < hb.To(v).isize(); j++) {
+                 int ex = hb.EdgeObjectIndexByIndexTo(v, j);
+                 int startx = start + hb.EdgeLengthKmers(ex);
+                 if (!Member(startsx, std::make_pair(ex, startx))) {
+                     starts.push(ex, startx);
+                     startsx.insert(std::make_pair(ex, startx));
+                     depth.push_back(depth[i] + 1);
+                 }
+             }
+             for (int j = 0; j < hb.From(w).isize(); j++) {
+                 int ex = hb.EdgeObjectIndexByIndexFrom(w, j);
+                 int startx = start - hb.EdgeLengthKmers(e);
+                 if (!Member(startsx, std::make_pair(ex, startx))) {
+                     starts.push(ex, startx);
+                     startsx.insert(std::make_pair(ex, startx));
+                     depth.push_back(depth[i] + 1);
+                 }
+             }
+         }
 
-          // Create initial paths.
-
+          // Create initial paths. Just the starts
           vec<ReadPath> ps;
           for ( int i = 0; i < starts.isize( ); i++ )
           {    if ( starts[i].second < 0 
                     || starts[i].second >= hb.EdgeLengthBases( starts[i].first ) )
                {    continue;    }
+               // Only keeps the edges that are stars -> offset >0 and offset is not hanging from the end of that edge
                ReadPath q;
                q.push_back( starts[i].first );
                q.setOffset( starts[i].second );
                ps.push_back(q);    }
 
-          // Extend the paths.
-
+          // Extend the paths. this will push and pop paths to the ps list until all paths are extended
           vec<Bool> to_delete( ps.size( ), False );
           for ( int i = 0; i < ps.isize( ); i++ )
           {    if ( i >= max_paths ) break;
@@ -502,7 +507,6 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
           EraseIf( ps, to_delete );
 
           // Score the paths.
-
           const int K = hb.K( );
           vec< std::pair<int,int> > qsum( ps.size( ), std::make_pair(0,0) );
           const basevector& r = bases[id];
@@ -514,7 +518,8 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
                int start = q.getOffset( );
                basevector b = hb.EdgeObject( q[0] );
                
-               // XXX: Similar opt as in Cleanup (?) 
+               // XXX: Similar opt as in Cleanup (?)
+               // This is creatig the paths (bases paths in b)
                for ( int l = 1; l < (int) q.size( ); l++ )
                {    b.resize( b.isize( ) - (K-1) );
                     b = Cat( b, hb.EdgeObject( q[l] ) );    }
@@ -529,9 +534,12 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
                // Put all b togheter in b (using cat??)
                for ( int l = 1; l < (int) q.size( ); l++ )
                {  b.append(hb.EdgeObject( q[l] )); }
-               */                       
+               */
+               // CHecking how many bases match of the path vs the read
                for ( int m = 0; m < r.isize( ); m++ )
                     if ( r[m] != b[start+m] ) qsum[i].first += qv[m];    }
+
+
           int qorig = qsum[0].first;
           SortSync( qsum, ps );
           for ( int i = 0; i < ps.isize( ); i++ )
@@ -542,6 +550,8 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
                {    ok = True;    }    }
           if (ok) continue;
 
+          // GONZA this is because the empty paths fix (this was the reason it was crashing) (Chequear si estos paths no son los que generan missasemblies !?)
+          if ( qsum.size() == 0 ) continue;
           if ( qsum[0].first > max_qsum ) continue;
 
           #pragma omp critical
@@ -574,7 +584,7 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
      std::cout << improveds << " paths improved by rerouting" << std::endl;
      LogTime( clock, "rerouting paths" );
      // std::cout << "\n" << Date( ) << ": done" << std::endl;
-          }
+ }
 
 //    Tamp down hanging ends.
 //

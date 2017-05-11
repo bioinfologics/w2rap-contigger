@@ -22,7 +22,7 @@
 // Pabcio modified pathfinder pathfinder
 #include "pacbio/PathFinder_pb.h"
 
-void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
+void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,
               const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2,
               const int MAX_DEL2,
@@ -31,12 +31,17 @@ void SimplifyWpb(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const Bool PULL_APART_VERBOSE, const vec<int> &PULL_APART_TRACE,
               const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
               const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
-              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, vecbvec& pb_bases) {
+              const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files) {
+
     // Improve read placements and delete funky pairs.
     std::cout << "Edge count: " << hb.EdgeObjectCount() << " Path count:" << paths.size() << std::endl;
     std::cout << "Simplify: rerouting paths" << std::endl;
     ReroutePaths(hb, inv, paths, bases, quals);
+    std::cout << "Simplify: Done rerouting paths!!" << std::endl;
+
+    std::cout << "Simplify: Deleting funky paths!!" << std::endl;
     DeleteFunkyPathPairs(hb, inv, bases, paths, False);
+    std::cout << "Simplify: Done deleting funky paths!!" << std::endl;
 
     // Remove unsupported edges in certain situations.
     std::cout << "Edge count: " << hb.EdgeObjectCount() << " Path count:" << paths.size() << std::endl;

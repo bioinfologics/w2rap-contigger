@@ -19,7 +19,7 @@
 #include "pacbio/LongRead_pather.h"
 
 
-void SimplifyWpb( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
+void Simplify( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
      ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals,
      const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2, 
      const int MAX_DEL2,
@@ -28,6 +28,6 @@ void SimplifyWpb( const String& fin_dir, HyperBasevector& hb, vec<int>& inv,
      const Bool PULL_APART_VERBOSE, const vec<int>& PULL_APART_TRACE,
      const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST, 
      const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
-     const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files, vecbvec& pb_bases );
+     const Bool FINAL_TINY, const Bool UNWIND3, const bool RUN_PATHFINDER, const bool dump_pf_files );
 
 #endif

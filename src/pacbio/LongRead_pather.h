@@ -48,7 +48,8 @@ private:
 //    std::vector<std::vector<linkReg>> getReadsLinks(bool output_to_file=true);
     std::vector<linkReg> getReadsLinks(std::string read, bool output_to_file=true);
     std::vector<linkReg> readOffsetFilter(const vector<linkReg> &data) const;
-    std::vector<linkReg> minCoverageFilter(const vector<linkReg> &data) const;
+//    std::vector<linkReg> minCoverageFilter(const vector<linkReg> &data) const;
+    std::vector<linkReg> minCoverageFilter(const vector<linkReg> &data, const int threshold = 10) const;
 
     // Build the map to get the padths ids from the edges
     void buildEdgeToPathMap();
