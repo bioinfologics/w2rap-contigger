@@ -73,6 +73,7 @@ int main(int argc, char *argv[]){
 //  std::cout<< Date() << " Starting pathfinder..." << std::endl;
 //  std::cout<< Date() << " done pathfinder..." << std::endl;
 //  txp.solve_region_using_TenX(5000, true);
+
 //  /* ----- TenXpather part ----- */
 
   auto reads = dataMag.mag["PB1"]->bases;
@@ -92,8 +93,8 @@ int main(int argc, char *argv[]){
   pbp.solve_using_long_read(1000, true);
 
   std::cout<<"Removing Unneeded Vertices & Cleanup"<<std::endl;
-//  RemoveUnneededVertices2(hbv,inv,pathsr);
-//  Cleanup(hbv, inv, pathsr );
+  RemoveUnneededVertices2(hbv,inv,pathsr);
+  Cleanup(hbv, inv, pathsr );
 
   std::string out_dir = "/Users/ggarcia/Documents/ecoli_test_dataset/test";
   auto bases = dataMag.mag["PE1"]->bases;
@@ -123,13 +124,12 @@ int main(int argc, char *argv[]){
   bool dump_pf = true;
 
   Simplify(out_dir, hbv, inv, pathsr, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
-         ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
-         PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-         IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
+           ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
+           PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
+           IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
 
-  RemoveUnneededVertices2(hbv,inv,pathsr);
-  Cleanup(hbv, inv, pathsr );
-  
+
+
 //  pathsr = pbp.mapReads();
 //  VecULongVec invPaths;
 //
@@ -143,6 +143,6 @@ int main(int argc, char *argv[]){
 //  RemoveUnneededVertices2(hbv, inv, pathsr);
 //  Cleanup(hbv, inv, pathsr);
 
-  BinaryWriter::writeFile("/Users/ggarcia/Documents/ecoli_test_dataset/test/pf_after_loops.hbv", hbv);
-  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/ecoli_test_dataset/test/pf_after_loops.paths");
+//  BinaryWriter::writeFile("/Users/ggarcia/Documents/arabidopsis_testrun/pf_after_loops.hbv", hbv);
+//  WriteReadPathVec(pathsr, "/Users/ggarcia/Documents/arabidopsis_testrun/pf_after_loops.paths");
 }
