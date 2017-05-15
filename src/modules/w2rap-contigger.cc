@@ -575,10 +575,39 @@ int main(const int argc, const char * argv[]) {
         bool FINAL_TINY = True;
         bool UNWIND3 = True;
 
+         /* Ten X stuff */
+        // construct tenx dict here
+
+        auto reads = dataMag.mag["TEX"]->rReads;
+        auto edges = hbvr.Edges();
+        std::cout << "Reads already loaded..." << std::endl;
+        std::cout << reads.size() << " Reads in the vector" << std::endl;
+
+
+        // Create the paths and invert them
+        std::cout << "Starting tenxPather..." << std::endl;
+        TenXPather txp (reads, hbvr, inv, 5, edges, pathsr, paths_inv);
+
+        std::cout<< Date() << " Map creation." << std::endl;
+        txp.createEmptyMap(&hbvr);
+
+        std::cout<< Date() << " Map filling with reads..." << std::endl;
+        txp.reads2kmerTagMap();
+
+        std::cout<< Date() << " Map filling with reads done..." << std::endl;
+        txp.kmerTagDensity();
+
+        // Pathfinder
+        std::cout<< Date() << " Starting pathfinder..." << std::endl;
+        std::cout<< Date() << " done pathfinder..." << std::endl;
+        txp.solve_region_using_TenX(1000, true);
+
+        RemoveUnneededVertices2(hbvr,inv,pathsr);
+        Cleanup(hbvr, inv, pathsr );
 
         //[GONZA]: append the pacbio paths to this vector as a first test
         auto pb_bases = dataMag.mag["PB1"]->bases;
-        auto edges = hbvr.Edges();
+        edges = hbvr.Edges();
 
         LongReadPather pbp(pb_bases, hbvr, inv, 5, edges, pathsr, paths_inv);
         std::cout << Date() << ": Object created" << std::endl;
@@ -601,25 +630,6 @@ int main(const int argc, const char * argv[]) {
                  ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
                  PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
                  IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, run_pathfinder, dump_pf);
-
-//        // construct tenx dict here
-//        auto tx_reads = dataMag.mag["TEX"]->rReads;
-//        std::cout << "Reads already loaded..." << std::endl;
-//        std::cout << tx_reads.size() << " Reads in the vector" << std::endl;
-//
-//        TenXPather txp (&tx_reads, &hbvr);
-//        std::cout<< Date() << " Map creation." << std::endl;
-//        txp.createEmptyMap(&hbvr);
-//        std::cout<< Date() << " Map creation done..." << std::endl;
-//        std::cout<< Date() << " Map filling with reads..." << std::endl;
-//        txp.reads2kmerTagMap();
-//        std::cout<< Date() << " Map filling with reads done..." << std::endl;
-//
-//        // execute pathfinder here
-//        std::cout<< Date() << " Starting pathfinder..." << std::endl;
-//        PathFinder_tx pf_tx (&txp, &hbvr, inv, 5);
-//        std::cout<< Date() << " done pathfinder..." << std::endl;
-//        pf_tx.solve_region_using_TenX(3000, true);
 
 
         if (dump_perf) perf_file << checkpoint_perf_time("Simplify") << std::endl;
