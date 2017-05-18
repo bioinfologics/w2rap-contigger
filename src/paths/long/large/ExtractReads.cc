@@ -126,7 +126,7 @@ bool InputFileReader::ProduceValidPair(std::string filename_string){
      // Get the filename string from the arguments and produce a valid pair of files to process
 
      std::vector<std::string> infiles;
-     infiles = tokenize(filename_string.c_str(), ',');
+     infiles = tk_tokenize(filename_string.c_str(), ',');
 
      if (!FilesExist(infiles)) Scram(1);
 
@@ -353,7 +353,7 @@ TenXData::TenXData(std::string out_dir, std::string library_name, std::string re
      //
 
      filename_string = reads_filename;
-     auto infiles = tokenize(filename_string.c_str(), ',');
+     auto infiles = tk_tokenize(filename_string.c_str(), ',');
 
 //     if (!ProduceValidPair(filename_string)) Scram(1); Not a pair
 
@@ -385,7 +385,7 @@ bool TenXData::split_filenames(std::string filename_string){
      // Get the filename string from the arguments and produce a valid set of files to proces
      // R1.fastq,R2.fastq,I.fastq
      std::vector<std::string> infiles;
-     infiles = tokenize(filename_string.c_str(), ',');
+     infiles = tk_tokenize(filename_string.c_str(), ',');
 
      if (!FilesExist(infiles)) Scram(1);
 
@@ -575,7 +575,7 @@ InputDataMag::InputDataMag(std::string config_file_path, std::string out_dir){
      while(getline(cf, line)){
           // TODO: check if the processed file is in the directory before reading the original file
           std::cout << line << std::endl;
-          std::vector<std::string> sline = tokenize(line.c_str(), ' ');
+          std::vector<std::string> sline = tk_tokenize(line.c_str(), ' ');
           std::cout << sline[3] << std::endl;
           if (sline[3] == "true") {
                if (sline[1] == "pe") {
