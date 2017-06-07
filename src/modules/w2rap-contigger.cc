@@ -505,7 +505,7 @@ int main(const int argc, const char * argv[]) {
                                                                "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
         TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
         TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
+                                                         "Dump detailed GFA for every graph (default: basic) or, for ABySS compatible, use, ABySS", false,"basic", &gfaOutputOptions,cmd);
 
         cmd.parse(argc, argv);
         // Get the value parsed by each arg.
