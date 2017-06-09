@@ -949,6 +949,7 @@ void KmerList::clear() {
     if (nullptr != kmers and 0 != size) {
         free(kmers);
         size = 0;
+        kmers = nullptr;
     }
 }
 
@@ -1043,8 +1044,7 @@ void KmerList::resize(size_t new_size) {
         //std::cout << " allocating space for "<< new_size <<" elements: " << sizeof(KMerNodeFreq_s) * new_size <<std::endl;
         /*if (0==size) kmers = (KMerNodeFreq_s *) malloc(sizeof(KMerNodeFreq_s) * new_size);
         else*/
-        if (size>0) kmers = (KMerNodeFreq_s *) realloc(kmers, sizeof(KMerNodeFreq_s) * new_size);
-        else kmers = (KMerNodeFreq_s *) calloc(kmers, sizeof(KMerNodeFreq_s) * new_size);
+        kmers = (KMerNodeFreq_s *) realloc(kmers, sizeof(KMerNodeFreq_s) * new_size);
         //if (new_size>0 and kmers == nullptr) std::cout << " realloc error!!! "<<std::endl;
         size = new_size;
     }
