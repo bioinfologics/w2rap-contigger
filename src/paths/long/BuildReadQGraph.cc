@@ -919,11 +919,11 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
     uint64_t qsize=quals.size();
     rlen.resize(qsize);
     OutputLog(2) << "Creating read lengths for "<<qsize<<" reads at quality >= " << minQual << std::endl;
-    #pragma omp parallel shared(rlen,quals)
+    #pragma omp parallel shared(rlen,quals,qsize)
     {
         QualVec uq;
         #pragma omp for
-        for (auto i = 0; i < qsize; ++i) {
+        for (uint64_t i = 0; i < qsize; ++i) {
             quals[i].unpack(&uq);
             auto itr = uq.end();
             auto beg = uq.begin();
