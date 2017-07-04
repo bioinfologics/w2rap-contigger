@@ -923,7 +923,7 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
     {
         QualVec uq;
         #pragma omp for
-        for (auto i = 0; i < qsize; ++i) {
+        for (uint64_t i = 0; i < qsize; ++i) {
             quals[i].unpack(&uq);
             auto itr = uq.end();
             auto beg = uq.begin();

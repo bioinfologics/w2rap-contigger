@@ -76,10 +76,10 @@ public:
         //Decode into qv
         //first pass: get the size
         uint16_t esize=0;
-        for (auto i=0;i<mSize;i++) esize+=mData[i]/64+1;
+        for (uint16_t i=0;i<mSize;i++) esize+=mData[i]/64+1;
         qv.resize(esize);
         uint16_t epos=0;
-        for (auto i=0;i<mSize;i++){
+        for (uint16_t i=0;i<mSize;i++){
             uint8_t q=mData[i]%64;
             for (auto p=mData[i]/64+1;p>0;--p){
                 qv[epos]=q;
