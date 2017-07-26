@@ -47,52 +47,6 @@
 
 namespace
 {
-    const unsigned K = 60;
-    typedef KMer<K> BRQ_Kmer;
-    typedef KMer<K-1> BRQ_SubKmer;
-    typedef KmerDictEntry<K> BRQ_Entry;
-    typedef KmerDict<K> BRQ_Dict;
-    //we can reduce this usage by storing blocks of kmers and using a difference with the previous. we would need slightly more complex heuristics.
-
-
-    class KMerNodeFreq: public KMer<K>{
-    public:
-        KMerNodeFreq(){};
-        template <class Itr>
-        explicit KMerNodeFreq( Itr start )
-        { assign(start,NopMapper()); }
-
-        KMerNodeFreq (const KMerNodeFreq &other){
-            *this=other;
-            count=other.count;
-            kc=other.kc;
-        }
-        KMerNodeFreq (const KMerNodeFreq_s &other) {
-            memcpy (&this->mVal,&other.kdata,sizeof(KMer<K>));
-            count=other.count;
-            kc.mVal=other.kc;
-        }
-
-        KMerNodeFreq (const KMerNodeFreq &other, bool rc){
-            *this=other;
-            count=other.count;
-            kc=other.kc;
-            if (rc){
-                this->rc();
-                kc=kc.rc();
-            }
-        }
-        void to_struct (KMerNodeFreq_s &other) const {
-            memcpy (&other.kdata,&this->mVal,sizeof(KMer<K>));
-            other.count=count;
-            other.kc=kc.mVal;
-        }
-        unsigned char count;
-
-        KMerContext kc;
-    };
-
-
 
     inline void summarizeEntries( BRQ_Entry* e1, BRQ_Entry* e2 )
     {

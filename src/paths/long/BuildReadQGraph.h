@@ -20,6 +20,9 @@
 #include "feudal/PQVec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
+#include "kmers/ReadPather.h"
+#include "kmers/KMer.h"
+#include "kmers/KMerContext.h"
 
 typedef struct __attribute__((__packed__)) KMerNodeFreq_s {
     uint64_t kdata[2];
@@ -45,9 +48,62 @@ typedef struct __attribute__((__packed__)) KMerNodeFreq_s {
         if ( newcount>count) count=newcount;
         kc|=other.kc;
     }
+    inline void merge(KMerNodeFreq_s const & other){
+        auto newcount=count+other.count;
+        if ( newcount>count) count=newcount;
+        kc|=other.kc;
+    }
     /*inline const operator=(KMerNodeFreq_s const & other) const {
         memcpy(&this,&other,sizeof(this));
     }*/
+};
+
+const unsigned K = 60;
+typedef KMer<K> BRQ_Kmer;
+typedef KMer<K-1> BRQ_SubKmer;
+typedef KmerDictEntry<K> BRQ_Entry;
+typedef KmerDict<K> BRQ_Dict;
+//we can reduce this usage by storing blocks of kmers and using a difference with the previous. we would need slightly more complex heuristics.
+
+
+class KMerNodeFreq: public KMer<K>{
+public:
+    KMerNodeFreq(){};
+    template <class Itr>
+    explicit KMerNodeFreq( Itr start )
+    { assign(start,NopMapper()); }
+    template <class Itr>
+    explicit KMerNodeFreq( Itr start, bool dummy)
+    { assign(start, CharToBaseMapper());}
+
+    KMerNodeFreq (const KMerNodeFreq &other){
+        *this=other;
+        count=other.count;
+        kc=other.kc;
+    }
+    KMerNodeFreq (const KMerNodeFreq_s &other) {
+        memcpy (&this->mVal,&other.kdata,sizeof(KMer<K>));
+        count=other.count;
+        kc.mVal=other.kc;
+    }
+
+    KMerNodeFreq (const KMerNodeFreq &other, bool rc){
+        *this=other;
+        count=other.count;
+        kc=other.kc;
+        if (rc){
+            this->rc();
+            kc=kc.rc();
+        }
+    }
+    void to_struct (KMerNodeFreq_s &other) const {
+        memcpy (&other.kdata,&this->mVal,sizeof(KMer<K>));
+        other.count=count;
+        other.kc=kc.mVal;
+    }
+    unsigned char count;
+
+    KMerContext kc;
 };
 
 class KmerList{
