@@ -158,7 +158,59 @@ void step_2_EXP(KMerNodeFreq_s *kCounts, const std::string &filenames,
 
     // TODO:
     // 1) Merge files after counting separately
-    // 2) Rethink the next_element function from the KMerFreqFactory to handle "paired" reads
+    std::vector<std::ifstream*> finalMerge(fastqFile.size());
+    std::ofstream threadMerged(workdir+"final"+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
+    for (auto i=fastqFile.cbegin(); i != fastqFile.cend(); ++i) {
+        std::string filename = *i;
+        std::replace(filename.begin(), filename.end(), '/', '.');
+        finalMerge[i-fastqFile.begin()] = new std::ifstream (tmpdir+filename+ ".kc", std::ios::in | std::ios::binary);
+    }
+    std::vector<uint64_t > fileSizes(fastqFile.size());
+    for (auto i=0; i < fastqFile.size(); ++i) {
+        finalMerge[i]->read((char *) &fileSizes[i], sizeof(uint64_t));
+    }
+
+    std::vector<std::pair<unsigned int, KMerNodeFreq_s>> kCursor;
+    for (auto i=0; i < fastqFile.size(); ++i) {
+        KMerNodeFreq_s k{};
+        finalMerge[i]->read((char *) &k, sizeof(KMerNodeFreq_s));
+        kCursor.emplace_back(i, k);
+    }
+
+    std::vector<bool> finished(finalMerge.size(), false);
+    uint64_t nKmers(maxGB/sizeof(KMerNodeFreq_s));
+    kCounts = (KMerNodeFreq_s *) malloc(nKmers * sizeof(KMerNodeFreq_s));
+    uint64_t countKmers(0);
+    do {
+        KMerNodeFreq_s k{};
+        std::pair<unsigned int, KMerNodeFreq_s> minFile;
+        minFile.second = kCursor.begin()->second;
+        for (auto itr = kCursor.begin(); itr != kCursor.cend(); ++itr) {
+            if (itr->second < minFile.second and !finished[itr->first]) {
+                minFile.first = itr->first;
+                minFile.second = itr->second;
+            }
+        }
+        auto currentMer(minFile.second);
+        for (auto itr=kCursor.cbegin(); itr != kCursor.cend(); ++itr){
+            if (currentMer == itr->second and !finished[itr->first]) {
+                k.merge(itr->second);
+                finalMerge[itr->first]->read((char *) &kCursor[itr->first].second, sizeof(KMerNodeFreq_s));
+                if (finalMerge[itr->first]->eof()) {
+                    finished[itr->first] = true;
+                }
+            }
+        }
+
+        k = currentMer;
+        if (countKmers >= nKmers) {
+            nKmers = (uint64_t) (countKmers * 1.2);
+            kCounts = (KMerNodeFreq_s *) realloc(kCounts, nKmers * sizeof(KMerNodeFreq_s));
+        }
+        kCounts[countKmers] = k;
+        ++countKmers;
+
+    } while (std::count_if(finished.begin(), finished.end(), [&](const bool &file) -> bool { return !file;})>0);
 
 }
 
@@ -648,7 +700,7 @@ int main(const int argc, const char * argv[]) {
     //Check directory exists:
 
 
-    struct stat info;
+    struct stat info{};
 
     if (stat(out_dir.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
         std::cout << "Output directory doesn't exist, or is not a directory: " << out_dir << std::endl;

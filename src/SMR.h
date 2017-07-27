@@ -19,7 +19,7 @@ class FastQReader {
 public:
     // Single-end reads constructor
     FastQReader(std::string filepath){
-        std::cout << "Openning: " << filepath << "\n";
+        std::cout << "Opening: " << filepath << "\n";
         read.open(filepath.data());
     }
 
@@ -57,7 +57,7 @@ public:
             tmp(Otmp)
     {};
 
-    RecordType* getRecords(FileReader &myFileReader){
+    RecordType* getRecords(FileReader &myFileReader, const std::string &name){
         RecordFactory myRecordFactory(parameters);
         FileRecord frecord;
         std::vector<RecordType> bElements;
@@ -80,7 +80,7 @@ public:
         }
 
         std::vector<std::ifstream*> finalMerge(myBatches);
-        std::ofstream threadMerged(tmp+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
+        std::ofstream threadMerged(tmp+name+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
         for (auto batchID = 0; batchID < myBatches; ++batchID) {
             finalMerge[batchID] = new std::ifstream (tmp+"_batch_" + std::to_string(batchID+1)
                                                      + ".tmc", std::ios::in | std::ios::binary);
@@ -150,8 +150,7 @@ public:
         FileReader myFileReader(file1, file2);
         std::replace(file1.begin(), file1.end(), '/', '.');
         std::replace(file2.begin(), file2.end(), '/', '.');
-        tmp += file1+"_"+file2;
-        return getRecords(myFileReader);
+        return getRecords(myFileReader, file1+"_"+file2);
     };
 
     RecordType * read_from_file(std::string file) {
@@ -160,8 +159,7 @@ public:
         tKmers = 0;
         FileReader myFileReader(file);
         std::replace(file.begin(), file.end(), '/', '.');
-        tmp += file;
-        return getRecords(myFileReader);
+        return getRecords(myFileReader, "/"+file);
     };
 
 
@@ -204,7 +202,7 @@ private:
     uint64_t myBatches;
     uint64_t nRecs;
     uint64_t tKmers;
-    std::string tmp;
+    const std::string &tmp;
 };
 
 #endif //W2RAP_CONTIGGER_SMR_H
