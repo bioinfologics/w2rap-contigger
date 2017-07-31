@@ -32,11 +32,9 @@
 #include "GFADump.h"
 #include "util/OutputLog.h"
 #include "SMR.h"
+#include "KMerFreqFactory.h"
 #include "kmers/KMer.h"
 #include <omp.h>
-
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
 
  // Dummy defines, this should come from CMakeLists.txt
 #ifndef GIT_COMMIT_HASH
@@ -62,86 +60,15 @@ void step_1(vecbvec & bases,
 }
 
 
-struct KMerParams {
-    uint8_t k;
-    unsigned int minQual;
-};
-
-template<typename FileRecord>
-class KMerFreqFactory{
-public:
-    KMerFreqFactory(KMerParams params) : K(params.k), minQual(params.minQual),
-                                     KMER_FIRSTOFFSET((uint64_t) (K - 1) * 2),
-                                     KMER_MASK((((uint64_t) 1) << (K * 2)) - 1),
-                                     p(0), bases(0) {
-        memset(b2f, 0, 255);
-        b2f['a'] = b2f['A'] = 0;
-        b2f['c'] = b2f['C'] = 1;
-        b2f['g'] = b2f['G'] = 2;
-        b2f['t'] = b2f['T'] = 3;
-    }
-
-    ~KMerFreqFactory() {
-        std::cout << "Bases processed " << bases << "\n";
-    }
-    void setFileRecord(FileRecord& rec){
-        std::swap(rec,currentRecord);
-        p=0;
-    }
-
-    const bool next_element(KMerNodeFreq_s& mer){
-        if (unlikely(K > currentRecord.seq.size()) or currentRecord.qual[p] < minQual) return false;
-        if (unlikely(p == 0)) {
-            kkk = KMerNodeFreq();
-            for (auto itr = currentRecord.seq.begin(); itr != currentRecord.seq.begin()+K; ++itr) {
-                kkk.toSuccessor(b2f[*itr]);
-            }
-            kkk.hash();
-            kkk.kc = KMerContext::initialContext(b2f[*(currentRecord.seq.begin()+K)]);
-            kkk.count = 1;
-            p = K;
-            (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
-            for (int i = 0; i < K; ++i) if (currentRecord.qual[i] < minQual) return false;
-            return p < currentRecord.seq.size();
-        }
-        auto itr = currentRecord.seq.cbegin()+p;
-        while (itr != currentRecord.seq.cend() and currentRecord.qual[p] > minQual) {
-            bases++;
-            unsigned char pred = kkk.front();
-            kkk.toSuccessor(b2f[*itr]);
-            ++itr;
-            kkk.kc = KMerContext(pred, b2f[*itr]);
-            p++;
-            (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
-            return true;
-        }
-        kkk.kc = KMerContext::finalContext(kkk.front());
-        kkk.toSuccessor(b2f[*itr]);
-        (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
-        return true;
-    }
-
-private:
-    KMerNodeFreq kkk;
-    FileRecord currentRecord;
-    uint64_t p;
-    uint64_t bases;
-    unsigned int minQual;
-    const uint8_t K;
-    const uint64_t KMER_MASK;
-    const uint64_t KMER_FIRSTOFFSET;
-    unsigned char b2f[256];
-};
-
 void step_2_EXP(KMerNodeFreq_s *kCounts, const std::string &filenames,
             unsigned int minQual, unsigned int minCount,
-                const std::string &workdir, const std::string &tmpdir, unsigned int maxGB) {
+                const std::string &workdir, const std::string &tmpdir, uint64_t maxGB) {
 
     SMR <KMerNodeFreq_s,
             KMerFreqFactory<FastqRecord>,
             FastQReader<FastqRecord>,
             FastqRecord,
-            KMerParams > fastqKCount({K, minQual},8*GB);
+            KMerParams > fastqKCount({K, minQual},8*GB, "./");
 
     std::vector<std::string> fastqFile;
     std::stringstream ss(filenames); // Turn the string into a stream.
@@ -156,61 +83,67 @@ void step_2_EXP(KMerNodeFreq_s *kCounts, const std::string &filenames,
         free(kCounts);
     }
 
-    // TODO:
-    // 1) Merge files after counting separately
     std::vector<std::ifstream*> finalMerge(fastqFile.size());
-    std::ofstream threadMerged(workdir+"final"+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
+    std::ofstream threadMerged(workdir+"/"+"final"+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
     for (auto i=fastqFile.cbegin(); i != fastqFile.cend(); ++i) {
         std::string filename = *i;
         std::replace(filename.begin(), filename.end(), '/', '.');
-        finalMerge[i-fastqFile.begin()] = new std::ifstream (tmpdir+filename+ ".kc", std::ios::in | std::ios::binary);
+        finalMerge[i-fastqFile.begin()] = new std::ifstream ("./"+filename+ ".kc", std::ios::in | std::ios::binary);
     }
     std::vector<uint64_t > fileSizes(fastqFile.size());
     for (auto i=0; i < fastqFile.size(); ++i) {
         finalMerge[i]->read((char *) &fileSizes[i], sizeof(uint64_t));
     }
 
-    std::vector<std::pair<unsigned int, KMerNodeFreq_s>> kCursor;
+    // TODO: Multi-threaded n-way merge
+    // Open all the files, find the boundary elements (file1[size/threadID]
+    // Merge the subsets using different threads
+    // Join all the merged kmers into elements ordered by threadID
+    typedef std::pair<std::ifstream*, KMerNodeFreq_s> fileRecPair;
+    auto pCmp = [](const fileRecPair &left, const fileRecPair &right) { return (left.second > right.second);};
+
+    std::priority_queue<fileRecPair, std::vector<fileRecPair>, decltype(pCmp)> fQueue(pCmp);
     for (auto i=0; i < fastqFile.size(); ++i) {
-        KMerNodeFreq_s k{};
+        KMerNodeFreq_s k;
         finalMerge[i]->read((char *) &k, sizeof(KMerNodeFreq_s));
-        kCursor.emplace_back(i, k);
+        fQueue.emplace(finalMerge[i], k);
     }
 
-    std::vector<bool> finished(finalMerge.size(), false);
+    KMerNodeFreq_s helper;
+    fileRecPair current, next;
     uint64_t nKmers(maxGB/sizeof(KMerNodeFreq_s));
     kCounts = (KMerNodeFreq_s *) malloc(nKmers * sizeof(KMerNodeFreq_s));
     uint64_t countKmers(0);
-    do {
-        KMerNodeFreq_s k{};
-        std::pair<unsigned int, KMerNodeFreq_s> minFile;
-        minFile.second = kCursor.begin()->second;
-        for (auto itr = kCursor.begin(); itr != kCursor.cend(); ++itr) {
-            if (itr->second < minFile.second and !finished[itr->first]) {
-                minFile.first = itr->first;
-                minFile.second = itr->second;
-            }
-        }
-        auto currentMer(minFile.second);
-        for (auto itr=kCursor.cbegin(); itr != kCursor.cend(); ++itr){
-            if (currentMer == itr->second and !finished[itr->first]) {
-                k.merge(itr->second);
-                finalMerge[itr->first]->read((char *) &kCursor[itr->first].second, sizeof(KMerNodeFreq_s));
-                if (finalMerge[itr->first]->eof()) {
-                    finished[itr->first] = true;
-                }
-            }
-        }
 
-        k = currentMer;
+    current = fQueue.top();
+    fQueue.pop();
+    do {
+        // Add an element from the same file to the PrtyQueue
+        current.first->read((char *) &helper, sizeof(KMerNodeFreq_s));
+        if (current.first->gcount() == sizeof(KMerNodeFreq_s))
+            fQueue.emplace(current.first, helper);
+
+        next = fQueue.top();
+        fQueue.pop();
+        // While every next element is equal to the current element, merge them
+        while (current.second == next.second and !fQueue.empty()) {
+            current.second.merge(next.second);
+            next.first->read((char *) &helper, sizeof(KMerNodeFreq_s));
+            if (next.first->gcount() == sizeof(KMerNodeFreq_s))
+                fQueue.emplace(next.first, helper);
+            next = fQueue.top();
+            fQueue.pop();
+        }
+        // Add the element to the final list
         if (countKmers >= nKmers) {
-            nKmers = (uint64_t) (countKmers * 1.2);
+            nKmers *= 1.2;
             kCounts = (KMerNodeFreq_s *) realloc(kCounts, nKmers * sizeof(KMerNodeFreq_s));
         }
-        kCounts[countKmers] = k;
+        kCounts[countKmers] = current.second;
         ++countKmers;
+        std::swap(current,next);
 
-    } while (std::count_if(finished.begin(), finished.end(), [&](const bool &file) -> bool { return !file;})>0);
+    } while (!fQueue.empty());
 
 }
 

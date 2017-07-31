@@ -217,6 +217,7 @@ add_library(base_libs OBJECT
         src/random/NormalDistribution.cc
         src/GFADump.cc
         src/util/TextTable.cc
+        src/SMR.h
         src/paths/long/ReadPath.cc src/util/OutputLog.h src/util/OutputLog.cc)
 
 add_library(specific_w2rap-contigger OBJECT

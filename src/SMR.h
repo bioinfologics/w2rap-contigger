@@ -48,7 +48,7 @@ private:
 template <class RecordType, class RecordFactory, class FileReader, typename FileRecord, typename ParamStruct >
 class SMR {
 public:
-    SMR(ParamStruct p, uint64_t maxMem, const std::string Otmp = "") :
+    SMR(ParamStruct p, uint64_t maxMem, const std::string Otmp = "./") :
             parameters(p),
             numMersPerThread((maxMem/sizeof(RecordType)) / 2),
             myBatches(0),
@@ -159,7 +159,7 @@ public:
         tKmers = 0;
         FileReader myFileReader(file);
         std::replace(file.begin(), file.end(), '/', '.');
-        return getRecords(myFileReader, "/"+file);
+        return getRecords(myFileReader, file);
     };
 
 
