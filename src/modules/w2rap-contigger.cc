@@ -64,11 +64,11 @@ void step_2_EXP(KMerNodeFreq_s *kCounts, const std::string &filenames,
             unsigned int minQual, unsigned int minCount,
                 const std::string &workdir, const std::string &tmpdir, uint64_t maxGB) {
 
-    SMR <KMerNodeFreq_s,
+    SMR2 <KMerNodeFreq_s,
             KMerFreqFactory<FastqRecord>,
             FastQReader<FastqRecord>,
             FastqRecord,
-            KMerParams > fastqKCount({K, minQual},8*GB, "./");
+            KMerParams > fastqKCount({K, minQual},44*GB, "./");
 
     std::vector<std::string> fastqFile;
     std::stringstream ss(filenames); // Turn the string into a stream.
@@ -83,67 +83,67 @@ void step_2_EXP(KMerNodeFreq_s *kCounts, const std::string &filenames,
         free(kCounts);
     }
 
-    std::vector<std::ifstream*> finalMerge(fastqFile.size());
-    std::ofstream threadMerged(workdir+"/"+"final"+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
-    for (auto i=fastqFile.cbegin(); i != fastqFile.cend(); ++i) {
-        std::string filename = *i;
-        std::replace(filename.begin(), filename.end(), '/', '.');
-        finalMerge[i-fastqFile.begin()] = new std::ifstream ("./"+filename+ ".kc", std::ios::in | std::ios::binary);
-    }
-    std::vector<uint64_t > fileSizes(fastqFile.size());
-    for (auto i=0; i < fastqFile.size(); ++i) {
-        finalMerge[i]->read((char *) &fileSizes[i], sizeof(uint64_t));
-    }
-
-    // TODO: Multi-threaded n-way merge
-    // Open all the files, find the boundary elements (file1[size/threadID]
-    // Merge the subsets using different threads
-    // Join all the merged kmers into elements ordered by threadID
-    typedef std::pair<std::ifstream*, KMerNodeFreq_s> fileRecPair;
-    auto pCmp = [](const fileRecPair &left, const fileRecPair &right) { return (left.second > right.second);};
-
-    std::priority_queue<fileRecPair, std::vector<fileRecPair>, decltype(pCmp)> fQueue(pCmp);
-    for (auto i=0; i < fastqFile.size(); ++i) {
-        KMerNodeFreq_s k;
-        finalMerge[i]->read((char *) &k, sizeof(KMerNodeFreq_s));
-        fQueue.emplace(finalMerge[i], k);
-    }
-
-    KMerNodeFreq_s helper;
-    fileRecPair current, next;
-    uint64_t nKmers(maxGB/sizeof(KMerNodeFreq_s));
-    kCounts = (KMerNodeFreq_s *) malloc(nKmers * sizeof(KMerNodeFreq_s));
-    uint64_t countKmers(0);
-
-    current = fQueue.top();
-    fQueue.pop();
-    do {
-        // Add an element from the same file to the PrtyQueue
-        current.first->read((char *) &helper, sizeof(KMerNodeFreq_s));
-        if (current.first->gcount() == sizeof(KMerNodeFreq_s))
-            fQueue.emplace(current.first, helper);
-
-        next = fQueue.top();
-        fQueue.pop();
-        // While every next element is equal to the current element, merge them
-        while (current.second == next.second and !fQueue.empty()) {
-            current.second.merge(next.second);
-            next.first->read((char *) &helper, sizeof(KMerNodeFreq_s));
-            if (next.first->gcount() == sizeof(KMerNodeFreq_s))
-                fQueue.emplace(next.first, helper);
-            next = fQueue.top();
-            fQueue.pop();
-        }
-        // Add the element to the final list
-        if (countKmers >= nKmers) {
-            nKmers *= 1.2;
-            kCounts = (KMerNodeFreq_s *) realloc(kCounts, nKmers * sizeof(KMerNodeFreq_s));
-        }
-        kCounts[countKmers] = current.second;
-        ++countKmers;
-        std::swap(current,next);
-
-    } while (!fQueue.empty());
+//    std::vector<std::ifstream*> finalMerge(fastqFile.size());
+//    std::ofstream threadMerged(workdir+"/"+"final"+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
+//    for (auto i=fastqFile.cbegin(); i != fastqFile.cend(); ++i) {
+//        std::string filename = *i;
+//        std::replace(filename.begin(), filename.end(), '/', '.');
+//        finalMerge[i-fastqFile.begin()] = new std::ifstream ("./"+filename+ ".kc", std::ios::in | std::ios::binary);
+//    }
+//    std::vector<uint64_t > fileSizes(fastqFile.size());
+//    for (auto i=0; i < fastqFile.size(); ++i) {
+//        finalMerge[i]->read((char *) &fileSizes[i], sizeof(uint64_t));
+//    }
+//
+//    // TODO: Multi-threaded n-way merge
+//    // Open all the files, find the boundary elements (file1[size/threadID]
+//    // Merge the subsets using different threads
+//    // Join all the merged kmers into elements ordered by threadID
+//    typedef std::pair<std::ifstream*, KMerNodeFreq_s> fileRecPair;
+//    auto pCmp = [](const fileRecPair &left, const fileRecPair &right) { return (left.second > right.second);};
+//
+//    std::priority_queue<fileRecPair, std::vector<fileRecPair>, decltype(pCmp)> fQueue(pCmp);
+//    for (auto i=0; i < fastqFile.size(); ++i) {
+//        KMerNodeFreq_s k;
+//        finalMerge[i]->read((char *) &k, sizeof(KMerNodeFreq_s));
+//        fQueue.emplace(finalMerge[i], k);
+//    }
+//
+//    KMerNodeFreq_s helper;
+//    fileRecPair current, next;
+//    uint64_t nKmers(maxGB/sizeof(KMerNodeFreq_s));
+//    kCounts = (KMerNodeFreq_s *) malloc(nKmers * sizeof(KMerNodeFreq_s));
+//    uint64_t countKmers(0);
+//
+//    current = fQueue.top();
+//    fQueue.pop();
+//    do {
+//        // Add an element from the same file to the PrtyQueue
+//        current.first->read((char *) &helper, sizeof(KMerNodeFreq_s));
+//        if (current.first->gcount() == sizeof(KMerNodeFreq_s))
+//            fQueue.emplace(current.first, helper);
+//
+//        next = fQueue.top();
+//        fQueue.pop();
+//        // While every next element is equal to the current element, merge them
+//        while (current.second == next.second and !fQueue.empty()) {
+//            current.second.merge(next.second);
+//            next.first->read((char *) &helper, sizeof(KMerNodeFreq_s));
+//            if (next.first->gcount() == sizeof(KMerNodeFreq_s))
+//                fQueue.emplace(next.first, helper);
+//            next = fQueue.top();
+//            fQueue.pop();
+//        }
+//        // Add the element to the final list
+//        if (countKmers >= nKmers) {
+//            nKmers *= 1.2;
+//            kCounts = (KMerNodeFreq_s *) realloc(kCounts, nKmers * sizeof(KMerNodeFreq_s));
+//        }
+//        kCounts[countKmers] = current.second;
+//        ++countKmers;
+//        std::swap(current,next);
+//
+//    } while (!fQueue.empty());
 
 }
 
