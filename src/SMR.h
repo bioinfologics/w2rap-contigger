@@ -18,11 +18,12 @@ template<typename FileRecord>
 class FastQReader {
 public:
     // Single-end reads constructor
-    FastQReader(std::string filepath){
+    explicit FastQReader(std::string filepath){
         std::cout << "Opening: " << filepath << "\n";
+        buffer = (char *) malloc(bufsize*sizeof(char));
+        read.rdbuf()->pubsetbuf(buffer,bufsize);
         read.open(filepath.data());
     }
-
     bool next_record(FileRecord& rec){
         std::string dummy;
         std::getline(read, record.name);
@@ -37,9 +38,14 @@ public:
         return read.eof();
     }
 
+    ~FastQReader(){
+        free(buffer);
+    }
 private:
     std::ifstream read;
     FileRecord record;
+    static const size_t bufsize=4*1024*1024;
+    char *buffer;
 };
 
 template <class RecordType, class RecordFactory, class FileReader, typename FileRecord, typename ParamStruct >
@@ -224,9 +230,10 @@ private:
 
 
     void mapElementsToBatches(FileReader &myFileReader) {
-#pragma omp parallel
+#pragma omp parallel reduction(+: nRecs, tKmers, nKmers)
         {
             std::vector<RecordType> _elements;
+            _elements.reserve(numMersPerThread);
             RecordFactory myRecordFactory(parameters);
             FileRecord frecord;
             // Make the next_record function get a chunk of elements
@@ -239,8 +246,9 @@ private:
                 RecordType record;
 #pragma omp critical (SMR_NextFileRecord)
                 {
-                    if (myFileReader.next_record(frecord)) nRecs++;
+                    myFileReader.next_record(frecord);
                 }
+                nRecs++;
                 // A bunch of records should be sent to each thread
                 // MyRecordFactory should be threadable
                 // would make setFileRecord a "process" batch
@@ -324,9 +332,9 @@ private:
     RecordType *elements;
     uint64_t numMersPerThread;
     std::atomic<uint64_t> myBatches;
-    std::atomic<uint64_t> nRecs;
-    std::atomic<uint64_t> nKmers;
-    std::atomic<uint64_t> tKmers;
+    uint64_t nRecs;
+    uint64_t nKmers;
+    uint64_t tKmers;
     const std::string tmp2;
     const int maxThreads;
     std::string tmp;
