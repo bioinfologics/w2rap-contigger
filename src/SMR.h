@@ -63,44 +63,37 @@ public:
 
     {};
 
-    RecordType *getRecords(FileReader &myFileReader){
-
-        std::cout<<"MAP Threads = "<<omp_get_max_threads()<<std::endl;
-        mapElementsToBatches(myFileReader);
-
+    void getRecords(RecordType *records){
+        std::swap(elements,records);
         omp_set_num_threads(1);
         reduceElementsFromBatches();
         omp_set_num_threads(maxThreads);
+        std::swap(records,elements);
 
         std::cout << "Total Kmers " << tKmers << "\n";
         std::cout << "Final nKmers " << nKmers << "\n";
         std::cout << "Final reads " << nRecs << "\n";
-        return elements;
     }
 
-    void read_from_file(RecordType *records, std::string file1, std::string file2) {
+    void read_from_file(std::string file1, std::string file2) {
         FileReader myFileReader(file1, file2);
         std::replace(file1.begin(), file1.end(), '/', '.');
         std::replace(file2.begin(), file2.end(), '/', '.');
         tmp = tmp2+file1+"_"+file2;
-        std::swap(elements,records);
-        getRecords(myFileReader);
-        std::swap(records,elements);
+        std::cout<<"MAP Threads = "<<omp_get_max_threads()<<std::endl;
+        mapElementsToBatches(myFileReader);
     };
 
-    void read_from_file(RecordType *records, std::string file) {
+    void read_from_file(std::string file) {
         FileReader myFileReader(file);
         std::replace(file.begin(), file.end(), '/', '.');
         tmp = tmp2+file;
-        std::swap(elements,records);
-        getRecords(myFileReader);
-        std::swap(records,elements);
+        std::cout<<"MAP Threads = "<<omp_get_max_threads()<<std::endl;
+        mapElementsToBatches(myFileReader);
     };
 
-
-private:
-
     void reduceElementsFromBatches() {
+        nKmers = 0;
         std::vector<std::ifstream> finalMerge(myBatches);
         for (auto batchID = 0; batchID < myBatches; ++batchID) {
             finalMerge[batchID].open(tmp + "_batch_" + std::to_string(batchID + 1)
@@ -168,6 +161,8 @@ private:
         }
 
     }
+
+private:
 
     bool fileBinarySearch(std::ifstream &file, RecordType &mVal, size_t lo, size_t hi) {
         file.seekg(sizeof(uint64_t), std::ios_base::beg);
@@ -246,9 +241,9 @@ private:
                 RecordType record;
 #pragma omp critical (SMR_NextFileRecord)
                 {
-                    myFileReader.next_record(frecord);
+                    if (myFileReader.next_record(frecord)) nRecs++;
                 }
-                nRecs++;
+
                 // A bunch of records should be sent to each thread
                 // MyRecordFactory should be threadable
                 // would make setFileRecord a "process" batch
