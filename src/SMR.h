@@ -23,13 +23,14 @@ public:
         read.open(filepath.data());
     }
 
-    void next_record(FileRecord& rec){
+    bool next_record(FileRecord& rec){
         std::string dummy;
         std::getline(read, record.name);
         std::getline(read, record.seq);
         std::getline(read, dummy);
         std::getline(read, record.qual);
         std::swap(record,rec);
+        return !rec.name.empty();
     }
 
     bool done() {
@@ -49,13 +50,14 @@ public:
             numMersPerThread(maxMem/sizeof(RecordType)),
             myBatches(0),
             nRecs(0),
+            nKmers(0),
             tKmers(0),
             tmp2(Otmp),
             maxThreads(omp_get_max_threads())
 
     {};
 
-    std::vector<RecordType> getRecords(FileReader &myFileReader){
+    RecordType *getRecords(FileReader &myFileReader){
 
         std::cout<<"MAP Threads = "<<omp_get_max_threads()<<std::endl;
         mapElementsToBatches(myFileReader);
@@ -65,12 +67,12 @@ public:
         omp_set_num_threads(maxThreads);
 
         std::cout << "Total Kmers " << tKmers << "\n";
-        std::cout << "Final nKmers " << elements.size() << "\n";
+        std::cout << "Final nKmers " << nKmers << "\n";
         std::cout << "Final reads " << nRecs << "\n";
         return elements;
     }
 
-    void read_from_file(std::vector<RecordType> &records, std::string file1, std::string file2) {
+    void read_from_file(RecordType *records, std::string file1, std::string file2) {
         FileReader myFileReader(file1, file2);
         std::replace(file1.begin(), file1.end(), '/', '.');
         std::replace(file2.begin(), file2.end(), '/', '.');
@@ -80,7 +82,7 @@ public:
         std::swap(records,elements);
     };
 
-    void read_from_file(std::vector<RecordType> &records, std::string file) {
+    void read_from_file(RecordType *records, std::string file) {
         FileReader myFileReader(file);
         std::replace(file.begin(), file.end(), '/', '.');
         tmp = tmp2+file;
@@ -140,20 +142,20 @@ private:
 
 #pragma omp critical (SMR_FinalMerge)
                 {
-                    elements.reserve(elements.size()+thread_elements.size());
-                    elements.insert(elements.end(),std::make_move_iterator(thread_elements.begin()),
-                                    std::make_move_iterator(thread_elements.end()));
+                    nKmers += thread_elements.size();
+                    elements = (RecordType*) realloc(elements, nKmers * sizeof(RecordType));
+                    memcpy(elements, thread_elements.data(), thread_elements.size()*sizeof(RecordType));
                 }
             }
 
             for (auto batchID = 0; batchID < myBatches; batchID++) {
                 std::remove(std::string(tmp + "_batch_" + std::to_string(batchID + 1) + ".tmc").data());
             }
-            uint64_t size(elements.size());
+
             std::ofstream threadMerged(tmp + ".kc",
                                        std::ios_base::trunc | std::ios_base::out | std::ios_base::binary);
-            threadMerged.write((char *) &size, sizeof(size));
-            threadMerged.write((char *) elements.data(), sizeof(RecordType) * size);
+            threadMerged.write((char *) &nKmers, sizeof(nKmers));
+            threadMerged.write((char *) elements, sizeof(RecordType) * nKmers);
         } else {
             // Just one batch so simply rename the _batch_ file
             std::rename(std::string(tmp + "_batch_" + std::to_string(1) + ".tmc").data(), std::string(tmp + ".kc").data());
@@ -260,14 +262,20 @@ private:
                     collapse(_elements);
 #pragma omp critical (mergeBatchesInMem)
                     {
-                        elements.reserve(elements.size()+_elements.size()); // Reserve space first
-                        elements.insert(elements.end(),std::make_move_iterator(_elements.begin()),
-                                        std::make_move_iterator(_elements.end()));
+                        nKmers += _elements.size();
+                        elements = (RecordType*) realloc(elements, nKmers * sizeof(RecordType));
+                        memcpy(elements, _elements.data(), _elements.size()*sizeof(RecordType));
                     }
                 }
             }
         };
-        if (myBatches < 1) collapse(elements);
+        if (myBatches < 1) {
+            std::vector<RecordType> _t(elements, elements + sizeof elements / sizeof elements[0]);
+            collapse(_t);
+            elements = realloc(elements, nKmers* sizeof(RecordType));
+            memcpy(elements, _t.data(), _t.size()*sizeof(RecordType));
+        }
+
     }
 
     void dumpBatch(std::vector<RecordType> &_elements) {
@@ -313,10 +321,11 @@ private:
     };
 
     ParamStruct parameters;
-    std::vector<RecordType> elements;
+    RecordType *elements;
     uint64_t numMersPerThread;
     std::atomic<uint64_t> myBatches;
     std::atomic<uint64_t> nRecs;
+    std::atomic<uint64_t> nKmers;
     std::atomic<uint64_t> tKmers;
     const std::string tmp2;
     const int maxThreads;
