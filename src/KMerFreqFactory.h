@@ -37,33 +37,36 @@ public:
     }
 
     const bool next_element(KMerNodeFreq_s& mer){
-        if (unlikely(K > currentRecord.seq.size()) or currentRecord.qual[p] < minQual) return false;
+/*        if (unlikely(K > currentRecord.seq.size()) or currentRecord.qual[p] < minQual) return false;  */
+        if (unlikely(K > currentRecord.size())) return false;
         if (unlikely(p == 0)) {
-            kkk = KMerNodeFreq();
-            for (auto itr = currentRecord.seq.begin(); itr != currentRecord.seq.begin()+K; ++itr) {
-                kkk.toSuccessor(b2f[*itr]);
-            }
+            kkk = KMerNodeFreq(currentRecord.begin());
+
             kkk.hash();
-            kkk.kc = KMerContext::initialContext(b2f[*(currentRecord.seq.begin()+K)]);
+/*            kkk.kc = KMerContext::initialContext(b2f[*(currentRecord.seq.begin()+K)]);*/
+            kkk.kc = KMerContext::initialContext(*(currentRecord.begin()+K));
             kkk.count = 1;
             p = K;
             (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
-            for (int i = 0; i < K; ++i) if (currentRecord.qual[i] < minQual) return false;
-            return p < currentRecord.seq.size();
+/*            for (int i = 0; i < K; ++i) if (currentRecord.qual[i] < minQual) return false;*/
+            /*return p < currentRecord.seq.size();*/
+            return p < currentRecord.size();
         }
-        auto itr = currentRecord.seq.cbegin()+p;
-        while (itr != currentRecord.seq.cend() and currentRecord.qual[p] > minQual) {
+        /*auto itr = currentRecord.seq.cbegin()+p;*/
+        auto itr = currentRecord.cbegin()+p;
+        /*while (itr != currentRecord.seq.cend() and currentRecord.qual[p] > minQual) {*/
+        while (itr != currentRecord.cend()-1) {
             bases++;
             unsigned char pred = kkk.front();
-            kkk.toSuccessor(b2f[*itr]);
+            kkk.toSuccessor(*itr);
             ++itr;
-            kkk.kc = KMerContext(pred, b2f[*itr]);
+            kkk.kc = KMerContext(pred, *itr);
             p++;
             (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
             return true;
         }
         kkk.kc = KMerContext::finalContext(kkk.front());
-        kkk.toSuccessor(b2f[*itr]);
+        kkk.toSuccessor(*itr);
         (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
         return true;
     }

@@ -14,6 +14,26 @@ struct FastqRecord{
     std::string name,seq,qual;
 };
 
+
+template<typename FileRecord>
+class FastBReader {
+public:
+    FastBReader(const vecbvec &_reads, const size_t _readsBegin, const size_t _readsEnd): reads(_reads), readsBegin(_readsBegin), readsEnd(_readsEnd) { pos = readsBegin; }
+    bool done() {return pos >= readsEnd-1;}
+    bool next_record(FileRecord &rec){
+        if (pos < readsEnd){
+            rec = reads[pos];
+            pos++;
+            return true;
+        }
+        return false;
+    }
+private:
+    const vecbvec &reads;
+    const size_t readsBegin, readsEnd;
+    size_t pos;
+};
+
 template<typename FileRecord>
 class FastQReader {
 public:
@@ -23,13 +43,17 @@ public:
         buffer = (char *) malloc(bufsize*sizeof(char));
         read.rdbuf()->pubsetbuf(buffer,bufsize);
         read.open(filepath.data());
+        read2=fopen(filepath.data(), "r");
     }
     bool next_record(FileRecord& rec){
-        std::string dummy;
-        std::getline(read, record.name);
-        std::getline(read, record.seq);
-        std::getline(read, dummy);
-        std::getline(read, record.qual);
+        char dummy[5000];
+        std::fgets(dummy, 5000, read2);
+        record.name = dummy;
+        std::fgets(dummy, 5000, read2);
+        record.seq = dummy;
+        std::fgets(dummy, 5000, read2);
+        std::fgets(dummy, 5000, read2);
+        record.qual = dummy;
         std::swap(record,rec);
         return !rec.name.empty();
     }
@@ -42,9 +66,10 @@ public:
         free(buffer);
     }
 private:
+    FILE* read2;
     std::ifstream read;
     FileRecord record;
-    static const size_t bufsize=4*1024*1024;
+    static const size_t bufsize=32*1024*1024;
     char *buffer;
 };
 
@@ -75,6 +100,18 @@ public:
         std::cout << "Final reads " << nRecs << "\n";
     }
 
+    void read_from_file(const vecbvec &reads, int numThreads) {
+#pragma omp parallel reduction(+: nRecs, tKmers, nKmers)
+        {
+            FileReader myFileReader(reads,
+                    reads.size()/omp_get_max_threads() * (omp_get_thread_num()),
+                    reads.size()/omp_get_max_threads() * (omp_get_thread_num()+1)
+            );
+            std::cout << "MAP Thread = " << omp_get_max_threads() << std::endl;
+            mapElementsToBatches(myFileReader);
+        }
+    };
+
     void read_from_file(std::string file1, std::string file2) {
         FileReader myFileReader(file1, file2);
         std::replace(file1.begin(), file1.end(), '/', '.');
@@ -84,12 +121,13 @@ public:
         mapElementsToBatches(myFileReader);
     };
 
-    void read_from_file(std::string file) {
-        FileReader myFileReader(file);
-        std::replace(file.begin(), file.end(), '/', '.');
-        tmp = tmp2+file;
+    void read_from_file(const vecbvec &reads) {
+//        FileReader myFileReader(file);
+//        std::replace(file.begin(), file.end(), '/', '.');
+//        tmp = tmp2+file;
+        FileReader mfr(reads, omp_get_max_threads());
         std::cout<<"MAP Threads = "<<omp_get_max_threads()<<std::endl;
-        mapElementsToBatches(myFileReader);
+        mapElementsToBatches(mfr);
     };
 
     void reduceElementsFromBatches() {
@@ -225,8 +263,6 @@ private:
 
 
     void mapElementsToBatches(FileReader &myFileReader) {
-#pragma omp parallel reduction(+: nRecs, tKmers, nKmers)
-        {
             std::vector<RecordType> _elements;
             _elements.reserve(numMersPerThread);
             RecordFactory myRecordFactory(parameters);
@@ -239,10 +275,7 @@ private:
             // This gets the filerecord metadata and keeps track of progress over the file
             while (not myFileReader.done()) {
                 RecordType record;
-#pragma omp critical (SMR_NextFileRecord)
-                {
-                    if (myFileReader.next_record(frecord)) nRecs++;
-                }
+                if (myFileReader.next_record(frecord)) nRecs++;
 
                 // A bunch of records should be sent to each thread
                 // MyRecordFactory should be threadable
@@ -263,23 +296,19 @@ private:
                     dumpBatch(_elements);
                 } else {
                     collapse(_elements);
-#pragma omp critical (mergeBatchesInMem)
-                    {
                         nKmers += _elements.size();
                         elements = (RecordType*) realloc(elements, nKmers * sizeof(RecordType));
                         memcpy(elements, _elements.data(), _elements.size()*sizeof(RecordType));
-                    }
                 }
             }
-        };
         if (myBatches < 1) {
             std::vector<RecordType> _t(elements, elements + sizeof elements / sizeof elements[0]);
             collapse(_t);
             elements = realloc(elements, nKmers* sizeof(RecordType));
             memcpy(elements, _t.data(), _t.size()*sizeof(RecordType));
         }
-
     }
+
 
     void dumpBatch(std::vector<RecordType> &_elements) {
         collapse(_elements);
