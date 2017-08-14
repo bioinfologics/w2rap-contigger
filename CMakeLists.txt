@@ -218,6 +218,7 @@ add_library(base_libs OBJECT
         src/GFADump.cc
         src/util/TextTable.cc
         src/SMR.h
+        src/KMerFreqFactory.h
         src/paths/long/ReadPath.cc src/util/OutputLog.h src/util/OutputLog.cc)
 
 add_library(specific_w2rap-contigger OBJECT
@@ -273,6 +274,10 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
 add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
+
+add_executable(readCounts src/modules/readCounts.cc
+               $<TARGET_OBJECTS:base_libs>
+               )
 
 ##Zlib link
 if (ZLIB_FOUND)

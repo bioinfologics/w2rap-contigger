@@ -62,16 +62,18 @@ void step_1(vecbvec & bases,
 
 void step_2_EXP(KMerNodeFreq_s *kCounts, vecbvec const &reads,
             unsigned int minQual, unsigned int minCount,
-                const std::string &workdir, const std::string &tmpdir, uint64_t maxGB) {
+                const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
 
     SMR2 <KMerNodeFreq_s,
             KMerFreqFactory<bvec>,
             FastBReader<bvec>,
             bvec,
-            KMerParams > fastqKCount({K, minQual},1*GB, "./");
+            KMerParams > fastqKCount({K, minQual},max_mem*0.5/1000 * GB, "./");
 
+    OutputLog(3) << "Generate batches\n";
     fastqKCount.read_from_file(reads, omp_get_max_threads());
 
+    OutputLog(3) << "Merge batches\n";
     fastqKCount.getRecords(kCounts);
 
 }
@@ -697,7 +699,7 @@ int main(const int argc, const char * argv[]) {
                 step_1(bases, quals, out_dir, read_files);
                 break;
             case 2:
-                if (run_exp) step_2_EXP(kmercounts->kmers, bases, minQual, minCount, out_dir, tmp_dir, 128*GB);
+                if (run_exp) step_2_EXP(kmercounts->kmers, bases, minQual, minCount, out_dir, tmp_dir, max_mem);
                 else step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
                 break;
             case 3:

@@ -1006,6 +1006,7 @@ void KmerList::resize(size_t new_size) {
 
 std::shared_ptr<KmerList> kmerCountOMP(vecbvec const& reads, std::vector<uint16_t> const &rlen,
                                                                uint64_t gfrom, uint64_t gto, uint64_t batch_size=0) {
+    std::atomic<uint64_t> totalKmers(0);
     //Compute how many "batches" will be used. and malloc a structure for them and a bool array to mark them "ready to process".
     //optionally, there could be a total count of "ready kmers" to set a limit for memory usage, if total count is too high, slaves would wait
     if (batch_size == 0) batch_size = (gto - gfrom) / (4 * omp_get_max_threads()) + 1;
@@ -1064,6 +1065,7 @@ std::shared_ptr<KmerList> kmerCountOMP(vecbvec const& reads, std::vector<uint16_
                     ++last_kmer;
                 }
             }
+            totalKmers += last_kmer;
             //std::cout<<last_kmer<<" kmers inserted in a batch"<<std::endl;
             local_kmer_list->resize(last_kmer);
             local_kmer_list->sort();
@@ -1122,6 +1124,7 @@ std::shared_ptr<KmerList> kmerCountOMP(vecbvec const& reads, std::vector<uint16_
     batch_lists.back()[1].reset();
     for (auto &bs:batch_status) free(bs);
     OutputLog(3) << "cleanup done" << std::endl;
+    OutputLog(3) << "Total kmers processed " << totalKmers << std::endl;
     return kmer_list;
 }
 
