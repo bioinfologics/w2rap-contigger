@@ -24,7 +24,7 @@ public:
     }
 
     ~KMerFreqFactory() {
-        std::cout << "Bases processed " << bases << "\n";
+        //std::cout << "Bases processed " << bases << "\n";
     }
     void setFileRecord(FileRecord& rec){
         std::swap(rec,currentRecord);

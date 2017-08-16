@@ -17,23 +17,16 @@
 #define O_DIRECT O_RDONLY
 #endif
 
-std::ostream& operator<<(std::ostream& os, const KMerNodeFreq_s& kmer)
-{
-    os << kmer.kdata[0] << '-' << kmer.kdata[1] << "\n";
-    os << kmer.count << ' ' << kmer.kc << "\n";
-    return os;
-}
-
-std::istream& operator>> (std::istream& is, KMerNodeFreq_s& kmer)
-{
+std::istream& operator>> (std::istream& is, KMerNodeFreq_s& kmer) {
     is.read((char*)&kmer, sizeof(kmer));
     return is;
 }
 
-struct FastqRecord{
-    std::string name,seq,qual;
-};
-
+std::ostream& operator<<(std::ostream& os, const KMerNodeFreq_s& kmer) {
+    os << kmer.kdata[0] << '-' << kmer.kdata[1] << "\n";
+    os << kmer.count << ' ' << kmer.kc << "\n";
+    return os;
+}
 
 template<typename FileRecord>
 class FastBReader {
@@ -54,45 +47,6 @@ private:
     size_t pos;
 };
 
-template<typename FileRecord>
-class FastQReader {
-public:
-    // Single-end reads constructor
-    explicit FastQReader(std::string filepath){
-        std::cout << "Opening: " << filepath << "\n";
-        buffer = (char *) malloc(bufsize*sizeof(char));
-        read.rdbuf()->pubsetbuf(buffer,bufsize);
-        read.open(filepath.data());
-        read2=fopen(filepath.data(), "r");
-    }
-    bool next_record(FileRecord& rec){
-        char dummy[5000];
-        std::fgets(dummy, 5000, read2);
-        record.name = dummy;
-        std::fgets(dummy, 5000, read2);
-        record.seq = dummy;
-        std::fgets(dummy, 5000, read2);
-        std::fgets(dummy, 5000, read2);
-        record.qual = dummy;
-        std::swap(record,rec);
-        return !rec.name.empty();
-    }
-
-    bool done() {
-        return read.eof();
-    }
-
-    ~FastQReader(){
-        free(buffer);
-    }
-private:
-    FILE* read2;
-    std::ifstream read;
-    FileRecord record;
-    static const size_t bufsize=32*1024*1024;
-    char *buffer;
-};
-
 template <class RecordType, class RecordFactory, class FileReader, typename FileRecord, typename ParamStruct >
 class SMR2 {
 public:
@@ -103,11 +57,10 @@ public:
             nKmers(0),
             tKmers(0),
             tmp2(Otmp),
-            maxThreads(omp_get_max_threads())
+            maxThreads((unsigned int) omp_get_max_threads())
     {
         numElementsPerBatch = maxMem/sizeof(RecordType) / maxThreads;
-//        numElementsPerBatch = 500;
-        mergeCount=3;
+        mergeCount=2;
     }
 
     void read_from_file(const vecbvec &reads, int numThreads) {
@@ -118,7 +71,9 @@ public:
             size_t from, to;
             from = (reads.size()/omp_get_max_threads()) * (omp_get_thread_num());
             to = (reads.size()/omp_get_max_threads()) * (omp_get_thread_num()+1);
-            // check the division on the size of the reads
+
+            if(omp_get_thread_num()+1 == omp_get_num_threads()) to = reads.size();
+
             FileReader myFileReader(reads, from, to);
 #pragma omp critical (mapStart)
             {
@@ -134,10 +89,7 @@ public:
 
     void getRecords(RecordType *records){
         std::swap(elements,records);
-        //myBatches=166;
-        //omp_set_num_threads(1);
         reduceElementsFromBatches2();
-        //omp_set_num_threads(maxThreads);
         std::swap(records,elements);
 
         std::cout << "Total Kmers " << tKmers << "\n";
@@ -146,56 +98,69 @@ public:
     }
 
     void reduceElementsFromBatches2() {
-        std::vector<std::ifstream> threadFiles(omp_get_max_threads());
-        for (auto threadID = 0; threadID<omp_get_max_threads(); threadID++) {
+        OutputLog(3) << "Merging thread files" << std::endl;
+        std::vector<std::ifstream> threadFiles(maxThreads);
+        for (auto threadID = 0; threadID<maxThreads; threadID++) {
             std::string name(tmp + "thread_" + std::to_string(threadID) + ".tmc");
+            //std::cout << "Opening file " << name << std::endl;
             threadFiles[threadID].open(name.data(), std::ios_base::in|std::ios_base::binary);
         }
         std::vector<RecordType> elements;
         nKmers = merge("final.kc", threadFiles);
-        if (!isOrdered("final.kc")) {
-            std::cerr << "Thread " <<  omp_get_thread_num() << " archivo no ordenado final.kc\n";
-            exit(-1);
-        }
+        OutputLog(3) << "Done merging thread files" << std::endl;
     }
 
 private:
     typedef std::pair<int, RecordType> fileRecPair;
-    struct pQueueComparator
+
+    struct FileRecPairMoreCmp
     {
         bool operator()(const fileRecPair& lhs, const fileRecPair& rhs)
         {
             return lhs.second > rhs.second;
         }
     };
-    typedef std::priority_queue<fileRecPair, std::vector<fileRecPair>, pQueueComparator> fileRecPQ;
+
+    typedef std::priority_queue<fileRecPair, std::vector<fileRecPair>, FileRecPairMoreCmp> fileRecPQ;
 
     bool addToQueue(std::vector<std::ifstream> &inf, fileRecPQ &q, const fileRecPair &pair) const
     {
         RecordType helper;
         inf[pair.first].read((char *) &helper, sizeof(RecordType));
         if (inf[pair.first].gcount() == sizeof(RecordType)) {
+//            if (isEqual(helper)) std::cerr << "Read from file " << pair.first << " on thread " << omp_get_thread_num() << std::endl;
             q.emplace(pair.first, helper);
             return true;
         }
         return false;
     }
 
-    void outputElement(std::ofstream &outf, const RecordType &smallest) const
-    {
-//        outvec.push_back(smallest);
+    void outputElement(std::ofstream &outf, const RecordType &smallest) const {
         outf.write((char*) &smallest, sizeof(RecordType));
-//        std::cout << smallest << std::endl;
+    }
+
+    bool isEqual(const RecordType &rec) const {
+        return false;
+        uint64_t a(18446744072652575747LLU);
+        uint64_t b(13835058055282163712LLU);
+        KMerNodeFreq_s tk;
+        tk.kdata[0] = a;
+        tk.kdata[1] = b;
+        if (rec == tk) {
+            return true;
+        }
+        return false;
     }
 
     uint64_t merge(const std::string &tmpName, std::vector<std::ifstream> &inf) {
-        std::cout << "Begin merge " << tmpName << "\n";
+        //std::cout << "Begin merge " << tmpName << "\n";
         std::ofstream outf(tmpName.data(), std::ios_base::binary|std::ios_base::out|std::ios_base::trunc);
         std::vector<RecordType> outvec;
         uint64_t numElements(0);
         outf.write((char*)&numElements, sizeof(uint64_t));
 
         RecordType helper;
+
         fileRecPQ fQueue;
         for (size_t i = 0; i < inf.size(); ++i) {
             uint64_t tmp;
@@ -203,31 +168,35 @@ private:
             inf[i].read((char *) &helper, sizeof(RecordType));
             fQueue.emplace(i, helper);
         }
-
-        fileRecPair smallest = fQueue.top();fQueue.pop();
+        fileRecPair smallest;
+        if (!fQueue.empty()) smallest = fQueue.top();fQueue.pop();
         addToQueue(inf, fQueue, smallest);
         fileRecPair next;
+        if (!fQueue.empty()) next = fQueue.top();fQueue.pop();
         while (!fQueue.empty()) {
-            next = fQueue.top(); fQueue.pop();
             if (smallest.second < next.second) {
                 outputElement(outf, smallest.second);
                 numElements++;
                 addToQueue(inf, fQueue, smallest);
-                smallest = next;
-            } else if (smallest.second == next.second){
+                if (! (fQueue.top().second < next.second) ) {
+                    smallest = next;
+                    addToQueue(inf, fQueue, next);
+                    next = fQueue.top();fQueue.pop();
+                }
+            } else if (smallest.second == next.second) {
                 smallest.second.merge(next.second);
                 addToQueue(inf, fQueue, next);
-            } else {
-                outputElement(outf, next.second);
-                numElements++;
-                addToQueue(inf, fQueue, next);
+                next = fQueue.top();fQueue.pop();
             }
         }
-        outputElement(outf, smallest.second);
-        numElements++;
+        if (smallest.second < next.second) {
+            outputElement(outf, smallest.second);
+            numElements++;
+            outputElement(outf, next.second);
+            numElements++;
+        }
         outf.seekp(0, std::ios_base::beg);
         outf.write((char*)&numElements, sizeof(uint64_t));
-        std::cout << "Done with " << tmpName << std::endl;
 
         return numElements;
     }
@@ -315,6 +284,7 @@ private:
             if (myFileReader.next_record(frecord)) numReadsReduction++;
             myRecordFactory.setFileRecord(frecord);
             while (myRecordFactory.next_element(record)) {
+
                 _elements.push_back(record);
                 numKmersReduction++;
                 if (_elements.size() >= numElementsPerBatch) {
@@ -331,9 +301,7 @@ private:
             }
         }
         tKmers+=_elements.size();
-        std::cout << "Before collapse on finalMerge " << std::to_string(_elements.size()) << std::endl;
         dumpBatch(currentBatch, _elements);
-        std::cout << "After collapse on finalMerge " << std::to_string(_elements.size()) << std::endl;
 
         mergeBatches(currentBatch);
         rename(std::string(tmp+ "thread_"+ std::to_string(omp_get_thread_num())+ "_batch_0.tmc").c_str(), std::string(tmp+"thread_"+ std::to_string(omp_get_thread_num()) +".tmc").c_str());
@@ -341,13 +309,13 @@ private:
 
     void collapsedElementsToFile(const std::string &tmpName, std::vector<RecordType> &_elements) const {
         // Simply dump the file
-        std::cout << "Dumping file: " << tmpName << std::endl;
+        //std::cout << "Dumping file: " << tmpName << std::endl;
         std::ofstream outBatch(tmpName.data()
                     , std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
         auto size = _elements.size();
         outBatch.write((char *)&size, sizeof(size));
         outBatch.write((char *)_elements.data(), size*sizeof(RecordType));
-        std::cout << "Done dumping file: " << tmpName << std::endl;
+        //std::cout << "Done dumping file: " << tmpName << std::endl;
         outBatch.close();
         _elements.clear();
     }
@@ -355,7 +323,7 @@ private:
     void dumpBatch(const uint currentBatch, std::vector<RecordType> &_elements) {
         collapse(_elements);
         // Simply dump the file
-        std::cout << "Thread " << omp_get_thread_num() << " dumping batch #" << currentBatch << "\n";
+        //std::cout << "Thread " << omp_get_thread_num() << " dumping batch #" << currentBatch << "\n";
         std::string outBatchName(std::string(tmp
                                              + "thread_"
                                              + std::to_string(omp_get_thread_num())
@@ -370,15 +338,13 @@ private:
         std::vector<std::ifstream> inBatches(numFilesToMerge);
         for (auto batch=0; batch < numFilesToMerge; batch++) {
             std::string filename(tmp+ "thread_"+ std::to_string(omp_get_thread_num())+ "_batch_" + std::to_string(batch)+ ".tmc");
-            std::cout << "Opening " << filename << std::endl;
+            //std::cout << "Opening " << filename << std::endl;
             inBatches[batch].open(filename, std::ios_base::binary | std::ios_base::in);
         }
         std::string threadFile(tmp+ "thread_"+ std::to_string(omp_get_thread_num())+ "_tmpBatch1.tmc");
+        OutputLog(3) << "Merging " << numFilesToMerge << " in thread " << omp_get_thread_num() << std::endl;
         merge(threadFile, inBatches);
-        if (!isOrdered(threadFile)) {
-            std::cerr << "Thread " <<  omp_get_thread_num() << " archivo no ordenado " << threadFile << std::endl;
-            exit(-1);
-        }
+        OutputLog(3) << "DONE - Merging " << numFilesToMerge << " in thread " << omp_get_thread_num() << std::endl;
         rename(std::string(tmp+ "thread_"+ std::to_string(omp_get_thread_num())+ "_tmpBatch1.tmc").c_str(), std::string(tmp+ "thread_"+ std::to_string(omp_get_thread_num())+ "_batch_0.tmc").c_str());
     }
 
@@ -391,7 +357,7 @@ private:
         endPtr = _elements.end();
 
         // Keep the total in the first equal KMer
-        typename std::vector<RecordType>::iterator readPtr;
+        typename std::vector<RecordType>::const_iterator readPtr;
         for (readPtr = _elements.begin(); readPtr != endPtr; ++writePtr) {
             *writePtr = *readPtr;
             ++readPtr;
@@ -403,26 +369,32 @@ private:
         // After accumulating the values on the first KMer, remove all duplicates using unique
         // this operation is safe because the first copy is kept for all unique values
         // resize the object by erasing the duplicates
-        _elements.erase(writePtr, _elements.end());
-    };
+        _elements.resize(std::distance(_elements.begin(),writePtr));
+    }
 
     bool isOrdered(const std::string &name) {
+        return true;
         std::ifstream inf(name.data(), std::ios_base::binary|std::ios_base::in);
         if (!inf) {
             return false;
         }
         uint64_t totalKmers(0), fileKmers(0);
         inf.read((char *) &totalKmers, sizeof(totalKmers));
-        std::cout << name << " - Final count " << totalKmers << "\n";
+
+#pragma omp critical
+        {
+            std::cout << name << " - Final count " << totalKmers << "\n";
+        }
         KMerNodeFreq_s mer, prev;
-        inf >> mer;
+        inf.read((char*) &mer, sizeof(RecordType));
+        fileKmers++;
 //        std::cout << mer;
         prev = mer;
-        while (!inf.eof()) {
-            inf >> mer;
+        while ( inf.read((char*) &mer, sizeof(RecordType)) ) {
+            if(isEqual(mer)) std::cerr << "Found it on file " << name << " at " << fileKmers << std::endl;
 //            std::cout << mer;
-            if (prev > mer) {
-                std::cerr << "Input error at " << inf.tellg() << " prev > current\n" << "Prev: "<< prev << "Curr: " << mer;
+            if (! (mer > prev)) {
+                std::cerr << "Input error at " << inf.tellg() << " prev >= current\n" << "Prev: "<< prev << "Curr: " << mer;
                 std::cerr << "File kmer = " << fileKmers << std::endl;
                 return false;
             }
@@ -438,6 +410,7 @@ private:
         std::cout << totalKmers << " = " << fileKmers << std::endl;
         return true;
     }
+
     ParamStruct parameters;
     RecordType *elements;
     uint64_t numElementsPerBatch;
@@ -446,7 +419,7 @@ private:
     uint64_t nKmers;
     std::atomic<uint64_t> tKmers;
     const std::string tmp2;
-    const int maxThreads;
+    const int unsigned maxThreads;
     int mergeCount; // How many batches to keep rolling before merging
     std::string tmp;
 };
