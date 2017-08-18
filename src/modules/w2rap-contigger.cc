@@ -64,7 +64,7 @@ void step_2_EXP(KMerNodeFreq_s *kCounts, vecbvec const &reads,
             unsigned int minQual, unsigned int minCount,
                 const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
 
-    SMR2 <KMerNodeFreq_s,
+    SMR <KMerNodeFreq_s,
             KMerFreqFactory<bvec>,
             FastBReader<bvec>,
             bvec,
