@@ -81,7 +81,7 @@ if (MALLOC_LIBRARY)
     link_directories(${LIBSO_PATH})
 endif()
 
-find_package(ZLIB)
+find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
     add_definitions(-DHAVE_ZLIB)
     include_directories(${ZLIB_INCLUDE_DIRS})
