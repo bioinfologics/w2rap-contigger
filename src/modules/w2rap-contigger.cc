@@ -60,25 +60,27 @@ void step_1(vecbvec & bases,
 }
 
 
-void step_2_EXP(KMerNodeFreq_s *kCounts, vecbvec const &reads,
-            unsigned int minQual, unsigned int minCount,
-                const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
+void step_2_EXP(KMerNodeFreq_s *kCounts, vecbvec const &reads, VecPQVec &quals, unsigned int minQual,
+                unsigned int minCount, const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
+    vec<uint16_t> reads_length;
+    create_read_lengths(reads_length,quals,minQual);
+    OutputLog(2)<<"Unloading quals"<<std::endl;
+    quals.clear();
+    quals.shrink_to_fit();
 
     SMR <KMerNodeFreq_s,
-            KMerFreqFactory<bvec>,
-            FastBReader<bvec>,
-            bvec,
-            KMerParams > fastqKCount({K, minQual},max_mem*0.5/1000 * GB, "./");
+            KMerFreqFactory<std::pair<bvec, uint16_t>>,
+            FastBReader<std::pair<bvec,uint16_t>>,
+            std::pair<bvec,uint16_t >,
+            KMerParams > fastqKCount({K, minQual},max_mem*0.25/1000 * GB, minCount, "./");
 
-    OutputLog(3) << "Generate batches\n";
-    fastqKCount.read_from_file(reads, omp_get_max_threads());
+    fastqKCount.read_from_file(reads, reads_length, omp_get_max_threads());
 
-    OutputLog(3) << "Merge batches\n";
     fastqKCount.getRecords(kCounts);
 
 }
 
-void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec &quals,
+void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec const &quals,
             unsigned int minQual, unsigned minCount,
             std::string workdir, std::string tmpdir, unsigned char disk_batches, uint64_t count_batch_size) {
     vec<uint16_t> rlen;
@@ -699,7 +701,8 @@ int main(const int argc, const char * argv[]) {
                 step_1(bases, quals, out_dir, read_files);
                 break;
             case 2:
-                if (run_exp) step_2_EXP(kmercounts->kmers, bases, minQual, minCount, out_dir, tmp_dir, max_mem);
+                if (run_exp)
+                    step_2_EXP(kmercounts->kmers, bases, quals, minQual, minCount, out_dir, tmp_dir, max_mem);
                 else step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
                 break;
             case 3:

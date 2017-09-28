@@ -14,40 +14,39 @@ struct KMerParams {
 };
 
 
+
 template<typename FileRecord>
 class KMerFreqFactory{
 public:
-    KMerFreqFactory(KMerParams params) : K(params.k), minQual(params.minQual),
+    explicit KMerFreqFactory(KMerParams params) : K(params.k), minQual(params.minQual),
                                          KMER_FIRSTOFFSET((uint64_t) (K - 1) * 2),
                                          KMER_MASK((((uint64_t) 1) << (K * 2)) - 1),
                                          p(0), bases(0) {
     }
 
-    ~KMerFreqFactory() {
-        //std::cout << "Bases processed " << bases << "\n";
-    }
+    ~KMerFreqFactory() = default;
     void setFileRecord(FileRecord& rec){
         std::swap(rec,currentRecord);
-        nRecords = currentRecord.size()-K;
+        nRecords = currentRecord.first.size()-K;
         p=0;
     }
 
     const bool next_element(KMerNodeFreq_s& mer){
-/*        if (unlikely(K > currentRecord.seq.size()) or currentRecord.qual[p] < minQual) return false;  */
-        if (unlikely(p >= currentRecord.size())) return false;
+        if (unlikely(p >= currentRecord.first.size())) return false;
+        if (unlikely(p >= currentRecord.second)) return false;
         if (unlikely(p == 0)) {
-            kkk = KMerNodeFreq(currentRecord.begin());
+            kkk = KMerNodeFreq(currentRecord.first.begin());
             kkk.hash();
-            kkk.kc = KMerContext::initialContext(*(currentRecord.begin()+K));
+            kkk.kc = KMerContext::initialContext(*(currentRecord.first.begin()+K));
             kkk.count = 1;
             bases+=K;
             p = K;
             (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
-            return p < currentRecord.size();
+            return p < currentRecord.first.size();
         }
 
-        auto itr = currentRecord.cbegin()+p;
-        while (itr != currentRecord.cend()-1) {
+        auto itr = currentRecord.first.cbegin()+p;
+        while (itr != currentRecord.first.cend()-1) {
             bases++;
             unsigned char pred = kkk.front();
             kkk.toSuccessor(*itr);
@@ -58,22 +57,22 @@ public:
             return true;
         }
         kkk.kc = KMerContext::finalContext(kkk.front());
-        kkk.toSuccessor(*(currentRecord.cbegin() + (currentRecord.size()-1)));
+        kkk.toSuccessor(*(currentRecord.first.cbegin() + (currentRecord.first.size()-1)));
         (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
         p++;
         return true;
     }
 
 private:
-    KMerNodeFreq kkk;
+    KMerNodeFreq kkk{};
     FileRecord currentRecord;
-    uint64_t p;
-    uint64_t bases;
-    uint nRecords;
+    uint64_t p{};
+    uint64_t bases{};
+    uint nRecords{};
     unsigned int minQual;
-    const uint8_t K;
-    const uint64_t KMER_MASK;
-    const uint64_t KMER_FIRSTOFFSET;
+    const uint8_t K{};
+    const uint64_t KMER_MASK{};
+    const uint64_t KMER_FIRSTOFFSET{};
 };
 
 
