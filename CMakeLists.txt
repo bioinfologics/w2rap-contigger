@@ -81,9 +81,16 @@ if (MALLOC_LIBRARY)
     link_directories(${LIBSO_PATH})
 endif()
 
-find_package(ZLIB REQUIRED)
+find_package(ZLIB)
 if (ZLIB_FOUND)
-  include_directories(${ZLIB_INCLUDE_DIRS})
+    add_definitions(-DHAVE_ZLIB)
+    include_directories(${ZLIB_INCLUDE_DIRS})
+endif()
+
+find_package(BZip2)
+if (BZIP2_FOUND)
+    add_definitions(-DHAVE_BZIP2)
+    include_directories(${BZIP2_INCLUDE_DIRS})
 endif()
 
 ## Include directories
