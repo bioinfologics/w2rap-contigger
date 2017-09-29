@@ -18,16 +18,6 @@
 #endif
 
 
-std::istream& operator>> (std::istream& is, KMerNodeFreq_s& kmer) {
-    is.read((char*)&kmer, sizeof(kmer));
-    return is;
-}
-
-std::ostream& operator<<(std::ostream& os, const KMerNodeFreq_s& kmer) {
-    os << kmer.kdata[0] << '-' << kmer.kdata[1];
-    return os;
-}
-
 template<typename FileRecord>
 class FastBReader {
 public:
@@ -75,6 +65,7 @@ public:
             nRecs(0),
             nKmers(0),
             tKmers(0),
+            merged_kmers(0),
             tmp2(Otmp),
             minCount(min),
             maxThreads((unsigned int) omp_get_max_threads()) {
@@ -166,16 +157,13 @@ private:
 
         uint min = 0;
         for (uint i = 1; i < files_size; ++i) {
-            if (next_element_from_file[i] < next_element_from_file[i-1]) min = i;
+            if (next_element_from_file[i][0] < next_element_from_file[i-1][0]) min = i;
         }
 
         KMerNodeFreq_s current_element;
-        if (elements[memoryElement] < next_element_from_file[min][0]) {
-            current_element = elements[memoryElement];
-        } else {
-            current_element = next_element_from_file[min][count_element_from_file[min]];
-            count_element_from_file[min];
-        }
+
+        current_element = std::min(elements[0],next_element_from_file[min][0]);
+
         current_element.count=0;
 
 
@@ -263,6 +251,7 @@ private:
 
         KMerNodeFreq_s *outfreqs=(KMerNodeFreq_s*) malloc(outBufferSize* sizeof(KMerNodeFreq_s));
 
+        // Open files and initialise batch arrays
         for (auto i = 0; i < files_size; i++) {
             in_fds[i] = ::open(files[i].c_str(), O_RDONLY);
             uint64_t size;
@@ -276,28 +265,39 @@ private:
             active_file[i] = true;
         }
 
+        // Find the file holding the minimum element
         uint min = 0;
         for (uint i = 1; i < files_size; ++i) {
-            if (next_element_from_file[i] < next_element_from_file[i-1]) min = i;
+            if (next_element_from_file[i][0] < next_element_from_file[i-1][0]) min = i;
         }
 
-        KMerNodeFreq_s current_element(next_element_from_file[min][count_element_from_file[min]]);
+        // Set the current element to the minimum from the files
+        KMerNodeFreq_s current_element(next_element_from_file[min][0]);
         current_element.count=0;
+        current_element.kc=0;
 
         KMerNodeFreq_s min_element;
         bool active;
         do {
             active=false;
+
+            // Set the minimum to a very large value (ensure the min is found)
             min_element.kdata[0] = std::numeric_limits<uint64_t>::max();
             min_element.kdata[1] = std::numeric_limits<uint64_t>::max();
 
             for (int i=0; i<files_size; ++i) {
+                // If this file is depleted continue
                 if (size_element_from_file[i] <= count_element_from_file[i]) continue;
 
+                // If this file's element == current element, merge onto the current element
+                // and advance the batch-file record
                 if (current_element == next_element_from_file[i][count_element_from_file[i]]) {
                     current_element.merge(next_element_from_file[i][count_element_from_file[i]]);
                     count_element_from_file[i]++;
+
+                    // If this batch ran out of elements, get a new batch
                     if (count_element_from_file[i] == size_element_from_file[i]) {
+                        // If there are no more elements, size_element_from_file == 0 so it is deactivated
                         size_element_from_file[i] =
                                 ::read(in_fds[i], (char *) next_element_from_file[i], bufferSize*sizeof(KMerNodeFreq_s))
                                 / sizeof(KMerNodeFreq_s);
@@ -305,7 +305,9 @@ private:
                         count_element_from_file[i] = 0;
                     }
                 }
+                // If there are any elements left on this file, check if it is the minimum
                 if (count_element_from_file[i] < size_element_from_file[i]) {
+                    // If this is the minimum, we need to merge it with the rest
                     if (!(next_element_from_file[i][count_element_from_file[i]] > min_element)){
                         active=true;
                         min_element = next_element_from_file[i][count_element_from_file[i]];
@@ -313,32 +315,42 @@ private:
                 }
             }
 
+            // Check if we need to output current element
             if (current_element.count >= minCount) {
                 outfreqs[count0] = current_element;
                 ++count0;
             }
+            merged_kmers++;
+            // Check if there's space left on the 'output' batch
             if (count0 == outBufferSize) {
                 ::write(out, (char *) outfreqs, outBufferSize * sizeof(KMerNodeFreq_s));
                 outCount += count0;
                 count0 = 0;
             }
+            // Set the new current_element to the min_element and it's count to 0 for the next iteration
             current_element = min_element;
             current_element.count=0;
+            current_element.kc=0;
         } while ( active );
 
+        // If there were any elements left on the 'output' batch dump them
         if (count0 > 0) {
             ::write(out, (char *) outfreqs, count0 * sizeof(KMerNodeFreq_s));
             outCount += count0;
         }
+
+        // Write the number of elements on the file at the header
         ::lseek(out, 0, SEEK_SET);
         ::write(out, (char *) &outCount, sizeof(outCount));
         free(outfreqs);
         ::close(out);
 
+        // Cleanup
         for (auto i = 0; i < files_size; i++) {
             free(next_element_from_file[i]);
             //std::remove(files[i].c_str());
         }
+        OutputLog(3) << "Total kmers " << outCount << "/" << merged_kmers << " with freq >= " << minCount << std::endl;
         return outCount;
     }
 
@@ -447,6 +459,7 @@ private:
     uint64_t nRecs;
     uint64_t nKmers;
     std::atomic<uint64_t> tKmers;
+    uint64_t merged_kmers;
     const std::string tmp2;
     const int unsigned maxThreads;
     int mergeCount; // How many batches to keep rolling before merging
