@@ -60,7 +60,7 @@ void step_1(vecbvec & bases,
 }
 
 
-void step_2_EXP(KMerNodeFreq_s *kCounts, vecbvec const &reads, VecPQVec &quals, unsigned int minQual,
+void step_2_EXP(std::shared_ptr<KmerList> & kmercounts, vecbvec const &reads, VecPQVec &quals, unsigned int minQual,
                 unsigned int minCount, const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
     vec<uint16_t> reads_length;
     create_read_lengths(reads_length,quals,minQual);
@@ -72,12 +72,11 @@ void step_2_EXP(KMerNodeFreq_s *kCounts, vecbvec const &reads, VecPQVec &quals, 
             KMerFreqFactory<std::pair<bvec, uint16_t>>,
             FastBReader<std::pair<bvec,uint16_t>>,
             std::pair<bvec,uint16_t >,
-            KMerParams > fastqKCount({K, minQual},max_mem*0.25/1000 * GB, minCount, "./");
+            KMerParams > fastqKCount({K, minQual},max_mem*0.25/1000 * GB, minCount, workdir, tmpdir);
 
     fastqKCount.read_from_file(reads, reads_length, omp_get_max_threads());
 
-    fastqKCount.getRecords(kCounts);
-
+    kmercounts->size = fastqKCount.getRecords(kmercounts->kmers);
 }
 
 void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec const &quals,
@@ -103,7 +102,6 @@ void step_3(HyperBasevector &hbv,
             unsigned int small_K,
             std::string out_dir) {
     bool FILL_JOIN = False;
-
     buildReadQGraph(bases, quals, kmercounts, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K);
 
     kmercounts.reset();
@@ -702,7 +700,7 @@ int main(const int argc, const char * argv[]) {
                 break;
             case 2:
                 if (run_exp)
-                    step_2_EXP(kmercounts->kmers, bases, quals, minQual, minCount, out_dir, tmp_dir, max_mem);
+                    step_2_EXP(kmercounts, bases, quals, minQual, minCount, out_dir, tmp_dir, max_mem);
                 else step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
                 break;
             case 3:
