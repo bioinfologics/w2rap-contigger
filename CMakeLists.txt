@@ -17,20 +17,56 @@ ENDIF ()
 
 project (w2rap-contigger)
 
+# Get the current working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of the working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Fill the version variables in case the compilation isn't done from a git repo
+if("${GIT_COMMIT_HASH}" STREQUAL "")
+add_definitions("-DGIT_COMMIT_HASH=\"experimental\"")
+else()
+add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+endif()
+if("${GIT_BRANCH}" STREQUAL "")
+add_definitions("-DGIT_COMMIT_HASH=\"not from git\"")
+else()
+add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
+endif()
+
 FIND_PACKAGE( OpenMP REQUIRED)
 if(OPENMP_FOUND)
 message("OPENMP FOUND")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+if(DEFINED PROFILE)
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+endif()
+
+if(DEFINED COVERAGE)
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+endif()
+
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -w -Wno-deprecated -std=c++11")
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-
-#SET(CMAKE_CXX_LINK_EXECUTABLE "/usr/bin/ld")
-add_definitions(${CMAKE_CXX_FLAGS})
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fpermissive -w -Wno-deprecated -std=c++11")
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
@@ -44,13 +80,6 @@ if (MALLOC_LIBRARY)
     ## Link directories
     link_directories(${LIBSO_PATH})
 endif()
-
-#if (DEFINED ZLIB_PATH)
-#  include_directories("${ZLIB_PATH}/include")
-#  link_directories("${ZLIB_PATH}/lib")
-#else()
-#    set(ZLIB_PATH "/usr/lib" CACHE FILEPATH "ZLIB Library path")
-#endif()
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -258,4 +287,3 @@ if (DEFINED MALLOC_LIBRARY)
         target_link_libraries(w2rap-contigger ${LIBSO_NAME})
     endif()
 endif()
-

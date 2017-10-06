@@ -201,13 +201,13 @@ void FindSomeCells( const digraph& G, const int max_cell_size,
      {    
           // Consider only canonical cell entry vertices v.
 
-          if ( !G.To(v).solo( ) || G.From(v).size( ) <= 1 ) continue;
-          if ( Member( G.From(v), v ) ) continue;
-          
-          // Find vertices a bit downstream of the immediate successors of v.
+          if ( !G.To(v).solo( ) || G.From(v).size( ) <= 1 ) continue;   // Continue if [x->v] is not unique
+                                                                        // OR [v is an end or v is part of a line]
+          if ( Member( G.From(v), v ) ) continue; // Continue if _this vertex_ (v) is in a cycle
 
+         // Find vertices a bit downstream of the immediate successors of v.
           int no = G.From(v).size( );
-          vec<vec<int>> down(no), downd(no);
+          vec<vec<int>> down(no), downd(no); // Downstream paths and distances
           for ( int j = 0; j < no; j++ )
           {    down[j].push_back( G.From(v)[j] );
                downd[j].push_back(0);
@@ -216,7 +216,7 @@ void FindSomeCells( const digraph& G, const int max_cell_size,
                     for ( int l = 0; l < G.From( down[j][i] ).isize( ); l++ )
                     {    int w = G.From( down[j][i] )[l], d = downd[j][i] + 1;
                          int p = Position( down[j], w );
-                         if ( p < 0 || downd[j][p] > d )
+                         if ( p < 0 || downd[j][p] > d ) // If p is in down and is further away
                          {    down[j].push_back(w);
                               downd[j].push_back(d);    }    }    }
                UniqueSort( down[j] );    }
@@ -228,8 +228,8 @@ void FindSomeCells( const digraph& G, const int max_cell_size,
           vec<Bool> to_del( ex.size( ), True );
           for ( int i = 0; i < ex.isize( ); i++ )
           {    int w = ex[i];
-               if ( !G.From(w).solo( ) || G.To(w).size( ) <= 1 ) continue;
-               if ( Member( G.To(w), w ) ) continue;
+               if ( !G.From(w).solo( ) || G.To(w).size( ) <= 1 ) continue; // Check the exit is part of a unique path
+               if ( Member( G.To(w), w ) ) continue; // Check the exit is not a loop
                to_del[i] = False;    }
           EraseIf( ex, to_del );
 
@@ -246,30 +246,30 @@ void FindSomeCells( const digraph& G, const int max_cell_size,
                Bool bad = False;
                for ( int j = 0; j < x.isize( ); j++ )
                {    if ( x.isize( ) > max_cell_size || G.From( x[j] ).empty( )
-                         || G.To( x[j] ).empty( ) )
+                         || G.To( x[j] ).empty( ) )  // Check it's not a loose end
                     {    bad = True;
                          break;    }
-                    if ( x[j] != w )
+                    if ( x[j] != w ) // x[j] isn't the exit[i]
                     {    for ( int l = 0; l < G.From( x[j] ).isize( ); l++ )
                          {    int t = G.From( x[j] )[l];
-                              if ( t == v )
+                              if ( t == v ) // Check t doesn't form a loop including the origin vertex (v)
                               {    bad = True;
                                    break;    }
-                              if ( !Member( x, t ) ) x.push_back(t);    }    }
-                    if ( x[j] != v )
+                              if ( !Member( x, t ) ) x.push_back(t);    }    } // Add t to the path list
+                    if ( x[j] != v ) // x[j] isn't the origin
                     {    for ( int l = 0; l < G.To( x[j] ).isize( ); l++ )
                          {    int t = G.To( x[j] )[l];
-                              if ( t == w )
+                              if ( t == w )  // Check t doesn't form a loop including the origin exit vertex
                               {    bad = True;
                                    break;    }
-                              if ( !Member( x, t ) ) x.push_back(t);    }    }    }
-               if ( bad || x.isize( ) > max_cell_size ) continue;
+                              if ( !Member( x, t ) ) x.push_back(t);    }    }    } // Add t to the path list
+               if ( bad || x.isize( ) > max_cell_size ) continue; // If x is too long
 
                // Check for cycles.
 
                for ( int j = 0; j < x.isize( ); j++ )
                {    if (bad) break;
-                    if ( x[j] == w ) continue;
+                    if ( x[j] == w ) continue; // If any inner cell vertex connects to the exit
                     vec<int> m = { x[j] };
                     for ( int l = 0; l < m.isize( ); l++ )
                     {    if (bad) break;
@@ -292,7 +292,7 @@ void FindSomeCells( const digraph& G, const int max_cell_size,
                len[i] = xs[i].size( );
           SortSync( len, ids );
           if ( ex2.size( ) >= 2 && len[0] == len[1] ) continue; // possible???
-          int w = ex2[ ids[0] ];
+          int w = ex2[ ids[0] ]; // Get the longest distance
           #pragma omp critical
           {    bounds.push( v, w );    }    }
      Sort(bounds);    }

@@ -54,10 +54,11 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
      {    ReadPath& p = paths[id];
           // Only consider full placements.
 
-          if ( p.size( ) == 0 ) continue;
-          if ( p.getOffset( ) < 0 ) continue;
+         // Don't contemplate path if:
+          if ( p.size( ) == 0 ) continue;   // The path is empty
+          if ( p.getOffset( ) < 0 ) continue; // Or the read start is hanging --=====
           vec<int> s( p.size( ) );
-          s[0] = p.getOffset( );
+          s[0] = p.getOffset( );    // Save the read start
           for ( int j = 1; j < (int) p.size( ); j++ )
                s[j] = s[j-1] - hb.EdgeLengthKmers( p[j-1] );
           int n = bases[id].size( );

@@ -30,12 +30,26 @@
 #include <kmers/BigKMer.h>
 #include "GFADump.h"
 #include "util/OutputLog.h"
+#include "SMR.h"
+#include "kmers/KMer.h"
 #include <omp.h>
+
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
+
+ // Dummy defines, this should come from CMakeLists.txt
+#ifndef GIT_COMMIT_HASH
+#define GIT_COMMIT_HASH "dummy"
+#endif
+#ifndef GIT_BRANCH
+#define GIT_BRANCH "dummy"
+#endif
 
 //TODO: stupid globals!
 
 int MAX_CELL_PATHS = 50;
 int MAX_DEPTH = 10;
+const uint64_t GB = 1024*1024*1024;
 
 
 void step_1(vecbvec & bases,
@@ -44,6 +58,159 @@ void step_1(vecbvec & bases,
             std::string read_files){
     OutputLog(2) << "processing reads into bases and quals"<<std::endl;
     ExtractReads(read_files, out_dir, &bases, &quals);
+}
+
+
+struct KMerParams {
+    uint8_t k;
+    unsigned int minQual;
+};
+
+template<typename FileRecord>
+class KMerFreqFactory{
+public:
+    KMerFreqFactory(KMerParams params) : K(params.k), minQual(params.minQual),
+                                     KMER_FIRSTOFFSET((uint64_t) (K - 1) * 2),
+                                     KMER_MASK((((uint64_t) 1) << (K * 2)) - 1),
+                                     p(0), bases(0) {
+        memset(b2f, 0, 255);
+        b2f['a'] = b2f['A'] = 0;
+        b2f['c'] = b2f['C'] = 1;
+        b2f['g'] = b2f['G'] = 2;
+        b2f['t'] = b2f['T'] = 3;
+    }
+
+    ~KMerFreqFactory() {
+        std::cout << "Bases processed " << bases << "\n";
+    }
+    void setFileRecord(FileRecord& rec){
+        std::swap(rec,currentRecord);
+        p=0;
+    }
+
+    const bool next_element(KMerNodeFreq_s& mer){
+        if (unlikely(K > currentRecord.seq.size()) or currentRecord.qual[p] < minQual) return false;
+        if (unlikely(p == 0)) {
+            kkk = KMerNodeFreq();
+            for (auto itr = currentRecord.seq.begin(); itr != currentRecord.seq.begin()+K; ++itr) {
+                kkk.toSuccessor(b2f[*itr]);
+            }
+            kkk.hash();
+            kkk.kc = KMerContext::initialContext(b2f[*(currentRecord.seq.begin()+K)]);
+            kkk.count = 1;
+            p = K;
+            (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
+            for (int i = 0; i < K; ++i) if (currentRecord.qual[i] < minQual) return false;
+            return p < currentRecord.seq.size();
+        }
+        auto itr = currentRecord.seq.cbegin()+p;
+        while (itr != currentRecord.seq.cend() and currentRecord.qual[p] > minQual) {
+            bases++;
+            unsigned char pred = kkk.front();
+            kkk.toSuccessor(b2f[*itr]);
+            ++itr;
+            kkk.kc = KMerContext(pred, b2f[*itr]);
+            p++;
+            (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
+            return true;
+        }
+        kkk.kc = KMerContext::finalContext(kkk.front());
+        kkk.toSuccessor(b2f[*itr]);
+        (kkk.isRev()) ? KMerNodeFreq(kkk,true).to_struct(mer) : kkk.to_struct(mer);
+        return true;
+    }
+
+private:
+    KMerNodeFreq kkk;
+    FileRecord currentRecord;
+    uint64_t p;
+    uint64_t bases;
+    unsigned int minQual;
+    const uint8_t K;
+    const uint64_t KMER_MASK;
+    const uint64_t KMER_FIRSTOFFSET;
+    unsigned char b2f[256];
+};
+
+void step_2_EXP(KMerNodeFreq_s *kCounts, const std::string &filenames,
+            unsigned int minQual, unsigned int minCount,
+                const std::string &workdir, const std::string &tmpdir, unsigned int maxGB) {
+
+    SMR <KMerNodeFreq_s,
+            KMerFreqFactory<FastqRecord>,
+            FastQReader<FastqRecord>,
+            FastqRecord,
+            KMerParams > fastqKCount({K, minQual},8*GB);
+
+    std::vector<std::string> fastqFile;
+    std::stringstream ss(filenames); // Turn the string into a stream.
+    std::string tok;
+
+    while(std::getline(ss, tok, ',')) {
+        fastqFile.push_back(tok);
+    }
+
+    for (const auto &i : fastqFile) {
+        kCounts = fastqKCount.read_from_file(i);
+        free(kCounts);
+    }
+
+    // TODO:
+    // 1) Merge files after counting separately
+    std::vector<std::ifstream*> finalMerge(fastqFile.size());
+    std::ofstream threadMerged(workdir+"final"+".kc", std::ios::trunc | std::ios::out | std::ios::binary);
+    for (auto i=fastqFile.cbegin(); i != fastqFile.cend(); ++i) {
+        std::string filename = *i;
+        std::replace(filename.begin(), filename.end(), '/', '.');
+        finalMerge[i-fastqFile.begin()] = new std::ifstream (tmpdir+filename+ ".kc", std::ios::in | std::ios::binary);
+    }
+    std::vector<uint64_t > fileSizes(fastqFile.size());
+    for (auto i=0; i < fastqFile.size(); ++i) {
+        finalMerge[i]->read((char *) &fileSizes[i], sizeof(uint64_t));
+    }
+
+    std::vector<std::pair<unsigned int, KMerNodeFreq_s>> kCursor;
+    for (auto i=0; i < fastqFile.size(); ++i) {
+        KMerNodeFreq_s k{};
+        finalMerge[i]->read((char *) &k, sizeof(KMerNodeFreq_s));
+        kCursor.emplace_back(i, k);
+    }
+
+    std::vector<bool> finished(finalMerge.size(), false);
+    uint64_t nKmers(maxGB/sizeof(KMerNodeFreq_s));
+    kCounts = (KMerNodeFreq_s *) malloc(nKmers * sizeof(KMerNodeFreq_s));
+    uint64_t countKmers(0);
+    do {
+        KMerNodeFreq_s k{};
+        std::pair<unsigned int, KMerNodeFreq_s> minFile;
+        minFile.second = kCursor.begin()->second;
+        for (auto itr = kCursor.begin(); itr != kCursor.cend(); ++itr) {
+            if (itr->second < minFile.second and !finished[itr->first]) {
+                minFile.first = itr->first;
+                minFile.second = itr->second;
+            }
+        }
+        auto currentMer(minFile.second);
+        for (auto itr=kCursor.cbegin(); itr != kCursor.cend(); ++itr){
+            if (currentMer == itr->second and !finished[itr->first]) {
+                k.merge(itr->second);
+                finalMerge[itr->first]->read((char *) &kCursor[itr->first].second, sizeof(KMerNodeFreq_s));
+                if (finalMerge[itr->first]->eof()) {
+                    finished[itr->first] = true;
+                }
+            }
+        }
+
+        k = currentMer;
+        if (countKmers >= nKmers) {
+            nKmers = (uint64_t) (countKmers * 1.2);
+            kCounts = (KMerNodeFreq_s *) realloc(kCounts, nKmers * sizeof(KMerNodeFreq_s));
+        }
+        kCounts[countKmers] = k;
+        ++countKmers;
+
+    } while (std::count_if(finished.begin(), finished.end(), [&](const bool &file) -> bool { return !file;})>0);
+
 }
 
 void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec &quals,
@@ -104,16 +271,6 @@ void step_4DV(HyperBasevector &hbv,
     FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 }
 
-void step_4(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            unsigned int large_K,
-            std::string out_dir){
-    step_4DV(hbv,hbvinv,paths,large_K,out_dir);
-}
-
-
-
 void step_4EXP(HyperBasevector &hbv,
                vec<int> &hbvinv,
                ReadPathVec &paths,
@@ -153,6 +310,14 @@ void step_4EXP(HyperBasevector &hbv,
     hbv.Involution(hbvinv);
     FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
 
+}
+
+void step_4(HyperBasevector &hbv,
+            vec<int> &hbvinv,
+            ReadPathVec &paths,
+            unsigned int large_K,
+            std::string out_dir){
+    step_4DV(hbv,hbvinv,paths,large_K,out_dir);
 }
 
 void step_5(HyperBasevector &hbv,
@@ -405,6 +570,8 @@ void step_8(HyperBasevector &hbv,
 
 int main(const int argc, const char * argv[]) {
 
+
+	std::cout << "Version: " << GIT_BRANCH << "  " << GIT_COMMIT_HASH << std::endl;
     std::string out_prefix;
     std::string read_files;
     std::string out_dir;
@@ -532,7 +699,7 @@ int main(const int argc, const char * argv[]) {
     //Check directory exists:
 
 
-    struct stat info;
+    struct stat info{};
 
     if (stat(out_dir.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
         std::cout << "Output directory doesn't exist, or is not a directory: " << out_dir << std::endl;
@@ -667,7 +834,8 @@ int main(const int argc, const char * argv[]) {
                 step_1(bases, quals, out_dir, read_files);
                 break;
             case 2:
-                step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
+                if (run_exp) step_2_EXP(kmercounts->kmers, read_files, minQual, minCount, out_dir, tmp_dir, 128*GB);
+                else step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
                 break;
             case 3:
                 step_3(hbv,hbvinv,paths,bases,quals,kmercounts,minFreq,small_K,out_dir);

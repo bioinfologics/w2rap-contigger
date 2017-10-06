@@ -47,52 +47,6 @@
 
 namespace
 {
-    const unsigned K = 60;
-    typedef KMer<K> BRQ_Kmer;
-    typedef KMer<K-1> BRQ_SubKmer;
-    typedef KmerDictEntry<K> BRQ_Entry;
-    typedef KmerDict<K> BRQ_Dict;
-    //we can reduce this usage by storing blocks of kmers and using a difference with the previous. we would need slightly more complex heuristics.
-
-
-    class KMerNodeFreq: public KMer<K>{
-    public:
-        KMerNodeFreq(){};
-        template <class Itr>
-        explicit KMerNodeFreq( Itr start )
-        { assign(start,NopMapper()); }
-
-        KMerNodeFreq (const KMerNodeFreq &other){
-            *this=other;
-            count=other.count;
-            kc=other.kc;
-        }
-        KMerNodeFreq (const KMerNodeFreq_s &other) {
-            memcpy (&this->mVal,&other.kdata,sizeof(KMer<K>));
-            count=other.count;
-            kc.mVal=other.kc;
-        }
-
-        KMerNodeFreq (const KMerNodeFreq &other, bool rc){
-            *this=other;
-            count=other.count;
-            kc=other.kc;
-            if (rc){
-                this->rc();
-                kc=kc.rc();
-            }
-        }
-        void to_struct (KMerNodeFreq_s &other) const {
-            memcpy (&other.kdata,&this->mVal,sizeof(KMer<K>));
-            other.count=count;
-            other.kc=kc.mVal;
-        }
-        unsigned char count;
-
-        KMerContext kc;
-    };
-
-
 
     inline void summarizeEntries( BRQ_Entry* e1, BRQ_Entry* e2 )
     {
@@ -919,11 +873,11 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
     uint64_t qsize=quals.size();
     rlen.resize(qsize);
     OutputLog(2) << "Creating read lengths for "<<qsize<<" reads at quality >= " << minQual << std::endl;
-    #pragma omp parallel shared(rlen,quals)
+    #pragma omp parallel shared(rlen,quals,qsize)
     {
         QualVec uq;
         #pragma omp for
-        for (auto i = 0; i < qsize; ++i) {
+        for (uint64_t i = 0; i < qsize; ++i) {
             quals[i].unpack(&uq);
             auto itr = uq.end();
             auto beg = uq.begin();
@@ -1042,9 +996,8 @@ void KmerList::load(std::string filename) {
 void KmerList::resize(size_t new_size) {
     if (size != new_size) {
         //std::cout << " allocating space for "<< new_size <<" elements: " << sizeof(KMerNodeFreq_s) * new_size <<std::endl;
-        /*if (0==size) kmers = (KMerNodeFreq_s *) malloc(sizeof(KMerNodeFreq_s) * new_size);
-        else*/
-        kmers = (KMerNodeFreq_s *) realloc(kmers, sizeof(KMerNodeFreq_s) * new_size);
+        if (0==size) kmers = (KMerNodeFreq_s *) malloc(sizeof(KMerNodeFreq_s) * new_size);
+        else kmers = (KMerNodeFreq_s *) realloc(kmers, sizeof(KMerNodeFreq_s) * new_size);
         //if (new_size>0 and kmers == nullptr) std::cout << " realloc error!!! "<<std::endl;
         size = new_size;
     }

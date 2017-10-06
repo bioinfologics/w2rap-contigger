@@ -43,60 +43,82 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      std::vector< std::vector<int> > places;
      places.reserve( paths.size( ) );
      //TODO: same path -> same place, why don't we sort and unique paths then? before complicating all of this code!
+
+    ///////////////////////////////////////////////////////////////////////////////
+    // Generate the 'places' vector
+    ///////////////////////////////////////////////////////////////////////////////
+
      const int batch = 10000;
      #pragma omp parallel for
      for (int64_t m = 0; m < (int64_t) paths.size(); m += batch) {
           std::vector<std::vector<int> > placesm;
           placesm.reserve(batch);
           std::vector<int> x, y;
-          int64_t n = Min(m + batch, (int64_t) paths.size());
+          int64_t n = Min(m + batch, (int64_t) paths.size());   // Check bounds
           for (int64_t i = m; i < n; i++) {
                x.clear(), y.clear();
                int nkmers = 0;
-               for (auto &e:paths[i]) {
+               for (auto &e:paths[i]) {     // Add paths forward paths to x and count kmers
                     x.push_back(e);
                     nkmers += edges[e].size() - ((int) K - 1);
                }
 
-               if (nkmers + ((int) K - 1) >= K2) {
+               if (nkmers + ((int) K - 1) >= K2) {      // If path is 'interesting' add rc to y and add that to places
                     for (int j = x.size() - 1; j >= 0; j--)
                          y.push_back(inv[x[j]]);
                     placesm.push_back(x < y ? x : y);
                }
           }
           #pragma omp critical
-          { places.insert(places.end(),placesm.begin(),placesm.end()); }
+          { places.insert(places.end(),placesm.begin(),placesm.end()); }    // Places is built
      }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    // Transform places into a set
+    ///////////////////////////////////////////////////////////////////////////////
      OutputLog(4) << "sorting "<<places.size()<<" path-places" << std::endl;
      sortInPlaceParallel(places.begin(), places.end());
      places.erase(std::unique(places.begin(),places.end()),places.end());
      places.shrink_to_fit();
      OutputLog(3) << places.size()<<" unique places" << std::endl;
+
+
      // Add extended places.
 
-     if (EXTEND_PATHS)
+     if (EXTEND_PATHS) // ALWAYS FALSE!
      {    OutputLog(2) << "begin extending paths" << std::endl;
           vec<int> to_left, to_right;
           hb.ToLeft(to_left), hb.ToRight(to_right);
           std::vector<std::vector<int>> eplaces;
+
           for ( auto i = 0; i < places.size( ); i++ )
-          {    vec<int> p = places[i];
+          {
+              vec<int> p = places[i];
                int v = to_left[ p.front( ) ], w = to_right[ p.back( ) ];
+
+              // TODO: Is this while equivalent to if?!
                while( hb.To(v).solo( ) )
                {    int e = hb.EdgeObjectIndexByIndexTo( v, 0 );
                     if ( !Member( p, e ) ) p.push_front(e);
                     else break;    }
+
                while( hb.From(w).solo( ) )
                {    int e = hb.EdgeObjectIndexByIndexFrom( w, 0 );
                     if ( !Member( p, e ) ) p.push_back(e);
                     else break;    }
+
                if ( p.size( ) > places[i].size( ) ) eplaces.push_back(p);    }
+
           places.insert(places.end(),eplaces.begin(),eplaces.end());
           OutputLog(2) << "resorting" << std::endl;
           sortInPlaceParallel(places.begin(),places.end());
           places.erase(std::unique(places.begin(),places.end()),places.end());
           places.shrink_to_fit();
-          OutputLog(2) << "done extending paths" << std::endl;    }
+          OutputLog(2) << "done extending paths" << std::endl;    } // ALWAYS FALSE!
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
      // Convert places to bases.  For paths of length > 1, we truncate at the
      // beginning and end so that they each contribute at most K2 bases.
@@ -105,25 +127,25 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      vecbasevector all( places.size( ) );
      vec<int> left_trunc( places.size( ), 0 ), right_trunc( places.size( ), 0 );
 #pragma omp parallel for
-     for ( int64_t i = 0; i < (int64_t) places.size( ); i++ )
-     {    vec<int> e;
-          for ( int j = 0; j < (int) places[i].size( ); j++ )
-               e.push_back( places[i][j] );
-          basevector b = edges[ e[0] ];
-          for ( int l = 1; l < e.isize( ); l++ )
-          {    b.resize( b.isize( ) - ( K - 1 ) );
-               b = Cat( b, edges[ e[l] ] );    }
-          if ( e.size( ) > 1 )
-          {    int x = e.back( );
-               if ( edges[x].isize( ) > K2 )
-               {    b.resize( b.isize( ) - ( edges[x].size( ) - K2 ) );
-                    right_trunc[i] = edges[x].isize( ) - K2;    }
-               x = e.front( );
+     for ( int64_t i = 0; i < (int64_t) places.size( ); i++ ) // For all places
+     {    vec<int> e; // Path e
+          for ( int j = 0; j < (int) places[i].size( ); j++ )  // For all edges in place[i]
+               e.push_back( places[i][j] ); // Insert path in e
+          basevector b = edges[ e[0] ];  // Initialise the sequence for this path
+          for ( int l = 1; l < e.isize( ); l++ )    // For each edge in the path
+          {    b.resize( b.isize( ) - ( K - 1 ) );  // remove the overlap
+               b = Cat( b, edges[ e[l] ] );    }    // Concatenate the bases of the next edge
+          if ( e.size( ) > 1 )                      // If there's more than one edge in the path
+          {    int x = e.back( );                   // x <- the last edge
+               if ( edges[x].isize( ) > K2 )        // If the edge size is larger than K2
+               {    b.resize( b.isize( ) - ( edges[x].size( ) - K2 ) ); // the last K2 bases are removed from b
+                    right_trunc[i] = edges[x].isize( ) - K2;    }   // right_trunc of path i is set to the number of bases truncated
+               x = e.front( );   // Repeat for the first edge of the path
                if ( edges[x].isize( ) > K2 )
                {    b.SetToSubOf( b, edges[x].size( ) - K2,
                                   b.isize( ) - ( edges[x].size( ) - K2 ) );
                     left_trunc[i] = edges[x].isize( ) - K2;    }    }
-          all[i] = b;    }
+          all[i] = b;    }  // Store in 'all' the bases for each path
 
      // Build HyperBasevector.
 
@@ -148,11 +170,19 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
           for ( int64_t e = 0; e < h2.EdgeObjectCount( ); e++ )
                hpaths.push_back_reserve( h2.EdgeObject(e) );
           CreateDatabase( hpaths, hpathsdb );
-          vec<int> sources, sinks, to_left, to_right;
-          h2.Sources(sources), h2.Sinks(sinks);
+
+
+
+
+          vec<int> to_left, to_right;
+
           h2.ToLeft(to_left), h2.ToRight(to_right);
+
           vec< vec<int> > ipaths2( xpaths.size( ) );
           vec<int> starts( xpaths.size( ) ), stops( xpaths.size( ) );
+
+
+
           for ( int64_t id = 0; id < (int64_t) xpaths.size( ); id++ )
           {    vec<int> u;
                const KmerPath& p = xpaths[id];
@@ -268,43 +298,41 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
           if (p.size() >= 2) multipathed++;
      }
      std::vector<std::vector<int> > places;
-     places.reserve(multipathed+old_hbv.EdgeObjectCount());
-     std::vector<bool> used_edges(old_edges.size(),false);
+     places.reserve(old_paths.size());
      //TODO: change this to do path-transversal through pairs? or even better path exploration in a radious with search for support after, could allow K2 to grow to 500 or so
 
-     #pragma omp parallel for
+     ///////////////////////////////////////////////////////////////////////////////
+     // Generate the 'places' vector
+     ///////////////////////////////////////////////////////////////////////////////
 
-     //TODO: same path -> same place, why don't we sort and unique paths then? before complicating all of this code!
-
-     for (int64_t i=0; i < (int64_t) old_paths.size(); ++i) {
-
-          if (old_paths[i].size() > 1 ) {
-               std::vector<int> newplace(old_paths[i]);//copy constructor from std::vector inherited, discards offset
-               if (newplace[0] > old_hbvinv[newplace.back()]) {
-                    newplace.clear();
-                    for (auto e = old_paths[i].rbegin(); e != old_paths[i].rend(); ++e) {
-                         newplace.push_back(old_hbvinv[*e]);
-                    }
+     const int batch = 10000;
+#pragma omp parallel for
+     for (int64_t m = 0; m < (int64_t) old_paths.size(); m += batch) {
+          std::vector<std::vector<int> > placesm;
+          placesm.reserve(batch);
+          std::vector<int> x, y;
+          int64_t n = Min(m + batch, (int64_t) old_paths.size());   // Check bounds
+          for (int64_t i = m; i < n; i++) {
+               x.clear(), y.clear();
+               int nkmers = 0;
+               for (auto &e:old_paths[i]) {     // Add paths forward paths to x and count kmers
+                    x.push_back(e);
+                    nkmers += old_edges[e].size() - ((int) old_K - 1);
                }
-               //check size
-               uint64_t s = 0;
-               for (auto e:newplace) s += old_edges[e].size() - old_K + 1;
-               if (s + old_K -1 >= new_K) {
-                    #pragma omp critical(places)
-                    places.push_back(std::move(newplace));
-               }
-          } else if (old_paths[i].size() == 1 )
-               #pragma omp critical(used)
-               used_edges[Min(old_paths[i][0],old_hbvinv[old_paths[i][0]])]=true;
 
+               if (nkmers + ((int) old_K - 1) >= new_K) {      // If path is 'interesting' add rc to y and add that to places
+                    for (int j = x.size() - 1; j >= 0; j--)
+                         y.push_back(old_hbvinv[x[j]]);
+                    placesm.push_back(x < y ? x : y);
+               }
+          }
+#pragma omp critical
+          { places.insert(places.end(),placesm.begin(),placesm.end()); }    // Places is built
      }
 
-     for (auto i=0;i<old_edges.size();++i){
-          if (used_edges[i] and i<=old_hbvinv[i] and old_edges[i].size()>=new_K) places.push_back({i});
-     }
 
      OutputLog(4) << "sorting " << places.size() << " places" << std::endl;
-     __gnu_parallel::sort(places.begin(), places.end());
+     sortInPlaceParallel(places.begin(), places.end());
      places.erase(std::unique(places.begin(), places.end()), places.end());
 
 
@@ -378,7 +406,6 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
      vec<int> starts(xpaths.size()), stops(xpaths.size());
 
      OutputLog(4) << "creating coordinate translation structures" << std::endl;
-
      //for each kmerpath (i.e.) a kmer representation of a a place
      for (int64_t id = 0; id < (int64_t) xpaths.size(); id++) {
 

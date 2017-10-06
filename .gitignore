@@ -22,3 +22,5 @@ src/modules/01_unipaths
 src/unipaths
 src/libDiscovarDeNovo.a
 .idea
+/build/
+cmake-*

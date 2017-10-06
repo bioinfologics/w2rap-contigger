@@ -30,6 +30,7 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
         std::cout<<"ERROR: 2 input files for paired reads needed."<<std::endl;
         Scram(1);
     }
+
     auto fn1=filenames[0];
     auto fn2=filenames[1];
     std::ifstream in1(filenames[0]);
