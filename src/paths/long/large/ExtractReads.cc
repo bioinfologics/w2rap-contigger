@@ -16,6 +16,7 @@
 #include "math/HoInterval.h"
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
+#include "util/kseq.hpp"
 
 void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals )
 {
@@ -33,76 +34,76 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
 
     auto fn1=filenames[0];
     auto fn2=filenames[1];
-    std::ifstream in1(filenames[0]);
-    std::ifstream in2(filenames[1]);
-    std::string line1,line2;
 
+    kseq seq1,seq2;
+    int l1=0;
+    int c1=0;
+
+    int l2=0;
+    int c2=0;
+
+    gzFile fp1 = gzopen(fn1.c_str(), "r");
+    gzFile fp2 = gzopen(fn2.c_str(), "r");
+    FunctorZlib gzr1, gzr2;
+    kstream<gzFile, FunctorZlib> ks1(fp1,gzr1);
+    kstream<gzFile, FunctorZlib> ks2(fp2,gzr2);
+    l1 = ks1.read(seq1);
+    l2 = ks2.read(seq2);
+    int finished_early=0;
     basevector b1, b2;
-    while (1) {
-        getline(in1, line1), getline(in2, line2);
-        if (in1.fail() && in2.fail()) break;
-        if ((in1.fail() && !in2.fail()) || (in2.fail() && !in1.fail())) {
-            std::cout << "\nThe files " << fn1 << " and " << fn2
-                      << " appear to be paired, yet have "
-                      << "different numbers of records.\n" << std::endl;
-            Scram(1);
+    while ( l1 >= 0 and l2 >= 0 ){
+
+        if (seq1.seq.empty() ) {
+            std::cout << "Error " << std::string(fn1.c_str()) << " on read " << c1 << " is invalid" << std::endl;
+            finished_early=1;
+            break;
+        }
+        if (seq2.seq.empty()) {
+            std::cout << "Error " << std::string(fn2.c_str()) << " on read " << c2 << " is invalid" << std::endl;
+            finished_early=1;
+            break;
         }
 
-        // Fetch bases.  Turn Ns into As.
-
-        getline(in1, line1), getline(in2, line2);
-        if (in1.fail() || in2.fail()) {
-            std::cout << "\nSee incomplete record in " << fn1
-                      << " or " << fn2 << ".\n" << std::endl;
-            Scram(1);
-        }
-        for (int i = 0; i < line1.size(); i++)
-            if (line1[i] == 'N') line1[i] = 'A';
-        for (int i = 0; i < line2.size(); i++)
-            if (line2[i] == 'N') line2[i] = 'A';
-        b1.SetFromString(line1);
-        b2.SetFromString(line2);
-
-        // Skip line.
-
-        getline(in1, line1), getline(in2, line2);
-        if (in1.fail() || in2.fail()) {
-            std::cout << "\nSee incomplete record in " << fn1
-                      << " or " << fn2 << ".\n" << std::endl;
-            Scram(1);
-        }
-
-        // Fetch quals.
-
-        getline(in1, line1), getline(in2, line2);
-        if (in1.fail() || in2.fail()) {
-            std::cout << "\nSee incomplete record in " << fn1
-                      << " or " << fn2 << ".\n" << std::endl;
-            Scram(1);
-        }
-        if (b1.size() != line1.size()
-            || b2.size() != line2.size()) {
-            std::cout << "\n1: " << b1.size() << " bases "
-                      << ", " << line1.size() << " quals" << std::endl;
-            std::cout << "2: " << b2.size() << " bases "
-                      << ", " << line2.size() << " quals" << std::endl;
-            std::cout << "See inconsistent base/quality lengths "
-                      << "in " << fn1 << " or " << fn2 << std::endl;
-            Scram(1);
-        }
-
-        // Save.
-
+        //Create seq
+        for (char &i : seq1.seq)
+            if (i == 'N') i = 'A';
+        for (char &i : seq2.seq)
+            if (i == 'N') i = 'A';
+        b1.SetFromString(seq1.seq);
+        b2.SetFromString(seq2.seq);
+        //Create qual
         QualVec q1;
         QualVec q2;
-        q1.resize(line1.size()), q2.resize(line2.size());
-        for (int i = 0; i < line1.size(); i++)
-            q1[i] = line1[i] - 33;
-        for (int i = 0; i < line2.size(); i++)
-            q2[i] = line2[i] - 33;
-
+        q1.resize(seq1.qual.size()), q2.resize(seq2.qual.size());
+        for (int i = 0; i < seq1.qual.size(); i++)
+            q1[i] = seq1.qual[i] - 33;
+        for (int i = 0; i < seq2.qual.size(); i++)
+            q2[i] = seq2.qual[i] - 33;
+        //Store
         pReads->push_back(b1), pReads->push_back(b2);
         quals->emplace_back(PQVec(q1));
         quals->emplace_back(PQVec(q2));
+
+        //std::cout << seq1.name << " " << seq1.comment << "\t" << seq2.name << " " << seq2.comment << std::endl;
+        //std::cout << seq1.qual << "\t" << seq2.qual << std::endl;
+        c1++;
+        c2++;
+        l1 = ks1.read(seq1);
+        l2 = ks2.read(seq2);
     }
+
+    if (!finished_early) {
+        if (l1 != l2) {
+            std::cout << "Error on files after " << c1 << " reads, check they are correctly paired" << std::endl;
+        }
+        if (l1 == -2) {
+            std::cout << std::string(fn1.c_str()) << " is invalid at " << c1 << std::endl;
+        }
+        if (l2 == -2) {
+            std::cout << std::string(fn2.c_str()) << " is invalid at " << c2 << std::endl;
+        }
+    }
+
+    gzclose(fp1);
+    gzclose(fp2);
 }

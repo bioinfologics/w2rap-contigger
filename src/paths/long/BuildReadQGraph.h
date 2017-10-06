@@ -43,18 +43,21 @@ typedef struct __attribute__((__packed__)) KMerNodeFreq_s {
         return kdata[1]>other.kdata[1];
     }
     inline void combine(KMerNodeFreq_s const & other){
-        auto newcount=count+other.count;
-        if ( newcount>count) count=newcount;
+        uint16_t newcount=count+other.count;
+        count = (newcount > UINT8_MAX) ? UINT8_MAX : newcount;
         kc|=other.kc;
     }
     inline void merge(KMerNodeFreq_s const & other){
-        auto newcount=count+other.count;
-        if ( newcount>count) count=newcount;
+        uint16_t newcount=count+other.count;
+        count = (newcount > UINT8_MAX) ? UINT8_MAX : newcount;
         kc|=other.kc;
     }
     /*inline const operator=(KMerNodeFreq_s const & other) const {
         memcpy(&this,&other,sizeof(this));
     }*/
+    friend std::ostream& operator<<(std::ostream& os, const KMerNodeFreq_s& kmer);
+    friend std::istream& operator>>(std::istream& is, KMerNodeFreq_s& kmer);
+
 };
 
 const unsigned K = 60;
