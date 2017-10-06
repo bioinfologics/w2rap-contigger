@@ -58,7 +58,7 @@ private:
 template <class RecordType, class RecordFactory, class FileReader, typename FileRecord, typename ParamStruct >
 class SMR {
 public:
-    SMR(ParamStruct p, uint64_t maxMem, uint min = 0, const std::string &Otmp = "") :
+    SMR(ParamStruct p, uint64_t maxMem, uint min = 0, const std::string &workdir = "", const std::string &tmp = "") :
             parameters(p),
             sizeElements(10000),
             myBatches(0),
@@ -66,7 +66,8 @@ public:
             nKmers(0),
             tKmers(0),
             merged_kmers(0),
-            tmp2(Otmp),
+            tmp(tmp),
+            workdir(workdir),
             minCount(min),
             maxThreads((unsigned int) omp_get_max_threads()) {
         numElementsPerBatch = maxMem/sizeof(RecordType) / maxThreads;
@@ -96,7 +97,7 @@ public:
             this->nRecs = numReadsReduction;
     };
 
-    void getRecords(RecordType* records) {
+    uint64_t getRecords(RecordType* &records) {
         OutputLog(3) << "Merging final files" << std::endl;
         std::vector<std::string> threadFiles(maxThreads);
 
@@ -107,17 +108,20 @@ public:
         }
 
 
-        nKmers = merge("final.kc", threadFiles);
+        nKmers = merge(workdir + "/raw_kmers.data", threadFiles);
         OutputLog(3) << "Done merging final files" << std::endl;
-        std::ifstream outf("final.kc", std::ios_base::binary);
+        std::ifstream outf(workdir + "/raw_kmers.data", std::ios_base::binary);
+        uint64_t fnKmers;
+        outf.read((char*) &fnKmers, sizeof(uint64_t));
         elements = (RecordType*) malloc(nKmers*sizeof(RecordType));
         outf.read((char*) elements, sizeof(RecordType)*nKmers);
 
-        std::swap(records,elements);
+        records = elements;
 
         std::cout << "Total Kmers " << tKmers << "\n";
         std::cout << "Final nKmers " << nKmers << "\n";
         std::cout << "Final reads " << nRecs << "\n";
+        return nKmers;
     }
 
 private:
@@ -348,7 +352,7 @@ private:
         // Cleanup
         for (auto i = 0; i < files_size; i++) {
             free(next_element_from_file[i]);
-            //std::remove(files[i].c_str());
+            std::remove(files[i].c_str());
         }
         OutputLog(3) << "Total kmers " << outCount << "/" << merged_kmers << " with freq >= " << minCount << std::endl;
         return outCount;
@@ -464,6 +468,7 @@ private:
     const int unsigned maxThreads;
     int mergeCount; // How many batches to keep rolling before merging
     std::string tmp;
+    std::string workdir;
 
     uint64_t sizeElements;
 };
