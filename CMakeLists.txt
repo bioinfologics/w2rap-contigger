@@ -409,3 +409,8 @@ if (DEFINED MALLOC_LIBRARY)
     endif()
 endif()
 
+# -----------------------------------------------------------------------------
+# installation
+# -----------------------------------------------------------------------------
+
+install(TARGETS w2rap-contigger hbv2gfa DESTINATION bin)
