@@ -11,14 +11,10 @@
 
 #include <util/OutputLog.h>
 #include "CoreTools.h"
-//#include "ParallelVecUtilities.h"
 #include "Qualvector.h"
 #include "graph/FindCells.h"
 #include "kmers/KmerRecord.h"
-#include "kmers/MakeLookup.h"
-#include "math/Functions.h"
 #include "paths/HyperBasevector.h"
-#include "paths/RemodelGapTools.h"
 #include "paths/long/KmerCount.h"
 #include "paths/long/ReadPath.h"
 #include "paths/long/large/GapToyTools.h"

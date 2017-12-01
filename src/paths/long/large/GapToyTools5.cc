@@ -16,20 +16,11 @@
 #include "Set.h"
 #include "feudal/Algorithms.h"
 #include "feudal/HashSet.h"
-#include "feudal/Mempool.h"
 #include "kmers/KMer.h"
 #include "kmers/KmerRecord.h"
-#include "kmers/MakeLookup.h"
-#include "math/Functions.h"
 #include "paths/HyperBasevector.h"
-#include "paths/RemodelGapTools.h"
 #include "paths/long/ReadPath.h"
 #include "paths/long/large/GapToyTools.h"
-//#include "system/RunTime.h"
-#include "system/SpinLockedData.h"
-#include "system/WorklistN.h"
-#include <algorithm>
-#include <ctime>
 #include <util/OutputLog.h>
 
 // AlignToGenome.  Find alignments of assembly edges to the genome.  Currently this

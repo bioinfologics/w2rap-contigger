@@ -12,7 +12,6 @@
 #include <util/OutputLog.h>
 #include "Basevector.h"
 #include "Bitvector.h"
-#include "FetchReads.h"
 #include "TokenizeString.h"
 #include "math/HoInterval.h"
 #include "paths/long/LoadCorrectCore.h"

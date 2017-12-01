@@ -12,7 +12,6 @@
 #include "Bitvector.h"
 #include "CoreTools.h"
 #include "Intvector.h"
-#include "feudal/ObjectManager.h"
 #include "feudal/PQVec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"

@@ -7,7 +7,6 @@
 #include <paths/long/large/MakeGaps.h>
 #include <paths/long/large/FinalFiles.h>
 #include "FastIfstream.h"
-#include "FetchReads.h"
 #include "MainTools.h"
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
@@ -241,9 +240,9 @@ void step_7DV(HyperBasevector &hbv,
     SimplifyDV(out_dir, hbv, hbvinv, paths, bases, quals);
 
     // For now, fix paths and write the and their inverse
-    for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
+    for (size_t i = 0; i <  paths.size(); i++) { //XXX TODO: change this int for uint 32
         Bool bad = False;
-        for (int j = 0; j < (int) paths[i].size(); j++)
+        for (size_t j = 0; j <  paths[i].size(); j++)
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }
@@ -306,9 +305,9 @@ void step_7(HyperBasevector &hbv,
              IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3);//TODO: the last 3 Falses disable pathfinder
 
     // For now, fix paths and write the and their inverse
-    for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
+    for (size_t i = 0; i < paths.size(); i++) { //XXX TODO: change this int for uint 32
         Bool bad = False;
-        for (int j = 0; j < (int) paths[i].size(); j++)
+        for (size_t j = 0; j < paths[i].size(); j++)
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }
@@ -373,9 +372,9 @@ void step_7EXP(HyperBasevector &hbv,
                 IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, False, False, False);//TODO: the last 3 Falses disable pathfinder
 
     // For now, fix paths and write the and their inverse
-    for (int i = 0; i < (int) paths.size(); i++) { //XXX TODO: change this int for uint 32
+    for (size_t i = 0; i < paths.size(); i++) { //XXX TODO: change this int for uint 32
         Bool bad = False;
-        for (int j = 0; j < (int) paths[i].size(); j++)
+        for (size_t j = 0; j < paths[i].size(); j++)
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }

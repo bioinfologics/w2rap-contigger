@@ -13,7 +13,6 @@
 #include "CoreTools.h"
 #include "Qualvector.h"
 #include "efasta/EfastaTools.h"
-//#include "paths/long/DataSpec.h"
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
 

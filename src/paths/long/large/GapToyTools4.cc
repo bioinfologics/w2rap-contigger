@@ -15,31 +15,14 @@
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
 #include "PrintAlignment.h"
-#include "Qualvector.h"
-#include "Set.h"
 #include "kmers/BigKPather.h"
 #include "kmers/LongReadPather.h"
-#include "kmers/naif_kmer/KernelPerfectAligner.h"
-#include "kmers/naif_kmer/NaifKmerizer.h"
-#include "kmers/naif_kmer/Kmers.h"
-#include "math/Functions.h"
-#include "paths/HyperBasevector.h"
-#include "paths/ReadsToPathsCoreX.h"
 #include "paths/RemodelGapTools.h"
-#include "paths/Unipath.h"
 #include "paths/long/Correct1Pre.h"
-#include "paths/long/ExtendReadPath.h"
 #include "paths/long/FriendAligns.h"
-#include "paths/long/HBVFromEdges.h"
-#include "paths/long/KmerCount.h"
-#include "paths/long/ReadPath.h"
-#include "paths/long/ReadPathTools.h"
 #include "paths/long/ReadStack.h"
-#include "paths/long/large/Lines.h"
 #include "paths/long/large/GapToyTools.h"
 #include "random/Bernoulli.h"
-#include "random/Random.h"
-#include "system/WorklistN.h"
 
 void BuildAll( vecbasevector& allx, const HyperBasevector& hb, const int64_t extra )
 {    size_t allxSize = hb.E( ) + extra;
@@ -532,39 +515,6 @@ namespace{
 
 typedef size_t work_item_t;
 
-class LogBubblesProcessor
-{
-public:
-    LogBubblesProcessor( bubble_logger& logger
-                       , vecbasevector const&bases, QualVecVec const&quals, ReadPathVec const& paths2)
-                       : logger_(logger)
-                       , bases_(bases)
-                       , quals_(quals)
-                       , paths2_(paths2){}
-    void operator()(work_item_t const&item){
-         if( logger_.log_read(bases_[item], quals_[item], paths2_[item]) ){
-             SpinLocker ml(message_lock);
-             if( nWarnings < nMaxVerbose ){
-                 // std::cout << "WARNING: read-path of read " << item << " is not the lowest error path, q_alt < q_cur " << std::endl;
-                 if(nWarnings+1==nMaxVerbose){
-                     // std::cout << "WARNING: read-path warning silenced" << std::endl;
-                 }
-             }
-             ++nWarnings;
-         }
-    }
-    static std::atomic<size_t> nWarnings;
-private:
-    bubble_logger& logger_;
-    vecbasevector const& bases_;
-    QualVecVec const& quals_;
-    ReadPathVec const&paths2_;
-    static const size_t nMaxVerbose=10;
-    static SpinLockedData message_lock;
-
-};
-std::atomic<size_t> LogBubblesProcessor::nWarnings(0);
-SpinLockedData LogBubblesProcessor::message_lock;
 
 void LogBubbles( bubble_logger& logger, HyperBasevector& hb , const vec<int>& inv2
                , const vecbasevector & bases, const VecPQVec& quals, const ReadPathVec& paths2){
@@ -805,141 +755,6 @@ void DeleteFunkyPathPairs( const HyperBasevector& hb, const vec<int>& inv,
                paths[2*pid+1].resize(0);    }    }
      //std::cout << Date() << ": "<<Sum(invalid)<< " / "<<npids<<" invalid pairs deleted"<<std::endl;
      LogTime( clock, "finding funky pairs" );    }
-
-void ReduceK( const int newK, HyperBasevector& hb, const vec<int>& inv,
-     ReadPathVec& paths )
-{    int oldK = hb.K( );
-     int delta = oldK - newK;
-     hb.ReduceK(newK);
-     vec<int> to_left, to_right;
-     hb.ToLeft(to_left), hb.ToRight(to_right);
-     for ( int64_t pi = 0; pi < (int64_t) paths.size( ); pi++ )
-     {    ReadPath& p = paths[pi];
-          if ( p.size( ) == 0 ) continue;
-          int v = to_left[ p[0] ];
-          int in = hb.To(v).size( ), out = hb.From(v).size( );
-          int trim;
-          if ( in == 0 ) trim = 0;
-          else if ( in == 1 && out > 1 ) trim = delta;
-          else if ( in > 1 && out == 1 ) trim = 0;
-          else trim = delta/2;
-          p.setOffset( p.getOffset( ) - trim );
-          if ( p.getOffset( ) < 0 && hb.To(v).solo( ) )
-          {    int e = hb.EdgeObjectIndexByIndexTo( v, 0 );
-               p.push_front(e);
-               p.setOffset( p.getOffset( ) + hb.EdgeLengthKmers(e) );    }    }    }
-
-void AssayMisassemblies( const HyperBasevector& hbx, const vec<int>& inv,
-     const vec< vec< std::pair<int,int> > >& hits, const vec<vec<vec<vec<int>>>>& linesx,
-     const String& final_dir )
-{    Ofstream( out, final_dir + "/misassemblies" );
-     vec<int> lens;
-     GetLineLengths( hbx, linesx, lens );
-     const int min_len = 30000;
-     int64_t assayed = 0;
-     int bads = 0;
-     std::set< std::pair<int,int> > seen;
-     for ( int i = 0; i < linesx.isize( ); i++ )
-     {    const vec<vec<vec<int>>>& L = linesx[i];
-          if ( lens[i] < min_len ) continue;
-          int e1 = -1, e2 = -1, g1 = -1, g2 = -1;
-          for ( int j = 0; j < L.isize( ); j += 2 )
-          {    int e = L[j][0][0];
-               if ( hits[e].size( ) + hits[ inv[e] ].size( ) == 1 )
-               {    if ( hits[e].solo( ) ) g1 = hits[e][0].first;
-                    else g1 = hits[ inv[e] ][0].first;
-                    if ( g1 < 24 )
-                    {    e1 = e;
-                         break;    }    }    }
-          for ( int j = L.isize( ) - 1; j >= 0; j -= 2 )
-          {    int e = L[j][0][0];
-               if ( hits[e].size( ) + hits[ inv[e] ].size( ) == 1 )
-               {    if ( hits[e].solo( ) ) g2 = hits[e][0].first;
-                    else g2 = hits[ inv[e] ][0].first;
-                    if ( g2 < 24 )
-                    {    e2 = e;
-                         break;    }    }    }
-          if ( e1 < 0 || e2 < 0 ) continue;
-          if ( Member( seen, std::make_pair( inv[e2], inv[e1] ) ) ) continue;
-          seen.insert( std::make_pair( e1, e2 ) );
-          assayed += lens[i];
-          if ( g1 != g2 ) 
-          {    int b1 = -1, b2 = -1;
-               for ( int j = L.isize( ) - 1; j >= 0; j -= 2 )
-               {    int e = L[j][0][0];
-                    for ( int l = 0; l < hits[e].isize( ); l++ )
-                    {    if ( hits[e][l].first == g1 )
-                         {    b1 = e;
-                              break;    }    }
-                    for ( int l = 0; l < hits[ inv[e] ].isize( ); l++ )
-                    {    if ( hits[ inv[e] ][l].first == g1 )
-                         {    b1 = e;
-                              break;    }    }
-                    if ( b1 >= 0 ) break;    }
-               for ( int j = 0; j < L.isize( ); j += 2 )
-               {    int e = L[j][0][0];
-                    for ( int l = 0; l < hits[e].isize( ); l++ )
-                    {    if ( hits[e][l].first == g2 ) 
-                         {    b2 = e;
-                              break;    }    }
-                    for ( int l = 0; l < hits[ inv[e] ].isize( ); l++ )
-                    {    if ( hits[ inv[e] ][l].first == g2 ) 
-                         {    b2 = e;
-                              break;    }    }
-                    if ( b2 >= 0 ) break;    }
-               out << ++bads << ".  L=" << i << ", len: " << lens[i] 
-                    << ", e: " << e1 << " / " << e2 << ", g: " << g1 << " / " << g2
-                    << ", b: " << b1 << " / " << b2 << std::endl;    }    }
-     if ( assayed > 0 )
-     {    double bad_rate = ( 1000000000.0 * bads ) / assayed;
-          std::cout << "see " << bads << " putative interchromosomal misassemblies, "
-               << "rate = " << ToString(bad_rate,1) << " per Gb" << std::endl;
-          PerfStatLogger::log("misassemblies",bads,
-                          "Putative interchromosomal misassemblies.");    }    }
-
-String Chr( const int g )
-{    if ( g < 22 ) return ToString(g+1);
-     if ( g == 22 ) return "X";
-     if ( g == 23 ) return "Y";
-     return "?";    }
-
-void MakeFinalFasta( const HyperBasevector& hbx, const vec<int>& inv2,
-     const vec<vec<vec<vec<int>>>>& linesx, const vec<int>& npairsx,
-     const vec<vec<covcount>>& covs,
-     const String& out_dir, const String& out_prefix)
-{    double clock1 = WallClockTime( );
-     vec<int> llensx;
-     GetLineLengths( hbx, linesx, llensx );
-     Ofstream( out, out_dir + "/" + out_prefix + ".fasta" );
-     vec<int> to_left, to_right;
-     hbx.ToLeft(to_left), hbx.ToRight(to_right);
-     vec<String> head( hbx.E( ) );
-     for ( int e = 0; e < hbx.E( ); e++ ) 
-     {    int v = to_left[e], w = to_right[e];
-          head[e] = ToString(e) + " " + ToString(v) + ":" + ToString(w);    }
-
-     // Add coverage values to headers.
-
-     int ns = covs.size( );
-     for ( int e = 0; e < hbx.E( ); e++ )
-     {    Bool defined = False;
-          int ns = covs.size( );
-          for ( int ss = 0; ss < ns; ss++ )
-               if ( covs[ss][e].Def( ) ) defined = True;
-          if (defined)
-          {    head[e] += " cov=";
-               for ( int ss = 0; ss < ns; ss++ )
-               {    if ( ss > 0 ) head[e] += ",";
-                    if ( covs[ss][e].Def( ) )
-                         head[e] += ToString( covs[ss][e].Cov( ), 2 ) + "x";
-                    else head[e] += "?x";    }    }    }
-
-     std::cout << TimeSince(clock1) << " using setting up final fasta" << std::endl;
-     double clock2 = WallClockTime( );
-     for ( int e = 0; e < hbx.E( ); e++ ) 
-     {    out << ">" << head[e] << "\n";
-          hbx.EdgeObject(e).Print(out);    }
-     std::cout << TimeSince(clock2) << " using printing final fasta" << std::endl;    }
 
 
 

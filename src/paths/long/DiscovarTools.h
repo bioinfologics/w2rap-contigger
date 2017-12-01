@@ -14,7 +14,6 @@
 #define DISCOVAR_TOOLS_H
 
 #include "CoreTools.h"
-//#include "Fastavector.h"
 #include "paths/HyperBasevector.h"
 #include "paths/long/Logging.h"
 #include "paths/long/RefTraceControl.h"

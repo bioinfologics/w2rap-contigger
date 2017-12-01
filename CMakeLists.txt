@@ -156,7 +156,7 @@ add_library(base_libs OBJECT
             src/paths/KmerBaseBroker.cc
             src/paths/KmerPath.cc
             src/paths/KmerPathInterval.cc
-            src/paths/LongReadTools.cc
+            #src/paths/LongReadTools.cc
             src/paths/Sepdev.cc
             src/paths/UnipathScaffold.cc
             src/paths/long/Correct1Pre.cc
@@ -244,7 +244,6 @@ add_library(specific_w2rap-contigger OBJECT
         src/kmers/LongReadPather.cc
         src/feudal/QualNibbleVec.cc
         src/Basevector.cc
-        src/FetchReads.cc
         src/VecString.cc
         src/BasevectorTools.cc
         src/CompressedSequence.cc
