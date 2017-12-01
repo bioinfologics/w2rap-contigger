@@ -74,7 +74,9 @@ void path_status(const ReadPathVec &paths){
         first=!first;
     }
     OutputLog(2) << "PATHS:  empty: " << u << "  1: " << ps <<"  2+: " << pm << std::endl;
+    auto totalReads(none+single+both);
     OutputLog(2) << "PAIR ENDS: none: " << none << "  single: " << single << "  both: " << both << std::endl;
+    OutputLog(2) << "PAIR ENDS: none: " << none*100.f/totalReads*1.0f << "  single: " << single*100.f/totalReads*1.0f << "  both: " << both*100.f/totalReads*1.0f << std::endl;
 
 }
 
