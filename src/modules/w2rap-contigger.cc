@@ -427,7 +427,7 @@ void step_8(HyperBasevector &hbv,
     vec<int64_t> subsam_starts={0};
     vec<String> subsam_names={"C"};
     FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
-    GFADump(out_prefix+ "_assembly",hbv,hbvinv,paths,MAX_CELL_PATHS,MAX_DEPTH,true);
+    GFADump(out_dir+ "/"+ out_prefix+ "_assembly",hbv,hbvinv,paths,MAX_CELL_PATHS,MAX_DEPTH,true);
 }
 
 
