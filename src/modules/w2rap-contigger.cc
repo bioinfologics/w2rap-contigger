@@ -426,8 +426,7 @@ void step_8(HyperBasevector &hbv,
     vecbasevector G;
     vec<int64_t> subsam_starts={0};
     vec<String> subsam_names={"C"};
-    FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
-    GFADump(out_dir+ "/"+ out_prefix+ "_assembly",hbv,hbvinv,paths,MAX_CELL_PATHS,MAX_DEPTH,true);
+    FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ ".assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
 }
 
 
@@ -601,8 +600,8 @@ int main(const int argc, const char * argv[]) {
             "large_K",
             "large_K_clean",
             "large_K_patched",
-            "large_K_expanded",
-            "large_K_final"
+            "contigs",
+            "assembly"
     };
 
     std::string step_inputg_prefix[8]={
@@ -613,7 +612,7 @@ int main(const int argc, const char * argv[]) {
             "large_K",
             "large_K_clean",
             "large_K_patched",
-            "large_K_expanded"
+            "contigs"
     };
 
     //========== Main Program Begins ======
