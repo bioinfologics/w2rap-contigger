@@ -434,7 +434,7 @@ void step_8(HyperBasevector &hbv,
 int main(const int argc, const char * argv[]) {
 
 
-	std::cout << "Version: " << GIT_BRANCH << "  " << GIT_COMMIT_HASH << std::endl;
+
     std::string out_prefix;
     std::string read_files;
     std::string out_dir;
@@ -454,9 +454,10 @@ int main(const int argc, const char * argv[]) {
     bool dump_all,run_dv,run_exp;
 
     //========== Command Line Option Parsing ==========
-    for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
-    std::cout<<std::endl<<std::endl;
     std::cout << "Welcome to w2rap-contigger" << std::endl << std::endl;
+    std::cout << "Git origin: " << GIT_ORIGIN_URL << " -> "  << GIT_BRANCH << std::endl;
+    std::cout << "Git commit: " << GIT_COMMIT_HASH << std::endl<<std::endl;
+
 
     try {
         TCLAP::CmdLine cmd("", ' ', "0.1");
@@ -568,6 +569,10 @@ int main(const int argc, const char * argv[]) {
         std::cout << "Output directory doesn't exist, or is not a directory: " << out_dir << std::endl;
         return 1;
     }
+
+    std::cout << "Command: ";
+    for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
+    std::cout<<std::endl<<std::endl;
 
 #if __GNUC__ > 4 || \
               (__GNUC__ == 4 && (__GNUC_MINOR__ > 9 || \

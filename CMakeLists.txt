@@ -17,6 +17,14 @@ ENDIF ()
 
 project (w2rap-contigger)
 
+# Get the remote url
+execute_process(
+        COMMAND git remote get-url origin
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_ORIGIN_URL
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 # Get the current working branch
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
@@ -34,6 +42,11 @@ execute_process(
 )
 
 # Fill the version variables in case the compilation isn't done from a git repo
+if("${GIT_ORIGIN_URL}" STREQUAL "")
+    add_definitions("-DGIT_ORIGIN_URL=\"not set\"")
+else()
+    add_definitions("-DGIT_ORIGIN_URL=\"${GIT_ORIGIN_URL}\"")
+endif()
 if("${GIT_COMMIT_HASH}" STREQUAL "")
 add_definitions("-DGIT_COMMIT_HASH=\"experimental\"")
 else()
