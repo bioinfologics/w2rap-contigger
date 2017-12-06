@@ -99,7 +99,8 @@ int main(const int argc, const char * argv[]) {
     int MAX_DEPTH = 10;
     if (!stats_only) {
         std::cout << "Dumping gfa" << std::endl;
-        if (validGFAOpts[0] == dump_detailed_gfa) {GFADump(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
+        if (validGFAOpts[0] == dump_detailed_gfa) {
+            GFADumpLines(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
         else if (validGFAOpts[1] == dump_detailed_gfa) {GFADumpAbyss(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
     }
 

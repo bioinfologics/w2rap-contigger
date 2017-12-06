@@ -524,7 +524,7 @@ void remove_unsupported_edges(HyperBasevector &hb, vec<int> &inv, ReadPathVec &p
             }
         }*/
 
-        //GFADumpDetail("unsupported_paths_marked_detail"+std::to_string(pass),hb,inv,dels);
+        //GFADumpRaw("unsupported_paths_marked_detail"+std::to_string(pass),hb,inv,dels);
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
         OutputLog(2) << delcount << " / " << before << " unsupported edges removed, "
@@ -584,7 +584,7 @@ void SimplifyEXP(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     paint.reserve(hb.EdgeObjectCount());
     for (int e:oval.find_perfect_tips(1000,5)) paint.push_back(e);
     std::cout<<Date()<<": "<<paint.size()<<" perfect tips found"<<std::endl;
-    GFADumpDetail("ovlpval_perfect_tips_detail",hb,inv,paint);
+    GFADumpRaw("ovlpval_perfect_tips_detail",hb,inv,paint);
     hb.DeleteEdges(paint);
     Cleanup(hb,inv,paths);
     graph_status(hb);

@@ -281,10 +281,6 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
 
-add_executable(readCounts src/modules/readCounts.cc
-               $<TARGET_OBJECTS:base_libs>
-               )
-
 ##Zlib link
 if (ZLIB_FOUND)
   set(ZLIB libz.so)

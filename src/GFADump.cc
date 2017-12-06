@@ -345,8 +345,8 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
 }
 
 
-void GFADump (std::string filename, const HyperBasevector &hb, const vec<int> &inv, const
-ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lines, const std::vector<int> & marked_edges){
+void GFADumpLines(std::string filename, const HyperBasevector &hb, const vec<int> &inv, const ReadPathVec &paths,
+                  const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lines, const std::vector<int> &marked_edges){
 
   std::vector<std::string> colour_names={
           "aliceblue",
@@ -591,8 +591,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
       if (inv[e]>=0) colour[inv[e]]=112;
   }
   // Do the raw dump
-  Ofstream(gfa_raw_out,filename+"_raw.gfa");
-  Ofstream(fasta_raw_out,filename+"_raw.fasta");
+  Ofstream(gfa_raw_out,filename+"_lines_raw.gfa");
+  Ofstream(fasta_raw_out,filename+"_lines_raw.fasta");
   std::cout<<"Dumping edges"<<std::endl;
 
   // header line
@@ -605,7 +605,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
       gfa_raw_out << "S\tedge" << ei << "\t*"
       << "\tLN:i:" << eo.isize()
       << "\tCL:Z:" << (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
-      << "\tUR:Z:" << prefix << "_raw.fasta"
+      << "\tUR:Z:" << prefix << "_lines_raw.fasta"
       << std::endl;
 
       // write seq to FASTA
@@ -669,7 +669,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 }
 
 
-void GFADumpDetail (std::string filename, const HyperBasevector &hb, const vec<int> &inv, const std::vector<int> & marked_edges, const std::vector<int> & marked_vertices){
+void GFADumpRaw(std::string filename, const HyperBasevector &hb, const vec<int> &inv,
+                const std::vector<int> &marked_edges, const std::vector<int> &marked_vertices){
     std::vector<std::string> colour_names={
             "aliceblue",
             "antiquewhite",

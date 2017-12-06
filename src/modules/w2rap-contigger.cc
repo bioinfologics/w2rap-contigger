@@ -71,7 +71,7 @@ void step_2_EXP(std::shared_ptr<KmerList> & kmercounts, vecbvec const &reads, Ve
             KMerFreqFactory<std::pair<bvec, uint16_t>>,
             FastBReader<std::pair<bvec,uint16_t>>,
             std::pair<bvec,uint16_t >,
-            KMerParams > fastqKCount({K, minQual},max_mem*0.25/1000 * GB, minCount, workdir, tmpdir);
+            KMerParams > fastqKCount({K, minQual},uint64_t((GB*max_mem*0.25f)*0.0001), minCount, workdir, tmpdir);
 
     fastqKCount.read_from_file(reads, reads_length, omp_get_max_threads());
 
@@ -427,7 +427,7 @@ void step_8(HyperBasevector &hbv,
     vec<int64_t> subsam_starts={0};
     vec<String> subsam_names={"C"};
     FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ "_assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
-    GFADump(out_prefix+ "_assembly",hbv,hbvinv,paths,MAX_CELL_PATHS,MAX_DEPTH,true);
+    GFADumpLines(out_dir + '/' + out_prefix + "_assembly", hbv, hbvinv, paths, MAX_CELL_PATHS, MAX_DEPTH, true);
 }
 
 
@@ -756,13 +756,14 @@ int main(const int argc, const char * argv[]) {
                     OutputLog(2) << "DONE!" << std::endl;
                 }
 
-                if (dump_detailed_gfa == validGFAOpts[1]) {
-                    GFADump(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv,
-                            paths, 0, 0, true);
-                } else if (dump_detailed_gfa == validGFAOpts[2]) {
-                    GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
-                                  hbvinv);
-                } else if (dump_detailed_gfa == validGFAOpts[3]) {
+                if (dump_detailed_gfa == validGFAOpts[1] or dump_all) {
+                    GFADumpLines(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
+                                 hbvinv, paths, 0, 0, true);
+                }
+                if (dump_detailed_gfa == validGFAOpts[2] or dump_all) {
+                    GFADumpRaw(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv);
+                }
+                if (dump_detailed_gfa == validGFAOpts[3] or dump_all) {
                     GFADumpAbyss(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
                                  hbvinv, paths, 0, 0, true);
                 }

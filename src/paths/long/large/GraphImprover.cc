@@ -19,7 +19,7 @@ void GraphImprover::improve_graph() {
     paint.reserve(mHBV.EdgeObjectCount());
     for (int e:oval.find_perfect_tips(1000,5)) paint.push_back(e);
     std::cout<<Date()<<": "<<paint.size()<<" perfect tips found"<<std::endl;
-    GFADumpDetail("ovlpval_perfect_tips_detail",mHBV,mInv,paint);
+    GFADumpRaw("ovlpval_perfect_tips_detail", mHBV, mInv, paint);
     mHBV.DeleteEdges(paint);
     Cleanup(mHBV,mInv,mPaths);
     graph_status(mHBV);
@@ -41,7 +41,7 @@ std::set<uint64_t> GraphImprover::expand_cannonical_repeats(uint64_t min_support
     std::vector<int> paintcr;
     paintcr.reserve(mHBV.EdgeObjectCount());
     for (auto ssp:ssvp) paintcr.push_back(mHBV.EdgeObjectIndexByIndexFrom(ssp.first,0));
-    GFADumpDetail("consecutive_support",mHBV,mInv,paintcr);
+    GFADumpRaw("consecutive_support", mHBV, mInv, paintcr);
 
     paintcr.clear();
 
@@ -112,7 +112,7 @@ std::set<uint64_t> GraphImprover::expand_cannonical_repeats(uint64_t min_support
 
     }
     std::cout<<Date()<<": "<<paintcr.size()<<" vertex pairs evaluated as repeats, "<<solved<<" solved"<<std::endl;
-    GFADumpDetail("consecutive_support_to_evaluate",mHBV,mInv,paintcr);
+    GFADumpRaw("consecutive_support_to_evaluate", mHBV, mInv, paintcr);
     //TODO: separate vertices and re-route paths
     uint64_t sep=0;
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
