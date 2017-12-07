@@ -1235,7 +1235,7 @@ std::shared_ptr<KmerList> kmerCountOMPDiskBased(vecbvec const& reads, std::vecto
 
 std::shared_ptr<KmerList> buildKMerCount( vecbvec const& reads,
                                                                 std::vector<uint16_t> & rlen, unsigned minCount,
-                                                                std::string workdir, std::string tmpdir,
+                                                                std::string workdir, const std::string tmpdir,
                                                                 unsigned char disk_batches, uint64_t count_batch_size )
 {
     std::shared_ptr<KmerList> spectrum=std::make_shared<KmerList>();

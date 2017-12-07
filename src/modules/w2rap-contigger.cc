@@ -21,7 +21,7 @@
 #include "tclap/CmdLine.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <ctime>
 #include <sys/time.h>
 #include <paths/PathFinder.h>
 #include <paths/long/large/ImprovePath.h>
@@ -52,15 +52,15 @@ const uint64_t GB = 1024*1024*1024;
 
 void step_1(vecbvec & bases,
             VecPQVec & quals,
-            std::string out_dir,
-            std::string read_files){
+            const std::string &out_dir,
+            const std::string &read_files){
     OutputLog(2) << "processing reads into bases and quals"<<std::endl;
     ExtractReads(read_files, out_dir, &bases, &quals);
 }
 
 
 void step_2_EXP(std::shared_ptr<KmerList> & kmercounts, vecbvec const &reads, VecPQVec &quals, unsigned int minQual,
-                unsigned int minCount, const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
+                unsigned int minCount, const std::string &workdir, const std::string &tmpdir, uint max_mem) {
     vec<uint16_t> reads_length;
     create_read_lengths(reads_length,quals,minQual);
     OutputLog(2)<<"Unloading quals"<<std::endl;
@@ -78,9 +78,9 @@ void step_2_EXP(std::shared_ptr<KmerList> & kmercounts, vecbvec const &reads, Ve
     kmercounts->size = fastqKCount.getRecords(kmercounts->kmers);
 }
 
-void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec const &quals,
+void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec &quals,
             unsigned int minQual, unsigned minCount,
-            std::string workdir, std::string tmpdir, unsigned char disk_batches, uint64_t count_batch_size) {
+            const std::string &workdir, const std::string &tmpdir, unsigned int disk_batches, uint64_t count_batch_size) {
     vec<uint16_t> rlen;
     create_read_lengths(rlen,quals,minQual);
     OutputLog(2)<<"Unloading quals"<<std::endl;
@@ -99,7 +99,7 @@ void step_3(HyperBasevector &hbv,
             std::shared_ptr<KmerList> kmercounts,
             unsigned int minFreq,
             unsigned int small_K,
-            std::string out_dir) {
+            const std::string &out_dir) {
     bool FILL_JOIN = False;
     buildReadQGraph(bases, quals, kmercounts, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K);
 
@@ -114,7 +114,7 @@ void step_4DV(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             unsigned int large_K,
-            std::string out_dir){
+            const std::string &out_dir){
 
     //Swap the old graph and such to variables private to this context
     ReadPathVec old_paths;
@@ -139,7 +139,7 @@ void step_4EXP(HyperBasevector &hbv,
                vec<int> &hbvinv,
                ReadPathVec &paths,
                unsigned int large_K,
-               std::string out_dir){
+               const std::string &out_dir){
     OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
     /*if (clean_smallk_graph) {
         std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
@@ -180,7 +180,7 @@ void step_4(HyperBasevector &hbv,
             vec<int> &hbvinv,
             ReadPathVec &paths,
             unsigned int large_K,
-            std::string out_dir){
+            const std::string &out_dir){
     step_4DV(hbv,hbvinv,paths,large_K,out_dir);
 }
 
@@ -203,7 +203,7 @@ void step_6(HyperBasevector &hbv,
             vecbvec &bases,
             VecPQVec &quals,
             unsigned int pair_sample,
-            std::string out_dir){
+            const std::string &out_dir){
     vecbvec new_stuff;
     //TODO: Hardcoded parameters
     bool CYCLIC_SAVE = True;
@@ -232,8 +232,8 @@ void step_7DV(HyperBasevector &hbv,
             ReadPathVec &paths,
             vecbvec &bases,
             VecPQVec &quals,
-            std::string out_dir,
-            std::string out_prefix){
+            const std::string &out_dir,
+            const std::string &out_prefix){
     OutputLog(2)<<"DISCOVAR-like heuristics being run"<<std::endl;
 
 
@@ -278,8 +278,8 @@ void step_7(HyperBasevector &hbv,
             vecbvec &bases,
             VecPQVec &quals,
             unsigned int min_input_reads,
-            std::string out_dir,
-            std::string out_prefix){
+            const std::string &out_dir,
+            const std::string &out_prefix){
 
     int MAX_SUPP_DEL = min_input_reads;//was 0
     bool TAMP_EARLY_MIN = True;
@@ -345,8 +345,8 @@ void step_7EXP(HyperBasevector &hbv,
             vecbvec &bases,
             VecPQVec &quals,
             unsigned int min_input_reads,
-            std::string out_dir,
-            std::string out_prefix){
+            const std::string &out_dir,
+            const std::string &out_prefix){
     OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
     int MAX_SUPP_DEL = min_input_reads;//was 0
     bool TAMP_EARLY_MIN = True;
@@ -407,13 +407,13 @@ void step_8(HyperBasevector &hbv,
             vec<vec<vec<vec<int>>>> &lines,
             vec<int> &npairs,
             ReadPathVec &paths,
-            std::string out_dir,
-            std::string out_prefix){
+            const std::string &out_dir,
+            const std::string &out_prefix){
     int MIN_LINE = 5000;
     int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
 
-    bool SCAFFOLD_VERBOSE = False;
-    bool GAP_CLEANUP = True;
+    Bool SCAFFOLD_VERBOSE = False;
+    Bool GAP_CLEANUP = True;
 
     VecULongVec pathsinv;
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
@@ -440,19 +440,22 @@ int main(const int argc, const char * argv[]) {
     std::string read_files;
     std::string out_dir;
     std::string tmp_dir;
+    std::string run_config;
     unsigned int threads;
     unsigned int minFreq,minCount;
     unsigned int minQual;
-    int max_mem;
+    uint max_mem;
     uint64_t count_batch_size;
     unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches, min_input_reads;
     std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
                                            180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
                                            400, 440, 460, 500, 544, 640};
     std::vector<std::string> validGFAOpts({"none", "basic", "detailed", "abyss"});
+    std::vector<std::string> validRunConfigs({"basic", "dv_like", "experimental"});
+    bool newStep2;
     std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7,8};
     std::string dump_detailed_gfa;
-    bool dump_all,run_dv,run_exp;
+    bool dump_all;
 
     //========== Command Line Option Parsing ==========
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
@@ -476,6 +479,7 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValuesConstraint<unsigned int> largeKconst(allowed_k);
         TCLAP::ValueArg<unsigned int> large_KArg("K", "large_k",
              "Large k (default: 200)", false, 200, &largeKconst, cmd);
+
         //TCLAP::ValueArg<unsigned int> small_KArg("k", "small_k",
         //                                         "Small k (default: 60)", false, 60, &largeKconst, cmd);
 
@@ -516,21 +520,19 @@ int main(const int argc, const char * argv[]) {
         TCLAP::ValueArg<unsigned int> logLevelArg("", "log_level",
                                                   "verbosity level (default: 3)", false, 3, "1-4", cmd);
 
-        TCLAP::ValueArg<bool>         runDiscovarCompatibleArg        ("","dv_like",
-                                                               "Run with discovar-like heuristics (default: 0)", false,false,"bool",cmd);
-
-        TCLAP::ValueArg<bool>         runExperimentalArg        ("","experimental",
-                                                                    "Run latest EXPERIMENTAL heuristics (default: 0)", false,false,"bool",cmd);
-
         TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
                                                                "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
+        TCLAP::ValueArg<bool> newStep2Arg("", "new_step2", "Run using SMR step2", false, false, "bool", cmd);
         TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
         TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
                                                          "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
+        TCLAP::ValuesConstraint<std::string> runConfigOptions(validRunConfigs);
+        TCLAP::ValueArg<std::string>    runConfigArg("", "run_config", "Run configuration (default: basic)", false, "basic", &runConfigOptions, cmd);
 
         cmd.parse(argc, argv);
         // Get the value parsed by each arg.
         out_dir = out_dirArg.getValue();
+        run_config = runConfigArg.getValue();
         out_prefix = out_prefixArg.getValue();
         read_files = read_filesArg.getValue();
         threads = threadsArg.getValue();
@@ -551,8 +553,7 @@ int main(const int argc, const char * argv[]) {
         tmp_dir=tmp_dirArg.getValue();
         min_input_reads=minInputArg.getValue();
         OutputLogLevel=logLevelArg.getValue();
-        run_dv=runDiscovarCompatibleArg.getValue();
-        run_exp=runExperimentalArg.getValue();
+        newStep2=newStep2Arg.getValue();
 
     } catch (TCLAP::ArgException &e)  // catch any exceptions
     {
@@ -638,12 +639,12 @@ int main(const int argc, const char * argv[]) {
     for (auto step=from_step; step <=to_step; ++step){
         int ostep = step-1;
         //First make sure all needed data is there.
-        if ( (2==step or 3==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
-            if (bases.size()==0) {
+        if ( (2==step or 3==step or 5==step or 6==step or 7==step) and (quals.empty() or bases.empty())){
+            if (bases.empty()) {
                 OutputLog(2) << "Loading bases..." << std::endl;
                 bases.ReadAll(out_dir + "/pe_data.fastb");
             }
-            if (quals.size()==0) {
+            if (quals.empty()) {
                 OutputLog(2) << "Loading quals..." << std::endl;
                 load_quals(quals, out_dir + "/pe_data.cqual");
             }
@@ -666,7 +667,7 @@ int main(const int argc, const char * argv[]) {
         }
 
         //steps that require a graph
-        if (step_inputg_prefix[ostep]!="" and hbv.N()==0) {
+        if (!step_inputg_prefix[ostep].empty() and hbv.N()==0) {
             //Load hbv
             OutputLog(2) <<"Loading graph..." << std::endl;
             BinaryReader::readFile(out_dir + "/" + out_prefix + "." + step_inputg_prefix[ostep] + ".hbv", &hbv);
@@ -698,7 +699,7 @@ int main(const int argc, const char * argv[]) {
                 step_1(bases, quals, out_dir, read_files);
                 break;
             case 2:
-                if (run_exp)
+                if (newStep2)
                     step_2_EXP(kmercounts, bases, quals, minQual, minCount, out_dir, tmp_dir, max_mem);
                 else step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
                 break;
@@ -706,9 +707,9 @@ int main(const int argc, const char * argv[]) {
                 step_3(hbv,hbvinv,paths,bases,quals,kmercounts,minFreq,small_K,out_dir);
                 break;
             case 4:
-                if (run_dv) step_4DV(hbv,hbvinv,paths,large_K,out_dir);
-                else if (run_exp) step_4EXP(hbv,hbvinv,paths,large_K,out_dir);
-                else step_4(hbv,hbvinv,paths,large_K,out_dir);
+                if (run_config == "dv_like")            step_4DV(hbv,hbvinv,paths,large_K,out_dir);
+                else if (run_config == "experimental")  step_4EXP(hbv,hbvinv,paths,large_K,out_dir);
+                else if (run_config == "basic")         step_4(hbv,hbvinv,paths,large_K,out_dir);
                 break;
             case 5:
                 step_5(hbv, hbvinv, paths, bases, quals, min_size);
@@ -717,9 +718,9 @@ int main(const int argc, const char * argv[]) {
                 step_6(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
                 break;
             case 7:
-                if (run_dv) step_7DV(hbv, hbvinv, lines, npairs, paths, bases, quals, out_dir, out_prefix);
-                else if (run_exp) step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
-                else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                if (run_config == "dv_like")            step_7DV(hbv, hbvinv, lines, npairs, paths, bases, quals, out_dir, out_prefix);
+                else if (run_config == "experimental")  step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+                else if (run_config == "basic")         step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
                 break;
             case 8:
               step_8(hbv, hbvinv, lines, npairs, paths, out_dir, out_prefix);
@@ -745,7 +746,7 @@ int main(const int argc, const char * argv[]) {
             save_quals(quals,out_dir + "/pe_data.cqual");
             OutputLog(2) << "DONE!" << std::endl;
         } else {
-            if (step_outputg_prefix[ostep]!="") {
+            if (!step_outputg_prefix[ostep].empty()) {
                 if (dump_all or step == to_step) {
                     //TODO: dump graph and paths
                     OutputLog(2) << "Dumping graph and paths..." << std::endl;
@@ -771,7 +772,7 @@ int main(const int argc, const char * argv[]) {
 
         }
         OutputLog(1) << "Step "<< step << " completed in "<<TimeSince(step_time)<<std::endl<<std::endl;
-        if (step_outputg_prefix[ostep]!=""){
+        if (!step_outputg_prefix[ostep].empty()){
             graph_status(hbv);
             path_status(paths);
             OutputLog(2,false)<<std::endl;
