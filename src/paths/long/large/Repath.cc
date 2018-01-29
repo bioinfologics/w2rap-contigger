@@ -281,29 +281,96 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      }
 }
 
-
-void RepathInMemoryEXP(const HyperBasevector &old_hbv,
-                       const vec<int> &old_hbvinv, ReadPathVec &old_paths, const int new_K,
-                       HyperBasevector &new_hbv, ReadPathVec &new_paths) {
-     // Build and unique sort places.  These are the paths, with the following
-     // modifications:
-     // (a) paths implying base sequence < K2 bases are discarded;
-     // (b) if the inverse of a path is smaller we use it instead;
-     // (c) places are unique sorted.
-     const int old_K=old_hbv.K();
-     vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
-     OutputLog(2) << "repathing " << old_edges.size() << " edges from K1=" << old_K << " to K2=" << new_K << std::endl;
-     uint64_t pathed = 0, multipathed = 0;
-     for (auto &p:old_paths) {
-          if (p.size() >= 2) multipathed++;
-     }
-     std::vector<std::vector<int> > places;
+void generate_supported_places(std::vector<std::vector<int> > & places, const HyperBasevector &old_hbv, const ReadPathVec &old_paths, const vecbvec &old_edges,
+                               const vec<int> &old_hbvinv,const int old_K, const int new_K){
      places.reserve(old_paths.size());
      //TODO: change this to do path-transversal through pairs? or even better path exploration in a radious with search for support after, could allow K2 to grow to 500 or so
+     vec<int> toLeft,toRight;
+     old_hbv.ToLeft(toLeft);
+     old_hbv.ToRight(toRight);
+     std::vector<bool>edge_used(old_edges.size());
+     std::vector<std::vector<int> > newplaces;
+     //IMPROVEMENT #1: if a pair of reads transverse consecutive edges, make it a single path
+     for (int64_t m = 0; m < (int64_t) old_paths.size()-1; m += 2){
+          newplaces.clear();
+//          std::cout<<"read# "<<m<<" ( ";
+//          for (auto &e:old_paths[m]) std::cout<<" "<<e<<":"<<old_hbvinv[e];
+//          std::cout<<" )   ( ";
+//          for (auto &e:old_paths[m+1]) std::cout<<" "<<e<<":"<<old_hbvinv[e];
+//          std::cout<<" )"<<std::endl;
+          //this should never be true, but just in case...
+          if (old_paths[m].size()==0 and old_paths[m+1].size()==0) continue;
+          //case 0: one of the 2 reads is unplaced
+          if (old_paths[m].size()==0) newplaces.push_back(old_paths[m+1]);
+          else if (old_paths[m+1].size()==0) newplaces.push_back(old_paths[m]);
+          //case 1: boring both reads map entirely to same edge
+          else if (old_paths[m].size()==1 and old_paths[m+1].size()==1 and old_paths[m][0]==old_hbvinv[old_paths[m+1][0]]){
+               if (not edge_used[old_paths[m][0]]) {
+                    newplaces.push_back({old_paths[m][0]});
+               }
+          }
+          else {
+               //is the end edge of read1 in read2?
+               int ovlp=-1;
+               //case 2: reads start in different edges, meet in the middle
+               for (int i=0;i<old_paths[m+1].size();++i) {
+                    if (old_paths[m].back()==old_hbvinv[old_paths[m+1][i]]){
+                         ovlp=i;
+                         break;
+                    }
+               }
+               if (ovlp>-1){
+                   //std::cout<<"Read joined through overlap!!!!"<<std::endl;
+                    //extend read1 path through read2, add read1 path
+                    auto r1p=old_paths[m];
+                    for (int i=ovlp+1;i<old_paths[m+1].size();++i){
+                         r1p.push_back(old_hbvinv[old_paths[m+1][i]]);
+                    }
+                    newplaces.push_back(r1p);
+               } else {
+                    //case 3: reads start in different edges, end edges are directly connected
+
+                   if (toRight[old_paths[m].back()]==toLeft[old_hbvinv[old_paths[m+1].back()]]){
+                       //std::cout<<"Read joined through connection!!!!"<<std::endl;
+                        auto r1p=old_paths[m];
+                        for (auto r2e=old_paths[m+1].rbegin();r2e<old_paths[m+1].rend();++r2e) r1p.push_back(old_hbvinv[*r2e]);
+                        newplaces.push_back(r1p);
+
+                   } else {
+                       newplaces.push_back(old_paths[m]);
+                       newplaces.push_back(old_paths[m+1]);
+                   }
+                    //TODO: case 5 -> end edges connected by a unique path
+               }
+
+
+
+
+               //case 4: can't
+          }
+
+          for (auto &np:newplaces){
+               std::vector<int> revplace;
+               int nkmers = 0;
+               for (auto e:np) {
+                    nkmers += old_edges[e].size() - ((int) old_K - 1);
+                    edge_used[e]=true;
+                    edge_used[old_hbvinv[e]]=true;
+                    revplace.push_back(old_hbvinv[e]);
+               }
+               std::reverse(revplace.begin(),revplace.end());
+               if (nkmers + ((int) old_K - 1) >= new_K) {
+                    if (np[0]<revplace[0]) places.push_back(np);
+                    else places.push_back(revplace);
+               }
+          }
+
+     }
 
      ///////////////////////////////////////////////////////////////////////////////
      // Generate the 'places' vector
      ///////////////////////////////////////////////////////////////////////////////
+
 
      const int batch = 10000;
 #pragma omp parallel for
@@ -337,6 +404,25 @@ void RepathInMemoryEXP(const HyperBasevector &old_hbv,
 
 
      places.shrink_to_fit();
+}
+
+void RepathInMemoryEXP(const HyperBasevector &old_hbv,
+                       const vec<int> &old_hbvinv, ReadPathVec &old_paths, const int new_K,
+                       HyperBasevector &new_hbv, ReadPathVec &new_paths) {
+     // Build and unique sort places.  These are the paths, with the following
+     // modifications:
+     // (a) paths implying base sequence < K2 bases are discarded;
+     // (b) if the inverse of a path is smaller we use it instead;
+     // (c) places are unique sorted.
+     const int old_K=old_hbv.K();
+     vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
+     OutputLog(2) << "repathing " << old_edges.size() << " edges from K1=" << old_K << " to K2=" << new_K << std::endl;
+     uint64_t pathed = 0, multipathed = 0;
+     for (auto &p:old_paths) {
+          if (p.size() >= 2) multipathed++;
+     }
+     std::vector<std::vector<int> > places;
+     generate_supported_places(places,old_hbv,old_paths,old_edges,old_hbvinv,old_K,new_K);
      OutputLog(3) << places.size() << " unique places" << std::endl;
 
      // Convert places to bases.  For paths of length > 1, we truncate at the

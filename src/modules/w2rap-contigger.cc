@@ -457,7 +457,7 @@ int main(const int argc, const char * argv[]) {
     std::cout << "Welcome to w2rap-contigger" << std::endl << std::endl;
     std::cout << "Git origin: " << GIT_ORIGIN_URL << " -> "  << GIT_BRANCH << std::endl;
     std::cout << "Git commit: " << GIT_COMMIT_HASH << std::endl<<std::endl;
-
+    //TODO: change the expeirmental/dv flags to arguments per step (--experimental_steps 4,5)
 
     try {
         TCLAP::CmdLine cmd("", ' ', "0.1");
