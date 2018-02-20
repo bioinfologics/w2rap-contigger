@@ -552,7 +552,12 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
           {    ps.SetToSubOf( ps, 2, ps.size( ) - 2 );
                qsum.SetToSubOf( qsum, 2, qsum.size( ) - 2 );    }
 
-          vec<Bool> del( ps.size( ), False );
+         /*
+          * XXX: If the path is not valid, stop considering it
+          */
+         if (ps.empty()) continue;
+
+         vec<Bool> del( ps.size( ), False );
           for ( int j = 1; j < ps.isize( ); j++ )
           {    if ( qsum[j].first > qsum[0].first ) break;
                if ( qsum[j].second < qsum[0].second ) del[j] = True;    }
