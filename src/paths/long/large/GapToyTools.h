@@ -178,7 +178,10 @@ void RemoveUnneededVerticesLoopsOnly( HyperBasevector& hb, vec<int>& inv,
 void RemoveUnneededVertices2( HyperBasevector& hb, vec<int>& inv,
      ReadPathVec& paths, Bool debug = false );
 
-void RemoveSmallComponents3( HyperBasevector& hb, 
+void RemoveSmallComponents4( HyperBasevector& hb,
+                             const Bool remove_small_cycles = False );
+
+void RemoveSmallComponents3( HyperBasevector& hb,
      const Bool remove_small_cycles = False );
 
 void Empty( const HyperBasevector& hb, const vec< std::pair<vec<int>,vec<int>> >& pairs, 

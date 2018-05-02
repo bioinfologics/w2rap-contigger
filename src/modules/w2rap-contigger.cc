@@ -466,7 +466,6 @@ int main(const int argc, const char * argv[]) {
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".large_K.final.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
-        std::cout << "   DONE!" << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("LargeKFinalLoad") << std::endl;
     }
     if (from_step<=6 and to_step>=6) {
@@ -562,9 +561,9 @@ int main(const int argc, const char * argv[]) {
         LoadReadPathVec(pathsr,(out_dir + "/" + out_prefix + ".contig.paths").c_str());
         inv.clear();
         hbvr.Involution(inv);
+
         paths_inv.clear();
         invert(pathsr, paths_inv, hbvr.EdgeObjectCount());
-        std::cout << "   DONE!" << std::endl;
         if (dump_perf) perf_file << std::endl << checkpoint_perf_time("ContigGraphLoad") << std::endl;
     }
     if (from_step<=7 and to_step>=7) {

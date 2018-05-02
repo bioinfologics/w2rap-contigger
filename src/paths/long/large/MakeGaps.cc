@@ -58,8 +58,14 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      vec<Bool> sink_like( nobj, False ), source_like( nobj, False );
      vec<int> dist_to_end( nobj, 0 );
      for ( int e = 0; e < nobj; e++ )
-     {    if ( hb.From( to_right[e] ).empty( ) ) sink_like[e] = True;
-          if ( hb.To( to_left[e] ).empty( ) ) source_like[e] = True;    }
+     {
+         if ( hb.From( to_right[e] ).empty( ) ) {
+             sink_like[e] = True;
+         }
+         if ( hb.To( to_left[e] ).empty( ) )  {
+              source_like[e] = True;
+         }
+     }
      for ( int pass = 1; pass <= passes; pass++ )
      {    for ( int zpass = 1; zpass <= 2; zpass++ )
           {    hb.Reverse( );
@@ -78,25 +84,28 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
                */
 
                for ( int e = 0; e < nobj; e++ )
-               {    int v = to_right[e];
+               {
+                    int v = to_right[e];
                     if ( hb.From(v).size( ) != 2 || hb.To(v).size( ) != 1 ) continue;
+
                     int e1 = hb.EdgeObjectIndexByIndexFrom( v, 0 );
                     int e2 = hb.EdgeObjectIndexByIndexFrom( v, 1 );
                     int w1 = to_right[e1], w2 = to_right[e2];
-                    if ( zpass == 2 && ( !sink_like[e1] || !sink_like[e2] ) ) 
-                         continue;
-                    if ( zpass == 1 && ( !source_like[e1] || !source_like[e2] ) ) 
-                         continue;
+
+                    if ( zpass == 2 && ( !sink_like[e1] || !sink_like[e2] ) ) continue;
+                    if ( zpass == 1 && ( !source_like[e1] || !source_like[e2] ) ) continue;
                     if ( w1 == w2 && hb.To(w1).size( ) != 2 ) continue;
-                    if ( w1 != w2 && ( !hb.To(w1).solo( ) || !hb.To(w2).solo( ) ) )
-                         continue;
+                    if ( w1 != w2 && ( !hb.To(w1).solo( ) || !hb.To(w2).solo( ) ) ) continue;
+
                     int d1 = hb.Kmers(e1) + dist_to_end[e1];
                     int d2 = hb.Kmers(e2) + dist_to_end[e2];
                     if ( d1 > max_hang || d2 > max_hang ) continue;
                     if ( zpass == 2 ) sink_like[e] = True;
                     else source_like[e] = True;
                     dist_to_end[e] = Max( d1, d2 );
-                    tom[e1] = tom[e], tom[e2] = tom[e];    }
+                    tom[e1] = tom[e], tom[e2] = tom[e];
+               }
+
                for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
                {    int v = to_right[e];
                     if ( hb.From(v).size( ) != 2 || hb.To(v).size( ) != 1 ) continue;
@@ -265,10 +274,12 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      // Compute edge groups.
 
      // std::cout << Date( ) << ": computing edge groups" << std::endl;
-     vec<vec<int>> gp(nobj);
-     for ( int e = 0; e < nobj; e++ )
-          gp[ tom[e] ].push_back(e);
 
+     vec<vec<int>> gp(nobj);
+    if (verbose) {
+        for (int e = 0; e < nobj; e++)
+            gp[tom[e]].push_back(e);
+    }
      // Finalize links.
 
      // std::cout << Date( ) << ": finalizing links" << std::endl;
@@ -429,7 +440,8 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      // Edit graph to add gap edges.
 
      for ( int i = 0; i < accepted.isize( ); i++ )
-     {    int e1 = accepted[i].first, e2 = accepted[i].second;
+     {
+         int e1 = accepted[i].first, e2 = accepted[i].second;
           int N = hb.N( );
           hb.AddVertices(2);
           hb.GiveEdgeNewToVx( e1, to_right[e1], N );
@@ -495,9 +507,11 @@ void MakeGaps( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths,
      // Clean up.
 
      if (GAP_CLEANUP) 
-     {    RemoveSmallComponents3( hb, True );
-          Cleanup( hb, inv, paths );
-          CleanupLoops( hb, inv, paths );    }
+     {
+         RemoveSmallComponents4( hb, True );
+         Cleanup( hb, inv, paths );
+         CleanupLoops( hb, inv, paths );
+     }
 
      // Done.
 

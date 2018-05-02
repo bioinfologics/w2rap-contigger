@@ -416,6 +416,95 @@ void RemoveUnneededVerticesGeneralizedLoops( HyperBasevector& hb, vec<int>& inv,
      hb.DeleteEdges(dels);
      CleanupCore( hb, inv, paths );    }
 
+void RemoveSmallComponents4( HyperBasevector& hb, const Bool remove_small_cycles )
+{    double clock1 = WallClockTime( );
+    const int max_small_comp = 750;
+    const int min_circle = 200;
+    vec<int> e_to_delete;
+    vec< vec<int> > comps;
+    hb.Components(comps);
+    LogTime( clock1, "removing small components 1" );
+    double clock2 = WallClockTime( );
+#pragma omp parallel for
+    for ( size_t i = 0; i < comps.size( ); i++ )
+    {    const vec<int>& o = comps[i];
+        int max_edge = 0;
+        for ( int j = 0; j < o.isize( ); j++ )
+            for ( int l = 0; l < hb.From( o[j] ).isize( ); l++ )
+            {    int e = hb.EdgeObjectIndexByIndexFrom( o[j], l );
+                max_edge = std::max( max_edge, hb.EdgeLengthKmers(e) );    }
+        if ( max_edge > max_small_comp ) continue;
+
+        // Remove small cycles.
+
+        int total_kmers = 0;
+        for ( int j = 0; j < o.isize( ); j++ )
+            for ( int l = 0; l < hb.From( o[j] ).isize( ); l++ )
+            {    int e = hb.EdgeObjectIndexByIndexFrom( o[j], l );
+                total_kmers += hb.EdgeLengthKmers(e);    }
+        if (total_kmers < min_circle && remove_small_cycles) {
+
+            for (size_t j = 0; j < o.size(); j++) {
+                int v = o[j];
+#pragma omp critical
+                {
+                    for (size_t t = 0; t < hb.From(v).size(); t++) {
+                        e_to_delete.push_back(hb.EdgeObjectIndexByIndexFrom(
+                                v, t));
+                    }
+                }
+            }
+            continue;
+        }
+
+        if ( hb.HasCycle(o) ) continue;
+
+        int no = o.size( );
+        digraphE<basevector> GX( digraphE<basevector>::COMPLETE_SUBGRAPH, hb, o );
+        vec<int> L, sources, sinks, p;
+        for ( int i = 0; i < GX.EdgeObjectCount( ); i++ )
+            L.push_back( GX.EdgeObject(i).size( ) - hb.K( ) + 1 );
+        digraphE<int> G( GX, L );
+        G.Sources(sources), G.Sinks(sinks);
+        G.AddVertices(2);
+        for ( int j = 0; j < sources.isize( ); j++ )
+            G.AddEdge( no, sources[j], 0 );
+        for ( int j = 0; j < sinks.isize( ); j++ )
+            G.AddEdge( sinks[j], no+1, 0 );
+        for ( int e = 0; e < G.EdgeObjectCount( ); e++ )
+            G.EdgeObjectMutable(e) = -G.EdgeObject(e);
+        G.ShortestPath( no, no+1, p );
+        int max_path = 0;
+        for ( int j = 0; j < p.isize( ) - 1; j++ )
+        {    int v1 = p[j], v2 = p[j+1];
+            int m = 1000000000;
+            for ( int l = 0; l < G.From(v1).isize( ); l++ )
+            {    if ( G.From(v1)[l] == v2 )
+                    m = Min( m, G.EdgeObjectByIndexFrom( v1, l ) );    }
+            max_path -= m;    }
+
+        if (max_path <= max_small_comp) {
+
+            for (size_t j = 0; j < o.size(); j++) {
+                int v = o[j];
+#pragma omp critical
+                {
+                    for (size_t t = 0; t < hb.From(v).size(); t++) {
+                        e_to_delete.push_back(hb.EdgeObjectIndexByIndexFrom(
+                                v, t));
+                    }
+                }
+            }
+        }
+    }
+
+    LogTime( clock2, "removing small components 2" );
+    double clock3 = WallClockTime( );
+
+    std::cout << "Number of edges to delete: " << e_to_delete.size() << std::endl;
+    hb.DeleteEdges(e_to_delete);
+    LogTime( clock3, "removing small components 3" );    }
+
 void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles )
 {    double clock1 = WallClockTime( );
      const int max_small_comp = 1000;
@@ -428,7 +517,6 @@ void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles
      #pragma omp parallel for
      for ( size_t i = 0; i < comps.size( ); i++ )
      {    const vec<int>& o = comps[i];
-
           int max_edge = 0;
           for ( int j = 0; j < o.isize( ); j++ )
           for ( int l = 0; l < hb.From( o[j] ).isize( ); l++ )
@@ -443,14 +531,21 @@ void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles
           for ( int l = 0; l < hb.From( o[j] ).isize( ); l++ )
           {    int e = hb.EdgeObjectIndexByIndexFrom( o[j], l );
                total_kmers += hb.EdgeLengthKmers(e);    }
-          if ( total_kmers < min_circle && remove_small_cycles )
-          {    for ( size_t j = 0; j < o.size( ); j++ )
-               {    int v = o[j];
+         if (total_kmers < min_circle && remove_small_cycles) {
+
+             for (size_t j = 0; j < o.size(); j++) {
+                 int v = o[j];
                     #pragma omp critical
-                    {    for ( size_t t = 0; t < hb.From(v).size( ); t++ )
-                         {    e_to_delete.push_back( hb.EdgeObjectIndexByIndexFrom( 
-                                   v, t ) );    }    }    }
-               continue;    }
+                 {
+                     for (size_t t = 0; t < hb.From(v).size(); t++) {
+                         e_to_delete.push_back(hb.EdgeObjectIndexByIndexFrom(
+                                 v, t));
+                     }
+                 }
+             }
+             continue;
+         }
+
           if ( hb.HasCycle(o) ) continue;
 
           int no = o.size( );
@@ -477,15 +572,27 @@ void RemoveSmallComponents3( HyperBasevector& hb, const Bool remove_small_cycles
                          m = Min( m, G.EdgeObjectByIndexFrom( v1, l ) );    }
                max_path -= m;    }
 
-          if ( max_path <= max_small_comp )
-          {    for ( size_t j = 0; j < o.size( ); j++ )
-               {    int v = o[j];
+         if (max_path <= max_small_comp) {
+
+             for (size_t j = 0; j < o.size(); j++) {
+                 int v = o[j];
                     #pragma omp critical
-                    {    for ( size_t t = 0; t < hb.From(v).size( ); t++ )
-                         {    e_to_delete.push_back( hb.EdgeObjectIndexByIndexFrom( 
-                                   v, t ) );    }    }    }    }    }
+                 {
+                     for (size_t t = 0; t < hb.From(v).size(); t++) {
+                         e_to_delete.push_back(hb.EdgeObjectIndexByIndexFrom(
+                                 v, t));
+                     }
+                 }
+             }
+         }
+     }
+
      LogTime( clock2, "removing small components 2" );
      double clock3 = WallClockTime( );
+    std::cout << "Number of edges to delete: " << e_to_delete.size() << std::endl;
+    hb.DeleteEdges(e_to_delete);
+
+
      hb.DeleteEdges(e_to_delete);
      LogTime( clock3, "removing small components 3" );    }
 
@@ -583,7 +690,14 @@ void TestInvolution( const HyperBasevector& hb, const vec<int>& inv )
                std::cout << "Involution value not rc.\n" << "Abort." << std::endl;
                TracebackThisProcess( );    }
           if ( inv[inv[e]] != e )
-          {    std::cout << "Involution is not an involution.\n" << "Abort." << std::endl;
+          {
+              std::cout << "ERROR! for edge " << e << " inv[]=" << inv[e] << " inv[inv[]]" << inv[inv[e]] << std::endl;
+              std::cout << "e " << e << " edge e size " << hb.EdgeObject(e).size() << std::endl;
+              std::cout << "DNA e " << hb.Cat({e}) << std::endl;
+              std::cout << "DNA inv[e] " << hb.Cat({inv[e]}) << std::endl;
+              std::cout << "DNA inv[inv[e]] " << hb.Cat({inv[inv[e]]}) << std::endl;
+
+              std::cout << "Involution is not an involution.\n" << "Abort." << std::endl;
                TracebackThisProcess( );    }    }
      for ( int v = 0; v < hb.N( ); v++ )
      {    for ( int i1 = 0; i1 < hb.To(v).isize( ); i1++ )
