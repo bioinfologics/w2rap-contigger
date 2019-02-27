@@ -50,7 +50,8 @@ vec<int> Nhood( const HyperBasevector& hb, const vec<int>& to_left,
 
 void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
      vec< vec< std::pair<int,int> > >& y, const vec< vec<int> >& n, const int N )
-{    vec< vec<int> > ind1(N), ind2(N);
+{
+     vec< vec<int> > ind1(N), ind2(N);
      for ( int i = 0; i < x.isize( ); i++ )
      for ( int j = 0; j < x[i].isize( ); j++ )
      {    ind1[ x[i][j].first ].push_back(i);
@@ -275,17 +276,28 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
 
      double mclock = WallClockTime();
      OutputLog(2)<<"Merging " << xs.size() << " clusters" << std::endl;
+     auto prev_xs(xs.size());
      for (int p = 1; p <= merge_passes; p++) {
+          OutputLog(2) << "Merge clusters \n";
+          OutputLog(2) << xs.size() << " elements in xs\n";
+          prev_xs = xs.size();
+
           MergeClusters(xs, xs, n, hb.EdgeObjectCount());
-          int n = 0;
-          for (int i = 0; i < xs.isize(); i++)
-               if (xs[i].size() > 1 || mult[xs[i][0]] > 1) n++;
-          // DPRINT2( xs.size( ), n );    
+
+          // Check if made any change, if hasn't simply bomb out
+          if (prev_xs == xs.size()) {
+               OutputLog(2)<<"Completed using " << p << " / " << merge_passes << " passes, last pass made no difference" << std::endl;
+               break;
+          }
+         OutputLog(2)<<"Completed pass " << p << " / " << merge_passes << std::endl;
+
      }
 
      // Remove giant clusters.
-
+     OutputLog(2) << "Remove giant clusters." << std::endl;
      const int max_cluster = 20;
+     OutputLog(2) << "Removing clusters where size > " << max_cluster << " out of " << xs.size() << " clusters " << std::endl;
+     prev_xs=xs.size();
      vec<Bool> delm(xs.size(), False);
 #pragma omp parallel for
      for (int i = 0; i < xs.isize(); i++) {
@@ -297,7 +309,10 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
      }
      EraseIf(xs, delm);
 
+
      // Remove singleton clusters. (just 2 nodes, connected by a single read)
+     OutputLog(2) << "Remove singleton clusters." << std::endl;
+     OutputLog(2) << "Removing clusters out of " << xs.size() << " clusters " << std::endl;
      vec<Bool> xdel(xs.size(), False);
      for (int i = 0; i < xs.isize(); i++) {
           vec<std::pair<int, int> > d = xs[i];
@@ -307,6 +322,8 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
      //PrintClusters( xs, mult, work_dir + "/clusters.txt.ini" );
 
      // Look for cluster merges based on sequence overlaps.
+     OutputLog(2) << "Merge overlapping clusters based on their sequences." << std::endl;
+     OutputLog(2) << "Merging " << xs.size() << " clusters " << std::endl;
      for (int opass = 1; opass <= 2; opass++) {
           int N = hb.EdgeObjectCount();
           vec<vec<int> > ind1(N), ind2(N);
@@ -394,6 +411,8 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
      }
 
      // Partially symmetrize.
+     OutputLog(2) << "Partial Symmetrisation." << std::endl;
+     OutputLog(2) << "Symmetrising " << xs.size() << " clusters " << std::endl;
 
      int nxs = xs.size();
      for (int i = 0; i < nxs; i++) {
@@ -405,6 +424,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
      MergeClusters(xs, xs, n, hb.EdgeObjectCount());
 
      // Clean clusters.
+     OutputLog(2) << "Cleaning clusters." << std::endl;
 
      const int cluster_ratio = 10;
      for (int i = 0; i < xs.isize(); i++) {
@@ -420,7 +440,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
                }
           }
      }
-
+     OutputLog(2) << "Unsat DONE" << std::endl;
      // Print clusters.
      //PrintClusters( xs, mult, work_dir + "/clusters.txt.fin" );
 
