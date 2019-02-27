@@ -273,6 +273,8 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
 
      // Merge clusters.
 
+     BinaryWriter::writeFile("xs.out", xs);
+     BinaryWriter::writeFile("n.out", n);
 
      double mclock = WallClockTime();
      OutputLog(2)<<"Merging " << xs.size() << " clusters" << std::endl;

@@ -306,10 +306,16 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
 
+add_executable(mergeclusters
+        $<TARGET_OBJECTS:base_libs>
+        $<TARGET_OBJECTS:specific_w2rap-contigger>
+        src/modules/MergeClusters_test.cpp)
+
 ##Zlib link
 if (ZLIB_FOUND)
   set(ZLIB libz.so)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
+  target_link_libraries(mergeclusters ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
 endif()
 

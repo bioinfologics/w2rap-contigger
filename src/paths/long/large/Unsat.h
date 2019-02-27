@@ -17,4 +17,6 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
      const ReadPathVec& paths, vec< vec< std::pair<int,int> > >& xs,
      const String& work_dir, const int A2V );
 
+void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
+                    vec< vec< std::pair<int,int> > >& y, const vec< vec<int> >& n, const int N );
 #endif
