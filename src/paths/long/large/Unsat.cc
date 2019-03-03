@@ -21,6 +21,7 @@
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadPath.h"
 #include "paths/long/large/Unsat.h"
+#include "equiv/DisjointSet.hpp"
 #include "system/SortInPlace.h"
 
 vec<int> Nhood( const HyperBasevector& hb, const vec<int>& to_left,
@@ -60,7 +61,9 @@ void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
      for ( int i = 0; i < N; i++ )
      {    UniqueSort( ind1[i] ), UniqueSort( ind2[i] );    }
      equiv_rel e( x.size( ) );
-     #pragma omp parallel
+    auto start = std::chrono::high_resolution_clock::now();
+
+#pragma omp parallel
      {
          std::vector<std::vector<int>> tt1;
          #pragma omp for nowait
@@ -97,21 +100,203 @@ void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
          }
      }
 
+    std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
+    OutputLog(2) << "DONE Core1 in " << duration.count() << " s\n";
+    start = std::chrono::high_resolution_clock::now();
 
+    vec< vec< std::pair<int,int> > > z;
+    vec<int> reps;
+    e.OrbitReps(reps);
+    duration = std::chrono::high_resolution_clock::now() - start;
+    OutputLog(2) << "DONE OrbitReps1 in " << duration.count() << " s\n";
 
-     vec< vec< std::pair<int,int> > > z;
-     vec<int> reps;
-     e.OrbitReps(reps);
+//     std::cout << "MergeClusters num orbit reps: " << reps.size() << std::endl;
      for ( int j = 0; j < reps.isize( ); j++ )
      {    vec<int> o;
           e.Orbit( reps[j], o );
+//          std::cout << "Class " << j << " = " << reps[j] << ", number of objects = " << o.size() << "\n";
           vec< std::pair<int,int> > m;
-          for ( int l = 0; l < o.isize( ); l++ )
-               m.append( x[ o[l] ] );
+         m.reserve(o.size());
+          for ( int l = 0; l < o.isize( ); l++ ) {
+//               std::cout <<o[l] << " ";
+               m.append(x[o[l]]);
+          }
+//          std::cout << std::endl;
           UniqueSort(m);
           z.push_back(m);    }
      sortInPlaceParallel(z.begin(),z.end());
      y = z;    }
+
+void MergeClusters2( const vec< vec< std::pair<int,int> > >& x,
+                    vec< vec< std::pair<int,int> > >& y, const vec< vec<int> >& n, const int N )
+{
+     vec< vec<int> > ind1(N), ind2(N);
+     for ( int i = 0; i < x.isize( ); i++ )
+          for ( int j = 0; j < x[i].isize( ); j++ )
+          {    ind1[ x[i][j].first ].push_back(i);
+               ind2[ x[i][j].second ].push_back(i);    }
+#pragma omp parallel for
+     for ( int i = 0; i < N; i++ )
+     {    UniqueSort( ind1[i] ), UniqueSort( ind2[i] );    }
+    equiv_rel_template_bj<int> e( x.size( ) );
+    auto start = std::chrono::high_resolution_clock::now();
+#pragma omp parallel
+     {
+          std::vector<std::vector<int>> tt1;
+#pragma omp for nowait
+          for ( int i = 0; i < x.isize( ); i++ ) {
+               vec<int> s1, s2, t1, t2;
+               for (int j = 0; j < x[i].isize(); j++) {
+                    s1.push_back(x[i][j].first);
+                    s2.push_back(x[i][j].second);
+               }
+               UniqueSort(s1), UniqueSort(s2);
+
+               vec<int> ss1, ss2;
+               for (int j = 0; j < s1.isize(); j++)
+                    ss1.append(n[s1[j]]);
+               for (int j = 0; j < s2.isize(); j++)
+                    ss2.append(n[s2[j]]);
+               UniqueSort(ss1), UniqueSort(ss2);
+               s1 = ss1;
+               s2 = ss2;
+
+               for (int j = 0; j < s1.isize(); j++)
+                    t1.append(ind1[s1[j]]);
+               for (int j = 0; j < s2.isize(); j++)
+                    t2.append(ind2[s2[j]]);
+               UniqueSort(t1), UniqueSort(t2);
+               vec<int> t = Intersection(t1, t2);
+               tt1.insert(tt1.end(),t);
+          }
+#pragma omp critical
+          {
+               for (auto &t:tt1) {
+                   for (auto x : t) {
+                       e.join(t[0], x);
+                   }
+               }
+          }
+     }
+
+     e.flatten_and_link();
+    std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
+    OutputLog(2) << "DONE Core2 in " << duration.count() << " s\n";
+    start = std::chrono::high_resolution_clock::now();
+
+     vec< vec< std::pair<int,int> > > z;
+     vec<int> reps;
+     e.OrbitRepsAlt(reps);
+    duration = std::chrono::high_resolution_clock::now() - start;
+    OutputLog(2) << "DONE OrbitReps2 in " << duration.count() << " s\n";
+//     std::cout << "MergeClusters2 num orbit reps: " << reps.size() << std::endl;
+     for ( int j = 0; j < reps.isize( ); j++ )
+     {    vec<int> o;
+          e.Orbit( reps[j], o );
+//          std::cout << "Class " << j << " = " << reps[j] << ", number of objects = " << o.size() << "\n";
+          vec< std::pair<int,int> > m;
+         m.reserve(o.size());
+          for ( int l = 0; l < o.isize( ); l++ ) {
+//               std::cout << o[l] << " ";
+               m.append(x[o[l]]);
+          }
+//          std::cout << std::endl;
+          UniqueSort(m);
+          z.push_back(m);    }
+     sortInPlaceParallel(z.begin(),z.end());
+     y = z;    }
+
+void MergeClusters3(const vec<vec<std::pair<int, int> > > &x,
+                    vec<vec<std::pair<int, int> > > &y, const vec<vec<int> > &n, const int N) {
+    vec<vec<int> > ind1(N), ind2(N);
+    for (int i = 0; i < x.isize(); i++) {
+        for (int j = 0; j < x[i].isize(); j++) {
+            ind1[x[i][j].first].push_back(i);
+            ind2[x[i][j].second].push_back(i);
+        }
+    }
+#pragma omp parallel for
+    for (int i = 0; i < N; i++) { UniqueSort(ind1[i]), UniqueSort(ind2[i]); }
+    DisjointSet e(x.size());
+    auto start = std::chrono::high_resolution_clock::now();
+#pragma omp parallel
+    {
+        std::vector<std::vector<int>> tt1;
+#pragma omp for nowait
+        for (int i = 0; i < x.isize(); i++) {
+            vec<int> s1, s2, t1, t2;
+            for (int j = 0; j < x[i].isize(); j++) {
+                s1.push_back(x[i][j].first);
+                s2.push_back(x[i][j].second);
+            }
+            UniqueSort(s1), UniqueSort(s2);
+
+            vec<int> ss1, ss2;
+            for (int j = 0; j < s1.isize(); j++)
+                ss1.append(n[s1[j]]);
+            for (int j = 0; j < s2.isize(); j++)
+                ss2.append(n[s2[j]]);
+            UniqueSort(ss1), UniqueSort(ss2);
+            s1 = ss1;
+            s2 = ss2;
+
+            for (int j = 0; j < s1.isize(); j++)
+                t1.append(ind1[s1[j]]);
+            for (int j = 0; j < s2.isize(); j++)
+                t2.append(ind2[s2[j]]);
+            UniqueSort(t1), UniqueSort(t2);
+            vec<int> t = Intersection(t1, t2);
+            tt1.insert(tt1.end(), t);
+        }
+#pragma omp critical
+        {
+            for (auto &t:tt1) {
+                for (auto x : t) {
+                    e.union_set(t[0], x);
+//                    e.join(t[0], x);
+                }
+            }
+//            e.flatten_and_link();
+        }
+    }
+//    e.normalise_sets();
+
+    std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
+    OutputLog(2) << "DONE Core3 in " << duration.count() << " s\n";
+    start = std::chrono::high_resolution_clock::now();
+
+//    std::cout << "Idx, Parent, Rank, Size\n";
+//     for (int ei = 0; ei < e.parent.size(); ei++) {
+//         std::cout << ei << "," << e.parent[ei] << ", " << e.rank[ei] << ", " << e.size[ei] << "\n";
+//     }
+
+    vec<vec<std::pair<int, int> > > z;
+
+    std::vector<int> index(x.size());
+    for (int i = 0; i < x.size(); i++) {
+        index[i] = i;
+    }
+    SortSync(e.parent, index);
+
+    z.resize(z.size() + 1);
+    z.back().reserve(x[index[0]].size());
+    z.back().append(x[index[0]]);
+    // Optm: Replace this for a binary search (to find the ending)
+    for (int i = 1; i < x.size(); i++) {
+//        std::cout << index[i] << ", " << e.parent[i] << "\n";
+        if (e.parent[i - 1] != e.parent[i]) {
+            UniqueSort(z.back());
+            z.resize(z.size() + 1);
+        }
+        z.back().reserve(x[index[i]].size());
+        z.back().append(x[index[i]]);
+    }
+    sortInPlaceParallel(z.begin(), z.end());
+    y = z;
+//    std::cout << std::endl;
+    duration = std::chrono::high_resolution_clock::now() - start;
+    OutputLog(2) << "DONE OrbitReps3 in " << duration.count() << " s\n";
+}
 
 void PrintClusters( const vec< vec< std::pair<int,int> > >& xs,
      std::map< std::pair<int,int>, int >& mult, const String& txt )
@@ -273,9 +458,6 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
 
      // Merge clusters.
 
-     BinaryWriter::writeFile("xs.out", xs);
-     BinaryWriter::writeFile("n.out", n);
-
      double mclock = WallClockTime();
      OutputLog(2)<<"Merging " << xs.size() << " clusters" << std::endl;
      auto prev_xs(xs.size());
@@ -284,7 +466,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
           OutputLog(2) << xs.size() << " elements in xs\n";
           prev_xs = xs.size();
 
-          MergeClusters(xs, xs, n, hb.EdgeObjectCount());
+          MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
 
           // Check if made any change, if hasn't simply bomb out
           if (prev_xs == xs.size()) {
@@ -409,7 +591,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
                UniqueSort(xs2[i]);
           }
           xs = xs2;
-          MergeClusters(xs, xs, n, hb.EdgeObjectCount());
+         MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
      }
 
      // Partially symmetrize.
@@ -423,7 +605,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
                rd.push(std::make_pair(inv[d[j].second], inv[d[j].first]));
           xs.push_back(rd);
      }
-     MergeClusters(xs, xs, n, hb.EdgeObjectCount());
+    MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
 
      // Clean clusters.
      OutputLog(2) << "Cleaning clusters." << std::endl;

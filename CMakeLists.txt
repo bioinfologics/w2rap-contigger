@@ -253,7 +253,7 @@ add_library(base_libs OBJECT
             src/util/TextTable.cc
             src/SMR.h
             src/KMerFreqFactory.h
-            src/paths/long/ReadPath.cc src/util/OutputLog.h src/util/OutputLog.cc src/paths/long/KMerNodeFreq_s.cc)
+            src/paths/long/ReadPath.cc src/util/OutputLog.h src/util/OutputLog.cc src/paths/long/KMerNodeFreq_s.cc src/equiv/DisjointSet.cc)
 
 add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/GapToyTools4.cc
@@ -296,7 +296,14 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/ImprovePath.cc
         src/util/w2rap_timers.h
         src/paths/PathFinder.cc
-        src/paths/PathFinder.h src/paths/long/large/OverlapValidator.cc src/paths/long/large/OverlapValidator.h src/paths/long/large/GraphImprover.cc src/paths/long/large/GraphImprover.h src/paths/long/large/ConsensusChecker.cc src/paths/long/large/ConsensusChecker.h)
+        src/paths/PathFinder.h
+        src/paths/long/large/OverlapValidator.cc
+        src/paths/long/large/OverlapValidator.h
+        src/paths/long/large/GraphImprover.cc
+        src/paths/long/large/GraphImprover.h
+        src/paths/long/large/ConsensusChecker.cc
+        src/paths/long/large/ConsensusChecker.h
+        )
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc

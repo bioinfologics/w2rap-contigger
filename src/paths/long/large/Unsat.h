@@ -19,4 +19,11 @@ void Unsat( const HyperBasevector& hb, const vec<int>& inv,
 
 void MergeClusters( const vec< vec< std::pair<int,int> > >& x,
                     vec< vec< std::pair<int,int> > >& y, const vec< vec<int> >& n, const int N );
+
+
+void MergeClusters2( const vec< vec< std::pair<int,int> > >& x,
+                    vec< vec< std::pair<int,int> > >& y, const vec< vec<int> >& n, const int N );
+
+void MergeClusters3( const vec< vec< std::pair<int,int> > >& x,
+                     vec< vec< std::pair<int,int> > >& y, const vec< vec<int> >& n, const int N );
 #endif
