@@ -1,5 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 
+if (POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif (POLICY CMP0074)
+
 IF (MY_COMPILER_OPTION STREQUAL "Intel")
   FIND_PROGRAM(ICPC_PROGRAM icpc ...)
   IF(ICPC_PROGRAM)
