@@ -171,9 +171,15 @@ void MergeClusters2( const vec< vec< std::pair<int,int> > >& x,
           }
 #pragma omp critical
           {
-               for (auto &t:tt1) {
-                   for (auto x : t) {
-                       e.join(t[0], x);
+              OutputLog(2) << "joining clusters in thread " << omp_get_thread_num() << std::endl;
+              uint64_t num_itt = 0;
+               for (auto itt = tt1.cbegin(); itt != tt1.cend(); ++itt) {
+                   for (auto x : *itt) {
+                       ++num_itt;
+                       e.join((*itt)[0], x);
+                       if (num_itt % 262144 == 0){
+                           std::cout << "Merged " << num_itt << " so far, total progress " << std::distance(tt1.cend(), itt) << "/" << tt1.size() << std::endl;
+                       }
                    }
                }
           }
@@ -181,14 +187,14 @@ void MergeClusters2( const vec< vec< std::pair<int,int> > >& x,
 
      e.flatten_and_link();
     std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
-    OutputLog(2) << "DONE Core2 in " << duration.count() << " s\n";
+    OutputLog(2) << "DONE Core2 in " << duration.count() << " s" << std::endl;
     start = std::chrono::high_resolution_clock::now();
 
      vec< vec< std::pair<int,int> > > z;
      vec<int> reps;
      e.OrbitRepsAlt(reps);
     duration = std::chrono::high_resolution_clock::now() - start;
-    OutputLog(2) << "DONE OrbitReps2 in " << duration.count() << " s\n";
+    OutputLog(2) << "DONE OrbitReps2 in " << duration.count() << " s" << std::endl;
 //     std::cout << "MergeClusters2 num orbit reps: " << reps.size() << std::endl;
      for ( int j = 0; j < reps.isize( ); j++ )
      {    vec<int> o;
@@ -463,7 +469,7 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
      auto prev_xs(xs.size());
      for (int p = 1; p <= merge_passes; p++) {
           OutputLog(2) << "Merge clusters \n";
-          OutputLog(2) << xs.size() << " elements in xs\n";
+          OutputLog(2) << xs.size() << " elements in xs" << std::endl;
           prev_xs = xs.size();
 
           MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
