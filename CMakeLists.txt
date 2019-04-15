@@ -168,7 +168,6 @@ add_library(base_libs OBJECT
         src/lookup/SAM.cc
         src/math/Functions.cc
         src/math/HoInterval.cc
-        src/math/Matrix.cc
         src/math/Permutation.cc
         src/math/PowerOf2.cc
         src/paths/FindErrorsCore.cc
@@ -178,7 +177,6 @@ add_library(base_libs OBJECT
         src/paths/KmerPath.cc
         src/paths/KmerPathInterval.cc
         src/paths/Sepdev.cc
-        src/paths/UnipathScaffold.cc
         src/paths/long/Correct1Pre.cc
         src/paths/long/CorrectByStack.cc
         src/paths/long/CorrectPairs1.cc
