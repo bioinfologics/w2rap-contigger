@@ -1328,27 +1328,6 @@ public:
                  const int mismatch, const double bits) : offset(offset), overlap(overlap),
                                                           fraglen(fraglen), mismatch(mismatch), bits(bits) {}
 
-    void Print(const basevector &con1, const basevector &con2, const int verbosity) {
-        if (verbosity >= 1) {
-            if (verbosity >= 2) std::cout << "\n";
-            std::cout << "offset = " << offset << ", overlap = " << overlap
-                      << ", fraglen = " << fraglen
-                      << ", mismatches = " << mismatch << ", rate = "
-                      << PERCENT_RATIO(3, mismatch, overlap)
-                      << ", bits = " << bits << std::endl;
-            if (verbosity >= 2) {
-                align a;
-                a.SetNblocks(1);
-                a.SetGap(0, 0);
-                a.SetLength(0, overlap);
-                int pos1 = (offset < 0 ? 0 : offset);
-                int pos2 = (offset < 0 ? -offset : 0);
-                a.Setpos1(pos1), a.Setpos2(pos2);
-                PrintVisualAlignment(True, std::cout, con1, con2, a);
-            }
-        }
-    }
-
     int offset;
     int overlap;
     int fraglen;
@@ -1493,8 +1472,6 @@ vec<int> GetOffsets1(const readstack &stack1, const readstack &stack2,
         if (bitsj >= min_bits) {
             int fraglen = offset + con2.isize();
             offsets.push(offset, overlap, fraglen, mismatch, bitsj);
-            if (verbosity >= 3)
-                offsets.back().Print(con1, con2, verbosity);
         }
     }
     if (verbosity >= 2) std::cout << TimeSince(clock) << " used\n";
@@ -1682,51 +1659,8 @@ vec<int> GetOffsets1(const readstack &stack1, const readstack &stack2,
     vec<int> off;
     for (int i = 0; i < offsets.isize(); i++)
         off.push_back(offsets[i].offset);
-    if (verbosity >= 1) std::cout << "\nsurviving offsets: " << printSeq(off) << std::endl;
-    for (int i = 0; i < offsets.isize(); i++)
-        offsets[i].Print(con1, con2, verbosity);
     return off;
 }
-
-template<int K>
-void readstack::RefStack(const basevector &ref,
-                         const vecbasevector &bases, const QualVecVec &quals,
-                         const PairsManager &pairs) {
-    vec<triple<kmer<K>, int, int> > kmers_plus;
-    vecbasevector all;
-    all.push_back(ref);
-    all.Append(bases);
-    MakeKmerLookup2(all, kmers_plus);
-    vec<triple<int, int64_t, Bool> > offset_id2_rc2;
-    for (int64_t i = 0; i < kmers_plus.jsize(); i++) {
-        int64_t j, m;
-        for (j = i + 1; j < kmers_plus.jsize(); j++)
-            if (kmers_plus[j].first != kmers_plus[i].first) break;
-        for (m = i; m < j; m++)
-            if (kmers_plus[m].second > 0) break;
-        for (int64_t l1 = i; l1 < m; l1++)
-            for (int64_t l2 = m; l2 < j; l2++) {
-                int pos1 = kmers_plus[l1].third, pos2 = kmers_plus[l2].third;
-                int64_t id2 = kmers_plus[l2].second - 1;
-                Bool rc2 = (pos1 < 0 ^ pos2 < 0);
-                if (pos1 < 0) pos1 = -pos1 - 1;
-                if (pos2 < 0) pos2 = -pos2 - 1;
-                if (rc2) pos2 = bases[id2].isize() - pos2 - K;
-                offset_id2_rc2.push(pos1 - pos2, id2, rc2);
-            }
-        i = j - 1;
-    }
-    UniqueSort(offset_id2_rc2);
-    AddToStack(offset_id2_rc2, bases, quals, pairs);
-}
-
-template void readstack::RefStack<20>(const basevector &ref,
-                                      const vecbasevector &bases, const QualVecVec &quals,
-                                      const PairsManager &pairs);
-
-template void readstack::RefStack<40>(const basevector &ref,
-                                      const vecbasevector &bases, const QualVecVec &quals,
-                                      const PairsManager &pairs);
 
 Bool cmp23(const triple<int, int64_t, Bool> &x1, const triple<int, int64_t, Bool> &x2) {
     if (x1.second < x2.second) return True;

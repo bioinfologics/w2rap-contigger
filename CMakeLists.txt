@@ -130,13 +130,12 @@ include_directories("/usr/include/malloc")
 
 ## Set sources variables
 add_library(base_libs OBJECT
-        src/Alignment.cc
+        #src/Alignment.cc
         src/Charvector.cc
         src/Equiv.cc
         src/FastIfstream.cc
         src/Fastavector.cc
-        src/Floatvector.cc
-        src/IndexedAlignmentPlusVector.cc
+        #src/IndexedAlignmentPlusVector.cc
         src/IntPairVec.cc
         src/Intvector.cc
         src/MemberOf.cc
@@ -144,12 +143,12 @@ add_library(base_libs OBJECT
         src/PairsManager.cc
         src/ParseRange.cc
         src/ParseSet.cc
-        src/PrintAlignment.cc
+        #src/PrintAlignment.cc
         src/Qualvector.cc
-        src/ScoreAlignment.cc
+        #src/ScoreAlignment.cc
         src/TokenizeString.cc
         src/Vec.cc
-        src/VecAlignmentPlus.cc
+        #src/VecAlignmentPlus.cc
         src/dna/Bases.cc
         src/efasta/EfastaTools.cc
         src/feudal/BaseVec.cc
