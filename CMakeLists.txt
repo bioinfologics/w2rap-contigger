@@ -261,7 +261,6 @@ add_library(specific_w2rap-contigger OBJECT
         src/kmers/kmatch/KMatch.cc
         src/paths/long/ultra/ConsensusScoreModel.cc
         src/paths/long/ultra/FounderAlignment.cc
-        src/paths/long/ultra/GetFriendsAndAlignsInitial.cc
         src/paths/long/ultra/MultipleAligner.cc
         src/paths/long/OverlapReads.cc
         src/paths/long/KmerAlign.cc
