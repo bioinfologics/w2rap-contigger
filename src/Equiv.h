@@ -12,37 +12,6 @@
 #include "Vec.h"
 #include "system/TraceVal.h"
 
-// File: Equiv.h
-//
-// This file contains two versions of a class which manages an
-// equivalence relation on 1,...,n.  In most cases the second is 
-// probably more efficient.
-
-class equivalence_relation : public vec<int> {
-   public:
-     equivalence_relation( ) { }
-     // construct discrete ~ relation:
-     explicit equivalence_relation(int n) : vec<int>(n) 
-     {    for ( int i = 0; i < n; i++ )
-               (*this)[i] = i;    }
-     bool equiv(int,int) const;    // test for equivalence
-     void join(int,int);           // make two integers equivalent
-     int size(int) const;          // compute size of an equivalence class
-     int orbit_count( ) const;     // compute number of orbits
-     vec<int> OrbitReps( ) const;  // return a complete set of orbit representatives
-     vec<int> orbit(int) const;    // compute an orbit 
-     bool minimal(int x)           // Is x the minimal element of its class?
-     {    int i = x;
-          while ( (i = (*this)[i]) > x );
-          return x <= i;    }
-     int min_in_class(int x)
-     {    int best = x;
-          int i = x;
-          while(1)
-          {    i = (*this)[i];
-               if ( i == x ) return best;    
-               if ( i < best ) best = i;    }    }
-};
 
 /**
    Class: equiv_rel
@@ -123,9 +92,6 @@ private:
 // TYPEDEFS
 // These go hand in hand with the template instantiations at the end of Equiv.cc
 typedef equiv_rel_template<int> equiv_rel;
-typedef equiv_rel_template<int64_t> equiv_rel_64;
-//extern template class equiv_rel_template<int>;
-//extern template class equiv_rel_template<int64_t>;
 
 
 #endif

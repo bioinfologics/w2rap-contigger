@@ -9,60 +9,6 @@
 #include "Equiv.h"
 #include "Vec.h"
 
-bool equivalence_relation::equiv(int a, int b) const
-{    if ( a == b ) return true;
-     int c = a;
-     while ( (c = (*this)[c]) != a )
-          if ( c == b ) return true;
-     return false;    }
-
-void equivalence_relation::join(int a, int b)
-{    if ( a == b ) return;
-     // Determine if a is already equivalent to b.
-     // Also, find out what comes before a.
-     int c = (*this)[a], before_a = a;
-     while( c != a )
-     {    if ( c == b ) return;  // a ~ b already
-          before_a = c;
-          c = (*this)[c];    }
-     // Make a equivalent to b.
-     (*this)[before_a] = (*this)[b];
-     (*this)[b] = a;    }
-
-int equivalence_relation::size(int a) const
-{    int s = 1, b = a;
-     while( (b = (*this)[b]) != a ) ++s;
-     return s;    }
-
-int equivalence_relation::orbit_count( ) const
-{    int count = 0;
-     for ( unsigned int i = 0; i < vec<int>(*this).size( ); i++ )
-     {    int a = (*this)[i];
-          int b = a;
-          while ( (b = (*this)[b]) != a )
-               if ( b < a ) break;
-          if ( a == b ) ++count;    }
-     return count;    }
-
-vec<int> equivalence_relation::OrbitReps( ) const
-{    vec<int> R;
-     for ( unsigned int i = 0; i < vec<int>(*this).size( ); i++ )
-     {    int a = (*this)[i];
-          int b = a;
-          while ( (b = (*this)[b]) != a )
-               if ( b < a ) break;
-          if ( a == b ) R.push_back(a);    }
-     return R;    }
-
-vec<int> equivalence_relation::orbit(int f) const
-{    vec<int> L;
-     L.push_back(f);
-     int n = f;
-     while(1)
-     {    n = (*this)[n];
-          if ( n == f ) return L;
-          L.push_back(n);    }    }
-
 // ===============================================================================
 
 template<class INT>
@@ -165,4 +111,3 @@ bool equiv_rel_template<INT>::Singletons() const {
 // TEMPLATE INSTANTIATIONS
 // These go hand in hand with the typedefs at the end of Equiv.h
 template class equiv_rel_template<int>;
-template class equiv_rel_template<int64_t>;

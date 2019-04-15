@@ -267,7 +267,6 @@ add_library(specific_w2rap-contigger OBJECT
         src/Basevector.cc
         src/VecString.cc
         src/BasevectorTools.cc
-        src/CompressedSequence.cc
         src/Misc.cc
         src/paths/long/large/AssembleGaps.cc
         src/paths/long/large/GapToyTools2.cc
