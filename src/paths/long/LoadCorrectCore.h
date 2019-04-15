@@ -15,6 +15,7 @@
 #include "efasta/EfastaTools.h"
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
+#include "PairsManager.h"
 
 void CapQualityScores( QualVecVec& cquals, const vec<Bool>& done );
 

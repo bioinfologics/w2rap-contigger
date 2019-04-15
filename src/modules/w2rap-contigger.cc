@@ -14,7 +14,6 @@
 #include "paths/HyperBasevector.h"
 #include "paths/RemodelGapTools.h"
 #include "paths/long/BuildReadQGraph.h"
-//#include "paths/long/PlaceReads0.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/large/AssembleGaps.h"
 #include "paths/long/large/ExtractReads.h"

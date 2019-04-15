@@ -35,13 +35,6 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/Fix64_6.h"
 #include "paths/long/LongProtoTools.h"
-//#include "paths/long/SupportedHyperBasevector2.h"
-#include "paths/long/SupportedHyperBasevector3.h"
-#include "paths/long/SupportedHyperBasevector4.h"
-#include "paths/long/SupportedHyperBasevector5.h"
-#include "paths/long/SupportedHyperBasevector6.h"
-#include "paths/long/SupportedHyperBasevector7.h"
-//#include "paths/long/SupportedHyperBasevector8.h"
 #include "paths/long/PairInfo.h"
 
 class SupportedHyperBasevectorPrivate : public HyperBasevector {
@@ -294,18 +287,6 @@ class SupportedHyperBasevector : public SupportedHyperBasevectorPrivate {
           const int64_t iDirectionalSortFactor=0 );
 
      // **** WRITING METHODS *****
-
-     // DumpFiles(HEAD): generate HEAD.{shbv,dot,support,fasta}.
-
-     void DumpFiles( const String& head, const long_logging_control& log_control,
-          const long_logging& logc ) const;
-     void DumpFilesStandard( const long_logging_control& log_control,
-          const long_logging& logc, const int id ) const;
-
-     void DumpDot( const String& head, const vec<Bool>& invisible,
-          const vec<String>& edge_color, const long_logging& logc,
-          const Bool hide_inv = True, 
-          const vec<String>& edge_names = vec<String>( ) ) const;
 
      void writeBinary( BinaryWriter& writer ) const;
      void readBinary( BinaryReader& reader );

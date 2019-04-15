@@ -13,11 +13,8 @@
 #include "ParallelVecUtilities.h"
 #include "Set.h"
 #include "VecUtilities.h"
-//#include "fastg/FastgGraph.h"
 #include "math/Functions.h"
 #include "paths/HyperBasevector.h"
-
-#include "paths/long/DigraphFromWords.h"
 #include "paths/long/LargeKDispatcher.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/MakeKmerStuff.h"
