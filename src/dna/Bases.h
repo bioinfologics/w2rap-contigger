@@ -33,10 +33,6 @@ public:
     unsigned char bits() const
     { return mBits; }
 
-    /// Number of choices of nucleotides represented by this one:
-    /// 0 for X, 1 for ACGT, 2 for KMRSWY, 3 for BDHV, 4 for N
-    size_t getAmbiguityCount() const { return mEndBases-mBases; }
-
     /// False for ACGT, true otherwise (including the "no base" case).
     bool isAmbiguous() const
     { return mAmbiguous; }
@@ -49,10 +45,6 @@ public:
     /// Complement of N is N.  Complement of - is -.
     GeneralizedBase const& complement() const
     { return fromChar(mComplement); }
-
-    /// Short-cut for complement().asChar().
-    char complementChar() const
-    { return mComplement; }
 
     /// A string giving the bases represented by the ambiguity code, e.g. GeneralizedBase::W.bases() is "AT".
     char const* bases() const
@@ -95,14 +87,6 @@ public:
     /// Upper and lower case letters from the set [ACGTRYKMSWBDHVNX.-] return true.
     static bool isGeneralizedBase( char chr )
     { return gCharToGenBase[static_cast<unsigned char>(chr)]; }
-
-    /// Check that all the characters in a sequence are generalized bases.
-    /// The Itr type must be an input iterator resolving to a char.
-    template <class Itr>
-    static bool areGeneralizedBases( Itr begin, Itr const& end )
-    { bool result = true;
-      for ( ; result && begin != end; ++begin ) result = isGeneralizedBase(*begin);
-      return result; }
 
     static char complementChar( char chr )
     { char result = gRevComp[static_cast<unsigned char>(chr)];
@@ -209,19 +193,6 @@ public:
     static bool isBase( char chr )
     { return gCharToBase[static_cast<unsigned char>(chr)]; }
 
-    /// True for the upper-case letters [ACGT].
-    static bool isCanonicalBase( char chr )
-    { Base const* pBase = gCharToBase[static_cast<unsigned char>(chr)];
-      return pBase && pBase->asChar()==chr; }
-
-    /// Check that all the characters in a sequence are bases.
-    /// The Itr type must be an input iterator resolving to a char.
-    template <class Itr>
-    static bool areBases( Itr begin, Itr const& end )
-    { bool result = true;
-      for ( ; result && begin != end; ++begin ) result = isBase(*begin);
-      return result; }
-
     /// turns a character into its 2-bit encoded value
     static unsigned char char2Val( char chr )
     { return fromChar(chr).val(); }
@@ -305,10 +276,6 @@ inline unsigned char GetComplementaryBase( unsigned char base )
 { if ( base > 3 ) Base::fromValFatalErr(base); // only 0,1,2,3 (A,C,T,G) are allowed
   return 3 - base; }
 
-/// Returns the canonical letter for the base complementary to this one, including ambiguous bases.
-inline char GetComplementaryBaseChar( char c )
-{ return GeneralizedBase::complementChar(c); }
-
 struct BaseToCharMapper
 : public std::unary_function<unsigned char,char>
 {
@@ -328,13 +295,6 @@ struct GenCharToRandomBaseMapper
 {
     unsigned char operator()( char c ) const
     { return GeneralizedBase::char2Val(c); }
-};
-
-struct GenBaseBitsToBaseValMapper
-: public std::unary_function<unsigned char,unsigned char>
-{
-    unsigned char operator()( unsigned char bits ) const
-    { return GeneralizedBase::bits2Val(bits); }
 };
 
 #endif // DNA_BASES_H
