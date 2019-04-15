@@ -177,8 +177,6 @@ add_library(base_libs OBJECT
         src/math/Matrix.cc
         src/math/Permutation.cc
         src/math/PowerOf2.cc
-        src/pairwise_aligners/SmithWatBandedA.cc
-        src/pairwise_aligners/SmithWatFree.cc
         src/paths/FindErrorsCore.cc
         src/paths/HyperBasevector.cc
         src/paths/HyperEfasta.cc
@@ -226,13 +224,11 @@ add_library(base_libs OBJECT
         src/kmers/kmer_parcels/KmerParcelsBuilder.cc
         src/math/IntDistribution.cc
         src/pairwise_aligners/MaxMutmerFromMer.cc
-        src/pairwise_aligners/SmithWatAffine.cc
         src/paths/MakeAlignsPathsParallelX.cc
         src/paths/ReadsToPathsCoreX.cc
         src/paths/RemodelGapTools.cc
         src/paths/UnibaseUtils.cc
         src/paths/Unipath.cc
-        src/paths/long/AssessBestAlignCore.cc
         src/paths/long/CreateGenome.cc
         src/paths/long/KmerCount.cc
         src/paths/long/LongHyper.cc
@@ -273,7 +269,6 @@ add_library(specific_w2rap-contigger OBJECT
         src/BasevectorTools.cc
         src/CompressedSequence.cc
         src/Misc.cc
-        src/pairwise_aligners/SmithWatBanded.cc
         src/paths/long/large/AssembleGaps.cc
         src/paths/long/large/GapToyTools2.cc
         src/paths/long/large/Unsat.cc
