@@ -40,7 +40,6 @@ could continue the investigation later?
 
 #include "MainTools.h"
 #include "ParallelVecUtilities.h"
-#include "PrintAlignment.h"
 #include "Qualvector.h"
 #include "kmers/KmerRecord.h"
 #include "math/Functions.h"

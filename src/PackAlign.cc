@@ -6,7 +6,6 @@
 //   Institute is not responsible for its use, misuse, or functionality.     //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Alignment.h"
 #include "CoreTools.h"
 #include "Fastavector.h"
 #include "PackAlign.h"
@@ -1162,80 +1161,6 @@ void align::Read( std::istream& in, int& errors, int& id1, int& id2, Bool& rc )
   BinRead( in, id1 );
   BinRead( in, id2 );
   BinRead( in, rc );    
-}
-
-int CorrelatePositions( const align& a, int x1 )
-{
-  int pos1 = a.pos1( ), pos2 = a.pos2( );
-  if ( x1 < pos1 ) return OffTheEnd;
-  if ( x1 == pos1 ) return pos2;
-  int nblocks = a.Nblocks( );
-  const avector<int>& gaps = a.Gaps( );
-  const avector<int>& lengths = a.Lengths( );
-  for ( int j = 0; j < nblocks; j++ )
-  {
-    if ( gaps(j) > 0 ) pos2 += gaps(j);
-    if ( gaps(j) < 0 )
-      for ( int x = 0; x < -gaps(j); x++ )
-	if ( x1 == pos1++ ) return AtGap;
-    if ( x1 < pos1 + lengths(j) ) return pos2 + x1 - pos1;
-    else
-    {
-      pos1 += lengths(j);
-      pos2 += lengths(j);    
-    }    
-  }
-  return OffTheEnd;    
-}
-
-void align::ReverseThis( int b1_len, int b2_len )
-{
-  vec<int> gaps_new, lengths_new;
-  gaps_new.resize(0);
-  lengths_new.resize(0);
-  int n = Nblocks( );
-  for ( int i = n-1; i >= 0; i-- )
-  {
-    if ( i == n-1 ) 
-    {
-      gaps_new.push_back(0);
-      lengths_new.push_back( lengths_(n-1) );    
-    }
-    else 
-    {
-      gaps_new.push_back( gaps_(i+1) );
-      lengths_new.push_back( lengths_(i) );    
-    }    
-  }
-  if ( n > 0 && gaps_(0) != 0 ) 
-  {
-    gaps_new.push_back( gaps_(0) );
-    lengths_new.push_back(0);    
-  }
-  int Pos1 = pos1_, Pos2 = pos2_;
-  for ( int j = 0; j < n; j++ )
-  {
-    if ( gaps_(j) > 0 ) Pos2 += gaps_(j);
-    else if ( gaps_(j) < 0 ) Pos1 -= gaps_(j);
-    Pos1 += lengths_(j); 
-    Pos2 += lengths_(j);    
-  }
-  pos1_ = b1_len - Pos1;
-  pos2_ = b2_len - Pos2;
-  SetNblocks( gaps_new.size( ) );
-  for ( int i = 0; i < nblocks_; i++ )
-  {
-    gaps_(i) = gaps_new[i];
-    lengths_(i) = lengths_new[i];    
-  }    
-}
-
-
-void align::Flip( )
-{
-  std::swap( pos1_, pos2_ );
-  for ( int i = 0; i < nblocks_; i++ )
-    gaps_(i) = -gaps_(i);    
 }
 
 

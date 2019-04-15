@@ -12,7 +12,6 @@
 #include "Basevector.h"
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
-#include "PrintAlignment.h"
 #include "efasta/EfastaTools.h"
 #include "paths/long/CorrectPairs1.h"
 #include "paths/long/FriendAligns.h"

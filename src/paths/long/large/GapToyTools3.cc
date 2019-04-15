@@ -11,7 +11,6 @@
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
-#include "PrintAlignment.h"
 #include "kmers/LongReadPather.h"
 #include "paths/HyperBasevector.h"
 #include "paths/RemodelGapTools.h"

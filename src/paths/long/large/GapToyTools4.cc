@@ -14,7 +14,6 @@
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
-#include "PrintAlignment.h"
 #include "kmers/BigKPather.h"
 #include "kmers/LongReadPather.h"
 #include "paths/RemodelGapTools.h"

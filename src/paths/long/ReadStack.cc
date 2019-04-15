@@ -13,7 +13,6 @@
 #include "CoreTools.h"
 #include "PackAlign.h"
 #include "PairsManager.h"
-#include "PrintAlignment.h"
 #include "Qualvector.h"
 #include "VecUtilities.h"
 #include "math/Functions.h"
