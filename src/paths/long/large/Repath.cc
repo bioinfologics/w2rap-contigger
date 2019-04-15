@@ -281,15 +281,26 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      }
 }
 
-void generate_supported_places(std::vector<std::vector<int> > & places, const HyperBasevector &old_hbv, const ReadPathVec &old_paths, const vecbvec &old_edges,
-                               const vec<int> &old_hbvinv,const int old_K, const int new_K){
+void generate_supported_places(std::vector<std::vector<int> > & places,
+        const HyperBasevector &old_hbv,
+        const ReadPathVec &old_paths,
+        const vecbvec &old_edges,
+        const vec<int> &old_hbvinv,
+        const int old_K,
+        const int new_K){
+
+     uint64_t ope=0;
+     for (auto &op:old_paths) if (op.empty()) ++ope;
+     OutputLog(3)<<ope<<"/"<<old_paths.size()<<" are empty"<<std::endl;
      places.reserve(old_paths.size());
      //TODO: change this to do path-transversal through pairs? or even better path exploration in a radious with search for support after, could allow K2 to grow to 500 or so
      vec<int> toLeft,toRight;
      old_hbv.ToLeft(toLeft);
      old_hbv.ToRight(toRight);
+
      std::vector<bool>edge_used(old_edges.size());
      std::vector<std::vector<int> > newplaces;
+     uint64_t single=0,same=0,overlap=0,direct=0,disjoint=0;
      //IMPROVEMENT #1: if a pair of reads transverse consecutive edges, make it a single path
      for (int64_t m = 0; m < (int64_t) old_paths.size()-1; m += 2){
           newplaces.clear();
@@ -301,10 +312,17 @@ void generate_supported_places(std::vector<std::vector<int> > & places, const Hy
           //this should never be true, but just in case...
           if (old_paths[m].size()==0 and old_paths[m+1].size()==0) continue;
           //case 0: one of the 2 reads is unplaced
-          if (old_paths[m].size()==0) newplaces.push_back(old_paths[m+1]);
-          else if (old_paths[m+1].size()==0) newplaces.push_back(old_paths[m]);
+          if (old_paths[m].size()==0) {
+              newplaces.push_back(old_paths[m+1]);
+              ++single;
+          }
+          else if (old_paths[m+1].size()==0) {
+              newplaces.push_back(old_paths[m]);
+              ++single;
+          }
           //case 1: boring both reads map entirely to same edge
           else if (old_paths[m].size()==1 and old_paths[m+1].size()==1 and old_paths[m][0]==old_hbvinv[old_paths[m+1][0]]){
+              ++same;
                if (not edge_used[old_paths[m][0]]) {
                     newplaces.push_back({old_paths[m][0]});
                }
@@ -327,6 +345,7 @@ void generate_supported_places(std::vector<std::vector<int> > & places, const Hy
                          r1p.push_back(old_hbvinv[old_paths[m+1][i]]);
                     }
                     newplaces.push_back(r1p);
+                    ++overlap;
                } else {
                     //case 3: reads start in different edges, end edges are directly connected
 
@@ -335,18 +354,15 @@ void generate_supported_places(std::vector<std::vector<int> > & places, const Hy
                         auto r1p=old_paths[m];
                         for (auto r2e=old_paths[m+1].rbegin();r2e<old_paths[m+1].rend();++r2e) r1p.push_back(old_hbvinv[*r2e]);
                         newplaces.push_back(r1p);
-
+                        ++direct;
                    } else {
+                       //TODO: try walking forward from read 1 and bw from read 2 while there is only one option, this may produce the path!
+                       ++disjoint;
                        newplaces.push_back(old_paths[m]);
                        newplaces.push_back(old_paths[m+1]);
                    }
-                    //TODO: case 5 -> end edges connected by a unique path
+                   //TODO: case 5 -> end edges connected by a unique path
                }
-
-
-
-
-               //case 4: can't
           }
 
           for (auto &np:newplaces){
@@ -366,6 +382,7 @@ void generate_supported_places(std::vector<std::vector<int> > & places, const Hy
           }
 
      }
+     OutputLog(3)<<"paths -> places: single="<<single<<" same="<<same<<" overlap="<<overlap<<" direct="<<direct<<" disjoint="<<disjoint<<std::endl;
 
      ///////////////////////////////////////////////////////////////////////////////
      // Generate the 'places' vector
@@ -401,8 +418,6 @@ void generate_supported_places(std::vector<std::vector<int> > & places, const Hy
      OutputLog(4) << "sorting " << places.size() << " places" << std::endl;
      sortInPlaceParallel(places.begin(), places.end());
      places.erase(std::unique(places.begin(), places.end()), places.end());
-
-
      places.shrink_to_fit();
 }
 

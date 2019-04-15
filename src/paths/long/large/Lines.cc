@@ -11,7 +11,7 @@
 #include "Intvector.h"
 #include "ParallelVecUtilities.h"
 #include "VecUtilities.h"
-#include "efasta/EfastaTools.h"
+//#include "efasta/EfastaTools.h"
 #include "math/Functions.h"
 #include "graph/FindCells.h"
 #include "paths/HyperBasevector.h"

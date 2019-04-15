@@ -20,24 +20,6 @@ struct Ambiguity
   size_t start;
   int size;
   String replace;
-
-  String to_annotation() const 
-  {
-    String s = "";
-    if (size == 0) {
-      s += (ToString(start) + "^\t" +
-            ToString(start + 1) + "\tvariation\t\t\n");
-    }
-    else {
-      s += (ToString(start + 1) + "\t" +
-            ToString(start + size) + "\tvariation\t\t\n");
-    }
-       
-    s += "\t\t\treplace\t" + ((replace == "") ? "\"\"" : replace) + "\n";
-    
-    s += "\t\t\tnote\tassembly ambiguity\n"; 
-    return s;
-  }
 };
 
 // Class efasta represents a single efasta record, exclusive of the header line.
