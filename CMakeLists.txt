@@ -185,7 +185,6 @@ add_library(base_libs OBJECT
             src/paths/KmerBaseBroker.cc
             src/paths/KmerPath.cc
             src/paths/KmerPathInterval.cc
-            #src/paths/LongReadTools.cc
             src/paths/Sepdev.cc
             src/paths/UnipathScaffold.cc
             src/paths/long/Correct1Pre.cc
@@ -224,7 +223,6 @@ add_library(base_libs OBJECT
             src/system/file/FileWriter.cc
             src/system/file/TempFile.cc
             src/util/Logger.cc
-            src/graphics/BasicGraphics.cc
             src/kmers/kmer_parcels/KmerParcelsBuilder.cc
             src/math/IntDistribution.cc
             src/pairwise_aligners/MaxMutmerFromMer.cc
@@ -237,7 +235,6 @@ add_library(base_libs OBJECT
             src/paths/long/AssessBestAlignCore.cc
             src/paths/long/CreateGenome.cc
             src/paths/long/DigraphFromWords.cc
-            #src/paths/long/EvalByReads.cc
             src/paths/long/KmerCount.cc
             src/paths/long/LongHyper.cc
             src/paths/long/SupportedHyperBasevector.cc
