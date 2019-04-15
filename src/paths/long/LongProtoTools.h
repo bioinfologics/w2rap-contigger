@@ -27,7 +27,6 @@
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/PairInfo.h"
-#include "paths/long/ultra/ConsensusScoreModel.h"
 #include "system/System.h"
 #include "paths/long/CreateGenome.h"
 
