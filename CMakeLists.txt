@@ -175,7 +175,6 @@ add_library(base_libs OBJECT
         src/paths/KmerBaseBroker.cc
         src/paths/KmerPath.cc
         src/paths/KmerPathInterval.cc
-        src/paths/Sepdev.cc
         src/paths/long/Correct1Pre.cc
         src/paths/long/CorrectByStack.cc
         src/paths/long/CorrectPairs1.cc

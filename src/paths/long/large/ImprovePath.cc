@@ -38,7 +38,6 @@ could continue the investigation later?
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
-#include "MainTools.h"
 #include "ParallelVecUtilities.h"
 #include "Qualvector.h"
 #include "kmers/KmerRecord.h"

@@ -14,8 +14,6 @@
 #ifndef _MATH__INT_FREQUENCIES_H
 #define _MATH__INT_FREQUENCIES_H
 
-#include "MainTools.h"
-
 #include "math/IntFunction.h"
 
 class IntFrequencies : public IntFunction<size_t>

@@ -19,8 +19,6 @@
 #include "Vec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/HyperKmerPath.h"
-#include "paths/KmerPath.h"
-#include "paths/KmerPathInterval.h"
 
 void LongReadsToPaths( vecbvec const& reads,
                             unsigned K, unsigned coverage,

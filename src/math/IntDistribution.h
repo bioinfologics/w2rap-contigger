@@ -14,8 +14,6 @@
 #ifndef _MATH__INT_DISTRIBUTION_H
 #define _MATH__INT_DISTRIBUTION_H
 
-#include "MainTools.h"
-
 #include "math/IntFunction.h"
 
 class IntDistribution 

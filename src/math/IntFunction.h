@@ -17,9 +17,10 @@
 #ifndef _MATH__INT_FUNCTION_H
 #define _MATH__INT_FUNCTION_H
 
+#include "feudal/BinaryStream.h"
+#include "feudal/CharString.h"
+#include "Vec.h"
 #include <deque>
-
-#include "MainTools.h"
 
 
 #define __INT_FUNCTION_BINARY_VERSION__ 2
