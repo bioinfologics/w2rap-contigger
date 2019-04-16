@@ -17,8 +17,6 @@
 #include "paths/FindErrorsCore.h"
 #include "paths/HyperKmerPath.h"
 #include "kmers/naif_kmer/KernelKmerStorer.h"
-#include "lookup/LibInfo.h"
-//#include "lookup/SAM2CRD.h"
 #include "paths/long/Correct1Pre.h"
 #include "paths/long/CorrectPairs1.h"
 #include "paths/long/FillPairs.h"

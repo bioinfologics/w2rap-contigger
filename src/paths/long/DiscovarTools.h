@@ -13,10 +13,7 @@
 #ifndef DISCOVAR_TOOLS_H
 #define DISCOVAR_TOOLS_H
 
-#include "CoreTools.h"
-#include "paths/HyperBasevector.h"
-#include "paths/long/Logging.h"
-//#include "paths/long/RefTraceControl.h"
+#include <feudal/CharString.h>
 
 namespace DiscovarTools{
 
@@ -29,6 +26,6 @@ namespace DiscovarTools{
     void ExitShortReads( const String& additional_info="" );
 }//namespace DiscovarTools
 
-void SetThreads( uint& NUM_THREADS, const Bool malloc_per_thread_check = True );
+void SetThreads( uint& NUM_THREADS, bool malloc_per_thread_check = true );
 
 #endif

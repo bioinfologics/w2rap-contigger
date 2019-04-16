@@ -586,7 +586,7 @@ int main(const int argc, const char * argv[]) {
 
 
     //== Set computational resources ===
-    SetThreads(threads, False);
+    SetThreads(threads, false);
     SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
     //TODO: try to find out max memory on the system to default to.
     std::string step_names[8]={

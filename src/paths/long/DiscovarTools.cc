@@ -9,13 +9,8 @@
 // Discovar messages are tagged "DISCOVAR MESSAGE".
 
 #include <omp.h>
-
-#include "CoreTools.h"
-#include "FastIfstream.h"
-#include "ParseSet.h"
-#include "VecUtilities.h"
-#include "lookup/SAM.h"
 #include "paths/long/DiscovarTools.h"
+#include "system/System.h"
 
 namespace DiscovarTools {
 
@@ -56,7 +51,7 @@ namespace DiscovarTools {
     }
 }
 
-void SetThreads(uint &NUM_THREADS, const Bool malloc_per_thread_check) {
+void SetThreads(uint &NUM_THREADS, bool malloc_per_thread_check) {
     if (malloc_per_thread_check) {
         static bool malloc_warning = false;
         String mtt = Getenv("MALLOC_PER_THREAD", "undefined");
