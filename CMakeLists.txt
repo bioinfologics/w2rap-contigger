@@ -172,7 +172,6 @@ add_library(base_libs OBJECT
         src/math/PowerOf2.cc
         src/paths/FindErrorsCore.cc
         src/paths/HyperBasevector.cc
-        src/paths/HyperEfasta.cc
         src/paths/KmerBaseBroker.cc
         src/paths/KmerPath.cc
         src/paths/KmerPathInterval.cc

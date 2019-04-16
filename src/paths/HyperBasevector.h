@@ -39,8 +39,6 @@ class HyperBasevector : public digraphE<basevector> {
      HyperBasevector( int K ) : K_(K) { }
 
      // Constructor from a HyperKmerPath having no gaps:
-
-     HyperBasevector( const HyperKmerPath& h, const KmerBaseBroker& kbb );
      HyperBasevector( const HyperKmerPath& h, const KmerBaseBrokerBig& kbb );
 
      void Initialize( const HyperKmerPath& h, const KmerBaseBroker& kbb );

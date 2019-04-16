@@ -21,7 +21,6 @@
 #include "Qualvector.h"
 #include "efasta/EfastaTools.h"
 #include "kmers/KmerRecord.h"
-#include "paths/HyperEfasta.h"
 #include "paths/long/Friends.h"
 #include "paths/long/Heuristics.h"
 #include "paths/long/Logging.h"
