@@ -605,6 +605,8 @@ int main( int argc,  char * argv[]) {
                                             hbv);
                     WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] +
                                              ".paths").c_str());
+                    GFADump(std::string(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv,
+                            paths, 0, 0, false);
                     OutputLog(2) << "DONE!" << std::endl;
                 }
             }
