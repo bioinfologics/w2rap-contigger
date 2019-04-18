@@ -13,7 +13,6 @@
 #include "CoreTools.h"
 #include "feudal/PQVec.h"
 
-void ExtractReads( String reads,
-     const String& work_dir, vecbvec* pReads, VecPQVec* quals );
+void ExtractPairedReads( std::string r1file, std::string r2file, vecbvec & pReads, VecPQVec & quals );
 
 #endif

@@ -316,25 +316,6 @@ namespace
         return result;
     }
 
-
-    template <class Itr1, class Itr2, class ItrW, typename sumType >
-    size_t fuzzyMatchLen( Itr1 itr1, Itr1 end1, Itr2 itr2, Itr2 end2,
-                          ItrW itrw, ItrW endw, sumType& maxWeight)
-    {
-        size_t result = 0;
-
-        while ( itr1 != end1 && itr2 != end2 && itrw != endw )
-        {
-            if ( *itr1 != *itr2 ) maxWeight -= *itrw;
-
-            if ( maxWeight < 0 ) break;             // EARLY EXIT!
-
-            ++result; ++itr1; ++itr2; ++itrw;
-        }
-
-        return result;
-    }
-
     class EdgeLoc
     {
     public:
@@ -872,7 +853,6 @@ void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, un
 
     uint64_t qsize=quals.size();
     rlen.resize(qsize);
-    OutputLog(2) << "Creating read lengths for "<<qsize<<" reads at quality >= " << minQual << std::endl;
     #pragma omp parallel shared(rlen,quals,qsize)
     {
         QualVec uq;
@@ -1316,8 +1296,8 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
     edges.reserve(pDict->size()/100); //TODO: this is probably WAY too much in most scenarios
     buildEdges(*pDict,&edges);
     uint64_t totalk=0;
-    for (auto &e:edges) totalk+=e.size()+1-K;
-    OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<K<<"-mers"<<std::endl;
+    for (auto &e:edges) totalk+=e.size()+1-_K;
+    OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<_K<<"-mers"<<std::endl;
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
 
@@ -1344,7 +1324,7 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
     else
     {
         OutputLog(2) << "building graph..." << std::endl;
-        buildHBVFromEdges(edges,K,pHBV,fwdEdgeXlat,revEdgeXlat);
+        buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
         OutputLog(2) << "pathing reads into graph..." << std::endl;
         pPaths->clear();
         pPaths->resize(reads.size());

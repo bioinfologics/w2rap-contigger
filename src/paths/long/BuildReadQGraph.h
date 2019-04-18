@@ -123,20 +123,11 @@ public:
 };
 
 void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual);
-/*void buildReadQGraph( vecbvec const& reads, VecPQVec &quals, std::vector<uint16_t> & rlen,
-                        bool doFillGaps, bool doJoinOverlaps, unsigned minFreq,
-                        double minFreq2Fract, unsigned maxGapSize,
-                        HyperBasevector* pHBV, ReadPathVec* pPaths, int _K, std::string workdir="",
-                        std::string tmpdir="", unsigned char disk_batches=0, uint64_t count_batch_size=10000000);
-*/
+
 void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_ptr<KmerList> kmerlist,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
                       ReadPathVec* pPaths, int _K);
-//void dumpkmers( std::shared_ptr<std::vector<KMerNodeFreq_s>> const kmercounts, std::string filename);
-//std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename);
-
-
 
 std::shared_ptr<KmerList> buildKMerCount( vecbvec const& reads,
                                                              std::vector<uint16_t> & rlen, unsigned minCount,
