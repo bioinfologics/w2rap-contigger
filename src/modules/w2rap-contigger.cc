@@ -338,7 +338,7 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
             throw std::runtime_error("from_step value needs to be between 1 and 8");
         }
 
-        if (parsed_args.from_step < parsed_args.to_step) {
+        if (parsed_args.from_step > parsed_args.to_step) {
             throw std::runtime_error("from_step must be lower than to_step");
         }
 
