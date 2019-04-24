@@ -26,4 +26,4 @@ void ReverseComplement( vecbasevector& vbv )
 template class OuterVec<BaseVec>;
 template class OuterVec<BaseVec,BaseVec::allocator_type>;
 template class OuterVec< OuterVec<BaseVec,BaseVec::allocator_type>,
-                         MempoolOwner<unsigned char> >;
+                         std::allocator<unsigned char> >;

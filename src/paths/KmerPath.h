@@ -56,7 +56,7 @@ class KmerPathLoc;  // forward declaration
    See also: <vecKmerPath>, <KmerPathInterval>
 */
 class KmerPath : public SerfVec<KmerPathInterval> {
-    typedef MempoolAllocator<KmerPathInterval> Alloc;
+    typedef std::allocator<KmerPathInterval> Alloc;
     typedef SerfVec<KmerPathInterval> Base;
 
 public:

@@ -20,11 +20,11 @@
 #include <ostream>
 
 /// A feudal vector that has bits as values.
-class BitVec : public FieldVec<1, MempoolAllocator<unsigned char> >
+class BitVec : public FieldVec<1, std::allocator<unsigned char> >
 {
 public:
-    typedef FieldVec<1, MempoolAllocator<unsigned char> > Base;
-    typedef MempoolAllocator<unsigned char> Alloc;
+    typedef FieldVec<1, std::allocator<unsigned char> > Base;
+    typedef std::allocator<unsigned char> Alloc;
 
     // Constructors
     BitVec() : Base() {}

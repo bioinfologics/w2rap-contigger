@@ -14,6 +14,6 @@
  */
 
 #include "feudal/FieldVecDefs.h"
-template class FieldVec< 1, MempoolAllocator<unsigned char> >;
-template class FieldVec< 2, MempoolAllocator<unsigned char> >;
-template class FieldVec< 4, MempoolAllocator<unsigned char> >;
+template class FieldVec< 1, std::allocator<unsigned char> >;
+template class FieldVec< 2, std::allocator<unsigned char> >;
+template class FieldVec< 4, std::allocator<unsigned char> >;

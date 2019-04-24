@@ -91,7 +91,7 @@ FriendAlignerImpl::~FriendAlignerImpl()
 {}
 
 #include "feudal/SmallVecDefs.h"
-template class SmallVec<Friend,MempoolAllocator<Friend>>;
+template class SmallVec<Friend,std::allocator<Friend>>;
 
 #include "feudal/OuterVecDefs.h"
 template class OuterVec<Friends>;

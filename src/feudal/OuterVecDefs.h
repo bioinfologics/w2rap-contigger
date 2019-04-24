@@ -55,7 +55,7 @@ template <class T, class S, class A>
 T* OuterVec<T,S,A>::init( T* last, T const& exemplar )
 {
     T* first = dataEnd();
-    mSubAllocator.preAllocate(exemplar.allocSize(),last-first);
+    mSubAllocator.allocate(exemplar.allocSize(),last-first);
     while ( first != last )
         *(new (first++) T(mSubAllocator)) = exemplar;
     return last;

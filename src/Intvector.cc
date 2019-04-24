@@ -17,17 +17,17 @@
 #include "feudal/SmallVecDefs.h"
 #include "feudal/OuterVecDefs.h"
 
-template class SmallVec< int, MempoolAllocator<int> >;
+template class SmallVec< int, std::allocator<int> >;
 template class OuterVec<IntVec>;
 
-template class SmallVec< unsigned int, MempoolAllocator<unsigned int> >;
+template class SmallVec< unsigned int, std::allocator<unsigned int> >;
 template class OuterVec<UIntVec>;
 
-template class SmallVec< unsigned short, MempoolAllocator<unsigned short> >;
+template class SmallVec< unsigned short, std::allocator<unsigned short> >;
 template class OuterVec<UShortVec>;
 
-template class SmallVec< long, MempoolAllocator<long> >;
+template class SmallVec< long, std::allocator<long> >;
 template class OuterVec<LongVec>;
 
-template class SmallVec< unsigned long, MempoolAllocator<unsigned long> >;
+template class SmallVec< unsigned long, std::allocator<unsigned long> >;
 template class OuterVec<ULongVec>;

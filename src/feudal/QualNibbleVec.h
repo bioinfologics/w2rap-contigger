@@ -26,13 +26,13 @@
 #include <cstddef>
 #include <iterator>
 
-class QualNibbleVec : private FieldVec<4, MempoolAllocator<unsigned char> >
+class QualNibbleVec : private FieldVec<4, std::allocator<unsigned char> >
 {
 public:
   typedef allocator_type Alloc;
   typedef unsigned char value_type;
   typedef unsigned size_type;
-  typedef FieldVec<4, MempoolAllocator<unsigned char> > BaseT;
+  typedef FieldVec<4, std::allocator<unsigned char> > BaseT;
   typedef std::ptrdiff_t difference_type;
   typedef std::iterator<std::random_access_iterator_tag,
                         value_type,

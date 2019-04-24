@@ -95,7 +95,7 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fpermissive -w -Wno-deprecated -std=c++11 -gdwarf")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fpermissive -w -Wno-deprecated -std=c++11")
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")

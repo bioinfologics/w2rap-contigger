@@ -35,7 +35,7 @@ unsigned const MAX_KMER_FREQ = 100;
 class KmerFriends : public KMer<FR_K>
 {
 public:
-    KmerFriends( MempoolAllocator<IdAndOrientation> const& alloc )
+    KmerFriends( std::allocator<IdAndOrientation> const& alloc )
     : mFriends(alloc) {}
 
     KmerFriends& operator=( KMer<FR_K> const& kmer )
@@ -55,15 +55,15 @@ public:
     class Factory
     {
     public:
-        Factory( MempoolAllocator<IdAndOrientation> const& alloc )
+        Factory( std::allocator<IdAndOrientation> const& alloc )
         : mAlloc(alloc) {}
 
         template <class X>
-        MempoolAllocator<X> alloc( X* ) const
-        { return MempoolAllocator<X>(mAlloc); }
+        std::allocator<X> alloc( X* ) const
+        { return std::allocator<X>(mAlloc); }
 
         KmerFriends* create( size_t nnn ) const
-        { MempoolAllocator<KmerFriends> alloc(mAlloc);
+        { std::allocator<KmerFriends> alloc(mAlloc);
           KmerFriends* result = alloc.allocate(nnn);
           for ( auto itr=result,end=result+nnn; itr != end; ++itr )
             new (itr) KmerFriends(mAlloc);
@@ -72,11 +72,11 @@ public:
         void destroy( KmerFriends* pKF, size_t nnn ) const
         { for ( auto itr=pKF,end=pKF+nnn; itr != end; ++itr )
             itr->~KmerFriends();
-          MempoolAllocator<KmerFriends> alloc(mAlloc);
+            std::allocator<KmerFriends> alloc(mAlloc);
           alloc.deallocate(pKF,nnn); }
 
     private:
-        MempoolAllocator<IdAndOrientation> mAlloc;
+        std::allocator<IdAndOrientation> mAlloc;
     };
 private:
     IAndOs mFriends;
@@ -128,7 +128,7 @@ private:
 
     void dumpFriends( size_t startId, size_t endId,
                         IncrementalWriter<IAndOs>& writer )
-    { OuterVec<IAndOs,MempoolAllocator<IdAndOrientation>> fVec(mAlloc);
+    { OuterVec<IAndOs,std::allocator<IdAndOrientation>> fVec(mAlloc);
       fVec.resize(endId-startId);
       for ( auto itr=mHash.begin(),end=mHash.end(); itr != end; ++itr )
         for ( KmerFriends const& kf : *itr )
@@ -176,7 +176,7 @@ private:
       { IdAndOrientation tmp(itr->getId(),itr->isRC()!=isRC);
         friends.push_back(tmp); ++itr; } }
 
-    MempoolOwner<IdAndOrientation> mAlloc;
+    std::allocator<IdAndOrientation> mAlloc;
     HashSet<KmerFriends,KMer<FR_K>::Hasher,std::equal_to<KMer<FR_K>>,
 
     KmerFriends::Factory> mHash;

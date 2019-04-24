@@ -24,10 +24,10 @@
 #include <utility>
 
 template <class T>
-class SerfVec : public SmallVec<T,MempoolAllocator<T> >
+class SerfVec : public SmallVec<T,std::allocator<T> >
 {
-    typedef MempoolAllocator<T> Alloc;
-    typedef SmallVec<T,MempoolAllocator<T> > BaseT;
+    typedef std::allocator<T> Alloc;
+    typedef SmallVec<T,std::allocator<T> > BaseT;
 
 public:
     typedef Alloc alloc_type;

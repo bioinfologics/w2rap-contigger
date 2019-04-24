@@ -1088,7 +1088,7 @@ KmerPathLoc vecKmerPathIndex::FindLoc( longlong pathId, int posInPath, Bool orie
 // Template instantiations:
 
 #include "feudal/SmallVecDefs.h"
-template class SmallVec< KmerPathInterval, MempoolAllocator<KmerPathInterval> >;
+template class SmallVec< KmerPathInterval, std::allocator<KmerPathInterval> >;
 
 #include "feudal/OuterVecDefs.h"
 

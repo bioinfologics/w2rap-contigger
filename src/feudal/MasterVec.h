@@ -295,9 +295,9 @@ private:
     { typename T::value_type* ppp = static_cast<typename T::value_type*>(0);
       size_t extSize = BinaryReader::externalSizeof(ppp);
       if ( extSize )
-      { size_t maxSize = BaseT::getSubAllocator().getMaxEnchunkableSize();
+      { size_t maxSize = 2*1024*1024 - 24;
         size_t preAllocSize = rdr.getPreallocation(maxSize,extSize,start,end);
-        BaseT::getSubAllocator().preAllocate(1UL,preAllocSize); } }
+        BaseT::getSubAllocator().allocate(1UL,preAllocSize); } }
 
     void appendFromFeudal( FeudalFileReader& rdr, size_t start, size_t stop )
     {

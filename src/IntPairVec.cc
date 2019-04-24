@@ -17,5 +17,5 @@
 #include "feudal/SmallVecDefs.h"
 #include "feudal/OuterVecDefs.h"
 
-template class SmallVec< IntPair, MempoolAllocator<IntPair> >;
+template class SmallVec< IntPair, std::allocator<IntPair> >;
 template class OuterVec<IntPairVec>;

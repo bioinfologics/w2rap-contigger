@@ -61,7 +61,7 @@ public:
 #endif
 
 template <class T,
-          class S = MempoolOwner<typename T::value_type>,
+          class S = std::allocator<typename T::value_type>,
           class A = std::allocator<T> >
 class OuterVec
 {
@@ -417,10 +417,10 @@ private:
     T* copy( Itr first, Itr const& last )
     { T* dest = dataEnd();
       size_t nVs = 0;
-      size_t maxVs = mSubAllocator.getMaxEnchunkableSize();
+      size_t maxVs = 2*1024*1024 - 24;
       for ( Itr itr(first); itr != last; ++itr )
       { size_t nnn = itr->allocSize(); if ( nnn <= maxVs ) nVs += nnn; }
-      mSubAllocator.preAllocate(1UL,nVs);
+      mSubAllocator.allocate(1UL,nVs);
       while ( first != last )
       { *(new (dest++) T(mSubAllocator)) = *first;
         ++first; }
@@ -478,9 +478,9 @@ private:
 
     S mSubAllocator;
     A mAllocator;
-    T* mpElements;
-    T* mpCurEnd;
-    T* mpAllocEnd;
+    T* mpElements = NULL;
+    T* mpCurEnd = NULL;
+    T* mpAllocEnd = NULL;
 };
 
 template <class T, class S, class A>

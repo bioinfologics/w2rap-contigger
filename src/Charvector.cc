@@ -29,7 +29,7 @@ void StripNewlines( const CharVec &in, CharVec &out )
 
 #include "feudal/SmallVecDefs.h"
 #include "feudal/OuterVecDefs.h"
-template class SmallVec< char, MempoolAllocator<char> >;
+template class SmallVec< char, std::allocator<char> >;
 template class OuterVec<CharVec>;
-template class SmallVec< unsigned char, MempoolAllocator<unsigned char> >;
+template class SmallVec< unsigned char, std::allocator<unsigned char> >;
 template class OuterVec<UCharVec>;

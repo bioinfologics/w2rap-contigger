@@ -41,7 +41,7 @@ inline void PrintBasesIter(std::ostream& out,
 }
 
 
-class BaseVec : public FieldVec<2, MempoolAllocator<unsigned char> >
+class BaseVec : public FieldVec<2, std::allocator<unsigned char> >
 {
 public:
     class rc_iterator
@@ -126,8 +126,8 @@ public:
     };
 
     typedef const_rc_iterator const_reverse_complement_iterator;
-    typedef MempoolAllocator<unsigned char> Alloc;
-    typedef FieldVec<2, MempoolAllocator<unsigned char> > Base_;
+    typedef std::allocator<unsigned char> Alloc;
+    typedef FieldVec<2, std::allocator<unsigned char> > Base_;
 
     //
     // Constructors

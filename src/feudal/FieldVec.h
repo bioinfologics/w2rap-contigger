@@ -785,9 +785,9 @@ private:
 
     void checkN();
 
-    size_type mSize;
-    size_type mCapacity;
-    unsigned long mData;
+    size_type mSize = 0;
+    size_type mCapacity = 0;
+    unsigned long mData = NULL;
     static unsigned long const MASK = 0xffffffffffff; // lowest 48 bits
     static size_type const VALS_PER_BYTE = 8/N;
     static value_type const VAL_MASK = (1U << N) - 1U;

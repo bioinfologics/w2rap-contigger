@@ -345,7 +345,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
 
                 CreateLocalReadSet(gbases, gquals, gpairs, pids, bases, quals);
-                HyperBasevector *mhbp_t = &mhbp[bl];
+                HyperBasevector &mhbp_t = mhbp[bl];
 
                 //#pragma omp task shared(lefts,rights)
                 //{
@@ -462,7 +462,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                         vecbasevector bpathsx;
                         for (int l = 0; l < bpaths.isize(); l++)
                             bpathsx.push_back(bpaths[l]);
-                        BasesToGraph(bpathsx, K, *mhbp_t);
+                        BasesToGraph(bpathsx, K, mhbp_t);
                         ++solved;
                         //++solutionK[xshb.K()];
                     }

@@ -291,9 +291,9 @@ private:
 };
 
 template <class T>
-class MempoolOwner : public MempoolAllocator<T>
+class MempoolOwner : public std::allocator<T>
 {
-    typedef MempoolAllocator<T> Base;
+    typedef std::allocator<T> Base;
 public:
     MempoolOwner()
     : Base(Base::finder().allocatePool())
