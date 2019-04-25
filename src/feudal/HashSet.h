@@ -227,11 +227,11 @@ public:
     { return lookup(val,mHCF.hash(val)); }
 
     /// Returns true if the value was added (otherwise, it was already present).
-    bool add( key_type val ) throw(NoRoomException)
+    bool add( key_type val ) /*throw (NoRoomException)*/
     { return add(val,mHCF.hash(val)); }
 
     /// Returns a reference to the value.  Inserts value, if not present.
-    const_reference operator[]( key_type val ) throw(NoRoomException)
+    const_reference operator[]( key_type val ) /*throw (NoRoomException)*/
     { size_type idx = mHCF.hash(val) % capacity();
       const_pointer pBkt = find(val,idx);
       if ( pBkt ) return *pBkt; // EARLY RETURN!
@@ -310,7 +310,7 @@ protected:
             if ( comp(val,bkt) ) {pBkt = &bkt; break; } } } }
       return pBkt; }
 
-    bool add( key_type val, size_t hash ) throw(NoRoomException)
+    bool add( key_type val, size_t hash ) /*throw (NoRoomException)*/
     { size_type idx = hash%capacity();
       if ( find(val,idx) ) return false;
       findInsertSlot(idx) = val; return true; }
@@ -340,13 +340,13 @@ protected:
       mSize -= 1;
       return true; }
 
-    const_reference insertK( key_type val, size_t hash ) throw(NoRoomException)
+    const_reference insertK( key_type val, size_t hash ) /*throw (NoRoomException)*/
     { return (findInsertSlot(hash%capacity()) = val); }
 
-    void insertV( value_type const& val, size_t hash ) throw(NoRoomException)
+    void insertV( value_type const& val, size_t hash ) /*throw (NoRoomException)*/
     { findInsertSlot(hash%capacity()) = val; }
 
-    void insertV( value_type&& val, size_t hash ) throw(NoRoomException)
+    void insertV( value_type&& val, size_t hash ) /*throw (NoRoomException)*/
     { findInsertSlot(hash%capacity()) = std::move(val); }
 
 private:
@@ -390,7 +390,7 @@ private:
 
     // Find a place for a value known not to be present.  Idx is the chain head.
     value_type& findInsertSlot( size_type idx )
-      throw(NoRoomException)
+    /*throw (NoRoomException)*/
     { if ( size() == capacity() )
         throw NoRoomException("capacity exceeded");
       BktStatus* pInfo = mBktInfo + idx;
@@ -412,7 +412,7 @@ private:
       return mBuckets[pInfo-mBktInfo]; }
 
     // move a SQUATTER key elsewhere
-    void bump( BktStatus* pBump ) throw(NoRoomException)
+    void bump( BktStatus* pBump ) /*throw (NoRoomException)*/
     { AssertEq((int)pBump->getStatus(),(int)BktStatus::SQUATTER);
 
       // search for the entry that points to pBump
@@ -470,7 +470,7 @@ private:
       pBump->setOffset(0); }
 
     // find empty slot within range of pInfo, or create one by hopscotchingSet
-    BktStatus* findEmpty( BktStatus* pInfo ) throw(NoRoomException)
+    BktStatus* findEmpty( BktStatus* pInfo ) /*throw (NoRoomException)*/
     { AssertLt(mSize,capacity());
       BktStatus* pEmpty = pInfo;
       do { if ( --pEmpty < mBktInfo ) pEmpty += capacity(); }
@@ -479,7 +479,7 @@ private:
           pEmpty = hopScotch(pEmpty);
       return pEmpty; }
 
-    BktStatus* hopScotch( BktStatus* pEmpty ) throw (NoRoomException)
+    BktStatus* hopScotch( BktStatus* pEmpty ) /*throw (NoRoomException)*/
     { AssertEq((int)pEmpty->getStatus(),(int)BktStatus::EMPTY);
       BktStatus* pPrev = pEmpty + BktStatus::maxOffset();
       if ( pPrev >= mBktInfo + capacity() ) pPrev -= capacity();

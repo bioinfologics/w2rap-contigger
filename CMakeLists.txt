@@ -95,7 +95,7 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
 ## Compiler flags
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fpermissive -w -Wno-deprecated -std=c++11")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fpermissive -w -Wno-deprecated")
 
 ## To move the bins to the final location
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
@@ -295,6 +295,11 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
 add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
+
+set_property(TARGET hbv2gfa PROPERTY CXX_STANDARD 17)
+set_property(TARGET w2rap-contigger PROPERTY CXX_STANDARD 17)
+set_property(TARGET specific_w2rap-contigger PROPERTY CXX_STANDARD 17)
+set_property(TARGET base_libs PROPERTY CXX_STANDARD 17)
 
 ##Zlib link
 if (ZLIB_FOUND)

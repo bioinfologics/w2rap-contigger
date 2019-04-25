@@ -990,7 +990,7 @@ Alignment::Alignment( Record const& rec, Logger& logger )
     }
 }
 
-void Alignment::recursiveCigarParse( uint blockIdx, char const* cigarPart, uint readStart, uint refStart ) throw (char const*)
+void Alignment::recursiveCigarParse( uint blockIdx, char const* cigarPart, uint readStart, uint refStart ) /*throw (char const*)*/
 {
     if ( !cigarPart[0] )
     {

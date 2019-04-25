@@ -679,7 +679,7 @@ public:
 
 private:
     void recursiveCigarParse( uint block, char const* cigarPart, uint readStart,
-                                uint refStart ) throw(char const*);
+                                uint refStart ) /*throw(char const*)*/;
 
     Block* mBlocks;
     uint mNBlocks;
