@@ -19,12 +19,14 @@
 
 class BigK
 {
+
+public:
     static int constexpr gK[] =
-    {20,     24,     28,     32,     40,     48,     60,     72,     80,     84,
-     88,     96,     100,    108,    116,    128,    136,    144,    152,    160,    168,
-     172,    180,    188,    196,    200,    208,    216,    224,    232,    240,
-     260,    280,    300,    320,    368,    400,    500,    544,    640,    720,
-     1000,   1200,   1600,   2000,   4000,   10000};
+            {20,     24,     28,     32,     40,     48,     60,     72,     80,     84,
+             88,     96,     100,    108,    116,    128,    136,    144,    152,    160,    168,
+             172,    180,    188,    196,    200,    208,    216,    224,    232,    240,
+             260,    280,    300,    320,    368,    400,    500,    544,    640,    720,
+             1000,   1200,   1600,   2000,   4000,   10000};
     // Case 1:  DANGER, WILL ROBINSON.  If you add a value to the array, you
     //          must also add another case statement at the end of the switch.
     //          If you forget, you won't get a dispatch on the last K value,
@@ -36,8 +38,6 @@ class BigK
     //          element.  So you'll fix it.
     // Case 3:  If you modify a value in the array, everything is fine.
     //          Nothing else changes.
-
-public:
 
     // iterator pair over allowable values
     static int const* begin() { return gK; }

@@ -35,8 +35,9 @@
 #include "KMerFreqFactory.h"
 #include "kmers/KMer.h"
 #include <omp.h>
+#include <paths/long/LargeKDispatcher.h>
 
- // Dummy defines, this should come from CMakeLists.txt
+// Dummy defines, this should come from CMakeLists.txt
 #ifndef GIT_COMMIT_HASH
 #define GIT_COMMIT_HASH "dummy"
 #endif
@@ -255,12 +256,21 @@ struct cmdline_args {
 
 };
 
+int dir_exists_and_writable(const std::string &dirname) {
+    return (access(dirname.data(), W_OK));
+}
+
+int file_exist (const std::string &filename)
+{
+    std::ifstream file(filename);
+    return file.good();
+}
+
 
 struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
     struct cmdline_args parsed_args;
+    cxxopts::Options options(argv[0], "");
     try {
-        cxxopts::Options options(argv[0], "");
-
         options.add_options()
                 ("1", "r1 file(s)", cxxopts::value(parsed_args.r1_files))
                 ("2", "r2 file(s)", cxxopts::value(parsed_args.r2_files))
@@ -302,12 +312,76 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
         if (result.count("tmp_dir")==0) {
             parsed_args.tmp_dir=parsed_args.out_dir;
         }
+        // Validate -1 and -2 exist
+        for (const auto &r1f : parsed_args.r1_files) {
+            if (!file_exist(r1f)) {
+                std::string error_str("Input file error, R1 file: "+r1f+'\n');
+                std::perror(error_str.data());
+                throw std::runtime_error("Input 1 error");
+            }
+        }
 
+        for (const auto &r2f : parsed_args.r2_files) {
+            if (!file_exist(r2f)) {
+                std::string error_str("Input file error, R2 file: "+r2f+'\n');
+                std::perror(error_str.data());
+                throw std::runtime_error("Input 2 error");
+            }
+        }
+
+        // Validate from and to, from 1 to 8,  from >= to
+        if (parsed_args.to_step > 8 or parsed_args.to_step < 1) {
+            throw std::runtime_error("to_step value needs to be between 1 and 8");
+        }
+
+        if (parsed_args.from_step > 8 or parsed_args.from_step < 1) {
+            throw std::runtime_error("from_step value needs to be between 1 and 8");
+        }
+
+        if (parsed_args.from_step > parsed_args.to_step) {
+            throw std::runtime_error("from_step must be lower than to_step");
+        }
+
+        // Validate large_k is in possibilities (get list from sources)
+        std::set<int> large_k_opts;
+        for (const auto &k : BigK::gK) {
+            large_k_opts.insert(k);
+        }
+
+        if (large_k_opts.find(parsed_args.large_K) == large_k_opts.cend()) {
+            std::cerr << "Invalid large K value, please use one of the following: \n";
+            for (const auto &k : large_k_opts) {
+                std::cerr << k << ", ";
+            }
+            std::cerr << std::endl;
+            throw std::runtime_error("Invalid large K value");
+        }
+
+        // Validate min_freq min 1
+
+        // Validate min_qual min 0 max 33
+        if (parsed_args.minQual > 33 or parsed_args.minQual < 0) {
+            throw std::runtime_error("Invalid min_qual, please use a value between 0 and 33");
+        }
+
+        // Validate directories exist
+        if (dir_exists_and_writable(parsed_args.out_dir)) {
+            std::string error_str("Output directory error: "+parsed_args.out_dir+", ");
+            std::perror(error_str.data());
+            throw std::runtime_error("Output directory error");
+        }
+
+
+        // Validate if solve_complex_repeats not possible to dv_repeat_solving
+        if (parsed_args.solve_complex_repeats and parsed_args.dv_repeat_solving) {
+            throw std::runtime_error("solve_complex_repeats and dv_repeat_solving options are incompatible, please choose only one");
+        }
 
         return parsed_args;
 
     } catch (const cxxopts::OptionException& e) {
-        std::cout << "error parsing options: " << e.what() << std::endl;
+        std::cerr << "error parsing options: " << e.what() << std::endl;
+        std::cout << options.help({""}) << std::endl;
         exit(1);
     }
 }

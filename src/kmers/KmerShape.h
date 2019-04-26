@@ -563,7 +563,7 @@ public:
 
  // Method: getId
  // Return a <KmerShapeId> object that uniquely identifies this particular kmer shape
- static KmerShapeId getId() { return getStringId(); }
+ static KmerShapeId getId() { return KmerShapeId(getStringId()); }
 
  private:
   // Method: getStringId
