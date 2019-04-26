@@ -601,12 +601,9 @@ int main( int argc,  char * argv[]) {
                 if (args.dump_all or step == args.to_step) {
                     //TODO: dump graph and paths
                     OutputLog(2) << "Dumping graph and paths..." << std::endl;
-                    BinaryWriter::writeFile(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".hbv",
-                                            hbv);
-                    WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] +
-                                             ".paths").c_str());
-                    GFADump(std::string(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv,
-                            paths, 0, 0, false);
+                    BinaryWriter::writeFile(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".hbv", hbv);
+                    WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".paths").c_str());
+                    GFADump(std::string(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv, paths, 0, 0, false);
                     OutputLog(2) << "DONE!" << std::endl;
                 }
             }

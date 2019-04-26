@@ -188,8 +188,6 @@ add_library(base_libs OBJECT
         src/paths/long/LongProtoTools.cc
         src/paths/long/LongReadsToPaths.cc
         src/paths/long/MakeAlignments.cc
-        src/paths/long/PreCorrectAlt1.cc
-        src/paths/long/PreCorrectOldNew.cc
         src/paths/long/ReadPathTools.cc
         src/paths/long/ReadStack.cc
         src/random/Bernoulli.cc
@@ -264,7 +262,6 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/BuildReadQGraph.cc
         src/paths/long/ExtendReadPath.cc
         src/paths/long/KmerAlign.h
-        src/paths/long/ShortKmerReadPather.cc
         src/paths/long/large/Clean200.cc
         src/paths/long/large/ExtractReads.cc
         src/paths/long/large/ReadNameLookup.cc

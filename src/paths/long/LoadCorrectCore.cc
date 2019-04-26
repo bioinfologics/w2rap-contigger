@@ -25,8 +25,6 @@
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/LongReadsToPaths.h"
-#include "paths/long/PreCorrectAlt1.h"
-#include "paths/long/PreCorrectOldNew.h"
 #include "paths/long/DiscovarTools.h"
 #include <numeric>
 #include <type_traits>
@@ -196,17 +194,11 @@ void CorrectionSuite(vecbasevector &gbases, QualVecVec &gquals, PairsManager &gp
     }
     ForceAssertEq(nBases, creads.SizeSum());
 
-    if (heur.PRECORRECT_ALT1) //This is always false
-        precorrectAlt1(&creads);
-    else if (heur.PRECORRECT_OLD_NEW) //This is always false too
-        PreCorrectOldNew(&creads, cquals, trace_ids);
-    else {
-        PC_Params pcp;
-        const int K_PC = 25;
-        KmerSpectrum kspec(K_PC);
-        pre_correct_parallel(pcp, K_PC, &creads, &cquals, &kspec,
-                             -1, NUM_THREADS);
-    }
+
+    PC_Params pcp;
+    const int K_PC = 25;
+    KmerSpectrum kspec(K_PC);
+    pre_correct_parallel(pcp, K_PC, &creads, &cquals, &kspec,-1, NUM_THREADS);
 
     ZeroCorrectedQuals(gbases, creads, &cquals);
 

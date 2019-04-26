@@ -43,7 +43,6 @@
 #include <util/OutputLog.h>
 #include "paths/HyperBasevector.h"
 #include "paths/long/ExtendReadPath.h"
-#include "paths/long/ShortKmerReadPather.h"
 
 namespace
 {
