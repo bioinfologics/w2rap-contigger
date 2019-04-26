@@ -24,6 +24,9 @@ project (w2rap-contigger)
 # Set a default build type if none was specified
 set(default_build_type "Release")
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/")
+
+option(WITH_JEMALLOC "build with JeMalloc" ON)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
     set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
@@ -306,6 +309,13 @@ if (ZLIB_FOUND)
   set(ZLIB libz.so)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
+endif()
+
+if (WITH_JEMALLOC)
+find_package(JeMalloc REQUIRED)
+add_definitions(-DJEMALLOC_NO_DEMANGLE)
+include_directories(${JEMALLOC_INCLUDE_DIR})
+target_link_libraries(w2rap-contigger ${JEMALLOC_LIBRARIES})
 endif()
 
 #Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc
