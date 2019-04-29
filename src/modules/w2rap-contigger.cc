@@ -36,6 +36,7 @@
 #include "kmers/KMer.h"
 #include <omp.h>
 #include <paths/long/LargeKDispatcher.h>
+#include <SpectraCn.hpp>
 
 // Dummy defines, this should come from CMakeLists.txt
 #ifndef GIT_COMMIT_HASH
@@ -253,6 +254,7 @@ struct cmdline_args {
     bool dv_repeat_solving=false;
     bool dump_all=false;
     unsigned int log_level=3;
+    bool output_spectracn=true;
 
 };
 
@@ -289,6 +291,7 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
                 ("from_step","starting step (default: 1)",cxxopts::value(parsed_args.from_step))
                 ("to_step","ending step (default: 8)",cxxopts::value(parsed_args.to_step))
                 ("dump_all","dump all intermediate graphs and status files",cxxopts::value(parsed_args.dump_all))
+                ("s,spectra-cn","write a spectra-cn of the graph on each step", cxxopts::value(parsed_args.output_spectracn))
                 ("h,help","show help message")
                 ;
 
@@ -563,6 +566,7 @@ int main( int argc,  char * argv[]) {
                 hbvinv.clear();
                 hbv.Involution(hbvinv);
                 FragDist(hbv, hbvinv, paths, args.out_dir + "/small_K.frags.dist");
+                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 4 (small_k graph -> large_k graph) =====
@@ -589,6 +593,7 @@ int main( int argc,  char * argv[]) {
                 hbvinv.clear();
                 hbv.Involution(hbvinv);
                 FragDist(hbv, hbvinv, paths, args.out_dir + "/large_K.frags.dist");
+                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 5 (large_k graph cleaning) =====
@@ -597,6 +602,7 @@ int main( int argc,  char * argv[]) {
                 int CLEAN_200_VERBOSITY = 0;
                 int CLEAN_200V = 3;
                 Clean200x(hbv, hbvinv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, args.min_size);
+                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 6 (local assemblies) =====
@@ -619,6 +625,7 @@ int main( int argc,  char * argv[]) {
 
                 AddNewStuff(new_stuff, hbv, hbvinv, paths, bases, quals, MIN_GAIN, EXT_MODE);
                 PartnersToEnds(hbv, paths, bases, quals);
+                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 7 (repeat resolution, 3 fairly complex approaches, keeping this in separated functions) =====
@@ -627,6 +634,7 @@ int main( int argc,  char * argv[]) {
                 else if (args.solve_complex_repeats)
                     step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
                 else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
+                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             case 8: {
@@ -648,6 +656,7 @@ int main( int argc,  char * argv[]) {
                 vec<int64_t> subsam_starts={0};
                 vec<String> subsam_names={"C"};
                 FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, args.out_dir, args.prefix+ ".assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
+                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             default:

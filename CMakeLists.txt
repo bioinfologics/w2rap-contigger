@@ -242,46 +242,46 @@ add_library(base_libs OBJECT
         )
 
 add_library(specific_w2rap-contigger OBJECT
-        src/paths/long/large/GapToyTools4.cc
-        src/paths/long/large/GapToyTools5.cc
-        src/kmers/MakeLookup.cc
-        src/kmers/kmatch/KMatch.cc
-        src/paths/long/OverlapReads.cc
-        src/paths/long/KmerAlign.cc
-        src/paths/long/Friends.cc
-        src/math/Combinatorics.cc
-        src/kmers/LongReadPather.cc
-        src/feudal/QualNibbleVec.cc
-        src/Basevector.cc
-        src/VecString.cc
-        src/BasevectorTools.cc
-        src/Misc.cc
-        src/paths/long/large/AssembleGaps.cc
-        src/paths/long/large/GapToyTools2.cc
-        src/paths/long/large/Unsat.cc
-        src/paths/long/BuildReadQGraph.cc
-        src/paths/long/ExtendReadPath.cc
-        src/paths/long/KmerAlign.h
-        src/paths/long/large/Clean200.cc
-        src/paths/long/large/ExtractReads.cc
-        src/paths/long/large/ReadNameLookup.cc
-        src/paths/long/large/Repath.cc
-        src/system/Crash.cc
-        src/util/PeakFinder.h
-        src/paths/long/large/FinalFiles.cc
-        src/paths/long/large/MakeGaps.cc
-        src/paths/long/large/Simplify.cc
-        src/paths/long/large/ImprovePath.cc
-        src/util/w2rap_timers.h
-        src/paths/PathFinder.cc
-        src/paths/PathFinder.h
-        src/paths/long/large/OverlapValidator.cc
-        src/paths/long/large/OverlapValidator.h
-        src/paths/long/large/GraphImprover.cc
-        src/paths/long/large/GraphImprover.h
-        src/paths/long/large/ConsensusChecker.cc
-        src/paths/long/large/ConsensusChecker.h
-        )
+            src/paths/long/large/GapToyTools4.cc
+            src/paths/long/large/GapToyTools5.cc
+            src/kmers/MakeLookup.cc
+            src/kmers/kmatch/KMatch.cc
+            src/paths/long/OverlapReads.cc
+            src/paths/long/KmerAlign.cc
+            src/paths/long/Friends.cc
+            src/math/Combinatorics.cc
+            src/kmers/LongReadPather.cc
+            src/feudal/QualNibbleVec.cc
+            src/Basevector.cc
+            src/VecString.cc
+            src/BasevectorTools.cc
+            src/Misc.cc
+            src/paths/long/large/AssembleGaps.cc
+            src/paths/long/large/GapToyTools2.cc
+            src/paths/long/large/Unsat.cc
+            src/paths/long/BuildReadQGraph.cc
+            src/paths/long/ExtendReadPath.cc
+            src/paths/long/KmerAlign.h
+            src/paths/long/large/Clean200.cc
+            src/paths/long/large/ExtractReads.cc
+            src/paths/long/large/ReadNameLookup.cc
+            src/paths/long/large/Repath.cc
+            src/system/Crash.cc
+            src/util/PeakFinder.h
+            src/paths/long/large/FinalFiles.cc
+            src/paths/long/large/MakeGaps.cc
+            src/paths/long/large/Simplify.cc
+            src/paths/long/large/ImprovePath.cc
+            src/util/w2rap_timers.h
+            src/paths/PathFinder.cc
+            src/paths/PathFinder.h
+            src/paths/long/large/OverlapValidator.cc
+            src/paths/long/large/OverlapValidator.h
+            src/paths/long/large/GraphImprover.cc
+            src/paths/long/large/GraphImprover.h
+            src/paths/long/large/ConsensusChecker.cc
+            src/paths/long/large/ConsensusChecker.h
+            src/SpectraCn.cc src/SpectraCn.hpp)
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
@@ -293,11 +293,17 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
 
+add_executable(faKmerSpectra src/modules/faKmerSpectra.cc
+        $<TARGET_OBJECTS:base_libs>
+        $<TARGET_OBJECTS:specific_w2rap-contigger>
+        )
+
 ##Zlib link
 if (ZLIB_FOUND)
   set(ZLIB libz.so)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
+  target_link_libraries(faKmerSpectra ${ZLIB_LIBRARIES})
 endif()
 
 #Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc
