@@ -82,6 +82,16 @@ void SpectraCN::DumpSpectraCN(const HyperBasevector &hb, const vec<int> &inv, co
             (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( graph_kmer_freqs->kmers[last_kmer] );
             ++last_kmer;
         }
+        if (len == K) {
+            auto beg = hb.EdgeObject(edgeID).begin(), itr = beg + K, last = beg + (len - 1);
+            KMerNodeFreq kkk(beg);
+            kkk.hash();
+            kkk.kc = KMerContext::initialContext(*itr);
+            kkk.count = 1;
+            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( graph_kmer_freqs->kmers[last_kmer] );
+            ++last_kmer;
+        }
+
     }
     //std::cout<<last_kmer<<" kmers inserted in a batch"<<std::endl;
 
