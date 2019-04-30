@@ -34,22 +34,27 @@ uint8_t SpectraCN::findCountBin(std::ifstream &file, KMerNodeFreq_s &target, siz
 }
 
 /**
- * @brief This function receives a hbv + involution graph and prints out a sparse spectra-cn file
+ * @brief Intersects freqs of small_K-mers on one side of the edge involution of an HBV vs the saved k-mers from reads
  * @param hb Graph
  * @param inv Graph Involution
- * @param dir Output directory, this has to be the same as the rest of the assembly
- * @param name Name of the spectra-cn file (without extension)
+ * @param dir Output directory, must contain the kmer counts
+ * @param name Name of output spectra-cn file (without extension)
  */
 void SpectraCN::DumpSpectraCN(const HyperBasevector &hb, const vec<int> &inv, const String &dir, const String &name) {
+    // First all small_K-mers from the graph are counted, then they are sorted and aggregated (same as the read kmers are).
+    // Then the read freq file is opened and pair-iterated while counting (freq1,freq2) occurrences.
+    // Finally, the (freq1,freq2) counts are dumped.
 
-    std::shared_ptr<KmerList> local_kmer_list = std::make_shared<KmerList>();
+    // STEP1: Count all small_K-mers from the graph, then sort and collapse their counts.
+
+    // Reserve memory for all (total) k-mers in edges (resizes because the slots are used directly).
+    std::shared_ptr<KmerList> graph_kmer_freqs = std::make_shared<KmerList>();
     uint64_t total_good_length(0);
-    // Calculate good length from the "lines"
     for (uint64_t edgeID = 0; edgeID < hb.E(); edgeID++) {
         if (inv[edgeID] < edgeID) continue;
         total_good_length += hb.EdgeLengthBases(edgeID);
     }
-    local_kmer_list->resize(total_good_length);
+    graph_kmer_freqs->resize(total_good_length);
 
     //Populate the kmer list
     uint64_t last_kmer=0;
@@ -62,86 +67,107 @@ void SpectraCN::DumpSpectraCN(const HyperBasevector &hb, const vec<int> &inv, co
             kkk.hash();
             kkk.kc = KMerContext::initialContext(*itr);
             kkk.count = 1;
-            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( local_kmer_list->kmers[last_kmer] );
+            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( graph_kmer_freqs->kmers[last_kmer] );
             ++last_kmer;
             while (itr != last) {
                 unsigned char pred = kkk.front();
                 kkk.toSuccessor(*itr);
                 ++itr;
                 kkk.kc = KMerContext(pred, *itr);
-                (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( local_kmer_list->kmers[last_kmer] );
+                (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( graph_kmer_freqs->kmers[last_kmer] );
                 ++last_kmer;
             }
             kkk.kc = KMerContext::finalContext(kkk.front());
             kkk.toSuccessor(*last);
-            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( local_kmer_list->kmers[last_kmer] );
+            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct( graph_kmer_freqs->kmers[last_kmer] );
             ++last_kmer;
         }
     }
     //std::cout<<last_kmer<<" kmers inserted in a batch"<<std::endl;
-    local_kmer_list->resize(last_kmer);
-    local_kmer_list->sort();
-    local_kmer_list->uniq();
 
+    //resize (shrinks to total size), sort and collapse
+    graph_kmer_freqs->resize(last_kmer);
+    graph_kmer_freqs->sort();
+    graph_kmer_freqs->uniq();
 
-    // This is the total list of kmers in the graph, now intersect with kmers from reads and generate the output
+    // STEP2: intersect with kmers from reads and generate the output
+
     uint64_t numKmers(0);
-    std::ifstream kmerData;
-    kmerData.open(dir + "/raw_kmers.data");
-    kmerData.read((char *) &numKmers, sizeof(uint64_t));
-
     std::FILE* kmers_from_disk;
     kmers_from_disk = std::fopen(std::string(dir+"/raw_kmers.data").data(), "rb");
     if (!kmers_from_disk) {
         std::perror("Failed to open raw_kmers.data, ");
     }
-    auto read = std::fread(&numKmers, sizeof(uint64_t), 1, kmers_from_disk);
-    if (!read) {
-        std::perror("Failed to read kmer from disk,");
-    }
 
     std::map< std::vector<uint64_t>, uint64_t > totals_by_freq;
-    KMerNodeFreq_s target;
-    read = std::fread(&target, sizeof(target), 1, kmers_from_disk);
-    if (!read) {
-        std::perror("Failed to read kmer from disk, ");
+    std::fread(&numKmers, sizeof(numKmers), 1, kmers_from_disk);
+    KMerNodeFreq_s reads_kmer;
+    //while next(a) or next(b)
+    for (size_t g_idx=0, read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
+        0<read_bytes or g_idx<graph_kmer_freqs->size;
+        ) {
+        //std::cout<<"read "<<read_bytes<<" bytes, and g_idx="<<g_idx<<"/"<<graph_kmer_freqs->size<<std::endl;
+        // if (no b and a or a<b) { out (freqa, 0); a=next(a)}
+        if ( 0==read_bytes or (g_idx<graph_kmer_freqs->size and graph_kmer_freqs->kmers[g_idx]<reads_kmer)){
+            ++totals_by_freq[{0,graph_kmer_freqs->kmers[g_idx].count}];
+            ++g_idx;
+        }
+        // else if (no a and b or b<a) { out (0, b); b=next(b)}
+        else if (g_idx>=graph_kmer_freqs->size or ( 0<read_bytes and reads_kmer<graph_kmer_freqs->kmers[g_idx])){
+            ++totals_by_freq[{reads_kmer.count,0}];
+            read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
+        }
+        // else if (a==b){ out (freqa, freqb); a=next(a); b= next(b)}
+        else {
+            ++totals_by_freq[{reads_kmer.count,graph_kmer_freqs->kmers[g_idx].count}];
+            ++g_idx;
+            read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
+        }
+
+
     }
-    uint64_t read_disk_kmers(1);
-    for (uint64_t query = 0; query < local_kmer_list->size; ++query) {
-        const auto &qkmer=local_kmer_list->kmers[query];
-        if (qkmer > target) {
+      // if (no b or a<b) { out (freqa, 0); a=next(a)}
+      // else if (no a or b<a) { out (0, b); b=next(b)}
+      // else if (a==b){ out (freqa, freqb); a=next(a); b= next(b)}
+
+
+
+    /*uint64_t read_disk_kmers(1);
+    for (uint64_t gkidx = 0; gkidx < graph_kmer_freqs->size; ++gkidx) {
+        const auto &graph_kmer=graph_kmer_freqs->kmers[gkidx];
+        if (graph_kmer > reads_kmer) {
             do {
-                read = std::fread(&target, sizeof(target), 1, kmers_from_disk);
+                read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
                 ++read_disk_kmers;
-                if (!read) {
+                if (!read_bytes) {
                     std::perror("Failed to read kmer from disk, ");
                 }
-            } while (qkmer > target);
-        } else if (qkmer < target) {
-            ++totals_by_freq[{qkmer.count, 0}];
+            } while (graph_kmer > reads_kmer);
+        } else if (graph_kmer < reads_kmer) {
+            ++totals_by_freq[{graph_kmer.count, 0}];
         } else {
-            ++totals_by_freq[{qkmer.count, target.count}];
+            ++totals_by_freq[{graph_kmer.count, reads_kmer.count}];
         }
-        if (qkmer == target) {
-            ++totals_by_freq[{qkmer.count, target.count}];
+        if (graph_kmer == reads_kmer) {
+            ++totals_by_freq[{graph_kmer.count, reads_kmer.count}];
         } else {
-            ++totals_by_freq[{qkmer.count, 0}];
+            ++totals_by_freq[{graph_kmer.count, 0}];
         }
 
         if (read_disk_kmers == numKmers) {
             // There are no more kmers to be found in disk, dump last asm kmers missing from disk and break
-            while (query < local_kmer_list->size) {
-                const auto &qkmer=local_kmer_list->kmers[query];
+            while (gkidx < graph_kmer_freqs->size) {
+                const auto &qkmer=graph_kmer_freqs->kmers[gkidx];
                 ++totals_by_freq[{qkmer.count, 0}];
-                ++query;
+                ++gkidx;
             }
             break;
         }
-    }
+    }*/
 
     std::ofstream analysis_output(dir+"/"+name+".freqs");
     for (int i = 1; i <= 2; i++) {
-        analysis_output << "f" + std::to_string(i-1) + ",";
+        analysis_output << "f" + std::to_string(i) + ",";
     }
     analysis_output<<"kmers"<<std::endl;
     std::cout <<"kmers"<<std::endl;

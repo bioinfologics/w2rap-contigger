@@ -26,25 +26,6 @@ bool ValidateReadPath(const HyperBasevector& hbv, const vec<int>& to_left,
 
 bool ValidateAllReadPaths(const HyperBasevector& hbv, const ReadPathVec& readpaths );
 
-// Displays a path through the HBV given a list of edges and the start base on
-// the first edge. If supplied with the corresponding read and quality scores
-// these are displayed too.
-
-void DisplayReadPath(std::ostream &out, const HyperBasevector& hbv,
-                     const vec<int>& to_left, const vec<int>& to_right,
-                     const int offset, const vec<int>& edge_list,
-                     const BaseVec& seq = BaseVec(), const QualVec& quals = QualVec(),
-                     bool show_edges = false, bool show_ruler = false,
-                     bool show_seq = true, bool show_quals = true,
-                     bool show_mismatch = true, bool show_overlap = true);
-
-void DisplayReadPath(std::ostream &out, const vecbvec& graph_edges, int K,
-		     const int offset, const vec<int>& edge_list,
-		     const BaseVec& seq, const QualVec& quals,
-                     bool show_edges = false, bool show_ruler = false,
-                     bool show_seq = true, bool show_quals = true,
-                     bool show_mismatch = true, bool show_overlap = true);
-
 
 
 #endif /* READPATHTOOLS_H_ */

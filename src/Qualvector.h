@@ -37,17 +37,4 @@ typedef std::vector<qual_t> QualVec;
 //TODO: BJ modify the vector definition
 typedef std::vector<std::vector<qual_t>> QualVecVec;
 
-///Produces fasta format quals, mirrors basevector::Print()
-void Print( std::ostream &out, const QualVec &q, const String &name,
-            const int scores_per_line = 25 );
-
-/// Returns two strings representing the quality scores stacked vertically
-std::pair <String, String> Stacked(const QualVec& quals) ;
-
-/// Writes two strings representing the quality scores stacked vertically
-/// e.g. 43,31,20,2,2,2 becomes: 432   
-///                              310222
-void PrintStacked(std::ostream &out , const QualVec& quals) ;
-
-
 #endif
