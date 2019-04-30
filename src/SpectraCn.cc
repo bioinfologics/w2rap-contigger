@@ -126,44 +126,6 @@ void SpectraCN::DumpSpectraCN(const HyperBasevector &hb, const vec<int> &inv, co
 
 
     }
-      // if (no b or a<b) { out (freqa, 0); a=next(a)}
-      // else if (no a or b<a) { out (0, b); b=next(b)}
-      // else if (a==b){ out (freqa, freqb); a=next(a); b= next(b)}
-
-
-
-    /*uint64_t read_disk_kmers(1);
-    for (uint64_t gkidx = 0; gkidx < graph_kmer_freqs->size; ++gkidx) {
-        const auto &graph_kmer=graph_kmer_freqs->kmers[gkidx];
-        if (graph_kmer > reads_kmer) {
-            do {
-                read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
-                ++read_disk_kmers;
-                if (!read_bytes) {
-                    std::perror("Failed to read kmer from disk, ");
-                }
-            } while (graph_kmer > reads_kmer);
-        } else if (graph_kmer < reads_kmer) {
-            ++totals_by_freq[{graph_kmer.count, 0}];
-        } else {
-            ++totals_by_freq[{graph_kmer.count, reads_kmer.count}];
-        }
-        if (graph_kmer == reads_kmer) {
-            ++totals_by_freq[{graph_kmer.count, reads_kmer.count}];
-        } else {
-            ++totals_by_freq[{graph_kmer.count, 0}];
-        }
-
-        if (read_disk_kmers == numKmers) {
-            // There are no more kmers to be found in disk, dump last asm kmers missing from disk and break
-            while (gkidx < graph_kmer_freqs->size) {
-                const auto &qkmer=graph_kmer_freqs->kmers[gkidx];
-                ++totals_by_freq[{qkmer.count, 0}];
-                ++gkidx;
-            }
-            break;
-        }
-    }*/
 
     std::ofstream analysis_output(dir+"/"+name+".freqs");
     for (int i = 1; i <= 2; i++) {
