@@ -153,7 +153,7 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
      vecKmerPath xpaths;
      HyperKmerPath h2;
      OutputLog(2) << "building new graph from places" << std::endl;
-     unsigned const COVERAGE = 2u;
+     unsigned const COVERAGE = 1u;
      LongReadsToPaths( all, K2, COVERAGE, &hb2, &h2, &xpaths );
      Destroy(all);
 

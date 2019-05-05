@@ -22,7 +22,9 @@ public:
 
 
     }
-
+    //Simplification routines
+    void clip_tips(int max_length, int max_reads);
+    void extend_until_repeat();
     //Graph-related methods
     std::vector<std::vector<uint64_t>> AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length);
 
@@ -52,7 +54,6 @@ private:
     HyperBasevector& mHBV;
     vec<int>& mInv;
     ReadPathVec& mPaths;
-    ReadPathVec mInfPaths;
     VecULongVec& mEdgeToPathIds;
     vec<int> mToLeft;
     vec<int> mToRight;
@@ -63,5 +64,5 @@ private:
 
 };
 
-
+void simplifyWithPathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads = 5, bool verbose=false, bool dump_intermediate_gfas = false );
 #endif //W2RAP_CONTIGGER_PATHFINDER_H

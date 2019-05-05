@@ -2,8 +2,40 @@
 // Created by Bernardo Clavijo (TGAC) on 11/07/2016.
 //
 
+#include <util/OutputLog.h>
 #include "PathFinder.h"
 
+void PathFinder::clip_tips(int max_length, int max_reads) {
+    update_prev_next();
+    vec<int> to_delete;
+    for (uint64_t e=0;e<next_edges.size();++e){
+        if (next_edges[e].empty() and prev_edges[e].size()==1 and mHBV.Edges()[e].size()<=max_length){
+            //std::cout<<"Edge "<<e<<" ("<<mInv[e]<<") leads nowhere!!!"<<std::endl;
+            //now check for support
+            //std::cout<<" Support: "<< mEdgeToPathIds[e].size()<<" "<<mEdgeToPathIds[e].size()<<std::endl;
+            if (mEdgeToPathIds[e].size()<=max_reads and mEdgeToPathIds[e].size()<=max_reads) {
+                to_delete.push_back(e);
+                to_delete.push_back(mInv[e]);
+            }
+        }
+    }
+    mHBV.DeleteEdges(to_delete);
+    Cleanup( mHBV, mInv, mPaths );
+    invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
+}
+
+void PathFinder::extend_until_repeat() {
+    update_prev_next();
+    vec<int> to_delete;
+    for (uint64_t e=0;e<next_edges.size();++e){
+        if (next_edges[e].size()==1 and next_edges[next_edges[e][0]].size()==1
+            and next_edges[e][0]!=e and next_edges[e][0]!=mInv[e]
+            and next_edges[next_edges[e][0]][0]!=e and next_edges[next_edges[e][0]][0]!=mInv[e]){
+            std::cout<<"Edge "<<e<<" ("<<mInv[e]<<") can be forward-merged with "<<next_edges[e][0]<<" ("<<mInv[next_edges[e][0]]<<")"<<std::endl;
+        }
+    }
+
+}
 
 std::string PathFinder::edge_pstr(uint64_t e){
     return "e"+std::to_string(e)+"("+std::to_string(mHBV.EdgeObject(e).size())+"bp "+std::to_string(paths_per_kbp(e))+"ppk)";
@@ -919,3 +951,29 @@ void PathFinder::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edge
 bool PathFinder::join_edges_in_path(std::vector<uint64_t> p){
     //if a path is scrictly linear, it joins it
 }
+
+
+void simplifyWithPathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, int min_reads, bool verbose, bool dump_intermediate_gfas){
+    OutputLog(2)<<"======= Simplifying with pathfinder!!!!! ======="<<std::endl;
+    auto pf1=PathFinder(hbv,inv,paths,invPaths,min_reads,verbose);
+    //First clip stupid tips
+    pf1.clip_tips(400,20);
+    pf1.clip_tips(800,2);
+
+    //then unroll loops
+
+    //then expand perfectly-solved repeats
+
+    //then extend-to-repeat
+
+
+
+    //Now extend-to-repeats
+    //pf1.extend_until_repeat();
+    //Now unroll loops
+    //pf1.mVerbose=true;
+    pf1.unroll_loops(1000);
+    //Now find perfect repeats ?
+
+    //
+};

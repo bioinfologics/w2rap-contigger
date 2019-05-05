@@ -175,7 +175,11 @@ void step_7EXP(HyperBasevector &hbv,
             std::string out_dir,
             std::string out_prefix){
     OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
-    int MAX_SUPP_DEL = min_input_reads;//was 0
+    VecULongVec pathsinv;
+    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+    invert(paths,pathsinv,hbv.EdgeObjectCount());
+    simplifyWithPathFinder(hbv,hbvinv,paths,pathsinv,5,false,true);
+    /*int MAX_SUPP_DEL = min_input_reads;//was 0
     bool TAMP_EARLY_MIN = True;
     int MIN_RATIO2 = 8;
     int MAX_DEL2 = 200;
@@ -225,7 +229,7 @@ void step_7EXP(HyperBasevector &hbv,
     //TODO: maybe Report some similar to CN stats ???
     //double cn_frac_good = CNIntegerFraction(hbv, covs);
     //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
+    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");*/
 
 }
 
@@ -305,6 +309,10 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
         if (result.count("1")!=result.count("2")) {
             std::cout << "Please specify -1 and -2 in pairs of read files" << std::endl;
             exit(0);
+        }
+
+        if (1==parsed_args.from_step and 0==result.count("1")) {
+            throw std::runtime_error("Please specify read files when starting from step 1");
         }
 
         if (result.count("output_dir")!=1 or result.count("prefix")!=1) {
