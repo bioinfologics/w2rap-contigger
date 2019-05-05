@@ -73,27 +73,6 @@ void step_7DV(HyperBasevector &hbv,
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    vec<int> llens;
-    GetLineLengths(hbv, lines, llens);
-    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-    vec<vec<covcount>> covs;
-    vec<int64_t> subsam_starts={0};
-    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
-
-    //TODO: maybe Report some similar to CN stats ???
-    //double cn_frac_good = CNIntegerFraction(hbv, covs);
-    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
@@ -138,29 +117,6 @@ void step_7(HyperBasevector &hbv,
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    // Find lines and write files.
-
-    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-      vec<int> llens;
-      GetLineLengths(hbv, lines, llens);
-      GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-      BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-      vec<vec<covcount>> covs;
-      vec<int64_t> subsam_starts={0};
-      ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
-
-      //TODO: maybe Report some similar to CN stats ???
-      //double cn_frac_good = CNIntegerFraction(hbv, covs);
-      //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-      //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
@@ -179,57 +135,6 @@ void step_7EXP(HyperBasevector &hbv,
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
     simplifyWithPathFinder(hbv,hbvinv,paths,pathsinv,5,false,true);
-    /*int MAX_SUPP_DEL = min_input_reads;//was 0
-    bool TAMP_EARLY_MIN = True;
-    int MIN_RATIO2 = 8;
-    int MAX_DEL2 = 200;
-    bool ANALYZE_BRANCHES_VERBOSE2 = False;
-    const String TRACE_SEQ = "";
-    bool DEGLOOP = True;
-    bool EXT_FINAL = True;
-    int EXT_FINAL_MODE = 1;
-    bool PULL_APART_VERBOSE = False;
-    const vec<int> PULL_APART_TRACE;
-    int DEGLOOP_MODE = 1;
-    float DEGLOOP_MIN_DIST = 2.5;
-    bool IMPROVE_PATHS = True;
-    bool IMPROVE_PATHS_LARGE = False;
-    bool FINAL_TINY = True;
-    bool UNWIND3 = True;
-
-    SimplifyEXP(out_dir, hbv, hbvinv, paths, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
-                ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
-                PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, False, False, False);//TODO: the last 3 Falses disable pathfinder
-
-    // For now, fix paths and write the and their inverse
-    for (size_t i = 0; i < paths.size(); i++) { //XXX TODO: change this int for uint 32
-        Bool bad = False;
-        for (size_t j = 0; j < paths[i].size(); j++)
-            if (paths[i][j] < 0) bad = True;
-        if (bad) paths[i].resize(0);
-    }
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    vec<int> llens;
-    GetLineLengths(hbv, lines, llens);
-    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-    vec<vec<covcount>> covs;
-    vec<int64_t> subsam_starts={0};
-    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
-
-    //TODO: maybe Report some similar to CN stats ???
-    //double cn_frac_good = CNIntegerFraction(hbv, covs);
-    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");*/
 
 }
 
@@ -501,15 +406,6 @@ int main( int argc,  char * argv[]) {
         }
         if ( 4==step ) kmercounts.reset(); //cleanup just in case
 
-        if ( 8==step ) {
-            if (lines.empty()) {
-                BinaryReader::readFile( args.out_dir + "/" + args.prefix + ".fin.lines", &lines );
-            }
-            if (npairs.empty()) {
-                BinaryReader::readFile( args.out_dir + "/" + args.prefix + ".fin.lines.npairs", &npairs );
-            }
-        }
-
         //steps that require a graph
         if (step_inputg_prefix[ostep]!="" and hbv.N()==0) {
             //Load hbv
@@ -646,20 +542,19 @@ int main( int argc,  char * argv[]) {
                 break;
             }
             case 8: {
-                int MIN_LINE = 5000;
-                int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
-
-                bool SCAFFOLD_VERBOSE = False;
-                bool GAP_CLEANUP = True;
 
                 VecULongVec pathsinv;
                 OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
                 invert(paths,pathsinv,hbv.EdgeObjectCount());
-
+                FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+                GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+                int MIN_LINE = 5000;
+                int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
+                bool SCAFFOLD_VERBOSE = False;
+                bool GAP_CLEANUP = True;
                 MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, args.out_dir, args.prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
 
                 // Carry out final analyses and write final assembly files.
-
                 vecbasevector G;
                 vec<int64_t> subsam_starts={0};
                 vec<String> subsam_names={"C"};
