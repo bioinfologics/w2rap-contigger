@@ -198,7 +198,7 @@ void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
           p = ps[0];
      }
 
-     //std::cout << Date() << ": " << improveds << " / " << paths.size( ) << " paths improved by rerouting" << std::endl;
+     OutputLog(2) << improveds << " / " << paths.size( ) << " paths improved by rerouting" << std::endl;
      LogTime( clock, "rerouting paths" );
      // std::cout << "\n" << Date( ) << ": done" << std::endl;
           }

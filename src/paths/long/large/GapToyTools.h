@@ -21,40 +21,6 @@
 #include <memory>
 #include <fstream>
 
-class PerfStatLogger
-{
-public:
-    static void init( String const& workDir )
-    { delete gInst.mpOS;
-      gInst.mpOS = new std::ofstream(workDir+"/statistics.txt"); }
-
-    template <class T>
-    static void log( String const& statName, T const& val, String const& gloss )
-    { if ( gInst.mpOS )
-       (*gInst.mpOS) << statName << '\t' << val << '\t' << gloss << std::endl; }
-
-private:
-    PerfStatLogger() : mpOS(nullptr) {}
-    ~PerfStatLogger() { delete mpOS; }
-
-    std::ofstream* mpOS;
-    static PerfStatLogger gInst;
-};
-
-class GapToyResults {
-     public:
-     GapToyResults( ) : nedges(0) { }
-     Bool Defined( ) const { return nedges > 0; }
-     int nedges;
-     double meanlen;
-     int rev;
-     int indels;
-     int gaps;
-     int subs;
-};
-
-
-
 
 void BasesToGraph( vecbasevector& bpathsx, const int K, HyperBasevector& hb );
 

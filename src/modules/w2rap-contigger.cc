@@ -134,7 +134,7 @@ void step_7EXP(HyperBasevector &hbv,
     VecULongVec pathsinv;
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
-    simplifyWithPathFinder(hbv,hbvinv,paths,pathsinv,5,false,true);
+    simplifyWithPathFinder(hbv,hbvinv,paths,pathsinv,bases,quals,5,false,true);
 
 }
 
