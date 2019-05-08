@@ -1131,11 +1131,12 @@ void PathFinder::solve_perfect_repeats(int max_size) {
                 if (std::find(p.second.begin(), p.second.end(), n2) != p.second.end()) p2n2+=p.first;
             }
             std::cout<<"   "<<p1n1<<" "<<p1n2<<" "<<p2n1<<" "<<p2n2<<std::endl;
-            if (p1n1>0 and p2n2>0 and p1n2==0 and p2n1==0) {
+            //TODO: review thresholds here!
+            if (p1n1>=1 and p2n2>=1 and p1n2<1 and p2n1<1) {
                 std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n1<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n2<<std::endl;
                 sol_paths.push_back({p1,(uint64_t)repeat_e,n1});
             }
-            if (p1n2>0 and p2n1>0 and p1n1==0 and p2n2==0) {
+            if (p1n2>=1 and p2n1>=1 and p1n1<1 and p2n2<1) {
                 std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n2<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n1<<std::endl;
                 sol_paths.push_back({p1,(uint64_t)repeat_e,n2});
             }
@@ -1208,8 +1209,12 @@ void simplifyWithPathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& p
 
     pf1.improve_paths();
     pf1.solve_perfect_repeats(1000);
-    //RemoveUnneededVertices2(hbv, inv, paths);
     pf1.improve_paths();
+    //pf1.solve_perfect_repeats(1000);
+    //pf1.improve_paths();
+    pf1.unroll_loops(0,0,0);
+    pf1.improve_paths();
+    //RemoveUnneededVertices2(hbv, inv, paths);
     //then unroll loops
     // new heuristic: is the loop in the range of reads going full-through? if yes, check first for full through without collapsing.
     //  if not, collapse and check for looping end? if R is too big, it may be impossible, probably best to leave in peace

@@ -539,6 +539,11 @@ int main( int argc,  char * argv[]) {
                     step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
                 else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
                 if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
+
+                vecbasevector G;
+                vec<int64_t> subsam_starts={0};
+                vec<String> subsam_names={"C"};
+                FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, args.out_dir, args.prefix+ ".contig_lines", MAX_CELL_PATHS, MAX_DEPTH, G);
                 break;
             }
             case 8: {
@@ -549,8 +554,8 @@ int main( int argc,  char * argv[]) {
                 FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
                 GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
                 int MIN_LINE = 5000;
-                int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
-                bool SCAFFOLD_VERBOSE = False;
+                int MIN_LINK_COUNT = 5; //XXX TODO: this variable is the same as -w in soap?? -> it is links, but they're doubled
+                bool SCAFFOLD_VERBOSE = True;
                 bool GAP_CLEANUP = True;
                 MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, args.out_dir, args.prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
 
@@ -558,7 +563,7 @@ int main( int argc,  char * argv[]) {
                 vecbasevector G;
                 vec<int64_t> subsam_starts={0};
                 vec<String> subsam_names={"C"};
-                FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, args.out_dir, args.prefix+ ".assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
+                FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, args.out_dir, args.prefix+ ".scaffold_lines", MAX_CELL_PATHS, MAX_DEPTH, G);
                 if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
