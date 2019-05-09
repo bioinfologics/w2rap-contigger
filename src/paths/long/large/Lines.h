@@ -172,7 +172,7 @@ void SortLines( vec<vec<vec<vec<int>>>>& lines, const HyperBasevector& hb,
      const vec<int>& inv );
 
 void DumpLineFiles( const vec<vec<vec<vec<int>>>>& lines, const HyperBasevector& hb,
-     const vec<int>& inv, const ReadPathVec& paths, const String& dir, const String& prefix );
+     const vec<int>& inv, const ReadPathVec& paths, const String& dir, const String& prefix, const bool write_edges_file );
 
 // Split a line into contigs.
 

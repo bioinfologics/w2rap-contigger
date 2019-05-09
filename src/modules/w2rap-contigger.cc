@@ -200,7 +200,7 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
                 ("from_step","starting step (default: 1)",cxxopts::value(parsed_args.from_step))
                 ("to_step","ending step (default: 8)",cxxopts::value(parsed_args.to_step))
                 ("dump_all","dump all intermediate graphs and status files",cxxopts::value(parsed_args.dump_all))
-                ("s,spectra-cn","write a spectra-cn of the graph on each step", cxxopts::value(parsed_args.output_spectracn))
+                ("s,spectra-cn","write a spectra-cn of the graphs and lines", cxxopts::value(parsed_args.output_spectracn))
                 ("h,help","show help message")
                 ;
 
@@ -308,30 +308,30 @@ std::string step_names[8]={
         "Small K graph construction",
         "Large K graph construction",
         "Large K graph cleanup",
-        "Local Assembly",
+        "Local Assemblies and Patching",
         "Final graph cleanup",
-        "Paired-end scaffolding"
+        "Scaffolding"
 };
 std::string step_outputg_prefix[8]={
         "",
         "",
-        "small_K",
-        "large_K",
-        "large_K_clean",
-        "large_K_patched",
-        "contigs",
-        "assembly"
+        "A_small_K",
+        "B_large_K",
+        "C_large_K_clean",
+        "D_large_K_patched",
+        "E_contigs",
+        ""
 };
 
 std::string step_inputg_prefix[8]={
         "",
         "",
         "",
-        "small_K",
-        "large_K",
-        "large_K_clean",
-        "large_K_patched",
-        "contigs"
+        "A_small_K",
+        "B_large_K",
+        "C_large_K_clean",
+        "D_large_K_patched",
+        "E_contigs",
 };
 
 int main( int argc,  char * argv[]) {
@@ -469,8 +469,7 @@ int main( int argc,  char * argv[]) {
                 OutputLog(2) << "computing graph involution and fragment sizes" << std::endl;
                 hbvinv.clear();
                 hbv.Involution(hbvinv);
-                FragDist(hbv, hbvinv, paths, args.out_dir + "/small_K.frags.dist");
-                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
+                FragDist(hbv, hbvinv, paths, args.out_dir  + "/" + args.prefix + ".A_small_K.frags.dist");
                 break;
             }
             //===== STEP 4 (small_k graph -> large_k graph) =====
@@ -496,8 +495,6 @@ int main( int argc,  char * argv[]) {
                 }
                 hbvinv.clear();
                 hbv.Involution(hbvinv);
-                FragDist(hbv, hbvinv, paths, args.out_dir + "/large_K.frags.dist");
-                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 5 (large_k graph cleaning) =====
@@ -506,7 +503,6 @@ int main( int argc,  char * argv[]) {
                 int CLEAN_200_VERBOSITY = 0;
                 int CLEAN_200V = 3;
                 Clean200x(hbv, hbvinv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, args.min_size);
-                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 6 (local assemblies) =====
@@ -529,7 +525,6 @@ int main( int argc,  char * argv[]) {
 
                 AddNewStuff(new_stuff, hbv, hbvinv, paths, bases, quals, MIN_GAIN, EXT_MODE);
                 PartnersToEnds(hbv, paths, bases, quals);
-                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             //===== STEP 7 (repeat resolution, 3 fairly complex approaches, keeping this in separated functions) =====
@@ -538,12 +533,7 @@ int main( int argc,  char * argv[]) {
                 else if (args.solve_complex_repeats)
                     step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
                 else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
-                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
 
-                vecbasevector G;
-                vec<int64_t> subsam_starts={0};
-                vec<String> subsam_names={"C"};
-                FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, args.out_dir, args.prefix+ ".contig_lines", MAX_CELL_PATHS, MAX_DEPTH, G);
                 break;
             }
             case 8: {
@@ -555,16 +545,9 @@ int main( int argc,  char * argv[]) {
                 GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
                 int MIN_LINE = 5000;
                 int MIN_LINK_COUNT = 5; //XXX TODO: this variable is the same as -w in soap?? -> it is links, but they're doubled
-                bool SCAFFOLD_VERBOSE = True;
+                bool SCAFFOLD_VERBOSE = False;
                 bool GAP_CLEANUP = True;
                 MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, args.out_dir, args.prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
-
-                // Carry out final analyses and write final assembly files.
-                vecbasevector G;
-                vec<int64_t> subsam_starts={0};
-                vec<String> subsam_names={"C"};
-                FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, args.out_dir, args.prefix+ ".scaffold_lines", MAX_CELL_PATHS, MAX_DEPTH, G);
-                if (args.output_spectracn) SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
                 break;
             }
             default:
@@ -597,6 +580,32 @@ int main( int argc,  char * argv[]) {
                     GFADump(std::string(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv, paths, 0, 0, false);
                     OutputLog(2) << "DONE!" << std::endl;
                 }
+                if (args.output_spectracn){
+                    OutputLog(2) << "Computing graph freqs..." << std::endl;
+                    SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
+                    OutputLog(2) << "DONE!" << std::endl;
+                }
+            }
+            if (step==7) {
+                OutputLog(2) << "Dumping contig_lines..." << std::endl;
+                FinalFiles(hbv, hbvinv, paths, args.out_dir, args.prefix+ ".contig_lines", MAX_CELL_PATHS, MAX_DEPTH);
+                OutputLog(2) << "DONE!" << std::endl;
+                if (args.output_spectracn){
+                    OutputLog(2) << "Computing contig_lines freqs..." << std::endl;
+                    SpectraCN::DumpSpectraCN(args.out_dir+"/"+args.prefix+".contig_lines.fasta", args.out_dir,args.prefix+".contig_lines");
+                    OutputLog(2) << "DONE!" << std::endl;
+                }
+            }
+            if (step==8) {
+                OutputLog(2) << "Dumping scaffold_lines..." << std::endl;
+                FinalFiles(hbv, hbvinv, paths, args.out_dir, args.prefix + ".scaffold_lines", MAX_CELL_PATHS, MAX_DEPTH, false);
+                OutputLog(2) << "DONE!" << std::endl;
+                //TODO: Broken, Luis to FIX
+//                if (args.output_spectracn){
+//                    OutputLog(2) << "Computing scaffold_lines freqs..." << std::endl;
+//                    SpectraCN::DumpSpectraCN(args.out_dir+"/"+args.prefix+".scaffold_lines.fasta", args.out_dir,args.prefix+".contig_lines");
+//                    OutputLog(2) << "DONE!" << std::endl;
+//                }
             }
 
         }

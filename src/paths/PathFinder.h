@@ -52,7 +52,7 @@ public:
 
     // Graph-related methods
     std::vector<std::vector<uint64_t>> AllPathsFromTo(std::vector<uint64_t> in_edges, std::vector<uint64_t> out_edges, uint64_t max_length);
-
+    void separate_solutions(std::vector<std::vector<uint64_t >> sol_paths);
 
     //ReadPath-related methods
 

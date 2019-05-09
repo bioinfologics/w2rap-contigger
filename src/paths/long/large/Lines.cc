@@ -679,7 +679,7 @@ void SortLines( vec<vec<vec<vec<int>>>>& lines, const HyperBasevector& hb,
      PermuteVec( lines, idsx );    }
 
 void DumpLineFiles(const vec<vec<vec<vec<int>>>> &lines, const HyperBasevector &hb,
-                   const vec<int> &inv, const ReadPathVec &paths, const String &dir, const String &prefix) {
+                   const vec<int> &inv, const ReadPathVec &paths, const String &dir, const String &prefix, const bool write_edges_file) {
     const int gap = 100;
     const int K = hb.K();
 
@@ -779,24 +779,25 @@ void DumpLineFiles(const vec<vec<vec<vec<int>>>> &lines, const HyperBasevector &
         if (circular1 || circular2) header += " circular";
         efasta(b2).Print(out2, header);
     }
-
-    Ofstream(out3, dir + "/" + prefix + ".edges");
-    for (int i = 0; i < lines.isize(); i++) {
-        const vec<vec<vec<int>>> &L = lines[i];
-        out3 << "line_" << i + 1 << ": ";
-        for (int j = 0; j < L.isize(); j++) {
-            if (j > 0) out3 << ",";
-            if (j % 2 == 0) out3 << L[j][0][0];
-            else {
-                out3 << "{";
-                for (int k = 0; k < L[j].isize(); k++) {
-                    if (k > 0) out3 << ",";
-                    out3 << "{" << printSeq(L[j][k]) << "}";
+    if (write_edges_file) {
+        Ofstream(out3, dir + "/" + prefix + ".edges");
+        for (int i = 0; i < lines.isize(); i++) {
+            const vec<vec<vec<int>>> &L = lines[i];
+            out3 << "line_" << i + 1 << ": ";
+            for (int j = 0; j < L.isize(); j++) {
+                if (j > 0) out3 << ",";
+                if (j % 2 == 0) out3 << L[j][0][0];
+                else {
+                    out3 << "{";
+                    for (int k = 0; k < L[j].isize(); k++) {
+                        if (k > 0) out3 << ",";
+                        out3 << "{" << printSeq(L[j][k]) << "}";
+                    }
+                    out3 << "}";
                 }
-                out3 << "}";
             }
+            out3 << "\n";
         }
-        out3 << "\n";
     }
 }
 
