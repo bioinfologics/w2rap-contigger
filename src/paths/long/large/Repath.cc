@@ -47,8 +47,25 @@ void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
     ///////////////////////////////////////////////////////////////////////////////
     // Generate the 'places' vector
     ///////////////////////////////////////////////////////////////////////////////
-
-     const int batch = 10000;
+    vec<int> to_right,to_left;
+    hb.ToRight(to_right);
+    hb.ToLeft(to_left);
+    OutputLog(2) <<"checking/fizing paths"<<std::endl;
+    auto multi=0,fixed=0;
+    for (auto pi=0;pi<paths.size();++pi) {
+        auto &p=paths[pi];
+        if (p.size()<2) continue;
+        ++multi;
+        for (auto i=1;i<p.size();++i){
+            if (to_right[p[i-1]]!=to_left[p[i]]) {
+                //std::cout<<"Path "<<pi<<" has a false connection "<<p[i-1]<<" -> "<<p[i]<<std::endl;
+                p.resize(i-1);
+                ++fixed;
+            }
+        }
+    }
+    OutputLog(2) <<"checking/fixing paths done, "<<fixed<<"/"<<multi<<" paths with multiple edges fixed"<<std::endl;
+     const int batch = 10000; //I can see places coming from here that do not make sense (reads that "come and go")
      #pragma omp parallel for
      for (int64_t m = 0; m < (int64_t) paths.size(); m += batch) {
           std::vector<std::vector<int> > placesm;
