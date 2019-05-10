@@ -57,6 +57,17 @@ public:
 
 
     static void DumpSpectraCN(const std::string &fasta_path, const std::string &dir, const std::string &name);
+
+    static void generateAssemblyKmers(const HyperBasevector &hb, const vec<int> &inv, std::shared_ptr<KmerList> &graph_kmer_freqs);
+
+    static void
+    writeHistogram(const String &dir, const String &name, const std::map<std::vector<uint64_t>, uint64_t> &totals_by_freq);
+
+    static std::map<std::vector< uint64_t>, uint64_t>
+    calculateHistogram(const std::string &dir, const std::shared_ptr<KmerList> &graph_kmer_freqs);
+
+    static std::shared_ptr<KmerList> &
+    generateFastaKmers(const std::string &fasta_path, std::shared_ptr<KmerList> &local_kmer_list);
 };
 
 
