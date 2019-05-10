@@ -376,7 +376,6 @@ int main( int argc,  char * argv[]) {
 
     vecbvec bases;
     VecPQVec quals;
-    std::shared_ptr<KmerList> kmercounts=std::make_shared<KmerList>();
     HyperBasevector hbv;
     vec<int> hbvinv;
     ReadPathVec paths;
@@ -400,12 +399,6 @@ int main( int argc,  char * argv[]) {
             }
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
         }
-        if ( 3==step and 0==kmercounts->size){
-            OutputLog(2) << "Loading kmer counts..." << std::endl;
-            kmercounts->load(args.out_dir+"/raw_kmers.data");
-            OutputLog(2) << "kmer count data loaded" << std::endl << std::endl;
-        }
-        if ( 4==step ) kmercounts.reset(); //cleanup just in case
 
         //steps that require a graph
         if (step_inputg_prefix[ostep]!="" and hbv.N()==0) {
@@ -454,19 +447,19 @@ int main( int argc,  char * argv[]) {
                 OutputLog(2) << "Unloading quals" << std::endl;
                 quals.clear();
                 quals.shrink_to_fit();
-                kmercounts = buildKMerCount(bases, rlen, args.minFreq, args.out_dir, args.tmp_dir, args.disk_batches,
+//                std::shared_ptr<KmerList> kmercounts=std::make_shared<KmerList>();
+                auto kmercounts = buildKMerCount(bases, rlen, args.minFreq, args.out_dir, args.tmp_dir, args.disk_batches,
                                             args.count_batch_size);
                 kmercounts->dump(args.out_dir + "/raw_kmers.data");
+                kmercounts.reset();
                 OutputLog(2) << "Kmer counting done and dumped with " << kmercounts->size << " kmers" << std::endl;
                 break;
             }
             //===== STEP 3 (kmers -> small_k graph) =====
             case 3: {
                 bool FILL_JOIN = False;
-                buildReadQGraph(bases, quals, kmercounts, FILL_JOIN, FILL_JOIN, args.minFreq, .75, 0, &hbv, &paths,
+                buildReadQGraph(bases, quals, args.out_dir + "/raw_kmers.data", FILL_JOIN, FILL_JOIN, args.minFreq, .75, 0, &hbv, &paths,
                                 args.small_K);
-
-                kmercounts.reset();
                 OutputLog(2) << "computing graph involution and fragment sizes" << std::endl;
                 hbvinv.clear();
                 hbv.Involution(hbvinv);

@@ -1269,25 +1269,36 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename) {
     return kmercounts;
 }
 
-void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_ptr<KmerList> kmerlist,
+void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::string kmer_file_path,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
                       ReadPathVec* pPaths, int _K)
 {
-    OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
-    uint64_t kc=0;
-    for (auto i=0;i<kmerlist->size;++i) if (kmerlist->kmers[i].count>=minFreq) ++kc;
-    OutputLog(2) << kc << "/" << kmerlist->size <<" kmers with freq >= "<< minFreq << std::endl;
-    BRQ_Dict * pDict = new BRQ_Dict(kc);
-    OutputLog(2) << "Dict created, populating..." << std::endl;
-    for (auto i=0;i<kmerlist->size;++i) {
-        if (kmerlist->kmers[i].count>=minFreq) {
-            KMerNodeFreq knf(kmerlist->kmers[i]);
-            pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
-        }
+
+
+    uint64_t numKmers(0),usedKmers(0);
+    std::FILE* kmers_from_disk;
+    kmers_from_disk = std::fopen(std::string(kmer_file_path).data(), "rb");
+    if (!kmers_from_disk) {
+        std::perror("Failed to open raw_kmers.data, ");
     }
-    OutputLog(2) << "Dict populated, freeing kmer counts" << std::endl;
-    kmerlist->clear();
+    OutputLog(2) << "Creating dict." << std::endl;
+    BRQ_Dict * pDict = new BRQ_Dict(numKmers);
+    OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
+    std::fread(&numKmers, sizeof(numKmers), 1, kmers_from_disk);
+    KMerNodeFreq_s reads_kmer;
+    //while next(a) or next(b)
+    for (auto read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
+         0<read_bytes;
+         read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk)) {
+        if (reads_kmer.count>=minFreq) {
+            KMerNodeFreq knf(reads_kmer);
+            pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
+            ++usedKmers;
+        }
+
+    }
+    OutputLog(2) << usedKmers << "/" << numKmers <<" kmers with freq >= "<< minFreq << std::endl;
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
