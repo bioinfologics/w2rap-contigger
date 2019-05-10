@@ -189,6 +189,7 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
                 ("p,prefix","output prefix", cxxopts::value(parsed_args.prefix))
                 ("tmp_dir","temporary files dir (default: output_dir)", cxxopts::value(parsed_args.tmp_dir))
                 ("t,threads","parallel threads (default: 4)", cxxopts::value(parsed_args.threads))
+                ("d,disk_batches","disk batches for kmer counting (default: 4)", cxxopts::value(parsed_args.disk_batches))
                 ("max_memory","memory soft limit, in GB (default: 10)",cxxopts::value(parsed_args.max_mem))
                 ("min_freq","minimum frequency for k-mers on first DBG",cxxopts::value(parsed_args.minFreq))
                 ("min_qual","quality to trim read ends on first DBG (default: 0 - don't trim)",cxxopts::value(parsed_args.minQual))
