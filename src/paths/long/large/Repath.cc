@@ -403,8 +403,9 @@ void translate_paths(ReadPathVec &paths2,
     OutputLog(2) << "translating paths" << std::endl;
     vecKmerPath hpaths;
     vec<big_tagged_rpint> hpathsdb;
+    hpaths.reserve(h2.EdgeObjectCount());
     for (int64_t e = 0; e < h2.EdgeObjectCount(); e++)
-        hpaths.push_back_reserve(h2.EdgeObject(e));
+        hpaths.push_back(h2.EdgeObject(e));
     CreateDatabase(hpaths, hpathsdb);
 
 
