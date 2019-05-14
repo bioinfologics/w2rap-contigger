@@ -528,9 +528,7 @@ int main( int argc,  char * argv[]) {
             //===== STEP 5 (large_k graph cleaning) =====
             case 5: {
                 OutputLog(2) << "cleaning graph" << std::endl;
-                int CLEAN_200_VERBOSITY = 0;
-                int CLEAN_200V = 3;
-                Clean200x(hbv, hbvinv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, args.min_size);
+                Clean200x(hbv, hbvinv, paths, bases, quals, args.min_size);
                 break;
             }
             //===== STEP 6 (local assemblies) =====
