@@ -37,6 +37,7 @@
 #include <omp.h>
 #include <paths/long/LargeKDispatcher.h>
 #include <SpectraCn.hpp>
+#include <paths/long/LongReadsToPaths.h>
 
 // Dummy defines, this should come from CMakeLists.txt
 #ifndef GIT_COMMIT_HASH
@@ -388,7 +389,7 @@ int main( int argc,  char * argv[]) {
         int ostep = step-1;
 
         //===== pre-step: Make sure all data is there =====
-        if ( (2==step or 3==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
+        if (( 5==step or 6==step or 7==step ) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
                 OutputLog(2) << "Loading bases..." << std::endl;
                 bases.ReadAll(args.out_dir + "/pe_data.fastb");
@@ -440,25 +441,32 @@ int main( int argc,  char * argv[]) {
             }
             //===== STEP 2 (kmer counting) =====
             case 2: {
-                if (args.minQual > 0)
-                    OutputLog(2) << "Trimming " << quals.size() << " reads at quality >= " << args.minQual << std::endl;
+                if (quals.size()==0) {
+                    OutputLog(2) << "Loading quals..." << std::endl;
+                    load_quals(quals, args.out_dir + "/pe_data.cqual");
+                }
+                OutputLog(2) << "Trimming " << quals.size() << " reads at quality >= " << args.minQual << std::endl;
                 vec<uint16_t> rlen;
                 create_read_lengths(rlen, quals, args.minQual);
                 OutputLog(2) << "Unloading quals" << std::endl;
                 quals.clear();
                 quals.shrink_to_fit();
 //                std::shared_ptr<KmerList> kmercounts=std::make_shared<KmerList>();
+                if (bases.size()==0) {
+                    OutputLog(2) << "Loading bases..." << std::endl;
+                    bases.ReadAll(args.out_dir + "/pe_data.fastb");
+                }
                 auto kmercounts = buildKMerCount(bases, rlen, args.minFreq, args.out_dir, args.tmp_dir, args.disk_batches,
                                             args.count_batch_size);
                 kmercounts->dump(args.out_dir + "/raw_kmers.data");
-                kmercounts.reset();
+                bases.clear();
                 OutputLog(2) << "Kmer counting done and dumped with " << kmercounts->size << " kmers" << std::endl;
                 break;
             }
             //===== STEP 3 (kmers -> small_k graph) =====
             case 3: {
                 bool FILL_JOIN = False;
-                buildReadQGraph(bases, quals, args.out_dir + "/raw_kmers.data", FILL_JOIN, FILL_JOIN, args.minFreq, .75, 0, &hbv, &paths,
+                buildReadQGraph(args.out_dir, FILL_JOIN, FILL_JOIN, args.minFreq, .75, 0, &hbv, &paths,
                                 args.small_K);
                 OutputLog(2) << "computing graph involution and fragment sizes" << std::endl;
                 hbvinv.clear();
@@ -468,27 +476,53 @@ int main( int argc,  char * argv[]) {
             }
             //===== STEP 4 (small_k graph -> large_k graph) =====
             case 4: {
-                //Swap the old graph and such to variables private to this context
-                ReadPathVec old_paths;
-                std::swap(old_paths, paths);
-                paths.resize(old_paths.size());
-                HyperBasevector old_hbv;
-                std::swap(hbv, old_hbv);
-                vec<int> old_hbvinv;
-                std::swap(hbvinv, old_hbvinv);
+                //This is handled in 3 parts now: produce supported sequences from places, make graph, translate paths
+                //Paths are loaded and unloaded to ease memory requirements
 
-                if (!args.paired_repath) {
-                    vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
-                    //Produce the new graph and such in the argument variables
-                    RepathInMemory(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), args.large_K, hbv, paths,
-                                   True,
-                                   True, False);
-                } else {
-                    RepathInMemoryEXP(old_hbv, old_hbvinv, old_paths, args.large_K, hbv, paths);
-
+                // a - produce supported sequences from places (TODO: make this stream the paths?)
+                vecbasevector supseqs;
+                vec<vec<int>> places;
+                vec<int> left_trunc,right_trunc;
+                get_place_sequences(supseqs, places, left_trunc, right_trunc, hbv, hbvinv, paths, args.large_K, false);//last false disables path extension
+                // b - construct graph
+                //clear memory (we need it!)
+                paths.clear(); paths.shrink_to_fit();
+                hbvinv.clear();hbvinv.shrink_to_fit();
+                {//Hacky way to clear the hbv, every bit of memory counts.
+                    HyperBasevector old_hbv;
+                    std::swap(hbv,old_hbv);
                 }
-                hbvinv.clear();
+
+
+                vecKmerPath xpaths;
+                HyperKmerPath h2;
+                OutputLog(2) << "building new graph from places" << std::endl; //Here we should ONLY have the "all" vector in memory. and the hbv.
+                unsigned const COVERAGE = 2u;
+                LongReadsToPaths(supseqs, args.large_K, COVERAGE, &hbv, &h2, &xpaths);
+                Destroy(supseqs);
+                OutputLog(4) <<"Creating graph involution..." << std::endl;
                 hbv.Involution(hbvinv);
+
+
+
+                // c - translate paths
+                //first reload the paths, as we'll need them for translation
+                {
+                    HyperBasevector old_graph;
+                    OutputLog(2) << "Loading old graph..." << std::endl;
+                    BinaryReader::readFile(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".hbv",&old_graph);
+                    auto old_graph_K=old_graph.K();
+                    std::vector<int> old_edge_sizes(old_graph.Edges().size());
+                    for (auto i=0;i<old_edge_sizes.size();++i) old_edge_sizes[i]=old_graph.Edges()[i].isize();
+                    vec<int> old_inv;
+                    old_graph.Involution(old_inv);
+                    OutputLog(2) << "Loading old paths..." << std::endl;
+                    ReadPathVec old_paths;
+                    LoadReadPathVec(old_paths, (args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".paths").c_str());
+                    paths.clear();paths.resize(old_paths.size());
+                    translate_paths(paths,hbv, hbvinv, xpaths, h2, old_graph.K(), old_edge_sizes, old_paths, old_inv,
+                                         places, left_trunc,right_trunc);
+                }
                 break;
             }
             //===== STEP 5 (large_k graph cleaning) =====

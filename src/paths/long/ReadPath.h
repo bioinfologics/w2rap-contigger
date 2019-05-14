@@ -55,6 +55,7 @@ public:
 private:
     int mOffset;
 };
+
 typedef std::vector<ReadPath> ReadPathVec;
 
 void WriteReadPathVec(const ReadPathVec &rpv, const char * filename);

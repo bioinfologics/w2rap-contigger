@@ -124,7 +124,7 @@ public:
 
 void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual);
 
-void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::string kmer_file_path,
+void buildReadQGraph( std::string out_dir,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
                       ReadPathVec* pPaths, int _K);
