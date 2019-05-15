@@ -1366,6 +1366,23 @@ void buildReadQGraph( std::string out_dir,
         }
         improve_read_paths_OMP(reads,quals,*pHBV,*pPaths);
         OutputLog(2) << "reads pathed"<<std::endl;
+        vec<int> to_right, to_left;
+        pHBV->ToRight(to_right);
+        pHBV->ToLeft(to_left);
+        auto multi = 0, fixed = 0;
+        for (auto pi = 0; pi < pPaths->size(); ++pi) {
+            auto &p = (*pPaths)[pi];
+            if (p.size() < 2) continue;
+            ++multi;
+            for (auto i = 1; i < p.size(); ++i) {
+                if (to_right[p[i - 1]] != to_left[p[i]]) {
+                    //std::cout<<"Path "<<pi<<" has a false connection "<<p[i-1]<<" -> "<<p[i]<<std::endl;
+                    p.resize(i - 1);
+                    ++fixed;
+                }
+            }
+        }
+        OutputLog(2) << "checking/fixing paths done, " << fixed << "/" << multi << " paths with multiple edges fixed" << std::endl;
     }
 
 }

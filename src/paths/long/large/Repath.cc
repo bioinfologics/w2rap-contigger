@@ -44,23 +44,6 @@ vec<vec<int> > get_places(const HyperBasevector &hb,
     places.reserve(paths.size());
 
     //TODO: same path -> same place, why don't we sort and unique paths then? before complicating all of this code!
-    vec<int> to_right, to_left;
-    hb.ToRight(to_right);
-    hb.ToLeft(to_left);
-    auto multi = 0, fixed = 0;
-    for (auto pi = 0; pi < paths.size(); ++pi) {
-        auto &p = paths[pi];
-        if (p.size() < 2) continue;
-        ++multi;
-        for (auto i = 1; i < p.size(); ++i) {
-            if (to_right[p[i - 1]] != to_left[p[i]]) {
-                //std::cout<<"Path "<<pi<<" has a false connection "<<p[i-1]<<" -> "<<p[i]<<std::endl;
-                p.resize(i - 1);
-                ++fixed;
-            }
-        }
-    }
-    OutputLog(2) << "checking/fixing paths done, " << fixed << "/" << multi << " paths with multiple edges fixed" << std::endl;
 
     ///////////////////////////////////////////////////////////////////////////////
     // Generate the 'places' vector
@@ -106,6 +89,9 @@ vec<vec<int> > get_places(const HyperBasevector &hb,
     if (EXTEND_PATHS) // ALWAYS FALSE!
     {
         OutputLog(2) << "begin extending paths" << std::endl;
+        vec<int> to_right, to_left;
+        hb.ToRight(to_right);
+        hb.ToLeft(to_left);
         std::vector<std::vector<int>> eplaces;
 
         for (auto i = 0; i < places.size(); i++) {
