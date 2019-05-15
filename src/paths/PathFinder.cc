@@ -994,7 +994,7 @@ std::vector<int64_t> PathFinder::get_full_paired_path(int r1id, bool collapse_ov
 std::vector<std::pair<uint64_t,std::vector<int64_t>>> PathFinder::collect_paths_for_edge(int e,bool collect_inverse, bool collapse_overlaps) {
     std::vector<std::pair<uint64_t,std::vector<int64_t>>> counted_paths;
     std::vector<std::vector<int64_t>> paths;
-    std::cout<<"Collecting paths for edge "<<e<<" (inv="<<mInv[e]<<")"<<std::endl;
+    //std::cout<<"Collecting paths for edge "<<e<<" (inv="<<mInv[e]<<")"<<std::endl;
     std::set<uint64_t> used_paths;
     //process paths for this edge first
     for (auto &pid:mEdgeToPathIds[e]){
@@ -1045,7 +1045,11 @@ std::vector<std::pair<uint64_t,std::vector<int64_t>>> PathFinder::collect_paths_
 }
 
 void PathFinder::unroll_loops(int repeat_size, int loop_size, int side_size) {
+    std::vector<std::vector<uint64_t >> sol_paths;
     for (auto loop_e=1;loop_e<next_edges.size();++loop_e){
+
+        if (loop_e>mInv[loop_e]) continue;
+
         //if (mHBV.EdgeObject(loop_e).size()>loop_size) continue;
         if (prev_edges[loop_e].size()!=1 or
             next_edges[loop_e].size()!=1 or
@@ -1061,13 +1065,38 @@ void PathFinder::unroll_loops(int repeat_size, int loop_size, int side_size) {
         auto next_e=(next_edges[repeat_e][0]==loop_e ? next_edges[repeat_e][1]:next_edges[repeat_e][0]);
 
         if (prev_e==next_e or prev_e==mInv[next_e]) break;
+        if (prev_edges[next_e].size()!=1 or
+            next_edges[prev_e].size()!=1) continue;
 
-        std::cout<<"loop detected in edge"<<loop_e<<",edge"<<repeat_e<<std::endl;
+        //std::cout<<"loop detected in edge"<<loop_e<<", with repeat on edge"<<repeat_e<<std::endl;
 
+        //is there a connection across?
+        auto prev_paths=collect_paths_for_edge(prev_e);
+        auto loop_paths=collect_paths_for_edge(loop_e,true,false);
+        uint64_t bridges=0,entries=0,exits=0,loops=0;
+        for (auto pp:prev_paths){
+            if (std::find(pp.second.begin(),pp.second.end(), next_e)!=pp.second.end()) bridges+=pp.first;
+
+        }
+        for (auto lp:loop_paths){
+            if (std::find(lp.second.begin(),lp.second.end(), prev_e)!=lp.second.end()) entries+=lp.first;
+            if (std::find(lp.second.begin(),lp.second.end(), next_e)!=lp.second.end()) exits+=lp.first;
+            if (std::count(lp.second.begin(),lp.second.end(), loop_e)>1) loops+=lp.first;
+        }
+        //std::cout<<"    paths: "<<bridges<<" bridges,  "<<entries<<" entries,  "<<loops<<" loops,  "<<exits<<" exits"<<std::endl;
+
+        if (loops==0 and entries>3 and exits>3)  {
+            sol_paths.push_back({prev_e,repeat_e,loop_e,repeat_e,next_e});
+            //std::cout << "    SOLVED!"<<std::endl;
+        }
+        //watch out for
         //3) size constraints: prev_e and next_e must be at least 1Kbp
         //if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
         //if (loop_e==1170) std::cout<<"fourth check passed!"<<std::endl;
     }
+    separate_solutions(sol_paths);
+
+
 }
 
 void PathFinder::solve_perfect_repeats(int max_size) {
@@ -1108,7 +1137,7 @@ void PathFinder::solve_perfect_repeats(int max_size) {
         }
         if (seen_edges.size()!=4*next_edges[repeat_e].size()+2) continue;
 
-        std::cout << std::endl << "Perfect repeat x" << prev_edges[repeat_e].size() << " ,edge" << repeat_e << std::endl;
+        //std::cout << std::endl << "Perfect repeat x" << prev_edges[repeat_e].size() << " ,edge" << repeat_e << std::endl;
 //        for (auto e:prev_edges[repeat_e]) std::cout<<" "<<e;
 //        std::cout<<" -- ";
 //        for (auto e:next_edges[repeat_e]) std::cout<<" "<<e;
@@ -1130,13 +1159,14 @@ void PathFinder::solve_perfect_repeats(int max_size) {
                 if (std::find(p.second.begin(), p.second.end(), n1) != p.second.end()) p2n1+=p.first;
                 if (std::find(p.second.begin(), p.second.end(), n2) != p.second.end()) p2n2+=p.first;
             }
-            std::cout<<"   "<<p1n1<<" "<<p1n2<<" "<<p2n1<<" "<<p2n2<<std::endl;
-            if (p1n1>0 and p2n2>0 and p1n2==0 and p2n1==0) {
-                std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n1<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n2<<std::endl;
+            //std::cout<<"   "<<p1n1<<" "<<p1n2<<" "<<p2n1<<" "<<p2n2<<std::endl;
+            //TODO: review thresholds here!
+            if (p1n1>=1 and p2n2>=1 and p1n2<1 and p2n1<1) {
+                //std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n1<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n2<<std::endl;
                 sol_paths.push_back({p1,(uint64_t)repeat_e,n1});
             }
-            if (p1n2>0 and p2n1>0 and p1n1==0 and p2n2==0) {
-                std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n2<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n1<<std::endl;
+            if (p1n2>=1 and p2n1>=1 and p1n1<1 and p2n2<1) {
+                //std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n2<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n1<<std::endl;
                 sol_paths.push_back({p1,(uint64_t)repeat_e,n2});
             }
             //Just separate one, the inverse will be separated the same
@@ -1147,7 +1177,15 @@ void PathFinder::solve_perfect_repeats(int max_size) {
         //if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
         //if (loop_e==1170) std::cout<<"fourth check passed!"<<std::endl;
     }
-    //Separation can be done as in
+    separate_solutions(sol_paths);
+}
+
+void PathFinder::improve_paths() {
+    ReroutePaths(mHBV,mInv,mPaths,mBases,mQuals);
+    invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
+}
+
+void PathFinder::separate_solutions(std::vector<std::vector<uint64_t >> sol_paths){
     std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
     for (auto p:sol_paths){
         auto oen=separate_path(p);
@@ -1164,11 +1202,6 @@ void PathFinder::solve_perfect_repeats(int max_size) {
     Cleanup( mHBV, mInv, mPaths );
     invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
     update_prev_next();
-}
-
-void PathFinder::improve_paths() {
-    ReroutePaths(mHBV,mInv,mPaths,mBases,mQuals);
-    invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
 }
 
 void simplifyWithPathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, const vecbasevector& bases, const VecPQVec& quals, int min_reads, bool verbose, bool dump_intermediate_gfas){
@@ -1208,8 +1241,12 @@ void simplifyWithPathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& p
 
     pf1.improve_paths();
     pf1.solve_perfect_repeats(1000);
-    //RemoveUnneededVertices2(hbv, inv, paths);
     pf1.improve_paths();
+    //pf1.solve_perfect_repeats(1000);
+    //pf1.improve_paths();
+    pf1.unroll_loops(0,0,0);
+    pf1.improve_paths();
+    //RemoveUnneededVertices2(hbv, inv, paths);
     //then unroll loops
     // new heuristic: is the loop in the range of reads going full-through? if yes, check first for full through without collapsing.
     //  if not, collapse and check for looping end? if R is too big, it may be impossible, probably best to leave in peace

@@ -14,6 +14,12 @@
 #include "paths/HyperBasevector.h"
 #include "paths/long/ReadPath.h"
 
+void get_place_sequences(vecbasevector &all, vec<vec<int> > &places, vec<int> &left_trunc, vec<int> &right_trunc, const HyperBasevector &hb, const vec<int> &inv, ReadPathVec &paths, const int K2, const Bool EXTEND_PATHS);
+
+void translate_paths(ReadPathVec &paths2,
+                     const HyperBasevector &hb2/* the new graph*/, const vec<int> &inv2, const vecKmerPath &xpaths, const HyperKmerPath &h2,
+                     const int old_K, const std::vector<int> &old_edge_sizes, const ReadPathVec &paths, const vec<int> &old_inv,
+                     const vec<vec<int>> &old_places, const vec<int> &old_left_trunc,const vec<int> &old_right_trunc);
 
 void RepathInMemory( const HyperBasevector& hb, const vecbasevector& edges,
                 const vec<int>& inv, ReadPathVec& paths, const int K, const int K2,
