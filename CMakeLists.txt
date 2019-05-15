@@ -165,7 +165,6 @@ add_library(base_libs OBJECT
         src/kmers/KMerContext.cc
         src/kmers/KmerRecord.cc
         src/kmers/ReadPather.cc
-        src/lookup/SAM.cc
         src/math/Functions.cc
         src/math/HoInterval.cc
         src/math/Permutation.cc
@@ -272,7 +271,6 @@ add_library(specific_w2rap-contigger OBJECT
             src/paths/long/large/MakeGaps.cc
             src/paths/long/large/Simplify.cc
             src/paths/long/large/ImprovePath.cc
-            src/util/w2rap_timers.h
             src/paths/PathFinder.cc
             src/paths/PathFinder.h
             src/paths/long/large/OverlapValidator.cc

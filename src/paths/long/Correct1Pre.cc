@@ -19,12 +19,6 @@
 #include "paths/long/FriendAligns.h"
 #include "paths/long/MakeKmerStuff.h"
 #include "paths/long/ReadStack.h"
-#include "util/w2rap_timers.h"
-
-TIMELOG_CREATE_GLOBAL(C1P_Align);
-TIMELOG_CREATE_GLOBAL(C1P_InitBasesQuals);
-TIMELOG_CREATE_GLOBAL(C1P_Correct);
-TIMELOG_CREATE_GLOBAL(C1P_UpdateBasesQuals);
 
 namespace {
 template <class veclike>
@@ -50,14 +44,6 @@ void Correct1Pre( const int K,
      const vec<Bool>& to_edit, vec<int>& trim_to, const vec<int>& trace_ids, 
      /*const long_logging& logc,*/ const long_heuristics& heur )
 {
-     TIMELOG_DECLARE_LOCAL(C1P_Align,in);
-     TIMELOG_DECLARE_LOCAL(C1P_InitBasesQuals,in);
-     TIMELOG_DECLARE_LOCAL(C1P_Correct,in);
-     TIMELOG_DECLARE_LOCAL(C1P_UpdateBasesQuals,in);
-
-    //PART1---------
-     TIMELOG_START_LOCAL(C1P_Align,in);
-
      // Build alignments.
 
      FriendAligner faligns(bases,
@@ -65,10 +51,8 @@ void Correct1Pre( const int K,
                            heur.FF_MAX_FREQ,
                            heur.FF_DOWN_SAMPLE,heur.FF_VERBOSITY);
      //if (logc.STATUS_LOGGING) ReportPeakMem( "alignment data created" );
-     TIMELOG_STOP_LOCAL(C1P_Align,in);
 
      //PART2---------
-     TIMELOG_START_LOCAL(C1P_InitBasesQuals,in);
      // Go through the reads.
 
      trim_to.resize( bases.size( ) );
@@ -85,10 +69,8 @@ void Correct1Pre( const int K,
      // bases[0] and quals[0] for initial value
      vecbasevector bases_loc(use.size(),bases[0]);
      QualVecVec quals_loc(use.size(),quals[0]);
-     TIMELOG_STOP_LOCAL(C1P_InitBasesQuals,in);
 
      //PART3---------
-     TIMELOG_START_LOCAL(C1P_Correct,in);
 
      // Do the corrections.
 
@@ -160,16 +142,11 @@ void Correct1Pre( const int K,
                          stack.Print( std::cout, cons );    }    }    }    }
 
      // Save results.
-     TIMELOG_STOP_LOCAL(C1P_Correct,in);
      //PART4---------
-     TIMELOG_START_LOCAL(C1P_UpdateBasesQuals,in);
      //#pragma omp parallel for schedule(dynamic)
      for( size_t id1x = 0 ; id1x < use.size() ; ++id1x){
           const int64_t& id1 = use[id1x];
           bases[id1] = bases_loc[id1x];
           quals[id1] = quals_loc[id1x];
      }
-     TIMELOG_STOP_LOCAL(C1P_UpdateBasesQuals,in);
-
-
 }
