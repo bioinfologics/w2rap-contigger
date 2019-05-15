@@ -133,28 +133,20 @@ void SpectraCN::generateAssemblyKmers(const HyperBasevector &hb, const vec<int> 
         total_good_length += hb.EdgeLengthBases(edgeID);
     }
     graph_kmer_freqs->resize(total_good_length);
-
     //Populate the kmer list
     uint64_t last_kmer = 0;
     for (auto edgeID = 0; edgeID < hb.E(); ++edgeID) {
         if (inv[edgeID] < edgeID) continue;
         unsigned len = hb.EdgeLengthBases(edgeID);
         if (len >= K) {
-            auto beg = hb.EdgeObject(edgeID).begin(), itr = beg + K, last = beg + (len - 1);
-            KMerNodeFreq kkk(beg);
+            KMerNodeFreq kkk(hb.EdgeObject(edgeID).begin());
             kkk.hash();
             kkk.count = 1;
-            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(graph_kmer_freqs->kmers[last_kmer]);
-            ++last_kmer;
-            while (itr != last) {
-                kkk.toSuccessor(*itr);
-                ++itr;
-                (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(graph_kmer_freqs->kmers[last_kmer]);
-                ++last_kmer;
+            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(graph_kmer_freqs->kmers[last_kmer++]);
+            for (auto bpitr=hb.EdgeObject(edgeID).begin()+K; bpitr!=hb.EdgeObject(edgeID).end(); ++bpitr){
+                kkk.toSuccessor(*bpitr);
+                (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(graph_kmer_freqs->kmers[last_kmer++]);
             }
-            kkk.toSuccessor(*last);
-            (kkk.isRev() ? KMerNodeFreq(kkk, true) : kkk).to_struct(graph_kmer_freqs->kmers[last_kmer]);
-            ++last_kmer;
         }
     }
     //std::cout<<last_kmer<<" kmers inserted in a batch"<<std::endl;
