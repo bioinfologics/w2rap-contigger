@@ -230,22 +230,6 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
         if (result.count("tmp_dir")==0) {
             parsed_args.tmp_dir=parsed_args.out_dir;
         }
-        // Validate -1 and -2 exist
-        for (const auto &r1f : parsed_args.r1_files) {
-            if (!file_exist(r1f)) {
-                std::string error_str("Input file error, R1 file: "+r1f+'\n');
-                std::perror(error_str.data());
-                throw std::runtime_error("Input 1 error");
-            }
-        }
-
-        for (const auto &r2f : parsed_args.r2_files) {
-            if (!file_exist(r2f)) {
-                std::string error_str("Input file error, R2 file: "+r2f+'\n');
-                std::perror(error_str.data());
-                throw std::runtime_error("Input 2 error");
-            }
-        }
 
         // Validate from and to, from 1 to 8,  from >= to
         if (parsed_args.to_step > 8 or parsed_args.to_step < 1) {
@@ -432,6 +416,23 @@ int main( int argc,  char * argv[]) {
         switch (step) {
             //===== STEP 1 (reads to binary) =====
             case 1: {
+                // Validate -1 and -2 exist
+                for (const auto &r1f : args.r1_files) {
+                    if (!file_exist(r1f)) {
+                        std::string error_str("Input file error, R1 file: "+r1f+'\n');
+                        std::perror(error_str.data());
+                        throw std::runtime_error("Input 1 error");
+                    }
+                }
+
+                for (const auto &r2f : args.r2_files) {
+                    if (!file_exist(r2f)) {
+                        std::string error_str("Input file error, R2 file: "+r2f+'\n');
+                        std::perror(error_str.data());
+                        throw std::runtime_error("Input 2 error");
+                    }
+                }
+
                 OutputLog(2) << "processing reads into bases and quals" << std::endl;
                 for (auto i = 0; i < args.r1_files.size(); ++i) {
                     OutputLog(2) << "R1: " << args.r1_files[i] << "  /  R2: " << args.r2_files[i] << std::endl;
