@@ -3,11 +3,11 @@
 //
 #include <paths/long/large/Repath.h>
 #include <paths/long/large/FinalFiles.h>
+#include <deps/cxxopts/cxxopts.hpp>
 #include "ParallelVecUtilities.h"
-#include "tclap/CmdLine.h"
 #include "GFADump.h"
 
-int main(const int argc, const char * argv[]) {
+int main( int argc, char * argv[]) {
 
     std::string out_prefix;
     std::string in_prefix;
@@ -16,39 +16,55 @@ int main(const int argc, const char * argv[]) {
 
     uint64_t genome_size;
     //========== Command Line Option Parsing ==========
-    std::vector<std::string> validGFAOpts({"basic", "abyss"});
+    std::vector<std::string> validGFAOpts{"basic", "abyss"};
+
+
+    cxxopts::Options options(argv[0], "");
+    try {
+        options.add_options()
+                ("i,in_prefix", "Prefix for input files", cxxopts::value(in_prefix))
+                ("o,out_prefix", "Prefix for output files", cxxopts::value(out_prefix))
+                ("g,genome_size", "Genome size for NGXX stats in Kbp (default: 0, no NGXX stats)", cxxopts::value(genome_size))
+                ("l,find_lines", "Find lines", cxxopts::value(find_lines))
+                ("stats_only", "Compute stats only (do not dump GFA)", cxxopts::value(stats_only))
+                ("dump_detailed_gfa", "Dump detailed GFA for every graph (default: basic)", cxxopts::value(dump_detailed_gfa))
+                ("h,help","show help message")
+                ;
+
+        auto result = options.parse(argc, argv);
+
+        genome_size*=1000UL;
+        if (result.count("help")) {
+            std::cout << options.help({""}) << std::endl;
+            exit(0);
+        }
+
+        if (!result.count("i")) {
+            std::cerr << "Required option i,in_prefix missing" << std::endl;
+            std::cout << options.help({""}) << std::endl;
+            exit(1);
+        }
+        if (!result.count("o")) {
+            std::cerr << "Required option o,out_prefix missing" << std::endl;
+            std::cout << options.help({""}) << std::endl;
+            exit(1);
+        }
+
+        if (std::find(validGFAOpts.begin(),validGFAOpts.end(), dump_detailed_gfa) == validGFAOpts.cend()) {
+            std::cerr << "Invalid argument for dump_detailed_gfa. Please choose between options: ";
+            std::copy(validGFAOpts.begin(), validGFAOpts.end(), std::ostream_iterator<std::string>(std::cerr, ", "));
+            std::cerr << std::endl;
+            std::cout << options.help({""}) << std::endl;
+            exit(1);
+        }
+
+    } catch (const cxxopts::OptionException& e) {
+        std::cerr << "error parsing options: " << e.what() << std::endl;
+        std::cout << options.help({""}) << std::endl;
+        exit(1);
+    }
 
     std::cout << "hbv2gfa from w2rap-contigger" << std::endl;
-    try {
-        TCLAP::CmdLine cmd("", ' ', "0.1");
-        TCLAP::ValueArg<std::string> out_prefixArg("o", "out_prefix",
-             "Prefix for the output files", true, "", "string", cmd);
-        TCLAP::ValueArg<std::string> in_prefixArg("i", "in_prefix",
-                                                   "Prefix for the input files", true, "", "string", cmd);
-        TCLAP::ValueArg<uint32_t> genomeSize_Arg("g", "genome_size",
-                                                 "Genome size for NGXX stats in Kbp (default: 0, no NGXX stats)", false, 0,"int", cmd);
-        TCLAP::ValueArg<bool>         find_linesArg        ("l","find_lines",
-                                                            "Find lines", false,false,"bool",cmd);
-        TCLAP::ValueArg<bool>         statsOnly_Arg        ("","stats_only",
-                                                            "Compute stats only (do not dump GFA)", false,false,"bool",cmd);
-        TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
-        TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
-        cmd.parse(argc, argv);
-
-        // Get the value parsed by each arg.
-        out_prefix = out_prefixArg.getValue();
-        in_prefix = in_prefixArg.getValue();
-        find_lines = find_linesArg.getValue();
-        genome_size = 1000UL * genomeSize_Arg.getValue();
-        stats_only = statsOnly_Arg.getValue();
-        dump_detailed_gfa=dumpDetailedGFAArg.getValue();
-
-    } catch (TCLAP::ArgException &e)  // catch any exceptions
-    {
-        std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
-        return 1;
-    }
     HyperBasevector hbv;
     ReadPathVec paths;
     vec<int> inv;
