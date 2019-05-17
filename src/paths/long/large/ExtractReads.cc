@@ -12,28 +12,13 @@
 #include <util/OutputLog.h>
 #include "Basevector.h"
 #include "Bitvector.h"
-#include "TokenizeString.h"
 #include "math/HoInterval.h"
 #include "paths/long/LoadCorrectCore.h"
 #include "paths/long/large/ExtractReads.h"
 #include "util/kseq.hpp"
 
-void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQVec* quals )
+void ExtractPairedReads( std::string r1file, std::string r2file, vecbvec &pReads, VecPQVec &quals )
 {
-    reads.GlobalReplaceBy(" ", "");
-    vec<String> filenames;
-    Tokenize(reads, ',', filenames);
-    if (filenames.size()!=2) {
-        std::cout<<"ERROR: 2 input files for paired reads needed."<<std::endl;
-        Scram(1);
-    }
-    if (filenames.size()!=2) {
-        std::cout<<"ERROR: 2 input files for paired reads needed."<<std::endl;
-        Scram(1);
-    }
-
-    auto fn1=filenames[0];
-    auto fn2=filenames[1];
 
     kseq seq1,seq2;
     int l1=0;
@@ -42,8 +27,8 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
     int l2=0;
     int c2=0;
 
-    gzFile fp1 = gzopen(fn1.c_str(), "r");
-    gzFile fp2 = gzopen(fn2.c_str(), "r");
+    gzFile fp1 = gzopen(r1file.c_str(), "r");
+    gzFile fp2 = gzopen(r2file.c_str(), "r");
     FunctorZlib gzr1, gzr2;
     kstream<gzFile, FunctorZlib> ks1(fp1,gzr1);
     kstream<gzFile, FunctorZlib> ks2(fp2,gzr2);
@@ -54,12 +39,12 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
     while ( l1 >= 0 and l2 >= 0 ){
 
         if (seq1.seq.empty() ) {
-            std::cout << "Error " << std::string(fn1.c_str()) << " on read " << c1 << " is invalid" << std::endl;
+            std::cout << "Error " << std::string(r1file.c_str()) << " on read " << c1 << " is invalid" << std::endl;
             finished_early=1;
             break;
         }
         if (seq2.seq.empty()) {
-            std::cout << "Error " << std::string(fn2.c_str()) << " on read " << c2 << " is invalid" << std::endl;
+            std::cout << "Error " << std::string(r2file.c_str()) << " on read " << c2 << " is invalid" << std::endl;
             finished_early=1;
             break;
         }
@@ -80,9 +65,9 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
         for (int i = 0; i < seq2.qual.size(); i++)
             q2[i] = seq2.qual[i] - 33;
         //Store
-        pReads->push_back(b1), pReads->push_back(b2);
-        quals->emplace_back(PQVec(q1));
-        quals->emplace_back(PQVec(q2));
+        pReads.push_back(b1), pReads.push_back(b2);
+        quals.emplace_back(PQVec(q1));
+        quals.emplace_back(PQVec(q2));
 
         //std::cout << seq1.name << " " << seq1.comment << "\t" << seq2.name << " " << seq2.comment << std::endl;
         //std::cout << seq1.qual << "\t" << seq2.qual << std::endl;
@@ -97,10 +82,10 @@ void ExtractReads( String reads, const String& work_dir, vecbvec* pReads, VecPQV
             std::cout << "Error on files after " << c1 << " reads, check they are correctly paired" << std::endl;
         }
         if (l1 == -2) {
-            std::cout << std::string(fn1.c_str()) << " is invalid at " << c1 << std::endl;
+            std::cout << std::string(r1file.c_str()) << " is invalid at " << c1 << std::endl;
         }
         if (l2 == -2) {
-            std::cout << std::string(fn2.c_str()) << " is invalid at " << c2 << std::endl;
+            std::cout << std::string(r2file.c_str()) << " is invalid at " << c2 << std::endl;
         }
     }
 

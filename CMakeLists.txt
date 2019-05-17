@@ -128,114 +128,94 @@ include_directories("/usr/include/malloc")
 
 ## Set sources variables
 add_library(base_libs OBJECT
-            src/Alignment.cc
-            src/Charvector.cc
-            src/Equiv.cc
-            src/FastIfstream.cc
-            src/Fastavector.cc
-            src/Floatvector.cc
-            src/IndexedAlignmentPlusVector.cc
-            src/IntPairVec.cc
-            src/Intvector.cc
-            src/MemberOf.cc
-            src/PackAlign.cc
-            src/PairsManager.cc
-            src/ParseRange.cc
-            src/ParseSet.cc
-            src/PrintAlignment.cc
-            src/Qualvector.cc
-            src/ScoreAlignment.cc
-            src/TokenizeString.cc
-            src/Vec.cc
-            src/VecAlignmentPlus.cc
-            src/dna/Bases.cc
-            src/efasta/EfastaTools.cc
-            src/feudal/BaseVec.cc
-            src/feudal/BinaryStream.cc
-            src/feudal/BitVec.cc
-            src/feudal/CharString.cc
-            src/feudal/FeudalControlBlock.cc
-            src/feudal/FeudalFileReader.cc
-            src/feudal/FeudalFileWriter.cc
-            src/feudal/FeudalTools.cc
-            src/feudal/FieldVec.cc
-            src/feudal/Generic.cc
-            src/feudal/Mempool.cc
-            src/feudal/Oob.cc
-            src/feudal/PQVec.cc
-            src/graph/Digraph.cc
-            src/graph/FindCells.cc
-            src/kmers/BigKPather.cc
-            src/kmers/KMerContext.cc
-            src/kmers/KmerRecord.cc
-            src/kmers/ReadPather.cc
-            src/lookup/SAM.cc
-            src/math/Functions.cc
-            src/math/HoInterval.cc
-            src/math/Matrix.cc
-            src/math/Permutation.cc
-            src/math/PowerOf2.cc
-            src/pairwise_aligners/SmithWatBandedA.cc
-            src/pairwise_aligners/SmithWatFree.cc
-            src/paths/FindErrorsCore.cc
-            src/paths/HyperBasevector.cc
-            src/paths/HyperEfasta.cc
-            src/paths/KmerBaseBroker.cc
-            src/paths/KmerPath.cc
-            src/paths/KmerPathInterval.cc
-            #src/paths/LongReadTools.cc
-            src/paths/Sepdev.cc
-            src/paths/UnipathScaffold.cc
-            src/paths/long/Correct1Pre.cc
-            src/paths/long/CorrectByStack.cc
-            src/paths/long/CorrectPairs1.cc
-            src/paths/long/DiscovarTools.cc
-            src/paths/long/EMEC3.cc
-            src/paths/long/FillPairs.cc
-            src/paths/long/FriendAligns.cc
-            src/paths/long/HBVFromEdges.cc
-            src/paths/long/LargeKDispatcher.cc
-            src/paths/long/LoadCorrectCore.cc
-            src/paths/long/LongProtoTools.cc
-            src/paths/long/LongReadsToPaths.cc
-            src/paths/long/MakeAlignments.cc
-            src/paths/long/PreCorrectAlt1.cc
-            src/paths/long/PreCorrectOldNew.cc
-            src/paths/long/ReadPathTools.cc
-            src/paths/long/ReadStack.cc
-            src/random/Bernoulli.cc
-            src/random/RNGen.cc
-            src/reporting/PerfStat.cc
-            src/system/Assert.cc
-            src/system/ErrNo.cc
-            src/system/Exit.cc
-            src/system/HostName.cc
-            src/system/ProcBuf.cc
-            src/system/SysConf.cc
-            src/system/System.cc
-            src/system/Thread.cc
-            src/system/ThreadsafeIO.cc
-            src/system/TraceVal.cc
-            src/system/WorklistUtils.cc
-            src/system/file/File.cc
-            src/system/file/FileReader.cc
-            src/system/file/FileWriter.cc
-            src/system/file/TempFile.cc
-            src/util/Logger.cc
-            src/graphics/BasicGraphics.cc
-            src/kmers/kmer_parcels/KmerParcelsBuilder.cc
-            src/math/IntDistribution.cc
-            src/pairwise_aligners/MaxMutmerFromMer.cc
-            src/pairwise_aligners/SmithWatAffine.cc
-            src/paths/MakeAlignsPathsParallelX.cc
-            src/paths/ReadsToPathsCoreX.cc
-            src/paths/RemodelGapTools.cc
-            src/paths/UnibaseUtils.cc
-            src/paths/Unipath.cc
-            src/paths/long/AssessBestAlignCore.cc
-            src/paths/long/CreateGenome.cc
-            src/paths/long/DigraphFromWords.cc
-            #src/paths/long/EvalByReads.cc
+        src/Charvector.cc
+        src/Equiv.cc
+        src/FastIfstream.cc
+        src/Fastavector.cc
+        src/IntPairVec.cc
+        src/Intvector.cc
+        src/MemberOf.cc
+        src/PackAlign.cc
+        src/PairsManager.cc
+        src/ParseRange.cc
+        src/ParseSet.cc
+        src/Qualvector.cc
+        src/TokenizeString.cc
+        src/Vec.cc
+        src/dna/Bases.cc
+        src/efasta/EfastaTools.cc
+        src/feudal/BaseVec.cc
+        src/feudal/BinaryStream.cc
+        src/feudal/BitVec.cc
+        src/feudal/CharString.cc
+        src/feudal/FeudalControlBlock.cc
+        src/feudal/FeudalFileReader.cc
+        src/feudal/FeudalFileWriter.cc
+        src/feudal/FeudalTools.cc
+        src/feudal/FieldVec.cc
+        src/feudal/Generic.cc
+        src/feudal/Mempool.cc
+        src/feudal/Oob.cc
+        src/feudal/PQVec.cc
+        src/graph/Digraph.cc
+        src/graph/FindCells.cc
+        src/kmers/BigKPather.cc
+        src/kmers/KMerContext.cc
+        src/kmers/KmerRecord.cc
+        src/kmers/ReadPather.cc
+        src/lookup/SAM.cc
+        src/math/Functions.cc
+        src/math/HoInterval.cc
+        src/math/Permutation.cc
+        src/math/PowerOf2.cc
+        src/paths/FindErrorsCore.cc
+        src/paths/HyperBasevector.cc
+        src/paths/KmerBaseBroker.cc
+        src/paths/KmerPath.cc
+        src/paths/KmerPathInterval.cc
+        src/paths/long/Correct1Pre.cc
+        src/paths/long/CorrectByStack.cc
+        src/paths/long/CorrectPairs1.cc
+        src/paths/long/DiscovarTools.cc
+        src/paths/long/EMEC3.cc
+        src/paths/long/FillPairs.cc
+        src/paths/long/FriendAligns.cc
+        src/paths/long/HBVFromEdges.cc
+        src/paths/long/LargeKDispatcher.cc
+        src/paths/long/LoadCorrectCore.cc
+        src/paths/long/LongProtoTools.cc
+        src/paths/long/LongReadsToPaths.cc
+        src/paths/long/MakeAlignments.cc
+        src/paths/long/ReadPathTools.cc
+        src/paths/long/ReadStack.cc
+        src/random/Bernoulli.cc
+        src/random/RNGen.cc
+        src/reporting/PerfStat.cc
+        src/system/Assert.cc
+        src/system/ErrNo.cc
+        src/system/Exit.cc
+        src/system/HostName.cc
+        src/system/ProcBuf.cc
+        src/system/SysConf.cc
+        src/system/System.cc
+        src/system/Thread.cc
+        src/system/ThreadsafeIO.cc
+        src/system/TraceVal.cc
+        src/system/WorklistUtils.cc
+        src/system/file/File.cc
+        src/system/file/FileReader.cc
+        src/system/file/FileWriter.cc
+        src/system/file/TempFile.cc
+        src/util/Logger.cc
+        src/kmers/kmer_parcels/KmerParcelsBuilder.cc
+        src/math/IntDistribution.cc
+        src/pairwise_aligners/MaxMutmerFromMer.cc
+        src/paths/MakeAlignsPathsParallelX.cc
+        src/paths/ReadsToPathsCoreX.cc
+        src/paths/RemodelGapTools.cc
+        src/paths/UnibaseUtils.cc
+        src/paths/Unipath.cc
+        src/paths/long/CreateGenome.cc
             src/paths/long/KmerCount.cc
             src/paths/long/LongHyper.cc
             src/paths/long/SupportedHyperBasevector.cc
@@ -256,40 +236,33 @@ add_library(base_libs OBJECT
             src/paths/long/ReadPath.cc src/util/OutputLog.h src/util/OutputLog.cc src/paths/long/KMerNodeFreq_s.cc src/equiv/DisjointSet.cc)
 
 add_library(specific_w2rap-contigger OBJECT
-        src/paths/long/large/GapToyTools4.cc
-        src/paths/long/large/GapToyTools5.cc
-        src/kmers/MakeLookup.cc
-        src/kmers/kmatch/KMatch.cc
-        src/paths/long/ultra/ConsensusScoreModel.cc
-        src/paths/long/ultra/FounderAlignment.cc
-        src/paths/long/ultra/GetFriendsAndAlignsInitial.cc
-        src/paths/long/ultra/MultipleAligner.cc
-        src/paths/long/OverlapReads.cc
-        src/paths/long/KmerAlign.cc
-        src/paths/long/Friends.cc
-        src/math/Combinatorics.cc
-        src/kmers/LongReadPather.cc
-        src/feudal/QualNibbleVec.cc
-        src/Basevector.cc
-        src/VecString.cc
-        src/BasevectorTools.cc
-        src/CompressedSequence.cc
-        src/Misc.cc
-        src/pairwise_aligners/SmithWatBanded.cc
-        src/paths/long/large/AssembleGaps.cc
-        src/paths/long/large/GapToyTools2.cc
-        src/paths/long/large/Unsat.cc
-        src/paths/long/BuildReadQGraph.cc
-        src/paths/long/ExtendReadPath.cc
-        src/paths/long/KmerAlign.h
-        src/paths/long/ShortKmerReadPather.cc
-        src/paths/long/large/Clean200.cc
-        src/paths/long/large/ExtractReads.cc
-        src/paths/long/large/ReadNameLookup.cc
-        src/paths/long/large/Repath.cc
-        src/system/Crash.cc
-        src/util/PeakFinder.h
-        src/paths/long/DisplayTools.cc
+            src/paths/long/large/GapToyTools4.cc
+            src/paths/long/large/GapToyTools5.cc
+            src/kmers/MakeLookup.cc
+            src/kmers/kmatch/KMatch.cc
+            src/paths/long/OverlapReads.cc
+            src/paths/long/KmerAlign.cc
+            src/paths/long/Friends.cc
+            src/math/Combinatorics.cc
+            src/kmers/LongReadPather.cc
+            src/feudal/QualNibbleVec.cc
+            src/Basevector.cc
+            src/VecString.cc
+            src/BasevectorTools.cc
+            src/Misc.cc
+            src/paths/long/large/AssembleGaps.cc
+            src/paths/long/large/GapToyTools2.cc
+            src/paths/long/large/Unsat.cc
+            src/paths/long/BuildReadQGraph.cc
+            src/paths/long/ExtendReadPath.cc
+            src/paths/long/KmerAlign.h
+            src/paths/long/large/Clean200.cc
+            src/paths/long/large/ExtractReads.cc
+            src/paths/long/large/ReadNameLookup.cc
+            src/paths/long/large/Repath.cc
+            src/system/Crash.cc
+            src/util/PeakFinder.h
+
         src/paths/long/large/FinalFiles.cc
         src/paths/long/large/MakeGaps.cc
         src/paths/long/large/Simplify.cc
@@ -303,7 +276,7 @@ add_library(specific_w2rap-contigger OBJECT
         src/paths/long/large/GraphImprover.h
         src/paths/long/large/ConsensusChecker.cc
         src/paths/long/large/ConsensusChecker.h
-        )
+        src/SpectraCn.cc src/SpectraCn.hpp)
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
@@ -313,6 +286,11 @@ add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
 
 add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
+        )
+
+add_executable(faKmerSpectra src/modules/faKmerSpectra.cc
+        $<TARGET_OBJECTS:base_libs>
+        $<TARGET_OBJECTS:specific_w2rap-contigger>
         )
 
 add_executable(mergeclusters
@@ -326,6 +304,7 @@ if (ZLIB_FOUND)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
   target_link_libraries(mergeclusters ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
+  target_link_libraries(faKmerSpectra ${ZLIB_LIBRARIES})
 endif()
 
 #Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc

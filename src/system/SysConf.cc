@@ -19,7 +19,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <omp.h>
 
 namespace

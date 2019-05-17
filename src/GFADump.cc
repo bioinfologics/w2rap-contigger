@@ -591,8 +591,8 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
       if (inv[e]>=0) colour[inv[e]]=112;
   }
   // Do the raw dump
-  Ofstream(gfa_raw_out,filename+"_raw.gfa");
-  Ofstream(fasta_raw_out,filename+"_raw.fasta");
+  Ofstream(gfa_raw_out,filename+".gfa");
+  Ofstream(fasta_raw_out,filename+".fasta");
   std::cout<<"Dumping edges"<<std::endl;
 
   // header line
@@ -605,7 +605,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
       gfa_raw_out << "S\tedge" << ei << "\t*"
       << "\tLN:i:" << eo.isize()
       << "\tCL:Z:" << (colour[ei]>0 ? colour_names[colour[ei]%colour_names.size()] : "black" )
-      << "\tUR:Z:" << prefix << "_raw.fasta"
+      << "\tUR:Z:" << prefix << ".fasta"
       << std::endl;
 
       // write seq to FASTA

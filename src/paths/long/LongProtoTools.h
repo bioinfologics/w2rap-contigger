@@ -21,13 +21,11 @@
 #include "Qualvector.h"
 #include "efasta/EfastaTools.h"
 #include "kmers/KmerRecord.h"
-#include "paths/HyperEfasta.h"
 #include "paths/long/Friends.h"
 #include "paths/long/Heuristics.h"
 #include "paths/long/Logging.h"
 #include "paths/long/LongProtoTools.h"
 #include "paths/long/PairInfo.h"
-#include "paths/long/ultra/ConsensusScoreModel.h"
 #include "system/System.h"
 #include "paths/long/CreateGenome.h"
 

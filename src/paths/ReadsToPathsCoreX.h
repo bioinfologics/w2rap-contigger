@@ -50,37 +50,4 @@ void ReadsToPathsCoreY(BaseVecVec          & bvv,
                        const bool            VERBOSE = false);
 
 
-
-
-
-// These versions of ReadsToPathsCoreY generate paths_rc and pathsdb as well.
-
-void ReadsToPathsCoreY(BaseVecVec          & bvv, 
-                       const size_t          K, 
-                       vecKmerPath         & paths, 
-                       vecKmerPath         & paths_rc,
-                       vec<tagged_rpint>   & pathsdb,
-                       const String        & PARCEL_DIR = "",
-                       const size_t          NUM_THREADS = 1,
-                       const String          CHECKPOINT = "",
-                       const bool            VERBOSE = false);
-
-
-
-void ReadsToPathsCoreY(BaseVecVec            & bvv, 
-                       const size_t            K, 
-                       vecKmerPath           & paths, 
-                       vecKmerPath           & paths_rc,
-                       vec<big_tagged_rpint> & pathsdb, 
-                       const String          & PARCEL_DIR = "",
-                       const size_t            NUM_THREADS = 1,
-                       const String            CHECKPOINT = "",
-                       const bool              VERBOSE = false);
-
-
-
-
-
-
-
 #endif

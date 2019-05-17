@@ -11,8 +11,8 @@
 #include "efasta/EfastaTools.h"
 #include "kmers/KmerRecord.h"
 #include "paths/long/CreateGenome.h"
-#include "paths/long/ultra/GetFriendsAndAlignsInitial.h"
 #include "paths/long/LargeKDispatcher.h"
+#include "Heuristics.h"
 
 void ReportPeakMem( const String msg )
 {    std::cout << Date( ) << ": " << msg << ( msg != "" ? ", " : "" ) 
@@ -23,7 +23,6 @@ void ReportPeakMem( const String msg )
 int SelectK2(const VecEFasta &corrected, const double K2frac,
              const long_logging &logc, const long_heuristics &heur) {
     int K2 = -1;
-    double hclock = WallClockTime();
     vec<int> lens;
     for (size_t i = 0; i < corrected.size(); i++) {
         if (corrected[i].size() == 0) continue;
@@ -50,7 +49,6 @@ int SelectK2(const VecEFasta &corrected, const double K2frac,
     if (K2 == -1)
         FatalErr("Unable to identify a suitable value for K2.");
     if (logc.STATUS_LOGGING) std::cout << Date() << ": using K2 = " << K2 << std::endl;
-    REPORT_TIME(hclock, "used choosing K2");
     return K2;
 }
 

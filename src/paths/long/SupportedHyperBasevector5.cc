@@ -11,7 +11,6 @@
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
-#include "pairwise_aligners/SmithWatFree.h"
 #include "paths/long/CreateGenome.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "Map.h"

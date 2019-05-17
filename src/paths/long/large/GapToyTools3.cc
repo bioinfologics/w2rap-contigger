@@ -11,8 +11,6 @@
 
 #include "CoreTools.h"
 #include "ParallelVecUtilities.h"
-#include "PrintAlignment.h"
-#include "graphics/BasicGraphics.h"
 #include "kmers/LongReadPather.h"
 #include "paths/HyperBasevector.h"
 #include "paths/RemodelGapTools.h"
@@ -586,64 +584,7 @@ void FragDist( const HyperBasevector& hb, const vec<int>& inv,
           for ( int j = 0; j < count.isize( ); j++ )
                out << j * width + (width/2) << " " << count[j]/total << std::endl;    }
 
-     // Check for abject failure.
-
-     if ( total == 0 )
-     {    Ofstream( out, out_file + ".png.FAIL" );
-          Remove( out_file + ".png" );
-          out << "Could not generate frags.dist.png because there was not\n"
-               << "enough assembly to compute the distribution." << std::endl;
-          return;    }
-
-     // Check for missing executables.
-
-     vec<String> missing;
-     vec<String> ex = { "ps2epsi", "pstopnm", "pnmcrop", "pnmpad", "pnmtopng" };
-     for ( auto executable : ex )
-     {    if ( System( executable + " --version > /dev/null 2>&1" ) != 0 )
-               missing.push_back(executable);    }
-     if ( missing.nonempty( ) )
-     {    Ofstream( out, out_file + ".png.FAIL" );
-          out << "Could not generate frags.dist.png because the following "
-               << "executables were not found:\n" << printSeq(missing) 
-               << "." << std::endl;
-          Remove( out_file + ".png" );
-          return;    }
-
-     // Make plot.
-          
-     String TITLE = "Fragment library size distribution";
-     vec<graphics_primitive> points, lines;
-     lines.push_back( SetLineWidth(1.0) );
-     double xm = 0.0, ym = 0.0;
-     for ( int j = 0; j < count.isize( ); j++ )
-          points.push_back( Point( j * width + (width/2),  count[j]/total, 1.0 ) );
-     points.push_back( SetColor(black) );
-     points.append(lines);
-     double x = 0, X = MaxX(points), y = 0, Y = MaxY(points);
-     vec<graphics_primitive> x_axis = AxisX( x, X, 1.0, True, "", 0.0, False );
-     x_axis.push_front( SetLineWidth(1.0) );
-     vec<graphics_primitive> y_axis = AxisY( x, X, y, Y, True, "", 0.0, False );
-     vec<graphics_primitive> points2(y_axis);
-     points2.append(points);
-     points = points2;
-     vec< vec<graphics_primitive> > stack;
-     vec<double> heights;
-     stack.push_back(x_axis),    heights.push_back(0);
-     stack.push_back(points),    heights.push_back(200);
-     vec<graphics_primitive> title;
-     title.push_back( TextCenter( TITLE, (X+x)/2.0, 0, 0, TimesBold(15) ) );
-     stack.push_back(title);
-     heights.push_back(20);
-     String fail_msg = RenderGraphics( out_file + ".png", stack, heights, 1.0, 200, 
-          50, True, 1.0, True );
-     Remove( out_file + ".eps" );
-     if ( fail_msg != "" )
-     {    Remove( out_file + ".png" );
-          Ofstream( out, out_file + ".png.FAIL" );
-          out << "Could not generate frags.dist.png because something went "
-               << "wrong, see below:\n\n" << fail_msg;
-          return;    }    }
+     }
 
 // UnwindThreeEdgePlasmids
 //

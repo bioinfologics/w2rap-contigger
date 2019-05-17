@@ -14,8 +14,6 @@
 #include <math.h>
 
 #include "math/IntDistribution.h"
-#include "math/IntFrequencies.h"
-
 
 typedef IntDistribution::real_t real_t;
 

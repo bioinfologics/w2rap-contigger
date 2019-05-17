@@ -2,8 +2,41 @@
 // Created by Bernardo Clavijo (TGAC) on 11/07/2016.
 //
 
+#include <util/OutputLog.h>
 #include "PathFinder.h"
 
+void PathFinder::clip_tips(int max_length, int max_reads) {
+    update_prev_next();
+    vec<int> to_delete;
+    for (uint64_t e=0;e<next_edges.size();++e){
+        if (next_edges[e].empty() and prev_edges[e].size()==1 and mHBV.Edges()[e].size()<=max_length){
+            //std::cout<<"Edge "<<e<<" ("<<mInv[e]<<") leads nowhere!!!"<<std::endl;
+            //now check for support
+            //std::cout<<" Support: "<< mEdgeToPathIds[e].size()<<" "<<mEdgeToPathIds[e].size()<<std::endl;
+            if (mEdgeToPathIds[e].size()<=max_reads and mEdgeToPathIds[e].size()<=max_reads) {
+                to_delete.push_back(e);
+                to_delete.push_back(mInv[e]);
+            }
+        }
+    }
+    mHBV.DeleteEdges(to_delete);
+    Cleanup( mHBV, mInv, mPaths );
+    invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
+    update_prev_next();
+}
+
+void PathFinder::extend_until_repeat(int max_collapsed_size) {
+    update_prev_next();
+    vec<int> to_delete;
+    for (uint64_t e=0;e<next_edges.size();++e){
+        if (next_edges[e].size()==1 and prev_edges[e].size()>1){
+            if (mHBV.EdgeObject(e).size()<=max_collapsed_size) {
+                std::cout << "Edge " << e << " (" << mInv[e] << ") can be back-filled into its inputs" << std::endl;
+            }
+        }
+    }
+
+}
 
 std::string PathFinder::edge_pstr(uint64_t e){
     return "e"+std::to_string(e)+"("+std::to_string(mHBV.EdgeObject(e).size())+"bp "+std::to_string(paths_per_kbp(e))+"ppk)";
@@ -919,3 +952,336 @@ void PathFinder::migrate_readpaths(std::map<uint64_t,std::vector<uint64_t>> edge
 bool PathFinder::join_edges_in_path(std::vector<uint64_t> p){
     //if a path is scrictly linear, it joins it
 }
+
+std::vector<int64_t> PathFinder::get_full_paired_path(int r1id, bool collapse_overlaps) {
+    std::vector<int64_t> full_path;
+    std::vector<int64_t> r2_path;
+    for (auto e:mPaths[r1id]) full_path.emplace_back(e);
+    if (not mPaths[r1id+1].empty()) {
+        if (not full_path.empty()) {
+            for (auto ei = mPaths[r1id + 1].rbegin(); ei != mPaths[r1id + 1].rend(); ++ei)
+                r2_path.emplace_back(mInv[*ei]);
+            //If this overlaps, the first element on the second path needs to be on the first path too
+            size_t r1_ovlstart = 0;
+            size_t ovl_size;
+            while (r1_ovlstart < full_path.size()) {
+                if (full_path[r1_ovlstart] == r2_path[0]) {
+                    ovl_size = 0;
+                    while (r1_ovlstart + ovl_size < full_path.size()
+                           and ovl_size < r2_path.size()
+                           and full_path[r1_ovlstart + ovl_size] == r2_path[ovl_size])
+                        ++ovl_size;
+                    if (r1_ovlstart + ovl_size == full_path.size())break;
+                }
+                ++r1_ovlstart;
+            }
+            if (r1_ovlstart < full_path.size()) {
+                for (auto r2ei = r2_path.begin() + ovl_size; r2ei < r2_path.end(); ++r2ei)
+                    full_path.emplace_back(*r2ei);
+            } else {
+                full_path.emplace_back(-1);
+                for (auto &r2e:r2_path)
+                    full_path.emplace_back(r2e);
+            }
+        }
+        else full_path=r2_path;
+    }
+
+    return full_path;
+
+}
+
+std::vector<std::pair<uint64_t,std::vector<int64_t>>> PathFinder::collect_paths_for_edge(int e,bool collect_inverse, bool collapse_overlaps) {
+    std::vector<std::pair<uint64_t,std::vector<int64_t>>> counted_paths;
+    std::vector<std::vector<int64_t>> paths;
+    //std::cout<<"Collecting paths for edge "<<e<<" (inv="<<mInv[e]<<")"<<std::endl;
+    std::set<uint64_t> used_paths;
+    //process paths for this edge first
+    for (auto &pid:mEdgeToPathIds[e]){
+        if (used_paths.count(pid)) continue;
+        auto ppid=(pid%2 ? pid-1:pid+1);
+        used_paths.insert(pid);
+        used_paths.insert(ppid);
+        if (pid<ppid){
+            paths.emplace_back(get_full_paired_path(pid,collapse_overlaps));
+        }
+        else{
+            paths.emplace_back();
+            auto fpp=get_full_paired_path(ppid,collapse_overlaps);
+            for (auto ei=fpp.rbegin();ei<fpp.rend();++ei) paths.back().emplace_back((*ei==-1?-1:mInv[*ei]));
+        }
+    }
+    if (collect_inverse) {
+        for (auto &pid:mEdgeToPathIds[mInv[e]]){
+            if (used_paths.count(pid)) continue;
+            auto ppid=(pid%2 ? pid-1:pid+1);
+            used_paths.insert(pid);
+            used_paths.insert(ppid);
+            if (pid<ppid){
+                paths.emplace_back();
+                auto fpp=get_full_paired_path(pid);
+                for (auto ei=fpp.rbegin();ei<fpp.rend();++ei) paths.back().emplace_back((*ei==-1?-1:mInv[*ei]));
+            }
+            else{
+                paths.emplace_back(get_full_paired_path(ppid));
+            }
+        }
+    }
+    if (paths.empty()) return {};
+    //TODO: sort, count, add to answer vector
+    std::sort(paths.begin(),paths.end());
+    //uniq count
+
+    for (auto &p:paths){
+        if (counted_paths.empty() or counted_paths.back().second!=p){
+            counted_paths.emplace_back(std::make_pair(1,p));
+        }
+        else {
+            counted_paths.back().first++;
+        }
+    }
+
+    return counted_paths;
+}
+
+void PathFinder::unroll_loops(int repeat_size, int loop_size, int side_size) {
+    std::vector<std::vector<uint64_t >> sol_paths;
+    for (auto loop_e=1;loop_e<next_edges.size();++loop_e){
+
+        if (loop_e>mInv[loop_e]) continue;
+
+        //if (mHBV.EdgeObject(loop_e).size()>loop_size) continue;
+        if (prev_edges[loop_e].size()!=1 or
+            next_edges[loop_e].size()!=1 or
+            prev_edges[loop_e][0]!=next_edges[loop_e][0]) continue;
+        auto repeat_e=prev_edges[loop_e][0];
+        //if (mHBV.EdgeObject(repeat_e).size()>repeat_size) continue;
+        //2) the repeat edge has only one other neighbour on each direction, and it is a different one;
+        if (prev_edges[repeat_e].size()!=2 or
+            next_edges[repeat_e].size()!=2) continue;
+
+        auto prev_e=(prev_edges[repeat_e][0]==loop_e ? prev_edges[repeat_e][1]:prev_edges[repeat_e][0]);
+
+        auto next_e=(next_edges[repeat_e][0]==loop_e ? next_edges[repeat_e][1]:next_edges[repeat_e][0]);
+
+        if (prev_e==next_e or prev_e==mInv[next_e]) break;
+        if (prev_edges[next_e].size()!=1 or
+            next_edges[prev_e].size()!=1) continue;
+
+        //std::cout<<"loop detected in edge"<<loop_e<<", with repeat on edge"<<repeat_e<<std::endl;
+
+        //is there a connection across?
+        auto prev_paths=collect_paths_for_edge(prev_e);
+        auto loop_paths=collect_paths_for_edge(loop_e,true,false);
+        uint64_t bridges=0,entries=0,exits=0,loops=0;
+        for (auto pp:prev_paths){
+            if (std::find(pp.second.begin(),pp.second.end(), next_e)!=pp.second.end()) bridges+=pp.first;
+
+        }
+        for (auto lp:loop_paths){
+            if (std::find(lp.second.begin(),lp.second.end(), prev_e)!=lp.second.end()) entries+=lp.first;
+            if (std::find(lp.second.begin(),lp.second.end(), next_e)!=lp.second.end()) exits+=lp.first;
+            if (std::count(lp.second.begin(),lp.second.end(), loop_e)>1) loops+=lp.first;
+        }
+        //std::cout<<"    paths: "<<bridges<<" bridges,  "<<entries<<" entries,  "<<loops<<" loops,  "<<exits<<" exits"<<std::endl;
+
+        if (loops==0 and entries>3 and exits>3)  {
+            sol_paths.push_back({prev_e,repeat_e,loop_e,repeat_e,next_e});
+            //std::cout << "    SOLVED!"<<std::endl;
+        }
+        //watch out for
+        //3) size constraints: prev_e and next_e must be at least 1Kbp
+        //if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
+        //if (loop_e==1170) std::cout<<"fourth check passed!"<<std::endl;
+    }
+    separate_solutions(sol_paths);
+
+
+}
+
+void PathFinder::solve_perfect_repeats(int max_size) {
+    /* First part -> find repeats
+     * repeat_e is the minimum of the inversion pair
+     * size(repeat_e) <= max_size
+     * repeat_e has same number of ins and outs >1
+     * all ins and outs only connect to repeat_e
+     * all ins and outs are different edges (including inversion)
+     * every in is connected to an out only
+     * every out is connected to only an in
+     * WARNING: this may exclude palindromic edges!
+     */
+    std::vector<std::vector<uint64_t >> sol_paths;
+    for (auto repeat_e=1;repeat_e<next_edges.size();++repeat_e){
+
+        if (repeat_e>mInv[repeat_e]) continue;
+
+        if (mHBV.EdgeObject(repeat_e).size()>max_size) continue;
+
+        if (prev_edges[repeat_e].size()<=1 or prev_edges[repeat_e].size()!=next_edges[repeat_e].size()) continue;
+
+        bool too_complex=false;
+        for (auto pe:prev_edges[repeat_e]) if (next_edges[pe].size()>1) {too_complex=true;}
+        for (auto ne:next_edges[repeat_e]) if (prev_edges[ne].size()>1) {too_complex=true;}
+        if (too_complex) continue;
+
+        std::set<uint64_t> seen_edges;
+        seen_edges.insert(repeat_e);
+        seen_edges.insert(mInv[repeat_e]);
+        for (auto pe:prev_edges[repeat_e]) {
+            seen_edges.insert(pe);
+            seen_edges.insert(mInv[pe]);
+        }
+        for (auto ne:next_edges[repeat_e]) {
+            seen_edges.insert(ne);
+            seen_edges.insert(mInv[ne]);
+        }
+        if (seen_edges.size()!=4*next_edges[repeat_e].size()+2) continue;
+
+        //std::cout << std::endl << "Perfect repeat x" << prev_edges[repeat_e].size() << " ,edge" << repeat_e << std::endl;
+//        for (auto e:prev_edges[repeat_e]) std::cout<<" "<<e;
+//        std::cout<<" -- ";
+//        for (auto e:next_edges[repeat_e]) std::cout<<" "<<e;
+//        std::cout<<std::endl;
+
+        //TODO: make this generic, rather than hardcoded for CN=2
+        if (prev_edges[repeat_e].size()==2){
+            auto p1=prev_edges[repeat_e][0];
+            auto p2=prev_edges[repeat_e][1];
+            auto n1=next_edges[repeat_e][0];
+            auto n2=next_edges[repeat_e][1];
+
+            uint64_t p1n1=0,p1n2=0,p2n1=0,p2n2=0;
+            for (auto p:collect_paths_for_edge(p1)) {
+                if (std::find(p.second.begin(), p.second.end(), n1) != p.second.end()) p1n1+=p.first;
+                if (std::find(p.second.begin(), p.second.end(), n2) != p.second.end()) p1n2+=p.first;
+            }
+            for (auto p:collect_paths_for_edge(p2)) {
+                if (std::find(p.second.begin(), p.second.end(), n1) != p.second.end()) p2n1+=p.first;
+                if (std::find(p.second.begin(), p.second.end(), n2) != p.second.end()) p2n2+=p.first;
+            }
+            //std::cout<<"   "<<p1n1<<" "<<p1n2<<" "<<p2n1<<" "<<p2n2<<std::endl;
+            //TODO: review thresholds here!
+            if (p1n1>=1 and p2n2>=1 and p1n2<1 and p2n1<1) {
+                //std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n1<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n2<<std::endl;
+                sol_paths.push_back({p1,(uint64_t)repeat_e,n1});
+            }
+            if (p1n2>=1 and p2n1>=1 and p1n1<1 and p2n2<1) {
+                //std::cout<<" SOLVED: "<<p1<<" -> "<<repeat_e<<" -> "<<n2<<" / "<<p2<<" -> "<<repeat_e<<" -> "<<n1<<std::endl;
+                sol_paths.push_back({p1,(uint64_t)repeat_e,n2});
+            }
+            //Just separate one, the inverse will be separated the same
+        }
+
+
+        //3) size constraints: prev_e and next_e must be at least 1Kbp
+        //if (mHBV.EdgeObject(prev_e).size()<min_size_sizes or mHBV.EdgeObject(next_e).size()<min_size_sizes) return {};
+        //if (loop_e==1170) std::cout<<"fourth check passed!"<<std::endl;
+    }
+    separate_solutions(sol_paths);
+}
+
+void PathFinder::improve_paths() {
+    ReroutePaths(mHBV,mInv,mPaths,mBases,mQuals);
+    invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
+}
+
+void PathFinder::separate_solutions(std::vector<std::vector<uint64_t >> sol_paths){
+    std::map<uint64_t,std::vector<uint64_t>> old_edges_to_new;
+    for (auto p:sol_paths){
+        auto oen=separate_path(p);
+        if (oen.size()>0) {
+            for (auto et:oen){
+                if (old_edges_to_new.count(et.first)==0) old_edges_to_new[et.first]={};
+                for (auto ne:et.second) old_edges_to_new[et.first].push_back(ne);
+            }
+        }
+    }
+    if (old_edges_to_new.size()>0) {
+        migrate_readpaths(old_edges_to_new);
+    }
+    Cleanup( mHBV, mInv, mPaths );
+    invert(mPaths,mEdgeToPathIds,mHBV.EdgeObjectCount());
+    update_prev_next();
+}
+
+void simplifyWithPathFinder( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& paths, VecULongVec& invPaths, const vecbasevector& bases, const VecPQVec& quals, int min_reads, bool verbose, bool dump_intermediate_gfas){
+
+    /*Basically, simplifying in discovar was:
+     * - Improve read placements and delete funky pairs ( ReroutePaths / DeleteFunkyPathPairs )
+     * - Remove "unsupported edges"
+     * - Tip clipping
+     * - "Analyze branches"
+     * - PopBubbles
+     * - Degloop
+     * - UnwindThreeEdgePlasmids(hb, inv, paths)
+     * - remove small components
+     * - RemoveUnneededVerticesGeneralizedLoops
+     */
+
+    /* In w2rap, the pathfinder added more loop resolution and Complex Repeat Assembly Paths separation (i.e. directional regions)
+     * This worked only to a certain extent. The loop resolution had problems, and complex repeats were only sometimes solved.
+     *
+     * The new ideas behind this new implementation are:
+     * - simplify as in discovar by expanding edges that create lines that are then simplified by RemoveUnnecessaryVertices
+     * - Start by improving paths (reasonably) then make an effort not to discard or truncate paths lazily (DONE using DV functions)
+     * - Use PE all the way through.
+     * - Tip-clipping -> repeats -> shared-path-separation (extend_to_repeat) -> repeats -> loops
+     * - It would be important to have clean functions that perform operations clearly and update the inversion of the graph while doing so
+     */
+
+    OutputLog(2)<<"======= Simplifying with pathfinder!!!!! ======="<<std::endl;
+    auto pf1=PathFinder(hbv,inv,paths,invPaths,bases,quals,min_reads,verbose);
+    //First clip stupid tips
+
+    pf1.improve_paths();
+    pf1.clip_tips(400,20);
+
+    pf1.improve_paths();
+    pf1.clip_tips(800,2);
+
+    pf1.improve_paths();
+    pf1.solve_perfect_repeats(1000);
+    pf1.improve_paths();
+    //pf1.solve_perfect_repeats(1000);
+    //pf1.improve_paths();
+    pf1.unroll_loops(0,0,0);
+    pf1.improve_paths();
+    //RemoveUnneededVertices2(hbv, inv, paths);
+    //then unroll loops
+    // new heuristic: is the loop in the range of reads going full-through? if yes, check first for full through without collapsing.
+    //  if not, collapse and check for looping end? if R is too big, it may be impossible, probably best to leave in peace
+
+    //maybe add a function to find full-path-next and pe-next for an edge?
+
+
+    //then expand perfectly-solved repeats
+
+    //then extend-to-repeat
+
+
+
+    //Now extend-to-repeats
+    //pf1.extend_until_repeat();
+    //Now unroll loops
+    //pf1.mVerbose=true;
+    //pf1.unroll_loops(0,0,0);
+    /*for (auto cp:pf1.collect_paths_for_edge(1170)){
+        std::cout<<cp.first<<"x ";
+        for (auto &e:cp.second) std::cout<<e<<" ";
+        std::cout<<std::endl;
+    }
+    for (auto cp:pf1.collect_paths_for_edge(1460)){
+        std::cout<<cp.first<<"x ";
+        for (auto &e:cp.second) std::cout<<e<<" ";
+        std::cout<<std::endl;
+    }
+    for (auto cp:pf1.collect_paths_for_edge(374)){
+        std::cout<<cp.first<<"x ";
+        for (auto &e:cp.second) std::cout<<e<<" ";
+        std::cout<<std::endl;
+    }*/
+    ;
+    //Now find perfect repeats ?
+
+    //
+};

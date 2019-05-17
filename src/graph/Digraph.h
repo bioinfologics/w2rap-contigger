@@ -48,7 +48,6 @@
 #include "VecUtilities.h"
 #include "feudal/BinaryStream.h"
 #include "math/Functions.h"
-#include "math/Matrix.h"
 #include "system/TraceVal.h"
 #include <cstddef>
 
@@ -78,7 +77,6 @@ class digraph
 
      digraph( ) { }
      digraph( const vec< vec<int> >& from, const vec< vec<int> >& to );
-     digraph( const matrix<Bool>& );
      explicit digraph( int n ) { Initialize( n ); }
 
      // "Reducing" constructors
@@ -92,7 +90,6 @@ class digraph
      
      void Initialize( const vec< vec<int> >& from, const vec< vec<int> >& to );
      void Initialize( const digraph& g, const vec<int>& v );
-     void Initialize( const matrix< Bool >& );
 
      // Create an empty graph with n nodes.
 
@@ -170,11 +167,6 @@ class digraph
      void GetSuccessors( const vec<int>& v, vec<int>& from_v ) const;
      void GetPredecessors1( const int v, vec<int>& to_v ) const;
      void GetSuccessors1( const int v, vec<int>& from_v ) const;
-
-     // Return the connected component containing a given vertex.  Returns a sorted
-     // list of vertices.
-
-     vec<int> ComponentOf( const int v ) const;
 
      // VerticesConnectedTo.  Return all vertices that are connected directly or
      // indirectly to a vertex in a given list (which need not be ordered and may 
@@ -355,13 +347,6 @@ class digraph
      // ============================================================================
      // ======================== END ABOVE SECTION =================================
      // ============================================================================
-
-     /// ReplaceWithTransitiveClosure()
-     /// Replace this graph with its transitive closure.  That is, if there is a
-     /// directed path from u to w in the original graph, there is a direct edge
-     /// (u,w) in the new graph.
-
-     void ReplaceWithTransitiveClosure();
 
      static size_t externalSizeof() { return 0; }
 

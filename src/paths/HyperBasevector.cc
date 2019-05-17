@@ -94,14 +94,6 @@ vec<basevector> Convert( const vec<KmerPath>& in, KBB const& kbb )
 HyperBasevector::HyperBasevector( const String& filename )
 {    BinaryReader::readFile( filename, this ); }
 
-HyperBasevector::HyperBasevector( const HyperKmerPath& h, const KmerBaseBroker& kbb )
-     : digraphE<basevector>( h.From( ), h.To( ), Convert( h.Edges( ), kbb ),
-                             h.ToEdgeObj( ), h.FromEdgeObj( ) ),
-       K_( h.K() )
-{
-  TestValid();
-}
-
 HyperBasevector::HyperBasevector( const HyperKmerPath& h, const KmerBaseBrokerBig& kbb )
      : digraphE<basevector>( h.From( ), h.To( ), Convert( h.Edges( ), kbb ),
                              h.ToEdgeObj( ), h.FromEdgeObj( ) ),

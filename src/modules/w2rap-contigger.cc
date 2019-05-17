@@ -7,18 +7,19 @@
 #include <paths/long/large/MakeGaps.h>
 #include <paths/long/large/FinalFiles.h>
 #include "FastIfstream.h"
-#include "MainTools.h"
+#include "CoreTools.h"
+#include "system/ParsedArgs.h"
+#include "system/SysConf.h"
 #include "PairsManager.h"
 #include "ParallelVecUtilities.h"
 #include "feudal/PQVec.h"
 #include "paths/HyperBasevector.h"
 #include "paths/RemodelGapTools.h"
 #include "paths/long/BuildReadQGraph.h"
-//#include "paths/long/PlaceReads0.h"
 #include "paths/long/SupportedHyperBasevector.h"
 #include "paths/long/large/AssembleGaps.h"
 #include "paths/long/large/ExtractReads.h"
-#include "tclap/CmdLine.h"
+#include "deps/cxxopts/cxxopts.hpp"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -34,8 +35,11 @@
 #include "KMerFreqFactory.h"
 #include "kmers/KMer.h"
 #include <omp.h>
+#include <paths/long/LargeKDispatcher.h>
+#include <SpectraCn.hpp>
+#include <paths/long/LongReadsToPaths.h>
 
- // Dummy defines, this should come from CMakeLists.txt
+// Dummy defines, this should come from CMakeLists.txt
 #ifndef GIT_COMMIT_HASH
 #define GIT_COMMIT_HASH "dummy"
 #endif
@@ -48,182 +52,6 @@
 int MAX_CELL_PATHS = 50;
 int MAX_DEPTH = 10;
 const uint64_t GB = 1024*1024*1024;
-
-
-void step_1(vecbvec & bases,
-            VecPQVec & quals,
-            std::string out_dir,
-            std::string read_files){
-    OutputLog(2) << "processing reads into bases and quals"<<std::endl;
-    ExtractReads(read_files, out_dir, &bases, &quals);
-}
-
-
-void step_2_EXP(std::shared_ptr<KmerList> & kmercounts, vecbvec const &reads, VecPQVec &quals, unsigned int minQual,
-                unsigned int minCount, const std::string &workdir, const std::string &tmpdir, uint64_t max_mem) {
-    vec<uint16_t> reads_length;
-    create_read_lengths(reads_length,quals,minQual);
-    OutputLog(2)<<"Unloading quals"<<std::endl;
-    quals.clear();
-    quals.shrink_to_fit();
-
-    SMR <KMerNodeFreq_s,
-            KMerFreqFactory<std::pair<bvec, uint16_t>>,
-            FastBReader<std::pair<bvec,uint16_t>>,
-            std::pair<bvec,uint16_t >,
-            KMerParams > fastqKCount({K, minQual},max_mem*0.25/1000 * GB, minCount, workdir, tmpdir);
-
-    fastqKCount.read_from_file(reads, reads_length, omp_get_max_threads());
-
-    kmercounts->size = fastqKCount.getRecords(kmercounts->kmers);
-}
-
-void step_2(std::shared_ptr<KmerList> & kmercounts, vecbvec const& reads, VecPQVec const &quals,
-            unsigned int minQual, unsigned minCount,
-            std::string workdir, std::string tmpdir, unsigned char disk_batches, uint64_t count_batch_size) {
-    vec<uint16_t> rlen;
-    create_read_lengths(rlen,quals,minQual);
-    OutputLog(2)<<"Unloading quals"<<std::endl;
-    quals.clear();
-    quals.shrink_to_fit();
-    kmercounts=buildKMerCount( reads, rlen, minCount, workdir, tmpdir, disk_batches, count_batch_size );
-    kmercounts->dump(workdir+"/raw_kmers.data");
-    OutputLog(2) << "Kmer counting done and dumped with "<<kmercounts->size<< " kmers" <<std::endl;
-}
-
-void step_3(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            vecbvec &bases,
-            VecPQVec &quals,
-            std::shared_ptr<KmerList> kmercounts,
-            unsigned int minFreq,
-            unsigned int small_K,
-            std::string out_dir) {
-    bool FILL_JOIN = False;
-    buildReadQGraph(bases, quals, kmercounts, FILL_JOIN, FILL_JOIN, minFreq, .75, 0, &hbv, &paths, small_K);
-
-    kmercounts.reset();
-    OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
-    hbvinv.clear();
-    hbv.Involution(hbvinv);
-    FragDist(hbv, hbvinv, paths, out_dir + "/small_K.frags.dist");
-}
-
-void step_4DV(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            unsigned int large_K,
-            std::string out_dir){
-
-    //Swap the old graph and such to variables private to this context
-    ReadPathVec old_paths;
-    std::swap(old_paths,paths);
-    paths.resize(old_paths.size());
-    HyperBasevector old_hbv;
-    std::swap(hbv,old_hbv);
-    vec<int> old_hbvinv;
-    std::swap(hbvinv,old_hbvinv);
-
-    vecbvec old_edges(old_hbv.Edges().begin(), old_hbv.Edges().end()); //TODO: why do we even need this?
-
-    //Produce the new graph and such in the argument variables
-    RepathInMemory(old_hbv, old_edges, old_hbvinv, old_paths, old_hbv.K(), large_K, hbv, paths, True, True, False);
-    OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
-    hbvinv.clear();
-    hbv.Involution(hbvinv);
-    FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
-}
-
-void step_4EXP(HyperBasevector &hbv,
-               vec<int> &hbvinv,
-               ReadPathVec &paths,
-               unsigned int large_K,
-               std::string out_dir){
-    OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
-    /*if (clean_smallk_graph) {
-        std::cout << "--== Step 3a: improving small_K graph ==--" << std::endl;
-        inv.clear();
-        hbv.Involution(inv);
-        VecULongVec paths_inv;
-        invert(paths, paths_inv, hbv.EdgeObjectCount());
-        GraphImprover gi(hbv, inv, paths, paths_inv);
-        gi.improve_graph();
-        GraphImprover gi2(hbv, inv, paths, paths_inv);
-        gi2.expand_cannonical_repeats(2,2);
-
-
-        std::cout << "--== Step 3b: Repathing to second (large K) graph ==--" << std::endl;
-    } else {
-        std::cout << "--== Step 3: Repathing to second (large K) graph ==--" << std::endl;
-    }*/
-    ReadPathVec old_paths;
-    std::swap(old_paths,paths);
-    paths.resize(old_paths.size());
-    HyperBasevector old_hbv;
-    std::swap(hbv,old_hbv);
-    vec<int> old_hbvinv;
-    std::swap(hbvinv,old_hbvinv);
-
-
-
-    //Produce the new graph and such in the argument variables
-    RepathInMemoryEXP(old_hbv, old_hbvinv, old_paths, large_K, hbv, paths);
-    OutputLog(2)<<"computing graph involution and fragment sizes"<<std::endl;
-    hbvinv.clear();
-    hbv.Involution(hbvinv);
-    FragDist(hbv, hbvinv, paths, out_dir + "/large_K.frags.dist");
-
-}
-
-void step_4(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            unsigned int large_K,
-            std::string out_dir){
-    step_4DV(hbv,hbvinv,paths,large_K,out_dir);
-}
-
-void step_5(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            vecbvec &bases,
-            VecPQVec &quals,
-            unsigned int min_size){
-    OutputLog(2)<<"cleaning graph"<<std::endl;
-    int CLEAN_200_VERBOSITY = 0;
-    int CLEAN_200V = 3;
-    Clean200x(hbv, hbvinv, paths, bases, quals, CLEAN_200_VERBOSITY, CLEAN_200V, min_size);
-
-}
-
-void step_6(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            ReadPathVec &paths,
-            vecbvec &bases,
-            VecPQVec &quals,
-            unsigned int pair_sample,
-            std::string out_dir){
-    vecbvec new_stuff;
-    //TODO: Hardcoded parameters
-    bool CYCLIC_SAVE = True;
-    int A2V = 5;
-    int MAX_PROX_LEFT = 400;
-    int MAX_PROX_RIGHT = 400;
-    int MAX_BPATHS = 100000;
-    std::vector<int> k2floor_sequence={0, 100, 128, 144, 172, 200};
-    if (hbv.K()>=224) k2floor_sequence.push_back(224);
-    if (hbv.K()>=240) k2floor_sequence.push_back(240);
-    if (hbv.K()>=260) k2floor_sequence.push_back(260);
-    AssembleGaps2(hbv, hbvinv, paths, bases, quals, out_dir, k2floor_sequence,
-                  new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, pair_sample);
-    int MIN_GAIN = 5;
-    int EXT_MODE = 1;
-
-    AddNewStuff(new_stuff, hbv, hbvinv, paths, bases, quals, MIN_GAIN, EXT_MODE);
-    PartnersToEnds(hbv, paths, bases, quals);
-
-}
 
 void step_7DV(HyperBasevector &hbv,
             vec<int> &hbvinv,
@@ -246,27 +74,6 @@ void step_7DV(HyperBasevector &hbv,
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    vec<int> llens;
-    GetLineLengths(hbv, lines, llens);
-    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-    vec<vec<covcount>> covs;
-    vec<int64_t> subsam_starts={0};
-    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
-
-    //TODO: maybe Report some similar to CN stats ???
-    //double cn_frac_good = CNIntegerFraction(hbv, covs);
-    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
@@ -311,29 +118,6 @@ void step_7(HyperBasevector &hbv,
             if (paths[i][j] < 0) bad = True;
         if (bad) paths[i].resize(0);
     }
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    // Find lines and write files.
-
-    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-      vec<int> llens;
-      GetLineLengths(hbv, lines, llens);
-      GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-      BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-      vec<vec<covcount>> covs;
-      vec<int64_t> subsam_starts={0};
-      ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
-
-      //TODO: maybe Report some similar to CN stats ???
-      //double cn_frac_good = CNIntegerFraction(hbv, covs);
-      //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-      //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
 
 }
 
@@ -348,231 +132,215 @@ void step_7EXP(HyperBasevector &hbv,
             std::string out_dir,
             std::string out_prefix){
     OutputLog(2)<<"EXPERIMENTAL heuristics being run"<<std::endl;
-    int MAX_SUPP_DEL = min_input_reads;//was 0
-    bool TAMP_EARLY_MIN = True;
-    int MIN_RATIO2 = 8;
-    int MAX_DEL2 = 200;
-    bool ANALYZE_BRANCHES_VERBOSE2 = False;
-    const String TRACE_SEQ = "";
-    bool DEGLOOP = True;
-    bool EXT_FINAL = True;
-    int EXT_FINAL_MODE = 1;
-    bool PULL_APART_VERBOSE = False;
-    const vec<int> PULL_APART_TRACE;
-    int DEGLOOP_MODE = 1;
-    float DEGLOOP_MIN_DIST = 2.5;
-    bool IMPROVE_PATHS = True;
-    bool IMPROVE_PATHS_LARGE = False;
-    bool FINAL_TINY = True;
-    bool UNWIND3 = True;
-
-    SimplifyEXP(out_dir, hbv, hbvinv, paths, bases, quals, MAX_SUPP_DEL, TAMP_EARLY_MIN, MIN_RATIO2, MAX_DEL2,
-                ANALYZE_BRANCHES_VERBOSE2, TRACE_SEQ, DEGLOOP, EXT_FINAL, EXT_FINAL_MODE,
-                PULL_APART_VERBOSE, PULL_APART_TRACE, DEGLOOP_MODE, DEGLOOP_MIN_DIST, IMPROVE_PATHS,
-                IMPROVE_PATHS_LARGE, FINAL_TINY, UNWIND3, False, False, False);//TODO: the last 3 Falses disable pathfinder
-
-    // For now, fix paths and write the and their inverse
-    for (size_t i = 0; i < paths.size(); i++) { //XXX TODO: change this int for uint 32
-        Bool bad = False;
-        for (size_t j = 0; j < paths[i].size(); j++)
-            if (paths[i][j] < 0) bad = True;
-        if (bad) paths[i].resize(0);
-    }
     VecULongVec pathsinv;
     OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
     invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines", lines);
-
-    // XXX TODO: Solve the {} thingy, check if has any influence in the new code to run that integrated
-    vec<int> llens;
-    GetLineLengths(hbv, lines, llens);
-    GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
-    BinaryWriter::writeFile(out_dir + "/" + out_prefix + ".fin.lines.npairs", npairs);
-
-    vec<vec<covcount>> covs;
-    vec<int64_t> subsam_starts={0};
-    ComputeCoverage(hbv, hbvinv, paths, lines, subsam_starts, covs);
-
-    //TODO: maybe Report some similar to CN stats ???
-    //double cn_frac_good = CNIntegerFraction(hbv, covs);
-    //std::cout << "CN fraction good = " << cn_frac_good << std::endl;
-    //PerfStatLogger::log("cn_frac_good", ToString(cn_frac_good, 2), "fraction of edges with CN near integer");
+    simplifyWithPathFinder(hbv,hbvinv,paths,pathsinv,bases,quals,5,false,true);
 
 }
 
-void step_8(HyperBasevector &hbv,
-            vec<int> &hbvinv,
-            vec<vec<vec<vec<int>>>> &lines,
-            vec<int> &npairs,
-            ReadPathVec &paths,
-            std::string out_dir,
-            std::string out_prefix){
-    int MIN_LINE = 5000;
-    int MIN_LINK_COUNT = 3; //XXX TODO: this variable is the same as -w in soap??
 
-    bool SCAFFOLD_VERBOSE = False;
-    bool GAP_CLEANUP = True;
-
-    VecULongVec pathsinv;
-    OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
-    invert(paths,pathsinv,hbv.EdgeObjectCount());
-
-    MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, out_dir, out_prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
-
-    // Carry out final analyses and write final assembly files.
-
-    vecbasevector G;
-    vec<int64_t> subsam_starts={0};
-    vec<String> subsam_names={"C"};
-    FinalFiles(hbv, hbvinv, paths, subsam_names, subsam_starts, out_dir, out_prefix+ ".assembly", MAX_CELL_PATHS, MAX_DEPTH, G);
-}
-
-
-
-int main(const int argc, const char * argv[]) {
-
-
-
-    std::string out_prefix;
-    std::string read_files;
+struct cmdline_args {
+    std::vector<std::string> r1_files;
+    std::vector<std::string> r2_files;
     std::string out_dir;
+    std::string prefix;
     std::string tmp_dir;
-    unsigned int threads;
-    unsigned int minFreq,minCount;
-    unsigned int minQual;
-    int max_mem;
-    uint64_t count_batch_size;
-    unsigned int small_K, large_K, min_size,from_step,to_step, pair_sample, disk_batches, min_input_reads;
-    std::vector<unsigned int> allowed_k = {60, 64, 72, 80, 84, 88, 96, 100, 108, 116, 128, 136, 144, 152, 160, 168, 172,
-                                           180, 188, 192, 196, 200, 208, 216, 224, 232, 240, 260, 280, 300, 320, 368,
-                                           400, 440, 460, 500, 544, 640};
-    std::vector<std::string> validGFAOpts({"none", "basic", "detailed", "abyss"});
-    std::vector<unsigned int> allowed_steps = {1,2,3,4,5,6,7,8};
-    std::string dump_detailed_gfa;
-    bool dump_all,run_dv,run_exp;
+    unsigned int threads=4;
+    unsigned int minFreq=4;
+    unsigned int minQual=0;
+    int max_mem=10;
+    uint64_t count_batch_size=0;
+    unsigned int small_K=60;
+    unsigned int large_K=200;
+    unsigned int min_size=0;
+    unsigned int from_step=1;
+    unsigned int to_step=8;
+    unsigned int pair_sample=200;
+    unsigned int disk_batches=0;
+    unsigned int min_input_reads=3;
+    bool paired_repath=true;
+    bool solve_complex_repeats=false;
+    bool dv_repeat_solving=false;
+    bool dump_all=false;
+    unsigned int log_level=3;
+    bool output_spectracn=true;
 
-    //========== Command Line Option Parsing ==========
-    std::cout << "Welcome to w2rap-contigger" << std::endl << std::endl;
+};
+
+int dir_exists_and_writable(const std::string &dirname) {
+    return (access(dirname.data(), W_OK));
+}
+
+int file_exist (const std::string &filename)
+{
+    std::ifstream file(filename);
+    return file.good();
+}
+
+
+struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
+    struct cmdline_args parsed_args;
+    cxxopts::Options options(argv[0], "");
+    try {
+        options.add_options()
+                ("1", "r1 file(s)", cxxopts::value(parsed_args.r1_files))
+                ("2", "r2 file(s)", cxxopts::value(parsed_args.r2_files))
+                ("o,output_dir","output dir", cxxopts::value(parsed_args.out_dir))
+                ("p,prefix","output prefix", cxxopts::value(parsed_args.prefix))
+                ("tmp_dir","temporary files dir (default: output_dir)", cxxopts::value(parsed_args.tmp_dir))
+                ("t,threads","parallel threads (default: 4)", cxxopts::value(parsed_args.threads))
+                ("d,disk_batches","disk batches for kmer counting (default: 4)", cxxopts::value(parsed_args.disk_batches))
+                ("max_memory","memory soft limit, in GB (default: 10)",cxxopts::value(parsed_args.max_mem))
+                ("min_freq","minimum frequency for k-mers on first DBG",cxxopts::value(parsed_args.minFreq))
+                ("min_qual","quality to trim read ends on first DBG (default: 0 - don't trim)",cxxopts::value(parsed_args.minQual))
+                ("small_k","k for first DBG",cxxopts::value(parsed_args.small_K))
+                ("large_K","k for second DBG",cxxopts::value(parsed_args.large_K))
+                ("paired_repath","(EXPERIMENTAL) use pairs when repathing from first to second DBG",cxxopts::value(parsed_args.paired_repath))
+                ("dv_repeat_solving","(OBSOLETE) use DISCOVAR's repeat resolution parameters",cxxopts::value(parsed_args.dv_repeat_solving))
+                ("solve_complex_repeats","(EXPERIMENTAL) enable full PathFinder heuristics",cxxopts::value(parsed_args.solve_complex_repeats))
+                ("from_step","starting step (default: 1)",cxxopts::value(parsed_args.from_step))
+                ("to_step","ending step (default: 8)",cxxopts::value(parsed_args.to_step))
+                ("dump_all","dump all intermediate graphs and status files",cxxopts::value(parsed_args.dump_all))
+                ("s,spectra-cn","write a spectra-cn of the graphs and lines", cxxopts::value(parsed_args.output_spectracn))
+                ("h,help","show help message")
+                ;
+
+        auto result = options.parse(argc, argv);
+
+        if (result.count("help")) {
+            std::cout << options.help({""}) << std::endl;
+            exit(0);
+        }
+
+        if (result.count("1")!=result.count("2")) {
+            std::cout << "Please specify -1 and -2 in pairs of read files" << std::endl;
+            exit(0);
+        }
+
+        if (1==parsed_args.from_step and 0==result.count("1")) {
+            throw std::runtime_error("Please specify read files when starting from step 1");
+        }
+
+        if (result.count("output_dir")!=1 or result.count("prefix")!=1) {
+            std::cout << "Please specify output dir and prefix" << std::endl;
+            exit(0);
+        }
+
+        if (result.count("tmp_dir")==0) {
+            parsed_args.tmp_dir=parsed_args.out_dir;
+        }
+
+        // Validate from and to, from 1 to 8,  from >= to
+        if (parsed_args.to_step > 8 or parsed_args.to_step < 1) {
+            throw std::runtime_error("to_step value needs to be between 1 and 8");
+        }
+
+        if (parsed_args.from_step > 8 or parsed_args.from_step < 1) {
+            throw std::runtime_error("from_step value needs to be between 1 and 8");
+        }
+
+        if (parsed_args.from_step > parsed_args.to_step) {
+            throw std::runtime_error("from_step must be lower than to_step");
+        }
+
+        // Validate large_k is in possibilities (get list from sources)
+        std::set<int> large_k_opts;
+        for (const auto &k : BigK::gK) {
+            large_k_opts.insert(k);
+        }
+
+        if (large_k_opts.find(parsed_args.large_K) == large_k_opts.cend()) {
+            std::cerr << "Invalid large K value, please use one of the following: \n";
+            for (const auto &k : large_k_opts) {
+                std::cerr << k << ", ";
+            }
+            std::cerr << std::endl;
+            throw std::runtime_error("Invalid large K value");
+        }
+
+        // Validate min_freq min 1
+
+        // Validate min_qual min 0 max 33
+        if (parsed_args.minQual > 33 or parsed_args.minQual < 0) {
+            throw std::runtime_error("Invalid min_qual, please use a value between 0 and 33");
+        }
+
+        // Validate directories exist
+        if (dir_exists_and_writable(parsed_args.out_dir)) {
+            std::string error_str("Output directory error: "+parsed_args.out_dir+", ");
+            std::perror(error_str.data());
+            throw std::runtime_error("Output directory error");
+        }
+
+
+        // Validate if solve_complex_repeats not possible to dv_repeat_solving
+        if (parsed_args.solve_complex_repeats and parsed_args.dv_repeat_solving) {
+            throw std::runtime_error("solve_complex_repeats and dv_repeat_solving options are incompatible, please choose only one");
+        }
+
+        return parsed_args;
+
+    } catch (const cxxopts::OptionException& e) {
+        std::cerr << "error parsing options: " << e.what() << std::endl;
+        std::cout << options.help({""}) << std::endl;
+        exit(1);
+    }
+}
+
+std::string step_names[8]={
+        "Processing read files",
+        "Kmer counting",
+        "Small K graph construction",
+        "Large K graph construction",
+        "Large K graph cleanup",
+        "Local Assemblies and Patching",
+        "Final graph cleanup",
+        "Scaffolding"
+};
+std::string step_outputg_prefix[8]={
+        "",
+        "",
+        "A_small_K",
+        "B_large_K",
+        "C_large_K_clean",
+        "D_large_K_patched",
+        "E_contigs",
+        ""
+};
+
+std::string step_inputg_prefix[8]={
+        "",
+        "",
+        "",
+        "A_small_K",
+        "B_large_K",
+        "C_large_K_clean",
+        "D_large_K_patched",
+        "E_contigs",
+};
+
+int main( int argc,  char * argv[]) {
+    std::cout << "w2rap-contigger - a paired short read assembler" << std::endl << std::endl;
     std::cout << "Git origin: " << GIT_ORIGIN_URL << " -> "  << GIT_BRANCH << std::endl;
     std::cout << "Git commit: " << GIT_COMMIT_HASH << std::endl<<std::endl;
-    //TODO: change the expeirmental/dv flags to arguments per step (--experimental_steps 4,5)
-
-    try {
-        TCLAP::CmdLine cmd("", ' ', "0.1");
-        TCLAP::ValueArg<unsigned int> threadsArg("t", "threads",
-             "Number of threads on parallel sections (default: 4)", false, 4, "int", cmd);
-        TCLAP::ValueArg<unsigned int> max_memArg("m", "max_mem",
-             "Maximum memory in GB (soft limit, impacts performance, default 10000)", false, 10000, "int", cmd);
-
-        TCLAP::ValueArg<std::string> read_filesArg("r", "read_files",
-             "Input sequences (reads) files ", true, "", "file1.fastq,file2.fastq", cmd);
-
-        TCLAP::ValueArg<std::string> out_dirArg("o", "out_dir", "Output directory path", true, "", "string", cmd);
-        TCLAP::ValueArg<std::string> out_prefixArg("p", "prefix",
-             "Prefix for the output files", true, "", "string", cmd);
-
-        TCLAP::ValuesConstraint<unsigned int> largeKconst(allowed_k);
-        TCLAP::ValueArg<unsigned int> large_KArg("K", "large_k",
-             "Large k (default: 200)", false, 200, &largeKconst, cmd);
-        //TCLAP::ValueArg<unsigned int> small_KArg("k", "small_k",
-        //                                         "Small k (default: 60)", false, 60, &largeKconst, cmd);
-
-        TCLAP::ValuesConstraint<unsigned int> steps(allowed_steps);
-        TCLAP::ValueArg<unsigned int> fromStep_Arg("", "from_step",
-                                                 "Start on step (default: 1)", false, 1, &steps, cmd);
-
-        TCLAP::ValueArg<unsigned int> toStep_Arg("", "to_step",
-                                                   "Stop after step (default: 8)", false, 8, &steps, cmd);
-
-        TCLAP::ValueArg<unsigned int> disk_batchesArg("d", "disk_batches",
-                                                 "number of disk batches for step2 (default: 0, 0->in memory)", false, 0, "int", cmd);
-
-        TCLAP::ValueArg<uint32_t> count_batchArg("", "count_batch",
-                                                     "number of reads to count on each parallel iteration (default: total/(4*threads) )", false, 0, "int", cmd);
-
-        TCLAP::ValueArg<std::string> tmp_dirArg("", "tmp_dir",
-                                                      "tmp dir for step2 disk batches (default: workdir)", false, "", "string", cmd);
-
-        TCLAP::ValueArg<unsigned int> minQualArg("", "min_qual",
-                                                 "minimum quality for small k-mers (default: 7)", false, 7, "int", cmd);
-
-        TCLAP::ValueArg<unsigned int> minCountArg("", "min_count",
-                                                 "minimum frequency for k-mers counting (default: 4)", false, 4, "int", cmd);
-
-        TCLAP::ValueArg<unsigned int> minFreqArg("", "min_freq",
-                                                 "minimum frequency for small k-mer graph (default: 4)", false, 4, "int", cmd);
-
-        TCLAP::ValueArg<unsigned int> minSizeArg("s", "min_size",
-             "Min size of disconnected elements on large_k graph (in kmers, default: 0=no min)", false, 0, "int", cmd);
-
-        TCLAP::ValueArg<unsigned int> pairSampleArg("", "pair_sample",
-                                                    "max number of read pairs to use in local assemblies (default: 200)", false, 200, "int", cmd);
-
-        TCLAP::ValueArg<unsigned int> minInputArg("", "min_input",
-                                                    "min number of read entering an edge at step 6(default: 3)", false, 3, "int", cmd);
-
-        TCLAP::ValueArg<unsigned int> logLevelArg("", "log_level",
-                                                  "verbosity level (default: 3)", false, 3, "1-4", cmd);
-
-        TCLAP::ValueArg<bool>         runDiscovarCompatibleArg        ("","dv_like",
-                                                               "Run with discovar-like heuristics (default: 0)", false,false,"bool",cmd);
-
-        TCLAP::ValueArg<bool>         runExperimentalArg        ("","experimental",
-                                                                    "Run latest EXPERIMENTAL heuristics (default: 0)", false,false,"bool",cmd);
-
-        TCLAP::ValueArg<bool>         dumpAllArg        ("","dump_all",
-                                                               "Dump all intermediate files (default: 0)", false,false,"bool",cmd);
-        TCLAP::ValuesConstraint<std::string> gfaOutputOptions(validGFAOpts);
-        TCLAP::ValueArg<std::string>         dumpDetailedGFAArg        ("","dump_detailed_gfa",
-                                                         "Dump detailed GFA for every graph (default: basic)", false,"basic", &gfaOutputOptions,cmd);
-
-        cmd.parse(argc, argv);
-        // Get the value parsed by each arg.
-        out_dir = out_dirArg.getValue();
-        out_prefix = out_prefixArg.getValue();
-        read_files = read_filesArg.getValue();
-        threads = threadsArg.getValue();
-        max_mem = max_memArg.getValue();
-        large_K = large_KArg.getValue();
-        small_K = 60;//small_KArg.getValue();
-        min_size = minSizeArg.getValue();
-        dump_detailed_gfa=dumpDetailedGFAArg.getValue();
-        dump_all=dumpAllArg.getValue();
-        from_step=fromStep_Arg.getValue();
-        to_step=toStep_Arg.getValue();
-        pair_sample=pairSampleArg.getValue();
-        minFreq=minFreqArg.getValue();
-        minCount=minCountArg.getValue();
-        minQual=minQualArg.getValue();
-        disk_batches=disk_batchesArg.getValue();
-        count_batch_size=count_batchArg.getValue();
-        tmp_dir=tmp_dirArg.getValue();
-        min_input_reads=minInputArg.getValue();
-        OutputLogLevel=logLevelArg.getValue();
-        run_dv=runDiscovarCompatibleArg.getValue();
-        run_exp=runExperimentalArg.getValue();
-
-    } catch (TCLAP::ArgException &e)  // catch any exceptions
-    {
-        std::cerr << "error: " << e.error() << " for argument " << e.argId() << std::endl;
-        return 1;
-    }
-
-    //Check directory exists:
-
-
-    struct stat info{};
-
-    if (stat(out_dir.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
-        std::cout << "Output directory doesn't exist, or is not a directory: " << out_dir << std::endl;
-        return 1;
-    }
-
     std::cout << "Command: ";
     for (auto i=0;i<argc;i++) std::cout<<argv[i]<<" ";
     std::cout<<std::endl<<std::endl;
+    //Parse and validate args into args structure (DO NOT PASS THE STRUCTURE AROUND!)
+
+    auto args=parse_cmdline_args(argc,argv);
+    OutputLogLevel=args.log_level;
+
+    //===== Check directory exists =====
+
+    struct stat info{};
+    if (stat(args.out_dir.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
+        std::cout << "Output directory doesn't exist, or is not a directory: " << args.out_dir << std::endl;
+        return 1;
+    }
+
+
 
 #if __GNUC__ > 4 || \
               (__GNUC__ == 4 && (__GNUC_MINOR__ > 9 || \
@@ -584,103 +352,51 @@ int main(const int argc, const char * argv[]) {
 #endif
 
 
-    //== Set computational resources ===
-    SetThreads(threads, False);
-    SetMaxMemory(int64_t(round(max_mem * 1024.0 * 1024.0 * 1024.0)));
+    //===== Set computational resources =====
+    SetThreads(args.threads, false);
+    SetMaxMemory(int64_t(round(args.max_mem * 1024.0 * 1024.0 * 1024.0)));
     //TODO: try to find out max memory on the system to default to.
-    std::string step_names[8]={
-            "Processing read files",
-            "Kmer counting",
-            "Small K graph construction",
-            "Large K graph construction",
-            "Large K graph cleanup",
-            "Local Assembly",
-            "Final graph cleanup",
-            "Paired-end scaffolding"
-    };
-    std::string step_outputg_prefix[8]={
-            "",
-            "",
-            "small_K",
-            "large_K",
-            "large_K_clean",
-            "large_K_patched",
-            "contigs",
-            "assembly"
-    };
 
-    std::string step_inputg_prefix[8]={
-            "",
-            "",
-            "",
-            "small_K",
-            "large_K",
-            "large_K_clean",
-            "large_K_patched",
-            "contigs"
-    };
+    //===== Main variables, used across 2 or more steps =====
 
-    //========== Main Program Begins ======
     vecbvec bases;
     VecPQVec quals;
-
-
-    //double wtimer,cputimer;
-
     HyperBasevector hbv;
     vec<int> hbvinv;
     ReadPathVec paths;
-    std::shared_ptr<KmerList> kmercounts=std::make_shared<KmerList>();
-
-
-
-    // This is only needed by step 7 and 8
     vec<vec<vec<vec<int>>>> lines;
     vec<int> npairs;
 
-    //Step-by-step execution loop
-    for (auto step=from_step; step <=to_step; ++step){
+    //==== Step-by-step execution loop =====
+
+    for (auto step=args.from_step; step <=args.to_step; ++step){
         int ostep = step-1;
-        //First make sure all needed data is there.
-        if ( (2==step or 3==step or 5==step or 6==step or 7==step) and (quals.size()==0 or bases.size()==0)){
+
+        //===== pre-step: Make sure all data is there =====
+        if (( 5==step or 6==step or 7==step ) and (quals.size()==0 or bases.size()==0)){
             if (bases.size()==0) {
                 OutputLog(2) << "Loading bases..." << std::endl;
-                bases.ReadAll(out_dir + "/pe_data.fastb");
+                bases.ReadAll(args.out_dir + "/pe_data.fastb");
             }
             if (quals.size()==0) {
                 OutputLog(2) << "Loading quals..." << std::endl;
-                load_quals(quals, out_dir + "/pe_data.cqual");
+                load_quals(quals, args.out_dir + "/pe_data.cqual");
             }
             OutputLog(2) << "Read data loaded" << std::endl << std::endl;
-        }
-        if ( 3==step and 0==kmercounts->size){
-            OutputLog(2) << "Loading kmer counts..." << std::endl;
-            kmercounts->load(out_dir+"/raw_kmers.data");
-            OutputLog(2) << "kmer count data loaded" << std::endl << std::endl;
-        }
-        if ( 4==step ) kmercounts.reset(); //cleanup just in case
-
-        if ( 8==step ) {
-          if (lines.empty()) {
-            BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines", &lines );
-          }
-          if (npairs.empty()) {
-            BinaryReader::readFile( out_dir + "/" + out_prefix + ".fin.lines.npairs", &npairs );
-          }
         }
 
         //steps that require a graph
         if (step_inputg_prefix[ostep]!="" and hbv.N()==0) {
             //Load hbv
             OutputLog(2) <<"Loading graph..." << std::endl;
-            BinaryReader::readFile(out_dir + "/" + out_prefix + "." + step_inputg_prefix[ostep] + ".hbv", &hbv);
+            BinaryReader::readFile(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".hbv", &hbv);
             //Create inversion
             OutputLog(4) <<"Creating graph involution..." << std::endl;
             hbvinv.clear();
             hbv.Involution(hbvinv);
             //load paths
             OutputLog(2) <<"Loading paths..." << std::endl;
-            LoadReadPathVec(paths,(out_dir + "/" + out_prefix + "." + step_inputg_prefix[ostep] + ".paths").c_str());
+            LoadReadPathVec(paths,(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".paths").c_str());
             //create path inversion
             OutputLog(2) << "Graph and paths loaded" << std::endl << std::endl;
             graph_status(hbv);
@@ -696,38 +412,171 @@ int main(const int argc, const char * argv[]) {
         auto step_time=WallClockTime();
         //TODO: reset memory metrics?
 
-        //Run step
-        switch (step){
-            case 1:
-                step_1(bases, quals, out_dir, read_files);
+        //===== STEP SWITCH =====
+        switch (step) {
+            //===== STEP 1 (reads to binary) =====
+            case 1: {
+                // Validate -1 and -2 exist
+                for (const auto &r1f : args.r1_files) {
+                    if (!file_exist(r1f)) {
+                        std::string error_str("Input file error, R1 file: "+r1f+'\n');
+                        std::perror(error_str.data());
+                        throw std::runtime_error("Input 1 error");
+                    }
+                }
+
+                for (const auto &r2f : args.r2_files) {
+                    if (!file_exist(r2f)) {
+                        std::string error_str("Input file error, R2 file: "+r2f+'\n');
+                        std::perror(error_str.data());
+                        throw std::runtime_error("Input 2 error");
+                    }
+                }
+
+                OutputLog(2) << "processing reads into bases and quals" << std::endl;
+                for (auto i = 0; i < args.r1_files.size(); ++i) {
+                    OutputLog(2) << "R1: " << args.r1_files[i] << "  /  R2: " << args.r2_files[i] << std::endl;
+                    ExtractPairedReads(args.r1_files[i], args.r2_files[i], bases, quals);
+                }
                 break;
-            case 2:
-                if (run_exp)
-                    step_2_EXP(kmercounts, bases, quals, minQual, minCount, out_dir, tmp_dir, max_mem);
-                else step_2(kmercounts,bases, quals, minQual, minCount, out_dir, tmp_dir,disk_batches,count_batch_size);
+            }
+            //===== STEP 2 (kmer counting) =====
+            case 2: {
+                if (quals.size()==0) {
+                    OutputLog(2) << "Loading quals..." << std::endl;
+                    load_quals(quals, args.out_dir + "/pe_data.cqual");
+                }
+                OutputLog(2) << "Trimming " << quals.size() << " reads at quality >= " << args.minQual << std::endl;
+                vec<uint16_t> rlen;
+                create_read_lengths(rlen, quals, args.minQual);
+                OutputLog(2) << "Unloading quals" << std::endl;
+                quals.clear();
+                quals.shrink_to_fit();
+//                std::shared_ptr<KmerList> kmercounts=std::make_shared<KmerList>();
+                if (bases.size()==0) {
+                    OutputLog(2) << "Loading bases..." << std::endl;
+                    bases.ReadAll(args.out_dir + "/pe_data.fastb");
+                }
+                auto kmercounts = buildKMerCount(bases, rlen, args.minFreq, args.out_dir, args.tmp_dir, args.disk_batches,
+                                            args.count_batch_size);
+                kmercounts->dump(args.out_dir + "/raw_kmers.data");
+                bases.clear();
+                OutputLog(2) << "Kmer counting done and dumped with " << kmercounts->size << " kmers" << std::endl;
                 break;
-            case 3:
-                step_3(hbv,hbvinv,paths,bases,quals,kmercounts,minFreq,small_K,out_dir);
+            }
+            //===== STEP 3 (kmers -> small_k graph) =====
+            case 3: {
+                bool FILL_JOIN = False;
+                buildReadQGraph(args.out_dir, FILL_JOIN, FILL_JOIN, args.minFreq, .75, 0, &hbv, &paths,
+                                args.small_K);
+                OutputLog(2) << "computing graph involution and fragment sizes" << std::endl;
+                hbvinv.clear();
+                hbv.Involution(hbvinv);
+                FragDist(hbv, hbvinv, paths, args.out_dir  + "/" + args.prefix + ".A_small_K.frags.dist");
                 break;
-            case 4:
-                if (run_dv) step_4DV(hbv,hbvinv,paths,large_K,out_dir);
-                else if (run_exp) step_4EXP(hbv,hbvinv,paths,large_K,out_dir);
-                else step_4(hbv,hbvinv,paths,large_K,out_dir);
+            }
+            //===== STEP 4 (small_k graph -> large_k graph) =====
+            case 4: {
+                //This is handled in 3 parts now: produce supported sequences from places, make graph, translate paths
+                //Paths are loaded and unloaded to ease memory requirements
+
+                // a - produce supported sequences from places (TODO: make this stream the paths?)
+                vecbasevector supseqs;
+                vec<vec<int>> places;
+                vec<int> left_trunc,right_trunc;
+                get_place_sequences(supseqs, places, left_trunc, right_trunc, hbv, hbvinv, paths, args.large_K, false);//last false disables path extension
+                // b - construct graph
+                //clear memory (we need it!)
+                paths.clear(); paths.shrink_to_fit();
+                hbvinv.clear();hbvinv.shrink_to_fit();
+                {//Hacky way to clear the hbv, every bit of memory counts.
+                    HyperBasevector old_hbv;
+                    std::swap(hbv,old_hbv);
+                }
+
+
+                vecKmerPath xpaths;
+                HyperKmerPath h2;
+                OutputLog(2) << "building new graph from places" << std::endl; //Here we should ONLY have the "all" vector in memory. and the hbv.
+                unsigned const COVERAGE = 2u;
+                LongReadsToPaths(supseqs, args.large_K, COVERAGE, &hbv, &h2, &xpaths);
+                Destroy(supseqs);
+                OutputLog(4) <<"Creating graph involution..." << std::endl;
+                hbv.Involution(hbvinv);
+
+
+
+                // c - translate paths
+                //first reload the paths, as we'll need them for translation
+                {
+                    HyperBasevector old_graph;
+                    OutputLog(2) << "Loading old graph..." << std::endl;
+                    BinaryReader::readFile(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".hbv",&old_graph);
+                    auto old_graph_K=old_graph.K();
+                    std::vector<int> old_edge_sizes(old_graph.Edges().size());
+                    for (auto i=0;i<old_edge_sizes.size();++i) old_edge_sizes[i]=old_graph.Edges()[i].isize();
+                    vec<int> old_inv;
+                    old_graph.Involution(old_inv);
+                    OutputLog(2) << "Loading old paths..." << std::endl;
+                    ReadPathVec old_paths;
+                    LoadReadPathVec(old_paths, (args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".paths").c_str());
+                    paths.clear();paths.resize(old_paths.size());
+                    translate_paths(paths,hbv, hbvinv, xpaths, h2, old_graph.K(), old_edge_sizes, old_paths, old_inv,
+                                         places, left_trunc,right_trunc);
+                }
                 break;
-            case 5:
-                step_5(hbv, hbvinv, paths, bases, quals, min_size);
+            }
+            //===== STEP 5 (large_k graph cleaning) =====
+            case 5: {
+                OutputLog(2) << "cleaning graph" << std::endl;
+                Clean200x(hbv, hbvinv, paths, bases, quals, args.min_size);
                 break;
-            case 6:
-                step_6(hbv, hbvinv, paths, bases, quals, pair_sample, out_dir);
+            }
+            //===== STEP 6 (local assemblies) =====
+            case 6:{
+                vecbvec new_stuff;
+                //TODO: Hardcoded parameters
+                bool CYCLIC_SAVE = True;
+                int A2V = 5;
+                int MAX_PROX_LEFT = 400;
+                int MAX_PROX_RIGHT = 400;
+                int MAX_BPATHS = 100000;
+                std::vector<int> k2floor_sequence = {0, 100, 128, 144, 172, 200};
+                if (hbv.K() >= 224) k2floor_sequence.push_back(224);
+                if (hbv.K() >= 240) k2floor_sequence.push_back(240);
+                if (hbv.K() >= 260) k2floor_sequence.push_back(260);
+                AssembleGaps2(hbv, hbvinv, paths, bases, quals, args.out_dir, k2floor_sequence,
+                              new_stuff, CYCLIC_SAVE, A2V, MAX_PROX_LEFT, MAX_PROX_RIGHT, MAX_BPATHS, args.pair_sample);
+                int MIN_GAIN = 5;
+                int EXT_MODE = 1;
+
+                AddNewStuff(new_stuff, hbv, hbvinv, paths, bases, quals, MIN_GAIN, EXT_MODE);
+                PartnersToEnds(hbv, paths, bases, quals);
                 break;
-            case 7:
-                if (run_dv) step_7DV(hbv, hbvinv, lines, npairs, paths, bases, quals, out_dir, out_prefix);
-                else if (run_exp) step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
-                else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, min_input_reads, out_dir, out_prefix);
+            }
+            //===== STEP 7 (repeat resolution, 3 fairly complex approaches, keeping this in separated functions) =====
+            case 7: {
+                if (args.dv_repeat_solving) step_7DV(hbv, hbvinv, lines, npairs, paths, bases, quals, args.out_dir, args.prefix);
+                else if (args.solve_complex_repeats)
+                    step_7EXP(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
+                else step_7(hbv, hbvinv, lines, npairs, paths, bases, quals, args.min_input_reads, args.out_dir, args.prefix);
+
                 break;
-            case 8:
-              step_8(hbv, hbvinv, lines, npairs, paths, out_dir, out_prefix);
-              break;
+            }
+            case 8: {
+
+                VecULongVec pathsinv;
+                OutputLog(2)<<"creating path-to-edge mapping"<<std::endl;
+                invert(paths,pathsinv,hbv.EdgeObjectCount());
+                FindLines(hbv, hbvinv, lines, MAX_CELL_PATHS, MAX_DEPTH);
+                GetLineNpairs(hbv, hbvinv, paths, lines, npairs);
+                int MIN_LINE = 5000;
+                int MIN_LINK_COUNT = 5; //XXX TODO: this variable is the same as -w in soap?? -> it is links, but they're doubled
+                bool SCAFFOLD_VERBOSE = False;
+                bool GAP_CLEANUP = True;
+                MakeGaps(hbv, hbvinv, lines, npairs, paths, pathsinv, MIN_LINE, MIN_LINK_COUNT, args.out_dir, args.prefix, SCAFFOLD_VERBOSE, GAP_CLEANUP);
+                break;
+            }
             default:
                 std::cout << "ERROR: This is not a valid step " << step << std::endl;
                 exit(1);
@@ -745,31 +594,45 @@ int main(const int argc, const char * argv[]) {
         if (1==step) {
             //TODO: dump reads
             OutputLog(2) << "Dumping reads in fastb/cqual format..." << std::endl;
-            bases.WriteAll(out_dir + "/pe_data.fastb");
-            save_quals(quals,out_dir + "/pe_data.cqual");
+            bases.WriteAll(args.out_dir + "/pe_data.fastb");
+            save_quals(quals,args.out_dir + "/pe_data.cqual");
             OutputLog(2) << "DONE!" << std::endl;
         } else {
             if (step_outputg_prefix[ostep]!="") {
-                if (dump_all or step == to_step) {
+                if (args.dump_all or step == args.to_step) {
                     //TODO: dump graph and paths
                     OutputLog(2) << "Dumping graph and paths..." << std::endl;
-                    BinaryWriter::writeFile(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep] + ".hbv",
-                                            hbv);
-                    WriteReadPathVec(paths, (out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep] +
-                                             ".paths").c_str());
+                    BinaryWriter::writeFile(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".hbv", hbv);
+                    WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".paths").c_str());
+                    GFADump(std::string(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv, paths, 0, 0, false);
                     OutputLog(2) << "DONE!" << std::endl;
                 }
-
-                if (dump_detailed_gfa == validGFAOpts[1]) {
-                    GFADump(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv, hbvinv,
-                            paths, 0, 0, true);
-                } else if (dump_detailed_gfa == validGFAOpts[2]) {
-                    GFADumpDetail(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
-                                  hbvinv);
-                } else if (dump_detailed_gfa == validGFAOpts[3]) {
-                    GFADumpAbyss(std::string(out_dir + "/" + out_prefix + "." + step_outputg_prefix[ostep]), hbv,
-                                 hbvinv, paths, 0, 0, true);
+                if (args.output_spectracn){
+                    OutputLog(2) << "Computing graph freqs..." << std::endl;
+                    SpectraCN::DumpSpectraCN(hbv, hbvinv, args.out_dir, args.prefix+"."+step_outputg_prefix[ostep]);
+                    OutputLog(2) << "DONE!" << std::endl;
                 }
+            }
+            if (step==7) {
+                OutputLog(2) << "Dumping contig_lines..." << std::endl;
+                FinalFiles(hbv, hbvinv, paths, args.out_dir, args.prefix+ ".contig_lines", MAX_CELL_PATHS, MAX_DEPTH);
+                OutputLog(2) << "DONE!" << std::endl;
+                if (args.output_spectracn){
+                    OutputLog(2) << "Computing contig_lines freqs..." << std::endl;
+                    SpectraCN::DumpSpectraCN(args.out_dir+"/"+args.prefix+".contig_lines.fasta", args.out_dir,args.prefix+".contig_lines");
+                    OutputLog(2) << "DONE!" << std::endl;
+                }
+            }
+            if (step==8) {
+                OutputLog(2) << "Dumping scaffold_lines..." << std::endl;
+                FinalFiles(hbv, hbvinv, paths, args.out_dir, args.prefix + ".scaffold_lines", MAX_CELL_PATHS, MAX_DEPTH, false);
+                OutputLog(2) << "DONE!" << std::endl;
+                //TODO: Broken, Luis to FIX
+//                if (args.output_spectracn){
+//                    OutputLog(2) << "Computing scaffold_lines freqs..." << std::endl;
+//                    SpectraCN::DumpSpectraCN(args.out_dir+"/"+args.prefix+".scaffold_lines.fasta", args.out_dir,args.prefix+".contig_lines");
+//                    OutputLog(2) << "DONE!" << std::endl;
+//                }
             }
 
         }
@@ -780,6 +643,10 @@ int main(const int argc, const char * argv[]) {
             OutputLog(2,false)<<std::endl;
         }
     }
-    return 0;
+    //===== STEP 1: read formating and loading =====
+
+
+
+    //===== STEP 1: read formating and loading =====
 }
 

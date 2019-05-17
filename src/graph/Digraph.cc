@@ -202,28 +202,6 @@ digraph::digraph( const digraph& g, const int i )
   Initialize( g, components[i] );
 }
 
-
-digraph::digraph( const matrix< Bool >& A ) {
-  Initialize( A );
-}
-
-void digraph::Initialize( const matrix< Bool >& A ) {
-  ForceAssert( A.Square() );
-  vec< vec< int > > newFrom( A.Ncols() ), newTo( A.Nrows() );
-  for ( int v = 0; v < A.Ncols(); v++ ) {
-    for ( int w = 0; w < A.Nrows(); w++ ) {
-      if ( A( v, w ) ) {
-	newFrom[ v ].push_back( w );
-	newTo[ w ].push_back( v );
-      }
-    }
-  }
-
-  from_ = newFrom;
-  to_ = newTo;
-}
-
-
 void PrintStandardDOTHeader( std::ostream& out )
 {    out << "digraph G {\n\n";
      out << "rankdir=LR;\n";
@@ -864,38 +842,6 @@ void digraph::DeleteEdgesAtVertex( int v )
           for ( int j = from_[w].isize( ) - 1; j >= 0; j-- )
                if ( from_[w][j] == v ) from_[w].erase( from_[w].begin( ) + j );    }
      from_[v].clear( ), to_[v].clear( );    }
-
-/// Method: ReplaceWithTransitiveClosure()
-/// Replace this graph with its transitive closure.  That is, if there is a
-/// directed path from u to w in the original graph, there is a direct edge
-/// (u,w) in the new graph.
-
-void digraph::ReplaceWithTransitiveClosure() {
-  matrix< Bool > A( N(), N() );
-  for ( int v = 0; v < N(); v++ )
-    for ( int w = 0; w < N(); w++ )
-      A( v, w ) = HasEdge( v, w );
-
-  int pathLen = 1;
-  while ( pathLen < N() ) {
-    matrix< Bool > Asq;
-    mul( A, A, Asq );
-    for ( int v = 0; v < N(); v++ )
-      for ( int w = 0; w < N(); w++ )
-	A( v, w ) = ( A( v, w ) || Asq( v, w ) );
-    pathLen *= 2;
-  }
-
-  Initialize( A );
-}
-
-vec<int> digraph::ComponentOf( const int v ) const
-{    vec< vec<int> > comp;
-     Components(comp);
-     for ( int i = 0; i < comp.isize( ); i++ )
-          if ( BinMember( comp[i], v ) ) return comp[i];
-     ForceAssert( 0 == 1 );
-     return vec<int>( );    }
 
 vec<int> digraph::VerticesConnectedTo( const vec<int>& v ) const
 {    vec<int> x(v);

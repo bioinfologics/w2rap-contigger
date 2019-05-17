@@ -38,9 +38,7 @@ could continue the investigation later?
 // MakeDepend: library OMP
 // MakeDepend: cflags OMP_FLAGS
 
-#include "MainTools.h"
 #include "ParallelVecUtilities.h"
-#include "PrintAlignment.h"
 #include "Qualvector.h"
 #include "kmers/KmerRecord.h"
 #include "math/Functions.h"
@@ -506,12 +504,7 @@ template<int L> void ImprovePath( const vec<int>& rstarts,
           *pout << "comparison qsums: old = " << old_qsum << ", new = "
                << new_qsum << std::endl;
           if ( !good ) *pout << "new alignment looks like junk" << std::endl;
-          if (pimp.print_align)
-          {    basevector E = hb.Cat(core);
-               avector<int> gaps(1), lengths(1);
-               gaps(0) = 0, lengths(0) = b.size( );
-               align a( 0, starts[0], gaps, lengths );
-               PrintVisualAlignment( True, *pout, b, E, a, q );    }    }
+          }
      FinalPrint(pout);    }
 
 template<int L> void ImprovePathsCoreCore( const vec<int>& to_left,
