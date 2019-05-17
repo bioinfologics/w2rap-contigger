@@ -16,29 +16,30 @@
 #include "system/SortInPlace.h"
 
 int main(int argc, char **argv) {
-    vec<vec<std::pair<int, int> > > xs;
-    vec<vec<int>> n;
-    BinaryReader::readFile("xs.out", &xs);
-    BinaryReader::readFile("n.out", &n);
-    int merge_passes(10);
-    auto prev_xs(xs.size());
     OutputLogLevel = 2;
 
-    for (int p = 1; p <= merge_passes; p++) {
-        OutputLog(2) << "Merge clusters \n";
-        OutputLog(2) << xs.size() << " elements in xs\n";
-        prev_xs = xs.size();
+    HyperBasevector hb;
+    vec<int> inv2;
+    ReadPathVec paths2;
 
-        MergeClusters(xs, xs, n, n.size());
+    //Load hbv
+    OutputLog(2) <<"Loading graph..." << std::endl;
+    BinaryReader::readFile("step6.hbv", &hb);
+    //Create inversion
+    OutputLog(4) <<"Creating graph involution..." << std::endl;
+    inv2.clear();
+    hb.Involution(inv2);
+    //load paths
+    OutputLog(2) <<"Loading paths..." << std::endl;
+    LoadReadPathVec(paths2,"step6.paths");
+    //create path inversion
+    OutputLog(2) << "Graph and paths loaded" << std::endl << std::endl;
 
-        // Check if made any change, if hasn't simply bomb out
-        if (prev_xs == xs.size()) {
-            OutputLog(2)<<"Completed using " << p << " / " << merge_passes << " passes, last pass made no difference" << std::endl;
-            break;
-        }
-        OutputLog(2)<<"Completed pass " << p << " / " << merge_passes << std::endl;
+    vec<vec<std::pair<int, int> > > xs,xs2;
+    int A2V = 5;
 
-    }
+    Unsat2(hb, inv2, paths2, xs2, "./", A2V);
+    Unsat(hb, inv2, paths2, xs, "./", A2V);
 
     return 0;
 }
