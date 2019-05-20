@@ -792,7 +792,7 @@ void Unsat2(const HyperBasevector &hb, const vec<int> &inv,
         OutputLog(2) << xs.size() << " elements in xs" << std::endl;
         prev_xs = xs.size();
 
-        MergeClusters(xs, xs, n, hb.EdgeObjectCount());
+        MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
 
         // Check if made any change, if hasn't simply bomb out
         if (prev_xs == xs.size()) {
@@ -917,7 +917,7 @@ void Unsat2(const HyperBasevector &hb, const vec<int> &inv,
             UniqueSort(xs2[i]);
         }
         xs = xs2;
-        MergeClusters(xs, xs, n, hb.EdgeObjectCount());
+        MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
     }
 
     // Partially symmetrize.
@@ -931,7 +931,7 @@ void Unsat2(const HyperBasevector &hb, const vec<int> &inv,
             rd.push(std::make_pair(inv[d[j].second], inv[d[j].first]));
         xs.push_back(rd);
     }
-    MergeClusters(xs, xs, n, hb.EdgeObjectCount());
+    MergeClusters2(xs, xs, n, hb.EdgeObjectCount());
 
     // Clean clusters.
     OutputLog(2) << "Cleaning clusters." << std::endl;
