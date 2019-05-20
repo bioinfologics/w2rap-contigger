@@ -171,15 +171,11 @@ void MergeClusters2( const vec< vec< std::pair<int,int> > >& x,
           }
 #pragma omp critical
           {
-              OutputLog(2) << "joining clusters in thread " << omp_get_thread_num() << std::endl;
               uint64_t num_itt = 0;
                for (auto itt = tt1.cbegin(); itt != tt1.cend(); ++itt) {
                    for (auto x : *itt) {
                        ++num_itt;
                        e.join((*itt)[0], x);
-                       if (num_itt % 262144 == 0){
-                           std::cout << "Merged " << num_itt << " so far, total progress " << std::distance(tt1.cend(), itt) << "/" << tt1.size() << std::endl;
-                       }
                    }
                }
           }
