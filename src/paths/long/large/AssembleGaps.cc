@@ -436,7 +436,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                         }
                     }
 
-                    if (bpaths.isize() <= MAX_BPATHS) {
+                    if (bpaths.isize() <= MAX_BPATHS and not too_many_paths) {
                         // Make more bpaths.
                         for (int l = 0; l < lefts.isize(); l++) {
                             Bool ext = False;
