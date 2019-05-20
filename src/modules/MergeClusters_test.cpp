@@ -35,11 +35,16 @@ int main(int argc, char **argv) {
     //create path inversion
     OutputLog(2) << "Graph and paths loaded" << std::endl << std::endl;
 
-    vec<vec<std::pair<int, int> > > xs,xs2;
     int A2V = 5;
+    {
+        vec<vec<std::pair<int, int> > > xs2;
 
-    Unsat2(hb, inv2, paths2, xs2, "./", A2V);
-    Unsat(hb, inv2, paths2, xs, "./", A2V);
+        Unsat2(hb, inv2, paths2, xs2, "./", A2V);
+    }
+    {
+        vec<vec<std::pair<int, int> > > xs;
+        Unsat(hb, inv2, paths2, xs, "./", A2V);
+    }
 
     return 0;
 }
