@@ -414,18 +414,24 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                     xshb.Sources(sources), xshb.Sinks(sinks);
                     vec<int> zto_left, zto_right;
                     xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
-                    for (int i1 = 0; i1 < sources.isize(); i1++) {
-                        for (int i2 = 0; i2 < sinks.isize(); i2++) {
+
+                    bool too_many_paths=false;
+
+                    for (int i1 = 0; i1 < sources.isize() and not too_many_paths; i1++) {
+                        for (int i2 = 0; i2 < sinks.isize() and not too_many_paths; i2++) {
                             vec<vec<int>> p;
-                            xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
-                            for (int l = 0; l < p.isize(); l++) {
+                            too_many_paths = !xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p, -1, MAX_BPATHS); // returns whether or not it found a path
+                            for (int l = 0; l < p.isize() and not too_many_paths; l++) {
                                 basevector b = xshb.EdgeObject(p[l][0]);
                                 for (int m = 1; m < p[l].isize(); m++) {
                                     b.resize(b.isize() - (xshb.K() - 1));
                                     b = Cat(b, xshb.EdgeObject(p[l][m]));
                                 }
                                 bpaths.push_back(b);
-                                if (bpaths.isize() > MAX_BPATHS) break;
+                                if (bpaths.isize() > MAX_BPATHS) {
+                                    too_many_paths=true;
+                                    break;
+                                }
                             }
                         }
                     }
