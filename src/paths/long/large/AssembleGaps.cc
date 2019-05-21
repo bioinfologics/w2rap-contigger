@@ -244,7 +244,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     // Find clusters of unsatisfied links.
 
     vec<vec<std::pair<int, int> > > xs;
-    Unsat(hb, inv2, paths2, xs, work_dir, A2V);
+    Unsat2(hb, inv2, paths2, xs, work_dir, A2V);
 
     //Should print some stats about Unsats here.
 
