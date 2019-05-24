@@ -42,7 +42,7 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
 
         //std::cout << Date( ) << ": start walking" << std::endl;
         //std::cout << "memory in use = " << ToStringAddCommas( MemUsageBytes( ) ) << std::endl;
-        const int max_rl = 250;
+        const int max_rl = 400;
         vec<int> to_delete;
 #pragma omp parallel for
         for (int v = 0; v < hb.N(); v++) {

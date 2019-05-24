@@ -21,7 +21,6 @@
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Unsat.h"
 #include "system/SortInPlace.h"
-#include <util/w2rap_timers.h>
 #include <paths/long/LoadCorrectCore.h>
 #include <paths/long/ReadStack.h>
 #include <util/OutputLog.h>
@@ -483,9 +482,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //for (auto i=0;i<500;++i)
     //    if (solutionK[i]>0) OutputLog(2)<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
 
-    TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
-    TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);
-    TIMELOG_REPORT(std::cout,CorrectPairs1,CP1_Align,CP1_MakeStacks,CP1_Correct);
     // Create patches (edges+edge unions)
     Patch(hb, mhbp, new_stuff);
 }

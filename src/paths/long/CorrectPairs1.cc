@@ -16,11 +16,6 @@
 #include "paths/long/CorrectPairs1.h"
 #include "paths/long/FriendAligns.h"
 #include "paths/long/ReadStack.h"
-#include "util/w2rap_timers.h"
-TIMELOG_CREATE_GLOBAL(CP1_Align);
-TIMELOG_CREATE_GLOBAL(CP1_MakeStacks);
-TIMELOG_CREATE_GLOBAL(CP1_Correct);
-
 
 namespace { // open anonymous namespace
 
@@ -38,14 +33,10 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
      VecEFasta& corrected )
 {
      // Build alignments.
-     TIMELOG_DECLARE_LOCAL(CP1_Align, Loop);
-
-     TIMELOG_START_LOCAL(CP1_Align, Loop);
      FriendAligner faligns(bases,
                            heur.FF_MAKE_ALIGN_IMPL, K,
                            heur.FF_MAX_FREQ,
                            heur.FF_DOWN_SAMPLE, heur.FF_VERBOSITY);
-     TIMELOG_STOP_LOCAL(CP1_Align, Loop);
 
      // Go through the reads.
 
@@ -61,10 +52,6 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
      //batch = Min( 100, Max( 1, batch ) );
      //#pragma omp parallel for schedule(dynamic, batch)
      for (int64_t id1x = 0; id1x < (int64_t) use.size(); id1x++) {
-          TIMELOG_DECLARE_LOCAL(CP1_MakeStacks, Loop);
-          TIMELOG_DECLARE_LOCAL(CP1_Correct, Loop);
-
-          TIMELOG_START_LOCAL(CP1_MakeStacks, Loop);
           int64_t id1 = use[id1x];
           // Build stacks.
           std::ostringstream out;
@@ -80,7 +67,6 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
           readstack stack2(id1p, aligns_p, 0, aligns_p.size(),
                            readstack::right_extended, bases, quals, pairs);
           if (stack1.Rows() > heur.MAX_STACK || stack2.Rows() > heur.MAX_STACK) {
-               TIMELOG_STOP_LOCAL(CP1_MakeStacks, Loop);
                continue;
           }
 
@@ -119,7 +105,6 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
 
           if (all_qual - this_qual > heur.CP_MAX_QDIFF) {
                if (omp_get_thread_num() == 0) std::cout << out.str();
-               TIMELOG_STOP_LOCAL(CP1_MakeStacks, Loop);
                continue;
           }
 
@@ -168,10 +153,8 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
 
           vec<int> offsets = GetOffsets1(stack1, stack2, 0, heur.DELTA_MIS);
           vec<int> final_offsets = offsets;
-          TIMELOG_STOP_LOCAL(CP1_MakeStacks, Loop);
 
           // For each offset, create the merged stack associated to it.
-          TIMELOG_START_LOCAL(CP1_Correct, Loop);
           vec<basevector> closures;
           vec<QualVec> closuresq;
           vec<int> closureso;
@@ -452,7 +435,6 @@ void CorrectPairs1( const int K, const int max_freq, vecbasevector& bases,
                     corrected[id1p] = right;
                }
           }
-          TIMELOG_STOP_LOCAL(CP1_Correct, Loop);
      }
 
 }

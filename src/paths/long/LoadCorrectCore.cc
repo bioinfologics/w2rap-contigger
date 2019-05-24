@@ -28,7 +28,6 @@
 #include "paths/long/DiscovarTools.h"
 #include <numeric>
 #include <type_traits>
-#include "util/w2rap_timers.h"
 #include "ReadStack.h"
 
 void PopulateSpecials( const vecbasevector& creads, const PairsManager& pairs,

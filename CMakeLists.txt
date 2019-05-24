@@ -163,7 +163,6 @@ add_library(base_libs OBJECT
         src/kmers/KMerContext.cc
         src/kmers/KmerRecord.cc
         src/kmers/ReadPather.cc
-        src/lookup/SAM.cc
         src/math/Functions.cc
         src/math/HoInterval.cc
         src/math/Permutation.cc
@@ -290,16 +289,10 @@ add_executable(faKmerSpectra src/modules/faKmerSpectra.cc
         $<TARGET_OBJECTS:specific_w2rap-contigger>
         )
 
-add_executable(mergeclusters
-        $<TARGET_OBJECTS:base_libs>
-        $<TARGET_OBJECTS:specific_w2rap-contigger>
-        src/modules/MergeClusters_test.cpp)
-
 ##Zlib link
 if (ZLIB_FOUND)
   set(ZLIB libz.so)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
-  target_link_libraries(mergeclusters ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
   target_link_libraries(faKmerSpectra ${ZLIB_LIBRARIES})
 endif()
