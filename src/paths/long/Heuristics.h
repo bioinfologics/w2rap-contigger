@@ -173,11 +173,6 @@ HeuristicBool( CORRECT_PACBIO_PATCH, True,
 
 HeuristicBool( DETECT_VARIANTS, False, "mark SNP bubble edges in efasta" );
 
-HeuristicBool( PRECORRECT_OLD_NEW, False, "run PreCorrectOldNew" );
-
-HeuristicBool( PRECORRECT_ALT1, False,
-     "for Correct1, use only precorrection to get initial read set" );
-
 HeuristicBool( CORRECT_PAIRS, True, "do correction at pair level" );
 
 HeuristicBool( FILL_PAIRS_ALT, False, "use new pair filling code" );
@@ -349,8 +344,6 @@ HeuristicString( REQUIRE_EDGE_MATCH, "",
      Bool PACBIO_PATCH;
      Bool CORRECT_PACBIO_PATCH;
      Bool DETECT_VARIANTS;
-     Bool PRECORRECT_OLD_NEW;
-     Bool PRECORRECT_ALT1;
      Bool CORRECT_PAIRS;
      Bool FILL_PAIRS_ALT;
      Bool CORRECT;

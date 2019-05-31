@@ -24,7 +24,6 @@
 #include "paths/long/ReadPath.h"
 #include "paths/long/large/GapToyTools.h"
 
-PerfStatLogger PerfStatLogger::gInst;
 
 namespace
 {

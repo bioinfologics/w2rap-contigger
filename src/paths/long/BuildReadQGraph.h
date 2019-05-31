@@ -31,13 +31,13 @@ typedef struct __attribute__((__packed__)) KMerNodeFreq_s {
         //return 0==memcmp(&kdata,&other.kdata,2*sizeof(uint64_t));
         return (kdata[0]==other.kdata[0] and kdata[1]==other.kdata[1]);
     }
-    inline const operator<(KMerNodeFreq_s const & other) const{
+    inline const bool operator<(KMerNodeFreq_s const & other) const{
         //return -1==memcmp(&kdata,&other.kdata,2*sizeof(uint64_t));
         if (kdata[0]<other.kdata[0]) return true;
         if (kdata[0]>other.kdata[0]) return false;
         return kdata[1]<other.kdata[1];
     }
-    inline const operator>(KMerNodeFreq_s const & other) const{
+    inline const bool operator>(KMerNodeFreq_s const & other) const{
         if (kdata[0]>other.kdata[0]) return true;
         if (kdata[0]<other.kdata[0]) return false;
         return kdata[1]>other.kdata[1];
@@ -124,7 +124,7 @@ public:
 
 void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual);
 
-void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_ptr<KmerList> kmerlist,
+void buildReadQGraph( std::string out_dir,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
                       ReadPathVec* pPaths, int _K);

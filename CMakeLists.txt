@@ -1,9 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
-
-if (POLICY CMP0074)
-    cmake_policy(SET CMP0074 NEW)
-endif (POLICY CMP0074)
-
+IF(POLICY CMP0074)
+    CMAKE_POLICY(SET CMP0074 NEW)
+ENDIF(POLICY CMP0074)
 IF (MY_COMPILER_OPTION STREQUAL "Intel")
   FIND_PROGRAM(ICPC_PROGRAM icpc ...)
   IF(ICPC_PROGRAM)
@@ -168,7 +166,6 @@ add_library(base_libs OBJECT
         src/kmers/KMerContext.cc
         src/kmers/KmerRecord.cc
         src/kmers/ReadPather.cc
-        src/lookup/SAM.cc
         src/math/Functions.cc
         src/math/HoInterval.cc
         src/math/Permutation.cc
@@ -191,8 +188,6 @@ add_library(base_libs OBJECT
         src/paths/long/LongProtoTools.cc
         src/paths/long/LongReadsToPaths.cc
         src/paths/long/MakeAlignments.cc
-        src/paths/long/PreCorrectAlt1.cc
-        src/paths/long/PreCorrectOldNew.cc
         src/paths/long/ReadPathTools.cc
         src/paths/long/ReadStack.cc
         src/random/Bernoulli.cc
@@ -223,71 +218,64 @@ add_library(base_libs OBJECT
         src/paths/UnibaseUtils.cc
         src/paths/Unipath.cc
         src/paths/long/CreateGenome.cc
-        src/paths/long/KmerCount.cc
-        src/paths/long/LongHyper.cc
-        src/paths/long/SupportedHyperBasevector.cc
-        src/paths/long/SupportedHyperBasevector3.cc
-        src/paths/long/SupportedHyperBasevector4.cc
-        src/paths/long/SupportedHyperBasevector5.cc
-        src/paths/long/SupportedHyperBasevector6.cc
-        src/paths/long/SupportedHyperBasevector7.cc
-        src/paths/long/large/CN1PeakFinder.cc
-        src/paths/long/large/GapToyTools.cc
-        src/paths/long/large/GapToyTools3.cc
-        src/paths/long/large/Lines.cc
-        src/random/NormalDistribution.cc
-        src/GFADump.cc
-        src/util/TextTable.cc
-        src/SMR.h
-        src/KMerFreqFactory.h
-        src/paths/long/ReadPath.cc
-        src/util/OutputLog.h
-        src/util/OutputLog.cc
-        src/paths/long/KMerNodeFreq_s.cc
-        )
+            src/paths/long/KmerCount.cc
+            src/paths/long/LongHyper.cc
+            src/paths/long/SupportedHyperBasevector.cc
+            src/paths/long/SupportedHyperBasevector3.cc
+            src/paths/long/SupportedHyperBasevector4.cc
+            src/paths/long/SupportedHyperBasevector5.cc
+            src/paths/long/SupportedHyperBasevector6.cc
+            src/paths/long/SupportedHyperBasevector7.cc
+            src/paths/long/large/CN1PeakFinder.cc
+            src/paths/long/large/GapToyTools.cc
+            src/paths/long/large/GapToyTools3.cc
+            src/paths/long/large/Lines.cc
+            src/random/NormalDistribution.cc
+            src/GFADump.cc
+            src/util/TextTable.cc
+            src/paths/long/ReadPath.cc
+            src/util/OutputLog.cc
+            src/paths/long/KMerNodeFreq_s.cc
+            src/equiv/DisjointSet.cc
+            )
 
 add_library(specific_w2rap-contigger OBJECT
-        src/paths/long/large/GapToyTools4.cc
-        src/paths/long/large/GapToyTools5.cc
-        src/kmers/MakeLookup.cc
-        src/kmers/kmatch/KMatch.cc
-        src/paths/long/OverlapReads.cc
-        src/paths/long/KmerAlign.cc
-        src/paths/long/Friends.cc
-        src/math/Combinatorics.cc
-        src/kmers/LongReadPather.cc
-        src/feudal/QualNibbleVec.cc
-        src/Basevector.cc
-        src/VecString.cc
-        src/BasevectorTools.cc
-        src/Misc.cc
-        src/paths/long/large/AssembleGaps.cc
-        src/paths/long/large/GapToyTools2.cc
-        src/paths/long/large/Unsat.cc
-        src/paths/long/BuildReadQGraph.cc
-        src/paths/long/ExtendReadPath.cc
-        src/paths/long/KmerAlign.h
-        src/paths/long/ShortKmerReadPather.cc
-        src/paths/long/large/Clean200.cc
-        src/paths/long/large/ExtractReads.cc
-        src/paths/long/large/ReadNameLookup.cc
-        src/paths/long/large/Repath.cc
-        src/system/Crash.cc
-        src/util/PeakFinder.h
+            src/paths/long/large/GapToyTools4.cc
+            src/paths/long/large/GapToyTools5.cc
+            src/kmers/MakeLookup.cc
+            src/kmers/kmatch/KMatch.cc
+            src/paths/long/OverlapReads.cc
+            src/paths/long/KmerAlign.cc
+            src/paths/long/Friends.cc
+            src/math/Combinatorics.cc
+            src/kmers/LongReadPather.cc
+            src/feudal/QualNibbleVec.cc
+            src/Basevector.cc
+            src/VecString.cc
+            src/BasevectorTools.cc
+            src/Misc.cc
+            src/paths/long/large/AssembleGaps.cc
+            src/paths/long/large/GapToyTools2.cc
+            src/paths/long/large/Unsat.cc
+            src/paths/long/BuildReadQGraph.cc
+            src/paths/long/ExtendReadPath.cc
+            src/paths/long/KmerAlign.h
+            src/paths/long/large/Clean200.cc
+            src/paths/long/large/ExtractReads.cc
+            src/paths/long/large/ReadNameLookup.cc
+            src/paths/long/large/Repath.cc
+            src/system/Crash.cc
+
         src/paths/long/large/FinalFiles.cc
         src/paths/long/large/MakeGaps.cc
         src/paths/long/large/Simplify.cc
         src/paths/long/large/ImprovePath.cc
-        src/util/w2rap_timers.h
         src/paths/PathFinder.cc
-        src/paths/PathFinder.h
         src/paths/long/large/OverlapValidator.cc
-        src/paths/long/large/OverlapValidator.h
         src/paths/long/large/GraphImprover.cc
-        src/paths/long/large/GraphImprover.h
         src/paths/long/large/ConsensusChecker.cc
-        src/paths/long/large/ConsensusChecker.h
-        )
+        src/SpectraCn.cc
+            )
 
 ## add executables and respective sources
 add_executable(w2rap-contigger src/modules/w2rap-contigger.cc
@@ -299,7 +287,13 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
 
+add_executable(faKmerSpectra src/modules/faKmerSpectra.cc
+        $<TARGET_OBJECTS:base_libs>
+        $<TARGET_OBJECTS:specific_w2rap-contigger>
+        )
+
 set_property(TARGET hbv2gfa PROPERTY CXX_STANDARD 17)
+set_property(TARGET faKmerSpectra PROPERTY CXX_STANDARD 17)
 set_property(TARGET w2rap-contigger PROPERTY CXX_STANDARD 17)
 set_property(TARGET specific_w2rap-contigger PROPERTY CXX_STANDARD 17)
 set_property(TARGET base_libs PROPERTY CXX_STANDARD 17)
@@ -309,6 +303,7 @@ if (ZLIB_FOUND)
   set(ZLIB libz.so)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
+  target_link_libraries(faKmerSpectra ${ZLIB_LIBRARIES})
 endif()
 
 if (WITH_JEMALLOC)

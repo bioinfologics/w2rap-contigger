@@ -112,17 +112,6 @@ public:
 //using PQVec = PQVecA<>;
 using VecPQVec = std::vector<PQVec>;
 
-template <class Itr> // Itr is a random-access iterator over const qvec's
-void convertAppendParallel( Itr beg, Itr end, VecPQVec& vpqv )
-{
-    //XXX: TODO: not parallel at all!
-    vpqv.reserve(vpqv.size()+(end-beg));
-    for (auto it=beg;it!=end;++it) {
-        vpqv.push_back(PQVec(*it));
-    }
-
-}
-
 void save_quals(VecPQVec const &pqv, std::string filename);
 void load_quals(VecPQVec &pqv, std::string filename);
 

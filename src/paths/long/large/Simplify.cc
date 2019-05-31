@@ -665,7 +665,7 @@ void SimplifyEXP(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             WriteReadPathVec(paths,(fin_dir + "/pf_start.paths").c_str());
         }
 
-        PathFinder pf(hb, inv, paths, invPaths,5,VERBOSE_PATHFINDER);
+        PathFinder pf(hb, inv, paths, invPaths, bases, quals, 5,VERBOSE_PATHFINDER);
         pf.unroll_loops(800);
         RemoveUnneededVertices2(hb, inv, paths);
         Cleanup(hb, inv, paths);
@@ -918,7 +918,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     invert(paths, invPaths, hb.EdgeObjectCount());
 
     OutputLog(2) << "PathFinder: unrolling loops" << std::endl;
-    PathFinder(hb, inv, paths, invPaths).unroll_loops(800);
+    PathFinder(hb, inv, paths, invPaths, bases, quals).unroll_loops(800);
     OutputLog(2) << "Removing unneeded Vertices" << std::endl;
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
@@ -926,7 +926,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     invPaths.clear();
     invert( paths, invPaths, hb.EdgeObjectCount( ) );
     OutputLog(2) << "PathFinder: analysing single-direction repeats" << std::endl;
-    PathFinder(hb, inv, paths, invPaths).untangle_complex_in_out_choices(700);
+    PathFinder(hb, inv, paths, invPaths, bases, quals).untangle_complex_in_out_choices(700);
     OutputLog(2) << "Removing unneeded Vertices" << std::endl;
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);

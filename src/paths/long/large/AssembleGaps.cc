@@ -21,7 +21,6 @@
 #include "paths/long/large/GapToyTools.h"
 #include "paths/long/large/Unsat.h"
 #include "system/SortInPlace.h"
-#include <util/w2rap_timers.h>
 #include <paths/long/LoadCorrectCore.h>
 #include <paths/long/ReadStack.h>
 #include <util/OutputLog.h>
@@ -244,7 +243,7 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     // Find clusters of unsatisfied links.
 
     vec<vec<std::pair<int, int> > > xs;
-    Unsat(hb, inv2, paths2, xs, work_dir, A2V);
+    Unsat2(hb, inv2, paths2, xs, work_dir, A2V);
 
     //Should print some stats about Unsats here.
 
@@ -414,23 +413,29 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
                     xshb.Sources(sources), xshb.Sinks(sinks);
                     vec<int> zto_left, zto_right;
                     xshb.ToLeft(zto_left), xshb.ToRight(zto_right);
-                    for (int i1 = 0; i1 < sources.isize(); i1++) {
-                        for (int i2 = 0; i2 < sinks.isize(); i2++) {
+
+                    bool too_many_paths=false;
+
+                    for (int i1 = 0; i1 < sources.isize() and not too_many_paths; i1++) {
+                        for (int i2 = 0; i2 < sinks.isize() and not too_many_paths; i2++) {
                             vec<vec<int>> p;
-                            xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p);
-                            for (int l = 0; l < p.isize(); l++) {
+                            too_many_paths = !xshb.EdgePaths(zto_left, zto_right, sources[i1], sinks[i2], p, -1, MAX_BPATHS); // returns whether or not it found a path
+                            for (int l = 0; l < p.isize() and not too_many_paths; l++) {
                                 basevector b = xshb.EdgeObject(p[l][0]);
                                 for (int m = 1; m < p[l].isize(); m++) {
                                     b.resize(b.isize() - (xshb.K() - 1));
                                     b = Cat(b, xshb.EdgeObject(p[l][m]));
                                 }
                                 bpaths.push_back(b);
-                                if (bpaths.isize() > MAX_BPATHS) break;
+                                if (bpaths.isize() > MAX_BPATHS) {
+                                    too_many_paths=true;
+                                    break;
+                                }
                             }
                         }
                     }
 
-                    if (bpaths.isize() <= MAX_BPATHS) {
+                    if (bpaths.isize() <= MAX_BPATHS and not too_many_paths) {
                         // Make more bpaths.
                         for (int l = 0; l < lefts.isize(); l++) {
                             Bool ext = False;
@@ -477,9 +482,6 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
     //for (auto i=0;i<500;++i)
     //    if (solutionK[i]>0) OutputLog(2)<<solutionK[i]<<" blobs solved at K="<<i<<std::endl;
 
-    TIMELOG_REPORT(std::cout,AssembleGaps,AG2_FindPids,AG2_ReadSetCreation,AG2_CorrectionSuite,AG2_LocalAssembly2,AG2_LocalAssemblyEval,AG2_CreateBpaths,AG2_PushBpathsToGraph);
-    TIMELOG_REPORT(std::cout,Correct1Pre,C1P_Align,C1P_InitBasesQuals,C1P_Correct,C1P_UpdateBasesQuals);
-    TIMELOG_REPORT(std::cout,CorrectPairs1,CP1_Align,CP1_MakeStacks,CP1_Correct);
     // Create patches (edges+edge unions)
     Patch(hb, mhbp, new_stuff);
 }

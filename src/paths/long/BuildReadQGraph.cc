@@ -43,7 +43,6 @@
 #include <util/OutputLog.h>
 #include "paths/HyperBasevector.h"
 #include "paths/long/ExtendReadPath.h"
-#include "paths/long/ShortKmerReadPather.h"
 
 namespace
 {
@@ -742,7 +741,7 @@ namespace
         }
     }
 
-    void path_reads_OMP( vecbvec const& reads, VecPQVec const& quals, BRQ_Dict const& dict, vecbvec const& edges,
+    void path_reads_OMP( vecbvec const& reads, BRQ_Dict const& dict, vecbvec const& edges,
             HyperBasevector const& hbv, std::vector<int> const& fwdEdgeXlat, std::vector<int> const& revEdgeXlat,
                      ReadPathVec* pPaths) {
         static unsigned const MAX_JITTER = 3;
@@ -754,8 +753,6 @@ namespace
             hbv.ToLeft(toRight);
             BRQ_Pather mPather(dict,edges);
             ReadPath mPath;
-            ExtendReadPath mExtender(hbv,&toLeft,&toRight);
-            QualVec mQV;
 
             #pragma omp for
             for (size_t readId=0;readId<reads.size();++readId){
@@ -835,10 +832,24 @@ namespace
 
                 pathPartsToReadPath(parts, mPath,fwdEdgeXlat,revEdgeXlat);
 
-                quals[readId].unpack(&mQV);
-                mExtender.attemptLeftRightExtension(mPath,reads[readId],mQV);
+                (*pPaths)[readId].insert((*pPaths)[readId].end(),mPath.begin(),mPath.end());
+            }
+        }
 
-                (*pPaths)[readId] = mPath;
+    }
+
+    void improve_read_paths_OMP( vecbvec const& reads, VecPQVec const& quals, HyperBasevector const& hbv, ReadPathVec & pPaths) {
+#pragma omp parallel
+        {
+            vec<int> toLeft,toRight;
+            hbv.ToLeft(toLeft);
+            hbv.ToLeft(toRight);
+            QualVec mQV;
+            ExtendReadPath mExtender(hbv,&toLeft,&toRight);
+#pragma omp for
+            for (size_t readId=0;readId<reads.size();++readId){
+                quals[readId].unpack(&mQV);
+                mExtender.attemptLeftRightExtension(pPaths[readId],reads[readId],mQV);
             }
         }
 
@@ -1270,25 +1281,36 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename) {
     return kmercounts;
 }
 
-void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_ptr<KmerList> kmerlist,
+void buildReadQGraph( std::string out_dir,
                       bool doFillGaps, bool doJoinOverlaps,
                       unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
                       ReadPathVec* pPaths, int _K)
 {
-    OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
-    uint64_t kc=0;
-    for (auto i=0;i<kmerlist->size;++i) if (kmerlist->kmers[i].count>=minFreq) ++kc;
-    OutputLog(2) << kc << "/" << kmerlist->size <<" kmers with freq >= "<< minFreq << std::endl;
-    BRQ_Dict * pDict = new BRQ_Dict(kc);
-    OutputLog(2) << "Dict created, populating..." << std::endl;
-    for (auto i=0;i<kmerlist->size;++i) {
-        if (kmerlist->kmers[i].count>=minFreq) {
-            KMerNodeFreq knf(kmerlist->kmers[i]);
-            pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
-        }
+
+
+    uint64_t numKmers(0),usedKmers(0);
+    std::FILE* kmers_from_disk;
+    kmers_from_disk = std::fopen(std::string(out_dir+"/raw_kmers.data").data(), "rb");
+    if (!kmers_from_disk) {
+        std::perror("Failed to open raw_kmers.data, ");
     }
-    OutputLog(2) << "Dict populated, freeing kmer counts" << std::endl;
-    kmerlist->clear();
+    OutputLog(2) << "Creating dict." << std::endl;
+    BRQ_Dict * pDict = new BRQ_Dict(numKmers);
+    OutputLog(2) << "Filtering kmers into Dict..." << std::endl;
+    std::fread(&numKmers, sizeof(numKmers), 1, kmers_from_disk);
+    KMerNodeFreq_s reads_kmer;
+    //while next(a) or next(b)
+    for (auto read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk);
+         0<read_bytes;
+         read_bytes = std::fread(&reads_kmer, sizeof(reads_kmer), 1, kmers_from_disk)) {
+        if (reads_kmer.count>=minFreq) {
+            KMerNodeFreq knf(reads_kmer);
+            pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) knf, knf.kc));
+            ++usedKmers;
+        }
+
+    }
+    OutputLog(2) << usedKmers << "/" << numKmers <<" kmers with freq >= "<< minFreq << std::endl;
     pDict->recomputeAdjacencies();
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
@@ -1300,7 +1322,8 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
     OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<_K<<"-mers"<<std::endl;
 
     unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
-
+    vecbvec reads;
+    VecPQVec quals;
     if ( doFillGaps ) { // Off by default
         OutputLog(2) << "filling gaps." << std::endl;
         fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
@@ -1325,14 +1348,41 @@ void buildReadQGraph( vecbvec const & reads, VecPQVec const &quals, std::shared_
     {
         OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
-        OutputLog(2) << "pathing reads into graph..." << std::endl;
+
+        if (reads.size()==0) {
+            OutputLog(2) << "Loading bases..." << std::endl;
+            reads.ReadAll(out_dir + "/pe_data.fastb");
+        }
         pPaths->clear();
         pPaths->resize(reads.size());
-
-
-        path_reads_OMP(reads, quals, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
+        OutputLog(2) << "pathing"<<reads.size()<<" reads into graph..." << std::endl;
+        path_reads_OMP(reads, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         delete pDict;
+        edges.clear(); edges.shrink_to_fit();revEdgeXlat.clear();fwdEdgeXlat.clear();
+
+        if (quals.size()==0) {
+            OutputLog(2) << "Loading quals..." << std::endl;
+            load_quals(quals, out_dir + "/pe_data.cqual");
+        }
+        improve_read_paths_OMP(reads,quals,*pHBV,*pPaths);
         OutputLog(2) << "reads pathed"<<std::endl;
+        vec<int> to_right, to_left;
+        pHBV->ToRight(to_right);
+        pHBV->ToLeft(to_left);
+        auto multi = 0, fixed = 0;
+        for (auto pi = 0; pi < pPaths->size(); ++pi) {
+            auto &p = (*pPaths)[pi];
+            if (p.size() < 2) continue;
+            ++multi;
+            for (auto i = 1; i < p.size(); ++i) {
+                if (to_right[p[i - 1]] != to_left[p[i]]) {
+                    //std::cout<<"Path "<<pi<<" has a false connection "<<p[i-1]<<" -> "<<p[i]<<std::endl;
+                    p.resize(i - 1);
+                    ++fixed;
+                }
+            }
+        }
+        OutputLog(2) << "checking/fixing paths done, " << fixed << "/" << multi << " paths with multiple edges fixed" << std::endl;
     }
 
 }
