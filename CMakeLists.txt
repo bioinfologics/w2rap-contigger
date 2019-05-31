@@ -306,13 +306,14 @@ if (ZLIB_FOUND)
   target_link_libraries(faKmerSpectra ${ZLIB_LIBRARIES})
 endif()
 
-if (WITH_JEMALLOC)
-find_package(JeMalloc REQUIRED)
-add_definitions(-DJEMALLOC_NO_DEMANGLE)
-include_directories(${JEMALLOC_INCLUDE_DIR})
-target_link_libraries(w2rap-contigger ${JEMALLOC_LIBRARIES})
+if(WITH_JEMALLOC)
+    find_package(JeMalloc)
+    if (JeMalloc_FOUND)
+        add_definitions(-DJEMALLOC_NO_DEMANGLE)
+        include_directories(${JEMALLOC_INCLUDE_DIR})
+        target_link_libraries(w2rap-contigger ${JEMALLOC_LIBRARIES})
+    endif()
 endif()
-
 #Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc
 if (DEFINED MALLOC_LIBRARY)
     ## Link libraries
