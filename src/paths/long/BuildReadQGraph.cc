@@ -1027,7 +1027,6 @@ std::shared_ptr<KmerList> kmerCountOMP(vecbvec const& reads, std::vector<uint16_
             uint64_t from = gfrom + batch * batch_size;
             uint64_t read_count = (batch < batches - 1) ? batch_size : (gto - gfrom) - batch_size * (batches - 1);
             uint64_t to = from + read_count;
-
             std::shared_ptr<KmerList> local_kmer_list = std::make_shared<KmerList>();
             uint64_t total_good_lenght = std::accumulate(rlen.begin() + from, rlen.begin() + to, 0);
             local_kmer_list->resize(total_good_lenght);
@@ -1174,6 +1173,7 @@ std::shared_ptr<KmerList> kmerCountOMPDiskBased(vecbvec const& reads, std::vecto
     while (finished_files<disk_batches) {
         //find minimum of the non-finished files
         uint min=0;
+        while (!dbf_active[min])++min;
         for (auto i=1;i<disk_batches;++i)
             if (dbf_active[i]){
                 if (next_knf_from_dbf[i]<next_knf_from_dbf[min]) min=i;

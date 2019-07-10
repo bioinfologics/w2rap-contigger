@@ -183,26 +183,20 @@ void MergeClusters2( const vec< vec< std::pair<int,int> > >& x,
 
      e.flatten_and_link();
     std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
-    OutputLog(2) << "DONE Core2 in " << duration.count() << " s" << std::endl;
     start = std::chrono::high_resolution_clock::now();
 
      vec< vec< std::pair<int,int> > > z;
      vec<int> reps;
      e.OrbitRepsAlt(reps);
     duration = std::chrono::high_resolution_clock::now() - start;
-    OutputLog(2) << "DONE OrbitReps2 in " << duration.count() << " s" << std::endl;
-//     std::cout << "MergeClusters2 num orbit reps: " << reps.size() << std::endl;
      for ( int j = 0; j < reps.isize( ); j++ )
      {    vec<int> o;
           e.Orbit( reps[j], o );
-//          std::cout << "Class " << j << " = " << reps[j] << ", number of objects = " << o.size() << "\n";
           vec< std::pair<int,int> > m;
          m.reserve(o.size());
           for ( int l = 0; l < o.isize( ); l++ ) {
-//               std::cout << o[l] << " ";
                m.append(x[o[l]]);
           }
-//          std::cout << std::endl;
           UniqueSort(m);
           z.push_back(m);    }
      sortInPlaceParallel(z.begin(),z.end());
