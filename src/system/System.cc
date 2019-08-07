@@ -1,11 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-//                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2015) by the     //
-//   Broad Institute.  All rights are reserved.  This software is supplied   //
-//   without any warranty or guaranteed support whatsoever. The Broad        //
-//   Institute is not responsible for its use, misuse, or functionality.     //
-///////////////////////////////////////////////////////////////////////////////
-
 // Note that System.h is included first because it contains some defines which
 // affect the other includes.
 

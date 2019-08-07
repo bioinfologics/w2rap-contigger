@@ -1,11 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-//                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2010) by the     //
-//   Broad Institute.  All rights are reserved.  This software is supplied   //
-//   without any warranty or guaranteed support whatsoever. The Broad        //
-//   Institute is not responsible for its use, misuse, or functionality.     //
-///////////////////////////////////////////////////////////////////////////////
-
 // Mimic: given a vecbasevector, generate a vecbitbector which has the same
 // "dimensions", so that there is a bijective correspondence between bases in one
 // and bits in the other.  (Also set the bitvector entries to False.)  Other similar

@@ -1,5 +1,3 @@
-// Copyright (c) 2004 Broad Institute/Massachusetts Institute of Technology
-
 #ifndef MUTMERGRAPH
 #define MUTMERGRAPH
 

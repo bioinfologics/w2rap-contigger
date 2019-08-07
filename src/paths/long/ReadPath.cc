@@ -23,16 +23,16 @@ void WriteReadPathVec(const ReadPathVec &rpv, const char * filename){
 void LoadReadPathVec(ReadPathVec &rpv, const char * filename){
     std::ifstream f(filename, std::ios::in | std::ios::binary);
     uint64_t pathcount;
-    f.read((const char *) &pathcount, sizeof(pathcount));
+    f.read((char *) &pathcount, sizeof(pathcount));
     rpv.resize(pathcount);
     uint16_t ps;
     int mOffset;
-    for (auto const &rp:rpv){
-        f.read((const char *) &mOffset, sizeof(mOffset));
+    for (auto &rp:rpv){
+        f.read((char *) &mOffset, sizeof(mOffset));
         rp.setOffset(mOffset);
-        f.read((const char *) &ps, sizeof(ps));
+        f.read((char *) &ps, sizeof(ps));
         rp.resize(ps);
-        f.read((const char *) rp.data(),ps*sizeof(int));
+        f.read((char *) rp.data(),ps*sizeof(int));
     }
     f.close();
 }

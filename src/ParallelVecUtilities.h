@@ -1,12 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
-//                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2010) by the     //
-//   Broad Institute.  All rights are reserved.  This software is supplied   //
-//   without any warranty or guaranteed support whatsoever. The Broad        //
-//   Institute is not responsible for its use, misuse, or functionality.     //
-///////////////////////////////////////////////////////////////////////////////
-
-// This file is a combination of part of Vec.h and VecUtilities.h, modified to 
+// This file is a combination of part of Vec.h and VecUtilities.h, modified to
 // use gcc parallelized algorithm versions.  At present, only sort functions are
 // included, and only the parallelized algorithms are the sorts per se.  Probably
 // more could be parallelized.

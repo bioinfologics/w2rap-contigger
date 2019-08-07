@@ -1,7 +1,4 @@
 // Copyright (c) 2000-2003 Whitehead Institute for Biomedical Research
-// 
-
-
 
 /*
  * Cambridge, March 27, 2001.

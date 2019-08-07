@@ -1,10 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-//                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2014) by the     //
-//   Broad Institute.  All rights are reserved.  This software is supplied   //
-//   without any warranty or guaranteed support whatsoever. The Broad        //
-//   Institute is not responsible for its use, misuse, or functionality.     //
-///////////////////////////////////////////////////////////////////////////////
 /*
  * BuildReadQGraph.cc
  *
@@ -1355,7 +1348,7 @@ void buildReadQGraph( std::string out_dir,
         }
         pPaths->clear();
         pPaths->resize(reads.size());
-        OutputLog(2) << "pathing"<<reads.size()<<" reads into graph..." << std::endl;
+        OutputLog(2) << "pathing "<<reads.size()<<" reads into graph..." << std::endl;
         path_reads_OMP(reads, *pDict, edges, *pHBV, fwdEdgeXlat, revEdgeXlat, pPaths);
         delete pDict;
         edges.clear(); edges.shrink_to_fit();revEdgeXlat.clear();fwdEdgeXlat.clear();

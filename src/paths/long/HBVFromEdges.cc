@@ -1,10 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-//                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2016) by the     //
-//  Earlham Institute.  All rights are reserved.  This software is supplied  //
-//   without any warranty or guaranteed support whatsoever. The Earlham      //
-//   Institute is not responsible for its use, misuse, or functionality.     //
-///////////////////////////////////////////////////////////////////////////////
 /*
  * HBVFromEdges.cc
  *

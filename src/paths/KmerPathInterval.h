@@ -1,5 +1,3 @@
-// Copyright (c) 2005 Broad Institute/Massachusetts Institute of Technology
-
 #ifndef PATHS_KMERPATHINTERVAL_H
 #define PATHS_KMERPATHINTERVAL_H
 

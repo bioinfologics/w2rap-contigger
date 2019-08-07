@@ -1,5 +1,3 @@
-// Copyright (c) 2005 Broad Institute/Massachusetts Institute of Technology
-
 #include "paths/KmerPathInterval.h"
 
 #include <algorithm> // upper_bound

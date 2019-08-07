@@ -1,8 +1,6 @@
 #ifndef __INCLUDE_SortKmersImpl_H
 #define __INCLUDE_SortKmersImpl_H
 
-// Copyright (c) 2005 Broad Institute/Massachusetts Institute of Technology
-
 #include "math/Functions.h"
 #include "dna/Bases.h"
 #include "system/StaticAssert.h"

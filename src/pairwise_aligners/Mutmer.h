@@ -1,13 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
-//                   SOFTWARE COPYRIGHT NOTICE AGREEMENT                     //
-//       This software and its documentation are copyright (2010) by the     //
-//   Broad Institute.  All rights are reserved.  This software is supplied   //
-//   without any warranty or guaranteed support whatsoever. The Broad        //
-//   Institute is not responsible for its use, misuse, or functionality.     //
-///////////////////////////////////////////////////////////////////////////////
-
-
-//  Id: Mutmer.h,v 1.4 2000/07/12 16:30:30 jaffe Exp $             
+//  Id: Mutmer.h,v 1.4 2000/07/12 16:30:30 jaffe Exp $
 
 #ifndef MUTMER
 #define MUTMER

@@ -1,5 +1,3 @@
-// Copyright (c) 2004 Broad Institute/Massachusetts Institute of Technology
-
 #include "Basevector.h"
 #include "pairwise_aligners/MaxMutmerFromMer.h"
 
