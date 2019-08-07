@@ -157,7 +157,7 @@ struct cmdline_args {
     unsigned int from_step=1;
     unsigned int to_step=8;
     unsigned int pair_sample=200;
-    unsigned int disk_batches=0;
+    unsigned int disk_batches=4;    // Enables 4 disk batches by default. Uses less memory on step2 but it is slower
     unsigned int min_input_reads=3;
     bool paired_repath=true;
     bool solve_complex_repeats=false;
@@ -627,12 +627,12 @@ int main( int argc,  char * argv[]) {
                 OutputLog(2) << "Dumping scaffold_lines..." << std::endl;
                 FinalFiles(hbv, hbvinv, paths, args.out_dir, args.prefix + ".scaffold_lines", MAX_CELL_PATHS, MAX_DEPTH, false);
                 OutputLog(2) << "DONE!" << std::endl;
-                //TODO: Broken, Luis to FIX
-//                if (args.output_spectracn){
-//                    OutputLog(2) << "Computing scaffold_lines freqs..." << std::endl;
-//                    SpectraCN::DumpSpectraCN(args.out_dir+"/"+args.prefix+".scaffold_lines.fasta", args.out_dir,args.prefix+".contig_lines");
-//                    OutputLog(2) << "DONE!" << std::endl;
-//                }
+
+                if (args.output_spectracn){
+                    OutputLog(2) << "Computing scaffold_lines freqs..." << std::endl;
+                    SpectraCN::DumpSpectraCN(args.out_dir+"/"+args.prefix+".scaffold_lines.fasta", args.out_dir,args.prefix+".contig_lines");
+                    OutputLog(2) << "DONE!" << std::endl;
+                }
             }
 
         }
