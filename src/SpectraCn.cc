@@ -62,7 +62,6 @@ void SpectraCN::writeHistogram(const String &dir, const String &name,
         analysis_output << "f" + std::to_string(i) + ",";
     }
     analysis_output << "kmers" << std::endl;
-    std::cout << "kmers" << std::endl;
     for (const auto &fc:totals_by_freq) {
         for (const auto &s : fc.first) {
             analysis_output << s << ",";
