@@ -643,15 +643,18 @@ private:
         new (&allocator()) A(alloc);
     }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
     A& allocator()
     {
-        return reinterpret_cast<A*>(&mData + 1)[-1];
+        return reinterpret_cast<A*> (&mData+1)[-1];
     }
 
     A const& allocator() const
     {
-        return reinterpret_cast<A const*>(&mData + 1)[-1];
+        return reinterpret_cast<A const*>(&mData+1)[-1];
     }
+#pragma GCC pop_options
 
     void init( size_type last, value_type exemplar );
 

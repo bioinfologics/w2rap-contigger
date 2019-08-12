@@ -38,7 +38,7 @@ public:
         other.mSize=0;
         other.mData= nullptr;
     }
-    PQVec& PQVec::operator=(const PQVec& other){
+    PQVec& operator=(const PQVec& other){
         mSize=other.mSize;
         mData=(uint8_t *)malloc(mSize);
         for (auto i=0;i<mSize;++i) mData[i]=other.mData[i];

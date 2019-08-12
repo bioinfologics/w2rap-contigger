@@ -348,11 +348,11 @@ public:
       if ( mAllocator != that.mAllocator )
         exchange(that);
       else // we can do a quick swap -- just exchange data pointers
-      { using std::swap;
-        std::swap(mSubAllocator,that.mSubAllocator);
-        std::swap(mpElements,that.mpElements);
-        std::swap(mpCurEnd,that.mpCurEnd);
-        std::swap(mpAllocEnd,that.mpAllocEnd); }
+      {using std::swap;
+        swap(mSubAllocator,that.mSubAllocator);
+        swap(mpElements,that.mpElements);
+        swap(mpCurEnd,that.mpCurEnd);
+        swap(mpAllocEnd,that.mpAllocEnd); }
       return *this; }
 
     friend int compare( OuterVec const& v1, OuterVec const& v2 )
