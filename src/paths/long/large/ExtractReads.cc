@@ -11,7 +11,6 @@
 
 void ExtractPairedReads( std::string r1file, std::string r2file, vecbvec &pReads, VecPQVec &quals )
 {
-
     kseq seq1,seq2;
     int l1=0;
     int c1=0;
@@ -57,9 +56,10 @@ void ExtractPairedReads( std::string r1file, std::string r2file, vecbvec &pReads
         for (int i = 0; i < seq2.qual.size(); i++)
             q2[i] = seq2.qual[i] - 33;
         //Store
-        pReads.push_back(b1), pReads.push_back(b2);
         quals.emplace_back(PQVec(q1));
         quals.emplace_back(PQVec(q2));
+        pReads.push_back(b1);
+        pReads.push_back(b2);
 
         //std::cout << seq1.name << " " << seq1.comment << "\t" << seq2.name << " " << seq2.comment << std::endl;
         //std::cout << seq1.qual << "\t" << seq2.qual << std::endl;

@@ -446,7 +446,6 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
 
      // Merge clusters.
 
-     BinaryWriter::writeFile("clusters_before.bin", xs);
      double mclock = WallClockTime();
      OutputLog(2)<<"Merging " << xs.size() << " clusters" << std::endl;
      auto prev_xs(xs.size());
@@ -613,8 +612,6 @@ void Unsat(const HyperBasevector &hb, const vec<int> &inv,
                }
           }
      }
-
-    BinaryWriter::writeFile("clusters_after.bin", xs);
 
     OutputLog(2) << "Unsat DONE" << std::endl;
      // Print clusters.
