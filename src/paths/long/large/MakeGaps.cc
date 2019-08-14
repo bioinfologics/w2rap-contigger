@@ -556,4 +556,3 @@ void MakeGaps(
 
     OutputLog(2) << "done making gaps, time used = " << TimeSince(clock) << std::endl;
 }
-#pragma clang diagnostic pop
