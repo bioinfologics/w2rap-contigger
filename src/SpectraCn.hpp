@@ -52,12 +52,6 @@ class SpectraCN {
         gzclose(fp1);
         return total_good_length;
     }
-public:
-    static void DumpSpectraCN(const HyperBasevector &hb, const vec<int> &inv, const String &dir, const String &name);
-
-
-    static void DumpSpectraCN(const std::string &fasta_path, const std::string &dir, const std::string &name);
-
     static void generateAssemblyKmers(const HyperBasevector &hb, const vec<int> &inv, std::shared_ptr<KmerList> &graph_kmer_freqs);
 
     static void
@@ -68,6 +62,10 @@ public:
 
     static std::shared_ptr<KmerList> &
     generateFastaKmers(const std::string &fasta_path, std::shared_ptr<KmerList> &local_kmer_list);
+public:
+    static void DumpSpectraCN(const HyperBasevector &hb, const vec<int> &inv, const String &dir, const String &name);
+    static void DumpSpectraCN(const std::string &fasta_path, const std::string &dir, const std::string &name);
+
 };
 
 

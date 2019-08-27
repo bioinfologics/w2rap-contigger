@@ -1610,131 +1610,6 @@ template<class E> void DistancesToEndArr( const digraphE<E>& G,
      for ( int v = 0; v < G.N( ); v++ )
           if ( D[v] < 0 ) D[v] = max_dist;    }
 
-template<class E> void RemoveHangingEnds( digraphE<E>& G, 
-     int (E::*len)( ) const, const int max_del, const double min_ratio )
-{
-     // Track hanging ends.
-
-     vec<Bool> hanging( G.EdgeObjectCount( ), False );
-
-     // Define the maximum length that we care about.
-
-     const int max_dist = int( ceil( double(max_del) * min_ratio ) );
-
-     // Go through two passes (forward and reverse).
-
-     for ( int pass = 1; pass <= 2; pass++ ) {
-       // Compute distances to end.
-       vec<int> D;
-       DistancesToEnd( G, len, max_dist, pass == 1, D ); //this is for vertices, pass 1 fw, pass2 rv
-       // Identify hanging ends.
-       for ( int v = 0; v < G.N( ); v++ ) {
-         //for each vertex: get and sort a list of lengths 
-         const vec<int>& V = ( pass == 1 ? G.From(v) : G.To(v) );
-         vec<int> d( V.size( ) ); 
-         vec<int> id( V.size( ), vec<int>::IDENTITY );
-         //this supposedly calculates a distance to end again??? can't get the point!
-         for ( int j = 0; j < V.isize( ); j++ ) { 
-           d[j] = ((pass == 1 ? G.EdgeObjectByIndexFrom(v,j) : G.EdgeObjectByIndexTo(v,j)).*len)( ) + D[ V[j] ]; 
-         }
-         ReverseSortSync( d, id );
-         for ( int j = 1; j < d.isize( ); j++ ) {
-           if ( d[j] <= max_del && d[0] >= d[j] * min_ratio ) {  
-             hanging[ ( pass == 1 ? G.EdgeObjectIndexByIndexFrom( v, id[j] ) : G.EdgeObjectIndexByIndexTo( v, id[j] ) ) ] = True;
-           }
-         } 
-       } 
-     }
-
-     // Remove hanging ends.
-
-     vec<int> to_delete;
-     for ( int i = 0; i < G.EdgeObjectCount( ); i++ )
-          if ( hanging[i] ) to_delete.push_back(i);
-     G.DeleteEdges(to_delete);
-}
-
-
-// Remove short hanging ends.  Look for
-//
-//                 x
-//                 |
-//                 e
-//                 |
-//        u --c--> v --d--> w
-//
-// where x is a source or sink, e is short (and can go either way), whereas
-// c and d are long.  Works for T = HyperKmerPath and T = HyperFastavector.
-
-template<class T> void RemoveHangingEnds2( T& h,const int max_del,
-     const double min_ratio )
-{
-
-  for ( int x = 0; x < h.N( ); x++ ) {
-    
-    // Check that basic assumptions are satisfied, including length(e) <= 5kb.
-    
-    int v, c, d, e;
-    if ( h.Source(x) && h.From(x).size( ) == 1 ) {
-      v = h.From(x)[0];
-      e = h.EdgeObjectIndexByIndexFrom( x, 0 );
-    } else if ( h.Sink(x) && h.To(x).size( ) == 1 ) {
-      v = h.To(x)[0];
-      e = h.EdgeObjectIndexByIndexTo( x, 0 );
-    } else 
-      continue;
-
-    if ( h.EdgeLengthKmers(e) > max_del ) continue;
-
-    if ( h.Source(x) ) {
-      if ( !( h.From(v).size( ) == 1 && h.To(v).size( ) == 2 ) ) continue;
-      d = h.EdgeObjectIndexByIndexFrom( v, 0 );
-      c = h.EdgeObjectIndexByIndexTo( v, 0 );
-      if ( c == e ) c = h.EdgeObjectIndexByIndexTo( v, 1 );
-    } else {
-      if ( !( h.From(v).size( ) == 2 && h.To(v).size( ) == 1 ) ) continue;
-      c = h.EdgeObjectIndexByIndexTo( v, 0 );
-      d = h.EdgeObjectIndexByIndexFrom( v, 0 );
-      if ( d == e ) d = h.EdgeObjectIndexByIndexFrom( v, 1 );
-    }
-
-    // We require that there is an edge "competing with e", that is at least
-    // 20 times longer.
-    
-    static vec<int> v_only(1), to_v, from_v;
-    v_only[0] = v;
-    int max_competitor = 0;
-    if ( h.Source(x) ) {
-      h.digraph::GetPredecessors( v_only, to_v );
-      for ( int j = 0; j < to_v.isize( ); j++ ) {
-	int z = to_v[j];
-	for ( int i = 0; i < h.To(z).isize( ); i++ ) {
-	  int e = h.EdgeObjectIndexByIndexTo( z, i );
-	  max_competitor = Max( max_competitor, h.EdgeLengthKmers(e) );
-	}
-      }
-    } else {
-      h.digraph::GetSuccessors( v_only, from_v );
-      for ( int j = 0; j < from_v.isize( ); j++ ) {
-	int z = from_v[j];
-	for ( int i = 0; i < h.From(z).isize( ); i++ ) {
-	  int e = h.EdgeObjectIndexByIndexFrom( z, i );
-	  max_competitor = Max( max_competitor, h.EdgeLengthKmers(e) );
-	}
-      }
-    }
-
-    if ( min_ratio * h.EdgeLengthKmers(e) > max_competitor ) continue;
-    
-    // Edit the graph.
-    
-    if ( h.Source(x) ) h.DeleteEdgeFrom( x, 0 );
-    else h.DeleteEdgeTo( x, 0 );
-
-  }
-}
-
-
 // Find the indices of all edges e that form self-loops, i.e., e goes from v -> v.
 template<class E> vec<int> digraphE<E>::SelfLoops( ) const
 {
@@ -2323,6 +2198,130 @@ template<class E> void DistancesToEnd3( const digraphE<E>& G,
           complete[v] = ( paths.isize( ) <= max_paths );
           for ( int i = 0; i < paths.isize( ); i++ )
                D[v] = Max( D[v], paths[i].second );    }    }
+
+template<class E> void RemoveHangingEnds( digraphE<E>& G,
+                                          int (E::*len)( ) const, const int max_del, const double min_ratio )
+{
+    // Track hanging ends.
+
+    vec<Bool> hanging( G.EdgeObjectCount( ), False );
+
+    // Define the maximum length that we care about.
+
+    const int max_dist = int( ceil( double(max_del) * min_ratio ) );
+
+    // Go through two passes (forward and reverse).
+
+    for ( int pass = 1; pass <= 2; pass++ ) {
+        // Compute distances to end.
+        vec<int> D;
+        DistancesToEnd( G, len, max_dist, pass == 1, D ); //this is for vertices, pass 1 fw, pass2 rv
+        // Identify hanging ends.
+        for ( int v = 0; v < G.N( ); v++ ) {
+            //for each vertex: get and sort a list of lengths
+            const vec<int>& V = ( pass == 1 ? G.From(v) : G.To(v) );
+            vec<int> d( V.size( ) );
+            vec<int> id( V.size( ), vec<int>::IDENTITY );
+            //this supposedly calculates a distance to end again??? can't get the point!
+            for ( int j = 0; j < V.isize( ); j++ ) {
+                d[j] = ((pass == 1 ? G.EdgeObjectByIndexFrom(v,j) : G.EdgeObjectByIndexTo(v,j)).*len)( ) + D[ V[j] ];
+            }
+            ReverseSortSync( d, id );
+            for ( int j = 1; j < d.isize( ); j++ ) {
+                if ( d[j] <= max_del && d[0] >= d[j] * min_ratio ) {
+                    hanging[ ( pass == 1 ? G.EdgeObjectIndexByIndexFrom( v, id[j] ) : G.EdgeObjectIndexByIndexTo( v, id[j] ) ) ] = True;
+                }
+            }
+        }
+    }
+
+    // Remove hanging ends.
+
+    vec<int> to_delete;
+    for ( int i = 0; i < G.EdgeObjectCount( ); i++ )
+        if ( hanging[i] ) to_delete.push_back(i);
+    G.DeleteEdges(to_delete);
+}
+
+
+// Remove short hanging ends.  Look for
+//
+//                 x
+//                 |
+//                 e
+//                 |
+//        u --c--> v --d--> w
+//
+// where x is a source or sink, e is short (and can go either way), whereas
+// c and d are long.  Works for T = HyperKmerPath and T = HyperFastavector.
+
+template<class T> void RemoveHangingEnds2( T& h,const int max_del,
+                                           const double min_ratio )
+{
+
+    for ( int x = 0; x < h.N( ); x++ ) {
+
+        // Check that basic assumptions are satisfied, including length(e) <= 5kb.
+
+        int v, c, d, e;
+        if ( h.Source(x) && h.From(x).size( ) == 1 ) {
+            v = h.From(x)[0];
+            e = h.EdgeObjectIndexByIndexFrom( x, 0 );
+        } else if ( h.Sink(x) && h.To(x).size( ) == 1 ) {
+            v = h.To(x)[0];
+            e = h.EdgeObjectIndexByIndexTo( x, 0 );
+        } else
+            continue;
+
+        if ( h.EdgeLengthKmers(e) > max_del ) continue;
+
+        if ( h.Source(x) ) {
+            if ( !( h.From(v).size( ) == 1 && h.To(v).size( ) == 2 ) ) continue;
+            d = h.EdgeObjectIndexByIndexFrom( v, 0 );
+            c = h.EdgeObjectIndexByIndexTo( v, 0 );
+            if ( c == e ) c = h.EdgeObjectIndexByIndexTo( v, 1 );
+        } else {
+            if ( !( h.From(v).size( ) == 2 && h.To(v).size( ) == 1 ) ) continue;
+            c = h.EdgeObjectIndexByIndexTo( v, 0 );
+            d = h.EdgeObjectIndexByIndexFrom( v, 0 );
+            if ( d == e ) d = h.EdgeObjectIndexByIndexFrom( v, 1 );
+        }
+
+        // We require that there is an edge "competing with e", that is at least
+        // 20 times longer.
+
+        static vec<int> v_only(1), to_v, from_v;
+        v_only[0] = v;
+        int max_competitor = 0;
+        if ( h.Source(x) ) {
+            h.digraph::GetPredecessors( v_only, to_v );
+            for ( int j = 0; j < to_v.isize( ); j++ ) {
+                int z = to_v[j];
+                for ( int i = 0; i < h.To(z).isize( ); i++ ) {
+                    int e = h.EdgeObjectIndexByIndexTo( z, i );
+                    max_competitor = Max( max_competitor, h.EdgeLengthKmers(e) );
+                }
+            }
+        } else {
+            h.digraph::GetSuccessors( v_only, from_v );
+            for ( int j = 0; j < from_v.isize( ); j++ ) {
+                int z = from_v[j];
+                for ( int i = 0; i < h.From(z).isize( ); i++ ) {
+                    int e = h.EdgeObjectIndexByIndexFrom( z, i );
+                    max_competitor = Max( max_competitor, h.EdgeLengthKmers(e) );
+                }
+            }
+        }
+
+        if ( min_ratio * h.EdgeLengthKmers(e) > max_competitor ) continue;
+
+        // Edit the graph.
+
+        if ( h.Source(x) ) h.DeleteEdgeFrom( x, 0 );
+        else h.DeleteEdgeTo( x, 0 );
+
+    }
+}
 
 template<class E> void RemoveHangingEnds3( digraphE<E>& G, 
      int (E::*len)( ) const, const int max_del, const double min_ratio,

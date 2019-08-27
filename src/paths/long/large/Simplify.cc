@@ -77,20 +77,20 @@ void graph_path_pairs_status(HyperBasevector &hbv, ReadPathVec & paths){
 
 
 //Needed by old versions
-void AnalyzeBranches( HyperBasevector& hb, vec<int>& to_right, const vec<int>& inv2,
-                      ReadPathVec& paths2, const Bool ANALYZE_BRANCHES_REV,
-                      const int min_ratio2, const Bool ANALYZE_BRANCHES_VERBOSE )
-
-{    double clock0 = WallClockTime( );
+void AnalyzeBranches(HyperBasevector &hb, vec<int> &to_right, const vec<int> &inv2,
+                     ReadPathVec &paths2, const Bool ANALYZE_BRANCHES_REV,
+                     const int min_ratio2, const Bool ANALYZE_BRANCHES_VERBOSE) {
+    double clock0 = WallClockTime();
     vec<int> to_left;
     hb.ToLeft(to_left);
-    for ( int64_t i = 0; i < (int64_t) paths2.size( ); i++ )
-    {    ReadPath& p = paths2[i];
-        for ( int64_t j = 0; j < (int64_t) p.size( ); j++ )
-        {    if ( p[j] >= hb.EdgeObjectCount( ) ) p[j] = -1;
-            if ( j > 0 && p[j-1] >= 0 && p[j] >= 0
-                 && to_right[ p[j-1] ] != to_left[ p[j] ] )
-            {    p[j] = -1;    }    }    }
+    for (int64_t i = 0; i < (int64_t) paths2.size(); i++) {
+        ReadPath &p = paths2[i];
+        for (int64_t j = 0; j < (int64_t) p.size(); j++) {
+            if (p[j] >= hb.EdgeObjectCount()) p[j] = -1;
+            if (j > 0 && p[j - 1] >= 0 && p[j] >= 0
+                && to_right[p[j - 1]] != to_left[p[j]]) { p[j] = -1; }
+        }
+    }
 
     // Heuristics.
 
@@ -98,64 +98,75 @@ void AnalyzeBranches( HyperBasevector& hb, vec<int>& to_right, const vec<int>& i
     const int min_ratio = 5;
     const int max_kill = 2;
 
-    vec< std::pair<int,int> > breaks;
-    vec< vec<int> > froms( hb.EdgeObjectCount( ) ), tos( hb.EdgeObjectCount( ) );
-    LogTime( clock0, "analyzing branches 0" );
-    double clock1 = WallClockTime( );
-    for ( int pass = 1; pass <= 2; pass++ )
-    {    const int batch = 10000;
-        int64_t npids = paths2.size( )/2;
+    vec<std::pair<int, int> > breaks;
+    vec<vec<int> > froms(hb.EdgeObjectCount()), tos(hb.EdgeObjectCount());
+    LogTime(clock0, "analyzing branches 0");
+    double clock1 = WallClockTime();
+    for (int pass = 1; pass <= 2; pass++) {
+        const int batch = 10000;
+        int64_t npids = paths2.size() / 2;
 #pragma omp parallel for
-        for ( int64_t bi = 0; bi < npids; bi += batch )
-        {    vec< std::pair<int,int> > PP;
-            for ( int64_t pid = bi; pid < Min( bi + batch, npids ); pid++ )
-            {    vec<int> x, y;
-                for ( int64_t j = 0; j < (int64_t) paths2[2*pid].size( ); j++ )
-                    x.push_back( paths2[2*pid][j] );
-                for ( int64_t j = 0; j < (int64_t) paths2[2*pid+1].size( ); j++ )
-                    y.push_back( paths2[2*pid+1][j] );
-                y.ReverseMe( );
-                for ( int j = 0; j < y.isize( ); j++ )
-                    if ( y[j] >= 0 ) y[j] = inv2[ y[j] ];
-                if ( pass == 2 )
-                {    swap( x, y );
-                    x.ReverseMe( ), y.ReverseMe( );
-                    for ( int j = 0; j < x.isize( ); j++ )
-                        if ( x[j] >= 0 ) x[j] = inv2[ x[j] ];
-                    for ( int j = 0; j < y.isize( ); j++ )
-                        if ( y[j] >= 0 ) y[j] = inv2[ y[j] ];    }
-                std::pair< vec<int>, vec<int> > p = std::make_pair( x, y );
-                vec< std::pair<int,int> > P;
-                for ( int j1 = 0; j1 < p.first.isize( ) - 1; j1++ )
-                {    if ( p.first[j1] >= 0 && p.first[j1+1] >= 0 )
-                        P.push( p.first[j1], p.first[j1+1] );    }
-                for ( int j1 = 0; j1 < p.second.isize( ) - 1; j1++ )
-                {    if ( p.second[j1] >= 0 && p.second[j1+1] >= 0 )
-                        P.push( p.second[j1], p.second[j1+1] );    }
-                for ( int j1 = 0; j1 < p.first.isize( ); j1++ )
-                {    int x1 = p.first[j1];
-                    if ( x1 >= 0 )
-                    {    int m = Position( p.second, x1 );
-                        if ( m < 0 && p.second.nonempty( )
-                             && p.second[0] >= 0 )
-                        {    P.push( x1, p.second[0] );    }    }    }
+        for (int64_t bi = 0; bi < npids; bi += batch) {
+            vec<std::pair<int, int> > PP;
+            for (int64_t pid = bi; pid < Min(bi + batch, npids); pid++) {
+                vec<int> x, y;
+                for (int64_t j = 0; j < (int64_t) paths2[2 * pid].size(); j++)
+                    x.push_back(paths2[2 * pid][j]);
+                for (int64_t j = 0; j < (int64_t) paths2[2 * pid + 1].size(); j++)
+                    y.push_back(paths2[2 * pid + 1][j]);
+                y.ReverseMe();
+                for (int j = 0; j < y.isize(); j++)
+                    if (y[j] >= 0) y[j] = inv2[y[j]];
+                if (pass == 2) {
+                    swap(x, y);
+                    x.ReverseMe(), y.ReverseMe();
+                    for (int j = 0; j < x.isize(); j++)
+                        if (x[j] >= 0) x[j] = inv2[x[j]];
+                    for (int j = 0; j < y.isize(); j++)
+                        if (y[j] >= 0) y[j] = inv2[y[j]];
+                }
+                std::pair<vec<int>, vec<int> > p = std::make_pair(x, y);
+                vec<std::pair<int, int> > P;
+                for (int j1 = 0; j1 < p.first.isize() - 1; j1++) {
+                    if (p.first[j1] >= 0 && p.first[j1 + 1] >= 0)
+                        P.push(p.first[j1], p.first[j1 + 1]);
+                }
+                for (int j1 = 0; j1 < p.second.isize() - 1; j1++) {
+                    if (p.second[j1] >= 0 && p.second[j1 + 1] >= 0)
+                        P.push(p.second[j1], p.second[j1 + 1]);
+                }
+                for (int j1 = 0; j1 < p.first.isize(); j1++) {
+                    int x1 = p.first[j1];
+                    if (x1 >= 0) {
+                        int m = Position(p.second, x1);
+                        if (m < 0 && p.second.nonempty()
+                            && p.second[0] >= 0) { P.push(x1, p.second[0]); }
+                    }
+                }
                 UniqueSort(P);
-                PP.append(P);    }
+                PP.append(P);
+            }
 #pragma omp critical
-            {    for ( int j = 0; j < PP.isize( ); j++ )
-                {    froms[ PP[j].first ].
-                            push_back( PP[j].second );
-                    tos[ PP[j].second ].
-                            push_back( PP[j].first );    }    }    }    }
-    LogTime( clock1, "analyzing branches 1" );
-    double clock1b = WallClockTime( );
+            {
+                for (int j = 0; j < PP.isize(); j++) {
+                    froms[PP[j].first].
+                            push_back(PP[j].second);
+                    tos[PP[j].second].
+                            push_back(PP[j].first);
+                }
+            }
+        }
+    }
+    LogTime(clock1, "analyzing branches 1");
+    double clock1b = WallClockTime();
 #pragma omp parallel for
-    for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
-    {    Sort( froms[e] );
-        Sort( tos[e] );    }
+    for (int e = 0; e < hb.EdgeObjectCount(); e++) {
+        Sort(froms[e]);
+        Sort(tos[e]);
+    }
     if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\nforward reach:\n";
-    LogTime( clock1b, "analyzing branches 1b" );
-    double clock2 = WallClockTime( );
+    LogTime(clock1b, "analyzing branches 1b");
+    double clock2 = WallClockTime();
 
     /*
     for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
@@ -169,83 +180,97 @@ void AnalyzeBranches( HyperBasevector& hb, vec<int>& to_right, const vec<int>& i
          if ( n2 >= 10 && n1 <= 1 ) breaks.push( e, hb.IFrom( v, 0 ) );    }
     */
 
-    for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
-    {    int v = to_right[e];
-        if ( hb.From(v).size( ) <= 1 ) continue;
-        if ( hb.To(v).size( ) > 1 ) continue;
-        vec< vec<int> > follow( hb.From(v).size( ) );
+    for (int e = 0; e < hb.EdgeObjectCount(); e++) {
+        int v = to_right[e];
+        if (hb.From(v).size() <= 1) continue;
+        if (hb.To(v).size() > 1) continue;
+        vec<vec<int> > follow(hb.From(v).size());
         vec<int> branches;
-        for ( int j = 0; j < hb.From(v).isize( ); j++ )
-        {    int f = hb.EdgeObjectIndexByIndexFrom( v, j );
-            branches.push_back(f);    }
-        int nbranches = branches.size( );
+        for (int j = 0; j < hb.From(v).isize(); j++) {
+            int f = hb.EdgeObjectIndexByIndexFrom(v, j);
+            branches.push_back(f);
+        }
+        int nbranches = branches.size();
 
-        for ( int j = 0; j < hb.From(v).isize( ); j++ )
-        {    int f = hb.EdgeObjectIndexByIndexFrom( v, j );
+        for (int j = 0; j < hb.From(v).isize(); j++) {
+            int f = hb.EdgeObjectIndexByIndexFrom(v, j);
             int w = to_right[f];
-            for ( int l = 0; l < hb.From(w).isize( ); l++ )
-                follow[j].push_back( hb.EdgeObjectIndexByIndexFrom(w, l) );    }
+            for (int l = 0; l < hb.From(w).isize(); l++)
+                follow[j].push_back(hb.EdgeObjectIndexByIndexFrom(w, l));
+        }
 
-        for ( int dpass = 1; dpass < max_dist; dpass++ )
-        {    for ( int i = 0; i < nbranches; i++ )
-            {    int n = follow[i].size( );
-                for ( int j = 0; j < n; j++ )
-                {    int w = to_right[ follow[i][j] ];
-                    follow[i].append( hb.FromEdgeObj(w) );    }
-                UniqueSort( follow[i] );    }    }
+        for (int dpass = 1; dpass < max_dist; dpass++) {
+            for (int i = 0; i < nbranches; i++) {
+                int n = follow[i].size();
+                for (int j = 0; j < n; j++) {
+                    int w = to_right[follow[i][j]];
+                    follow[i].append(hb.FromEdgeObj(w));
+                }
+                UniqueSort(follow[i]);
+            }
+        }
 
         vec<int> fr, count;
-        for ( int i = 0; i < froms[e].isize( ); i++ )
-        {    int j = froms[e].NextDiff(i);
+        for (int i = 0; i < froms[e].isize(); i++) {
+            int j = froms[e].NextDiff(i);
             int c = j - i, f = froms[e][i];
             fr.push_back(f), count.push_back(c);
-            i = j - 1;    }
-        vec<Bool> to_delete( fr.size( ), False );
-        for ( int i = 0; i < fr.isize( ); i++ )
-        {    vec<int> homes;
-            for ( int j = 0; j < follow.isize( ); j++ )
-                if ( Member( follow[j], fr[i] ) ) homes.push_back(j);
-            if ( homes.size( ) == follow.size( ) ) count[i] = 0;
-            if ( homes.solo( ) )
-            {    for ( int j = 0; j < fr.isize( ); j++ )
-                {    if ( fr[j] == hb.EdgeObjectIndexByIndexFrom( v, homes[0] ) )
-                    {    count[j] += count[i];
-                        count[i] = 0;    }    }    }    }
-        for ( int i = 0; i < fr.isize( ); i++ )
-            if ( count[i] == 0 ) to_delete[i] = True;
-        EraseIf( fr, to_delete ), EraseIf( count, to_delete );
+            i = j - 1;
+        }
+        vec<Bool> to_delete(fr.size(), False);
+        for (int i = 0; i < fr.isize(); i++) {
+            vec<int> homes;
+            for (int j = 0; j < follow.isize(); j++)
+                if (Member(follow[j], fr[i])) homes.push_back(j);
+            if (homes.size() == follow.size()) count[i] = 0;
+            if (homes.solo()) {
+                for (int j = 0; j < fr.isize(); j++) {
+                    if (fr[j] == hb.EdgeObjectIndexByIndexFrom(v, homes[0])) {
+                        count[j] += count[i];
+                        count[i] = 0;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < fr.isize(); i++)
+            if (count[i] == 0) to_delete[i] = True;
+        EraseIf(fr, to_delete), EraseIf(count, to_delete);
         vec<int> s1 = fr, s2 = branches;
         Sort(s1), Sort(s2);
-        if ( s1 == s2 && s1.size( ) == 2 )
-        {    if ( count[0] < min_ratio * count[1]
-                  && count[1] < min_ratio * count[0] )
-            {    continue;    }    }
-        ReverseSortSync( count, fr );
-        if (ANALYZE_BRANCHES_VERBOSE)
-        {    std::cout << e << " -->";
-            for ( int i = 0; i < fr.isize( ); i++ )
-                std::cout << " " << fr[i] << "[" << count[i] << "]";    }
-        if ( count.size( ) >= 2 && count[0] >= min_ratio2 * Max( 1, count[1] )
-             && count[1] <= max_kill && Member( branches, fr[0] ) )
-        {    if (ANALYZE_BRANCHES_VERBOSE) std::cout << " -- RECOMMEND PRUNING";
-            for ( int j = 0; j < branches.isize( ); j++ )
-                if ( branches[j] != fr[0] ) breaks.push( e, branches[j] );    }
-        if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\n";    }
+        if (s1 == s2 && s1.size() == 2) {
+            if (count[0] < min_ratio * count[1]
+                && count[1] < min_ratio * count[0]) { continue; }
+        }
+        ReverseSortSync(count, fr);
+        if (ANALYZE_BRANCHES_VERBOSE) {
+            std::cout << e << " -->";
+            for (int i = 0; i < fr.isize(); i++)
+                std::cout << " " << fr[i] << "[" << count[i] << "]";
+        }
+        if (count.size() >= 2 && count[0] >= min_ratio2 * Max(1, count[1])
+            && count[1] <= max_kill && Member(branches, fr[0])) {
+            if (ANALYZE_BRANCHES_VERBOSE) std::cout << " -- RECOMMEND PRUNING";
+            for (int j = 0; j < branches.isize(); j++)
+                if (branches[j] != fr[0]) breaks.push(e, branches[j]);
+        }
+        if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\n";
+    }
     UniqueSort(breaks);
-    for ( int i = 0; i < breaks.isize( ); i++ )
-    {    int e = breaks[i].first, f = breaks[i].second;
-        int n = hb.N( );
+    for (int i = 0; i < breaks.isize(); i++) {
+        int e = breaks[i].first, f = breaks[i].second;
+        int n = hb.N();
         hb.AddVertices(2);
-        hb.GiveEdgeNewFromVx( f, to_right[e], n );
+        hb.GiveEdgeNewFromVx(f, to_right[e], n);
         to_left[f] = n;
         int re = inv2[e], rf = inv2[f];
-        if ( re >= 0 && rf >= 0 )
-        {    hb.GiveEdgeNewToVx( rf, to_right[rf], n+1 );
-            to_right[rf] = n+1;    }    }
+        if (re >= 0 && rf >= 0) {
+            hb.GiveEdgeNewToVx(rf, to_right[rf], n + 1);
+            to_right[rf] = n + 1;
+        }
+    }
 
-    if (ANALYZE_BRANCHES_REV)
-    {
-        vec< std::pair<int,int> > breaksr;
+    if (ANALYZE_BRANCHES_REV) {
+        vec<std::pair<int, int> > breaksr;
         if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\nbackward reach:\n";
 
         /*
@@ -260,98 +285,115 @@ void AnalyzeBranches( HyperBasevector& hb, vec<int>& to_right, const vec<int>& i
              if ( n2 >= 10 && n1 <= 1 ) breaksr.push( hb.ITo( v, 0 ), e );    }
         */
 
-        for ( int e = 0; e < hb.EdgeObjectCount( ); e++ )
-        {    int v = to_left[e];
-            if ( hb.To(v).size( ) <= 1 ) continue;
-            if ( hb.From(v).size( ) > 1 ) continue;
-            vec< vec<int> > preceed( hb.To(v).size( ) );
+        for (int e = 0; e < hb.EdgeObjectCount(); e++) {
+            int v = to_left[e];
+            if (hb.To(v).size() <= 1) continue;
+            if (hb.From(v).size() > 1) continue;
+            vec<vec<int> > preceed(hb.To(v).size());
             vec<int> branches;
-            for ( int j = 0; j < hb.To(v).isize( ); j++ )
-            {    int f = hb.EdgeObjectIndexByIndexTo( v, j );
-                branches.push_back(f);    }
-            int nbranches = branches.size( );
+            for (int j = 0; j < hb.To(v).isize(); j++) {
+                int f = hb.EdgeObjectIndexByIndexTo(v, j);
+                branches.push_back(f);
+            }
+            int nbranches = branches.size();
 
-            for ( int j = 0; j < hb.To(v).isize( ); j++ )
-            {    int f = hb.EdgeObjectIndexByIndexTo( v, j );
+            for (int j = 0; j < hb.To(v).isize(); j++) {
+                int f = hb.EdgeObjectIndexByIndexTo(v, j);
                 int w = to_left[f];
-                for ( int l = 0; l < hb.To(w).isize( ); l++ )
-                    preceed[j].push_back( hb.EdgeObjectIndexByIndexTo(w, l) );    }
+                for (int l = 0; l < hb.To(w).isize(); l++)
+                    preceed[j].push_back(hb.EdgeObjectIndexByIndexTo(w, l));
+            }
 
-            for ( int dpass = 1; dpass < max_dist; dpass++ )
-            {    for ( int i = 0; i < nbranches; i++ )
-                {    int n = preceed[i].size( );
-                    for ( int j = 0; j < n; j++ )
-                    {    int w = to_left[ preceed[i][j] ];
-                        preceed[i].append( hb.ToEdgeObj(w) );    }
-                    UniqueSort( preceed[i] );    }    }
+            for (int dpass = 1; dpass < max_dist; dpass++) {
+                for (int i = 0; i < nbranches; i++) {
+                    int n = preceed[i].size();
+                    for (int j = 0; j < n; j++) {
+                        int w = to_left[preceed[i][j]];
+                        preceed[i].append(hb.ToEdgeObj(w));
+                    }
+                    UniqueSort(preceed[i]);
+                }
+            }
 
             vec<int> fr, count;
-            for ( int i = 0; i < tos[e].isize( ); i++ )
-            {    int j = tos[e].NextDiff(i);
+            for (int i = 0; i < tos[e].isize(); i++) {
+                int j = tos[e].NextDiff(i);
                 int c = j - i, f = tos[e][i];
-                if ( to_right[f] == to_left[e] )
-                {   fr.push_back(f), count.push_back(c);    }
-                i = j - 1;    }
-            vec<Bool> to_delete( fr.size( ), False );
-            for ( int i = 0; i < fr.isize( ); i++ )
-            {    vec<int> homes;
-                for ( int j = 0; j < preceed.isize( ); j++ )
-                    if ( Member( preceed[j], fr[i] ) ) homes.push_back(j);
-                if ( homes.size( ) == preceed.size( ) ) count[i] = 0;
-                if ( homes.solo( ) )
-                {    for ( int j = 0; j < fr.isize( ); j++ )
-                    {    if ( fr[j] == hb.EdgeObjectIndexByIndexTo( v, homes[0] ) )
-                        {    count[j] += count[i];
-                            count[i] = 0;    }    }    }    }
-            for ( int i = 0; i < fr.isize( ); i++ )
-                if ( count[i] == 0 ) to_delete[i] = True;
-            EraseIf( fr, to_delete ), EraseIf( count, to_delete );
+                if (to_right[f] == to_left[e]) { fr.push_back(f), count.push_back(c); }
+                i = j - 1;
+            }
+            vec<Bool> to_delete(fr.size(), False);
+            for (int i = 0; i < fr.isize(); i++) {
+                vec<int> homes;
+                for (int j = 0; j < preceed.isize(); j++)
+                    if (Member(preceed[j], fr[i])) homes.push_back(j);
+                if (homes.size() == preceed.size()) count[i] = 0;
+                if (homes.solo()) {
+                    for (int j = 0; j < fr.isize(); j++) {
+                        if (fr[j] == hb.EdgeObjectIndexByIndexTo(v, homes[0])) {
+                            count[j] += count[i];
+                            count[i] = 0;
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < fr.isize(); i++)
+                if (count[i] == 0) to_delete[i] = True;
+            EraseIf(fr, to_delete), EraseIf(count, to_delete);
             vec<int> s1 = fr, s2 = branches;
             Sort(s1), Sort(s2);
-            if ( s1 == s2 && s1.size( ) == 2 )
-            {    if ( count[0] < min_ratio * count[1]
-                      && count[1] < min_ratio * count[0] )
-                {    continue;    }    }
-            ReverseSortSync( count, fr );
-            if (ANALYZE_BRANCHES_VERBOSE)
-            {    std::cout << e << " <--";
-                for ( int i = 0; i < fr.isize( ); i++ )
-                    std::cout << " " << fr[i] << "[" << count[i] << "]";    }
-            if ( count.size( ) >= 2 && count[0] >= min_ratio2 * Max( 1, count[1] )
-                 && count[1] <= max_kill && Member( branches, fr[0] ) )
-            {    if (ANALYZE_BRANCHES_VERBOSE) std::cout << " -- RECOMMEND PRUNING";
-                for ( int j = 0; j < branches.isize( ); j++ )
-                    if ( branches[j] != fr[0] ) breaksr.push( branches[j], e );    }
-            if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\n";    }
+            if (s1 == s2 && s1.size() == 2) {
+                if (count[0] < min_ratio * count[1]
+                    && count[1] < min_ratio * count[0]) { continue; }
+            }
+            ReverseSortSync(count, fr);
+            if (ANALYZE_BRANCHES_VERBOSE) {
+                std::cout << e << " <--";
+                for (int i = 0; i < fr.isize(); i++)
+                    std::cout << " " << fr[i] << "[" << count[i] << "]";
+            }
+            if (count.size() >= 2 && count[0] >= min_ratio2 * Max(1, count[1])
+                && count[1] <= max_kill && Member(branches, fr[0])) {
+                if (ANALYZE_BRANCHES_VERBOSE) std::cout << " -- RECOMMEND PRUNING";
+                for (int j = 0; j < branches.isize(); j++)
+                    if (branches[j] != fr[0]) breaksr.push(branches[j], e);
+            }
+            if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\n";
+        }
         UniqueSort(breaksr);
-        for ( int i = 0; i < breaksr.isize( ); i++ )
-        {    int e = breaksr[i].first, f = breaksr[i].second;
-            int n = hb.N( );
+        for (int i = 0; i < breaksr.isize(); i++) {
+            int e = breaksr[i].first, f = breaksr[i].second;
+            int n = hb.N();
             hb.AddVertices(2);
-            hb.GiveEdgeNewToVx( e, to_left[f], n );
+            hb.GiveEdgeNewToVx(e, to_left[f], n);
             to_right[e] = n;
 
             int re = inv2[e], rf = inv2[f];
-            if ( re >= 0 && rf >= 0 )
-            {    hb.GiveEdgeNewFromVx( re, to_left[re], n+1 );
-                to_left[re] = n+1;    }    }
+            if (re >= 0 && rf >= 0) {
+                hb.GiveEdgeNewFromVx(re, to_left[re], n + 1);
+                to_left[re] = n + 1;
+            }
+        }
         breaks.append(breaksr);
     }
 
-    int nb = breaks.size( );
-    for ( int i = 0; i < nb; i++ )
-        breaks.push( inv2[ breaks[i].second ], inv2[ breaks[i].first ] );
+    int nb = breaks.size();
+    for (int i = 0; i < nb; i++)
+        breaks.push(inv2[breaks[i].second], inv2[breaks[i].first]);
     UniqueSort(breaks);
 #pragma omp parallel for
-    for ( int64_t i = 0; i < (int64_t) paths2.size( ); i++ )
-    {    ReadPath& p = paths2[i];
+    for (int64_t i = 0; i < (int64_t) paths2.size(); i++) {
+        ReadPath &p = paths2[i];
         Bool bad = False;
-        for ( int j = 0; j < ( (int) p.size( ) ) - 1; j++ )
-        {    std::pair<int,int> x = std::make_pair( p[j], p[j+1] );
-            if ( BinMember( breaks, x ) ) bad = True;    }
-        if (bad) p.resize(0);    }
+        for (int j = 0; j < ((int) p.size()) - 1; j++) {
+            std::pair<int, int> x = std::make_pair(p[j], p[j + 1]);
+            if (BinMember(breaks, x)) bad = True;
+        }
+        if (bad) p.resize(0);
+    }
     if (ANALYZE_BRANCHES_VERBOSE) std::cout << "\n";
-    LogTime( clock2, "analyzing branches 2" );    }
+    LogTime(clock2, "analyzing branches 2");
+}
 
 
 
@@ -422,6 +464,7 @@ void update_read_placements_kmatch(HyperBasevector &hb, vec<int> &inv, ReadPathV
 }
 
 #include <iterator>
+#include <SpectraCn.hpp>
 
 template<class ForwardIt, class T>
 ForwardIt binary_find(ForwardIt first, ForwardIt last, const T& value)
@@ -767,8 +810,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               const int DEGLOOP_MODE, const double DEGLOOP_MIN_DIST,
               const Bool IMPROVE_PATHS, const Bool IMPROVE_PATHS_LARGE,
               const Bool FINAL_TINY, const Bool UNWIND3) {
-
-
+    std::string name;
     // Improve read placements and delete funky pairs.
     OutputLog(2) << "rerouting paths" << std::endl;
 
@@ -840,7 +882,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         auto delcount=dels.size();
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
+
         OutputLog(2) << delcount << " / " <<before<<" edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
+        name = "step7_edge_cleanup";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
         graph_path_pairs_status(hb,paths);
     }
 
@@ -850,6 +897,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
+    name = "step7_removesmallcomponents1_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
 
@@ -858,11 +909,23 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     if (TAMP_EARLY) {
         OutputLog(2) << "early tamping" << std::endl;
         Tamp(hb, inv, paths, 0);
+
+        name = "step7_tamp0_cleanup";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
         graph_path_pairs_status(hb,paths);
     }
 
     RemoveHangs(hb, inv, paths, 100);
     Cleanup(hb, inv, paths);
+
+    name = "step7_removehangs_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     OutputLog(2) <<hb.EdgeObjectCount()<<" edges after removing hangs"<<std::endl;
     graph_path_pairs_status(hb,paths);
     OutputLog(2) << "analysing branches" << std::endl;
@@ -871,15 +934,39 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     AnalyzeBranches(hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2);
     Cleanup(hb, inv, paths);
+
+    name = "step7_analysebranches_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     RemoveHangs(hb, inv, paths, MAX_DEL2);
     Cleanup(hb, inv, paths);
+
+    name = "step7_removehangs_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
+
+    name = "step7_removesmallcomponents2_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after branch analysis and cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
     OutputLog(2) << "popping bubbles" << std::endl;
     PopBubbles(hb, inv, bases, quals, paths);
     Cleanup(hb, inv, paths);
+
+    name = "step7_popbubbles_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after bubble popping and cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
     DeleteFunkyPathPairs(hb, inv, bases, paths, False);
@@ -887,10 +974,28 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     OutputLog(2) << "tamping (700)" << std::endl;
 
     Tamp(hb, inv, paths, 10);
+
+    name = "step7_tamp10_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     RemoveHangs(hb, inv, paths, 700);
     Cleanup(hb, inv, paths);
+
+    name = "step7_removehangs2_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
+
+    name = "step7_removesmallcomponents3_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after tamping, re-removing small components and cleanup"<<std::endl;
     // Pull apart.
 
@@ -900,6 +1005,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         invert(paths, invPaths, hb.EdgeObjectCount());
         PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
         size_t count = pa.SeparateAll();
+
+        name = "step7_pull_apart";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
         OutputLog(2) << count << " repeats pulled apart." << std::endl;
         OutputLog(2) << ": there were " << pa.getRemovedReadPaths() << " read paths removed during separation."<< std::endl;
     }
@@ -915,6 +1026,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
 
+    name = "step7_pathfinder_unroll_loops_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     invPaths.clear();
     invert( paths, invPaths, hb.EdgeObjectCount( ) );
     OutputLog(2) << "PathFinder: analysing single-direction repeats" << std::endl;
@@ -922,6 +1038,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     OutputLog(2) << "Removing unneeded Vertices" << std::endl;
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
+
+    name = "step7_pathfinder_complex_in_out_cleanup";
+    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     graph_path_pairs_status(hb,paths);
 
@@ -962,6 +1083,12 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         Degloop(DEGLOOP_MODE, hb, inv, paths, bases, quals, DEGLOOP_MIN_DIST);
         RemoveHangs(hb, inv, paths, 700);
         Cleanup(hb, inv, paths);
+
+        name = "step7_degloop_cleanup";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
         graph_path_pairs_status(hb,paths);
 
     }
@@ -976,8 +1103,20 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         OutputLog(2) << "removing small components" << std::endl;
         RemoveSmallComponents3(hb, True);
         Cleanup(hb, inv, paths);
+
+        name = "step7_removesmallcomponents_final_cleanup";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
         CleanupLoops(hb, inv, paths);
         RemoveUnneededVerticesGeneralizedLoops(hb, inv, paths);
+
+        name = "unneded_generalised_cleanup";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
         graph_path_pairs_status(hb,paths);
     }
 }

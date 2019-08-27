@@ -25,175 +25,187 @@
 
 
 
-void ReroutePaths( const HyperBasevector& hb, const vec<int>& inv,
-     ReadPathVec& paths, const vecbasevector& bases, const VecPQVec& quals )
-{
-     // Create indices.
+void ReroutePaths(const HyperBasevector &hb, const vec<int> &inv,
+                  ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals) {
+    // Create indices.
 
-     double clock = WallClockTime( );
-     vec<int> to_left, to_right;
-     hb.ToLeft(to_left), hb.ToRight(to_right);
+    double clock = WallClockTime();
+    vec<int> to_left, to_right;
+    hb.ToLeft(to_left), hb.ToRight(to_right);
 
-     // Begin reroute.
+    // Begin reroute.
 
-     const int max_depth = 3;
-     const int max_paths = 200;
-     const int max_qsum = 100;
+    const int max_depth = 3;
+    const int max_paths = 200;
+    const int max_qsum = 100;
 
-     int improveds = 0;
-     #pragma omp parallel for schedule(dynamic, 1000)
-     for ( int64_t id = 0; id < (int64_t) paths.size( ); id++ )
-     {    ReadPath& p = paths[id];
-          // Only consider full placements.
+    int improveds = 0;
+#pragma omp parallel for schedule(dynamic, 1000)
+    for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+        ReadPath &p = paths[id];
+        // Only consider full placements.
 
-         // Don't contemplate path if:
-          if ( p.size( ) == 0 ) continue;   // The path is empty
-          if ( p.getOffset( ) < 0 ) continue; // Or the read start is hanging --=====
-          vec<int> s( p.size( ) );
-          s[0] = p.getOffset( );    // Save the read start
-          for ( int j = 1; j < (int) p.size( ); j++ )
-               s[j] = s[j-1] - hb.EdgeLengthKmers( p[j-1] );
-          int n = bases[id].size( );
-          if ( s.back( ) + n > hb.EdgeLengthBases( p.back( ) ) ) continue;
+        // Don't contemplate path if:
+        if (p.size() == 0) continue;   // The path is empty
+        if (p.getOffset() < 0) continue; // Or the read start is hanging --=====
+        vec<int> s(p.size());
+        s[0] = p.getOffset();    // Save the read start
+        for (int j = 1; j < (int) p.size(); j++)
+            s[j] = s[j - 1] - hb.EdgeLengthKmers(p[j - 1]);
+        int n = bases[id].size();
+        if (s.back() + n > hb.EdgeLengthBases(p.back())) continue;
 
-          // Find possible starts for the read.
+        // Find possible starts for the read.
 
-          vec< std::pair<int,int> > starts = { std::make_pair( p[0], p.getOffset( ) ) };
-          std::set< std::pair<int,int> > startsx;
-          startsx.insert( std::make_pair( p[0], p.getOffset( ) ) );
-          vec<int> depth = {0};
-          for ( int i = 0; i < starts.isize( ); i++ )
-          {    if ( depth[i] == max_depth ) continue;
-               int e = starts[i].first, start = starts[i].second;
-               int v = to_left[e], w = to_right[e];
-               for ( int j = 0; j < hb.To(v).isize( ); j++ )
-               {    int ex = hb.EdgeObjectIndexByIndexTo( v, j );
-                    int startx = start + hb.EdgeLengthKmers(ex);
-                    if ( !Member( startsx, std::make_pair( ex, startx ) ) )
-                    {    starts.push( ex, startx );
-                         startsx.insert( std::make_pair( ex, startx ) );
-                         depth.push_back( depth[i] + 1 );    }    }
-               for ( int j = 0; j < hb.From(w).isize( ); j++ )
-               {    int ex = hb.EdgeObjectIndexByIndexFrom( w, j );
-                    int startx = start - hb.EdgeLengthKmers(e);
-                    if ( !Member( startsx, std::make_pair( ex, startx ) ) )
-                    {    starts.push( ex, startx );
-                         startsx.insert( std::make_pair( ex, startx ) );
-                         depth.push_back( depth[i] + 1 );    }    }    }
+        vec<std::pair<int, int> > starts = {std::make_pair(p[0], p.getOffset())};   // All possible starts including the original one
+        std::set<std::pair<int, int> > startsx; // All new possible starts
+        startsx.insert(std::make_pair(p[0], p.getOffset()));
+        vec<int> depth = {0};   // ??
+        for (int i = 0; i < starts.isize(); i++) {
+            if (depth[i] == max_depth) continue;
+            int e = starts[i].first, start = starts[i].second;
+            int v = to_left[e], w = to_right[e];
+            for (int j = 0; j < hb.To(v).isize(); j++) {
+                int ex = hb.EdgeObjectIndexByIndexTo(v, j);
+                int startx = start + hb.EdgeLengthKmers(ex);
+                if (!Member(startsx, std::make_pair(ex, startx))) {
+                    starts.push(ex, startx);
+                    startsx.insert(std::make_pair(ex, startx));
+                    depth.push_back(depth[i] + 1);
+                }
+            }
+            for (int j = 0; j < hb.From(w).isize(); j++) {
+                int ex = hb.EdgeObjectIndexByIndexFrom(w, j);
+                int startx = start - hb.EdgeLengthKmers(e);
+                if (!Member(startsx, std::make_pair(ex, startx))) {
+                    starts.push(ex, startx);
+                    startsx.insert(std::make_pair(ex, startx));
+                    depth.push_back(depth[i] + 1);
+                }
+            }
+        }
 
-          // Create initial paths.
+        // Create initial paths.
 
-          vec<ReadPath> ps;
-          for ( int i = 0; i < starts.isize( ); i++ )
-          {    if ( starts[i].second < 0 
-                    || starts[i].second >= hb.EdgeLengthBases( starts[i].first ) )
-               {    continue;    }
-               ReadPath q;
-               q.push_back( starts[i].first );
-               q.setOffset( starts[i].second );
-               ps.push_back(q);    }
+        vec<ReadPath> ps;
+        for (int i = 0; i < starts.isize(); i++) {
+            if (starts[i].second < 0
+                || starts[i].second >= hb.EdgeLengthBases(starts[i].first)) { continue; }
+            ReadPath q;
+            q.push_back(starts[i].first);
+            q.setOffset(starts[i].second);
+            ps.push_back(q);
+        }
 
-          // Extend the paths.
+        // Extend the paths.
 
-          vec<Bool> to_delete( ps.size( ), False );
-          for ( int i = 0; i < ps.isize( ); i++ )
-          {    if ( i >= max_paths ) break;
-               vec<int> s( ps[i].size( ) );
-               s[0] = ps[i].getOffset( );
-               for ( int j = 1; j < (int) ps[i].size( ); j++ )
-                    s[j] = s[j-1] - hb.EdgeLengthKmers( ps[i][j-1] );
-               int n = bases[id].size( );
-               if ( s.back( ) + n <= hb.EdgeLengthBases( ps[i].back( ) ) ) continue;
-               to_delete[i] = True;
-               int v = to_right[ ps[i].back( ) ];
-               for ( int j = 0; j < hb.From(v).isize( ); j++ )
-               {    ReadPath r(ps[i]);
-                    r.push_back( hb.EdgeObjectIndexByIndexFrom( v, j ) );
-                    ps.push_back(r);    
-                    to_delete.push_back(False);    }    }
-          if ( ps.isize( ) > max_paths ) continue;
-          EraseIf( ps, to_delete );
+        vec<Bool> to_delete(ps.size(), False);
+        for (int i = 0; i < ps.isize(); i++) {
+            if (i >= max_paths) break;
+            vec<int> s(ps[i].size());
+            s[0] = ps[i].getOffset();
+            for (int j = 1; j < (int) ps[i].size(); j++)
+                s[j] = s[j - 1] - hb.EdgeLengthKmers(ps[i][j - 1]);
+            int n = bases[id].size();
+            if (s.back() + n <= hb.EdgeLengthBases(ps[i].back())) continue;
+            to_delete[i] = True;
+            int v = to_right[ps[i].back()];
+            for (int j = 0; j < hb.From(v).isize(); j++) {
+                ReadPath r(ps[i]);
+                r.push_back(hb.EdgeObjectIndexByIndexFrom(v, j));
+                ps.push_back(r);
+                to_delete.push_back(False);
+            }
+        }
+        if (ps.isize() > max_paths) continue;
+        EraseIf(ps, to_delete);
 
-          // Score the paths.
+        // Score the paths.
 
-          const int K = hb.K( );
-          vec< std::pair<int,int> > qsum( ps.size( ), std::make_pair(0,0) );
-          const basevector& r = bases[id];
-          QualVec qv;
-          quals[id].unpack(&qv);
-          for ( int i = 0; i < ps.isize( ); i++ )
-          {    const ReadPath& q = ps[i];
-               qsum[i].second = -q.size( );
-               int start = q.getOffset( );
-               basevector b = hb.EdgeObject( q[0] );
-               
-               // XXX: Similar opt as in Cleanup (?) 
-               for ( int l = 1; l < (int) q.size( ); l++ )
-               {    b.resize( b.isize( ) - (K-1) );
-                    b = Cat( b, hb.EdgeObject( q[l] ) );    }
-               
-               /* 
-               // Measure total size
-               int tot_b = 0;
-               for ( int l = 1; l < (int) q.size( ); l++ )
-               {  tot_b += b.isize( ) - (K-1); }
-               // Allocate total size
-               b.resize( tot_b );
-               // Put all b togheter in b (using cat??)
-               for ( int l = 1; l < (int) q.size( ); l++ )
-               {  b.append(hb.EdgeObject( q[l] )); }
-               */                       
-               for ( int m = 0; m < r.isize( ); m++ )
-                    if ( r[m] != b[start+m] ) qsum[i].first += qv[m];    }
-          int qorig = qsum[0].first;
-          SortSync( qsum, ps );
-          for ( int i = 0; i < ps.isize( ); i++ )
-               qsum[i].second = -qsum[i].second;
-          Bool ok = False;
-          for ( int j = 0; j < ps.isize( ); j++ )
-          {    if ( ps[j] == p && qsum[j].first == qsum[0].first )
-               {    ok = True;    }    }
-          if (ok) continue;
+        const int K = hb.K();
+        vec<std::pair<int, int> > qsum(ps.size(), std::make_pair(0, 0));
+        const basevector &r = bases[id];
+        QualVec qv;
+        quals[id].unpack(&qv);
+        for (int i = 0; i < ps.isize(); i++) {
+            const ReadPath &q = ps[i];
+            qsum[i].second = -q.size();
+            int start = q.getOffset();
+            basevector b = hb.EdgeObject(q[0]);
 
-          if ( qsum[0].first > max_qsum ) continue;
+            // XXX: Similar opt as in Cleanup (?)
+            for (int l = 1; l < (int) q.size(); l++) {
+                b.resize(b.isize() - (K - 1));
+                b = Cat(b, hb.EdgeObject(q[l]));
+            }
 
-          #pragma omp critical
-          {    improveds++;    }
-     
-          int ooo = qsum[0].first;
-          while( ps.size( ) >= 2 && qsum[0] == qsum[1] )
-          {    ps.SetToSubOf( ps, 2, ps.size( ) - 2 );
-               qsum.SetToSubOf( qsum, 2, qsum.size( ) - 2 );    }
+            /*
+            // Measure total size
+            int tot_b = 0;
+            for ( int l = 1; l < (int) q.size( ); l++ )
+            {  tot_b += b.isize( ) - (K-1); }
+            // Allocate total size
+            b.resize( tot_b );
+            // Put all b togheter in b (using cat??)
+            for ( int l = 1; l < (int) q.size( ); l++ )
+            {  b.append(hb.EdgeObject( q[l] )); }
+            */
+            for (int m = 0; m < r.isize(); m++)
+                if (r[m] != b[start + m]) qsum[i].first += qv[m];
+        }
+        int qorig = qsum[0].first;
+        SortSync(qsum, ps);
+        for (int i = 0; i < ps.isize(); i++)
+            qsum[i].second = -qsum[i].second;
+        Bool ok = False;
+        for (int j = 0; j < ps.isize(); j++) {
+            if (ps[j] == p && qsum[j].first == qsum[0].first) { ok = True; }
+        }
+        if (ok) continue;
 
-         /*
-          * XXX: If the path is not valid, stop considering it
-          */
-         if (ps.empty()) continue;
+        if (qsum[0].first > max_qsum) continue;
 
-         vec<Bool> del( ps.size( ), False );
-          for ( int j = 1; j < ps.isize( ); j++ )
-          {    if ( qsum[j].first > qsum[0].first ) break;
-               if ( qsum[j].second < qsum[0].second ) del[j] = True;    }
-          EraseIf( ps, del );
-          EraseIf( qsum, del );
+#pragma omp critical
+        { improveds++; }
 
-          if ( ooo < qsum[0].first ) continue;
+        int ooo = qsum[0].first;
+        while (ps.size() >= 2 && qsum[0] == qsum[1]) {
+            ps.SetToSubOf(ps, 2, ps.size() - 2);
+            qsum.SetToSubOf(qsum, 2, qsum.size() - 2);
+        }
 
-          Bool verbose = False;
-          if (verbose)
-          {    std::cout << "\n[" << id << "] ";
-               for ( int j = 0; j < ps.isize( ); j++ )
-               {    std::cout << ps[j].getOffset( ) << ":" << printSeq(ps[j])
-                         << " --> " << qsum[j].first;
-                    std::cout << std::endl;
-                    break;    }    }
-          p = ps[0];
-     }
+        /*
+         * XXX: If the path is not valid, stop considering it
+         */
+        if (ps.empty()) continue;
 
-     OutputLog(2) << improveds << " / " << paths.size( ) << " paths improved by rerouting" << std::endl;
-     LogTime( clock, "rerouting paths" );
-     // std::cout << "\n" << Date( ) << ": done" << std::endl;
-          }
+        vec<Bool> del(ps.size(), False);
+        for (int j = 1; j < ps.isize(); j++) {
+            if (qsum[j].first > qsum[0].first) break;
+            if (qsum[j].second < qsum[0].second) del[j] = True;
+        }
+        EraseIf(ps, del);
+        EraseIf(qsum, del);
+
+        if (ooo < qsum[0].first) continue;
+
+        Bool verbose = False;
+        if (verbose) {
+            std::cout << "\n[" << id << "] ";
+            for (int j = 0; j < ps.isize(); j++) {
+                std::cout << ps[j].getOffset() << ":" << printSeq(ps[j])
+                          << " --> " << qsum[j].first;
+                std::cout << std::endl;
+                break;
+            }
+        }
+        p = ps[0];
+    }
+
+    OutputLog(2) << improveds << " / " << paths.size() << " paths improved by rerouting" << std::endl;
+    LogTime(clock, "rerouting paths");
+    // std::cout << "\n" << Date( ) << ": done" << std::endl;
+}
 
 //    Tamp down hanging ends.
 //
