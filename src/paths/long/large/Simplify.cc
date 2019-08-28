@@ -884,10 +884,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         Cleanup(hb, inv, paths);
 
         OutputLog(2) << delcount << " / " <<before<<" edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
-        name = "step7_edge_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//        name = "step7_edge_cleanup";
+//        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
         graph_path_pairs_status(hb,paths);
     }
 
@@ -897,10 +897,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
-    name = "step7_removesmallcomponents1_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_removesmallcomponents1_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
 
@@ -910,10 +910,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         OutputLog(2) << "early tamping" << std::endl;
         Tamp(hb, inv, paths, 0);
 
-        name = "step7_tamp0_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//        name = "step7_tamp0_cleanup";
+//        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         graph_path_pairs_status(hb,paths);
     }
@@ -921,10 +921,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveHangs(hb, inv, paths, 100);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removehangs_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_removehangs_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) <<hb.EdgeObjectCount()<<" edges after removing hangs"<<std::endl;
     graph_path_pairs_status(hb,paths);
@@ -935,26 +935,26 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     AnalyzeBranches(hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2);
     Cleanup(hb, inv, paths);
 
-    name = "step7_analysebranches_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_analysebranches_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     RemoveHangs(hb, inv, paths, MAX_DEL2);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removehangs_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_removehangs_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removesmallcomponents2_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_removesmallcomponents2_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after branch analysis and cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
@@ -962,10 +962,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     PopBubbles(hb, inv, bases, quals, paths);
     Cleanup(hb, inv, paths);
 
-    name = "step7_popbubbles_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_popbubbles_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after bubble popping and cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
@@ -975,26 +975,26 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     Tamp(hb, inv, paths, 10);
 
-    name = "step7_tamp10_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_tamp10_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     RemoveHangs(hb, inv, paths, 700);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removehangs2_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_removehangs2_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removesmallcomponents3_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_removesmallcomponents3_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after tamping, re-removing small components and cleanup"<<std::endl;
     // Pull apart.
@@ -1006,10 +1006,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
         size_t count = pa.SeparateAll();
 
-        name = "step7_pull_apart";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//        name = "step7_pull_apart";
+//        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         OutputLog(2) << count << " repeats pulled apart." << std::endl;
         OutputLog(2) << ": there were " << pa.getRemovedReadPaths() << " read paths removed during separation."<< std::endl;
@@ -1026,10 +1026,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
 
-    name = "step7_pathfinder_unroll_loops_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_pathfinder_unroll_loops_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     invPaths.clear();
     invert( paths, invPaths, hb.EdgeObjectCount( ) );
@@ -1039,10 +1039,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
 
-    name = "step7_pathfinder_complex_in_out_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//    name = "step7_pathfinder_complex_in_out_cleanup";
+//    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     graph_path_pairs_status(hb,paths);
 
@@ -1084,10 +1084,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         RemoveHangs(hb, inv, paths, 700);
         Cleanup(hb, inv, paths);
 
-        name = "step7_degloop_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//        name = "step7_degloop_cleanup";
+//        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         graph_path_pairs_status(hb,paths);
 
@@ -1104,18 +1104,18 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         RemoveSmallComponents3(hb, True);
         Cleanup(hb, inv, paths);
 
-        name = "step7_removesmallcomponents_final_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//        name = "step7_removesmallcomponents_final_cleanup";
+//        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         CleanupLoops(hb, inv, paths);
         RemoveUnneededVerticesGeneralizedLoops(hb, inv, paths);
 
-        name = "unneded_generalised_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+//        name = "unneded_generalised_cleanup";
+//        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+//        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+//        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         graph_path_pairs_status(hb,paths);
     }

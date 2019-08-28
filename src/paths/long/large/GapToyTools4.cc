@@ -629,123 +629,139 @@ void PopBubbles( HyperBasevector& hb , const vec<int>& inv2
      hb.DeleteEdges(to_delete);
 }
 
-void DeleteFunkyPathPairs( const HyperBasevector& hb, const vec<int>& inv,
-     const vecbasevector& bases, ReadPathVec& paths, const Bool verbose )
-{
-     double clock = WallClockTime( );
-     vec<int> to_left, to_right;
-     hb.ToLeft(to_left), hb.ToRight(to_right);
+void DeleteFunkyPathPairs(const HyperBasevector &hb, const vec<int> &inv,
+                          const vecbasevector &bases, ReadPathVec &paths, const Bool verbose) {
+    double clock = WallClockTime();
+    vec<int> to_left, to_right;
+    hb.ToLeft(to_left), hb.ToRight(to_right);
 
-     // Define heuristics.
+    // Define heuristics.
 
-     const int max_homes = 20;
-     const int max_frag = 1000;
-     const int K = 40;
-     const int min_gain = 5;
+    const int max_homes = 20;
+    const int max_frag = 1000;
+    const int K = 40;
+    const int min_gain = 5;
 
-     // Compute distances to ends, approximately.  This is a bit dangerous.
+    // Compute distances to ends, approximately.  This is a bit dangerous.
 
-     // std::cout << Date( ) << ": estimating distances to end" << std::endl;
-     vec<int> D( hb.N( ), 1000000000 );
-     const int max_check = 20;
-     vec<int> xc;
-     for ( int v = 0; v < hb.N( ); v++ )
-     {    if ( hb.From(v).empty( ) ) 
-          {    D[v] = 0;
-               xc.push_back(v);    }    }
-     for ( int p = 0; p < max_check; p++ )
-     {    vec<int> xc2;
-          for ( int i = 0; i < xc.isize( ); i++ )
-          {    int v = xc[i];
-               for ( int j = 0; j < hb.To(v).isize( ); j++ )
-               {    int w = hb.To( xc[i] )[j];
-                    int e = hb.EdgeObjectIndexByIndexTo( v, j );
-                    D[w] = Min( D[w], D[v] + hb.EdgeLengthKmers(e) );
-                    xc2.push_back(w);    }    }
-          xc = xc2;    }
+    // std::cout << Date( ) << ": estimating distances to end" << std::endl;
+    vec<int> D(hb.N(), 1000000000);
+    const int max_check = 20;
+    vec<int> xc;
+    for (int v = 0; v < hb.N(); v++) {
+        if (hb.From(v).empty()) {
+            D[v] = 0;
+            xc.push_back(v);
+        }
+    }
+    for (int p = 0; p < max_check; p++) {
+        vec<int> xc2;
+        for (int i = 0; i < xc.isize(); i++) {
+            int v = xc[i];
+            for (int j = 0; j < hb.To(v).isize(); j++) {
+                int w = hb.To(xc[i])[j];
+                int e = hb.EdgeObjectIndexByIndexTo(v, j);
+                D[w] = Min(D[w], D[v] + hb.EdgeLengthKmers(e));
+                xc2.push_back(w);
+            }
+        }
+        xc = xc2;
+    }
 
-     // Find badly placed pairs.
+    // Find badly placed pairs.
 
-     // std::cout << Date( ) << ": finding badly placed pairs" << std::endl;
-     int64_t npids = paths.size( ) / 2;
-     vec<Bool> invalid(npids, False);
-     #pragma omp parallel for
-     for ( int64_t pid = 0; pid < npids; pid++ )
-     {    int64_t id1 = 2*pid, id2 = 2*pid + 1;
-          ReadPath &p1 = paths[id1], &p2 = paths[id2];
-          if ( p1.size( ) == 0 || p2.size( ) == 0 ) continue;
-          vec<int> x1, x2;
-          for ( int j = 0; j < (int) p1.size( ); j++ )
-               x1.push_back( p1[j] );
-          for ( int j = ( (int) p2.size( ) ) - 1; j >= 0; j-- )
-               x2.push_back( inv[ p2[j] ] );
-          Bool equal = ( p1 == p2 );
-          if (equal) 
-          {    invalid[pid] = True;
-               continue;    } // THESE SHOULD BE DELETED.
-          int start1 = p1.getOffset( );
-          int start2 = hb.EdgeLengthBases( p2.front( ) ) - p2.getOffset( );
+    // std::cout << Date( ) << ": finding badly placed pairs" << std::endl;
+    int64_t npids = paths.size() / 2;
+    vec<Bool> invalid(npids, False);
+#pragma omp parallel for
+    for (int64_t pid = 0; pid < npids; pid++) {
+        int64_t id1 = 2 * pid, id2 = 2 * pid + 1;
+        ReadPath &p1 = paths[id1], &p2 = paths[id2];
+        if (p1.size() == 0 || p2.size() == 0) continue;
+        vec<int> x1, x2;
+        for (int j = 0; j < (int) p1.size(); j++)
+            x1.push_back(p1[j]);
+        for (int j = ((int) p2.size()) - 1; j >= 0; j--)
+            x2.push_back(inv[p2[j]]);
+        Bool equal = (p1 == p2);
+        if (equal) {
+            invalid[pid] = True;
+            continue;
+        } // THESE SHOULD BE DELETED.
+        int start1 = p1.getOffset();
+        int start2 = hb.EdgeLengthBases(p2.front()) - p2.getOffset();
 
-          const int min_frag = 50;
-          const int max_frag = 1300;
+        const int min_frag = 50;
+        const int max_frag = 1300;
 
-          if ( x1.solo( ) && x1 == x2 
-               && start2 - start1 >= min_frag && start2 - start1 <= max_frag )
-          {    continue;    }
+        if (x1.solo() && x1 == x2
+            && start2 - start1 >= min_frag && start2 - start1 <= max_frag) { continue; }
 
-          int dist_to_end1 = hb.EdgeLengthBases( p1.front( ) ) 
-               - p1.getOffset( ) - bases[id1].size( ) + D[ to_right[ p1.back( ) ] ];
-          for ( int j = 1; j < (int) p1.size( ); j++ )
-               dist_to_end1 -= hb.EdgeLengthKmers( p1[j] );
-          int dist_to_end2 = hb.EdgeLengthBases( p2.front( ) ) 
-               - p2.getOffset( ) - bases[id2].size( ) + D[ to_right[ p2.back( ) ] ];
-          for ( int j = 1; j < (int) p2.size( ); j++ )
-               dist_to_end2 -= hb.EdgeLengthKmers( p2[j] );
-          if ( dist_to_end1 + dist_to_end2 
-                    + bases[id1].isize( ) + bases[id2].isize( ) <= max_frag )
-          {    continue;    }
+        int dist_to_end1 = hb.EdgeLengthBases(p1.front())
+                           - p1.getOffset() - bases[id1].size() + D[to_right[p1.back()]];
+        for (int j = 1; j < (int) p1.size(); j++)
+            dist_to_end1 -= hb.EdgeLengthKmers(p1[j]);
+        int dist_to_end2 = hb.EdgeLengthBases(p2.front())
+                           - p2.getOffset() - bases[id2].size() + D[to_right[p2.back()]];
+        for (int j = 1; j < (int) p2.size(); j++)
+            dist_to_end2 -= hb.EdgeLengthKmers(p2[j]);
+        if (dist_to_end1 + dist_to_end2
+            + bases[id1].isize() + bases[id2].isize() <= max_frag) { continue; }
 
-          const int max_exts = 10;
-          vec<vec<int>> paths = {x1};
-          Bool good = False;
-          for ( int64_t e = 0; e <= max_exts; e++ )
-          {    for ( int64_t j = 0; j < paths.isize( ); j++ )
-               {    const vec<int>& p = paths[j];
-                    if ( x2.size( ) <= p.size( ) 
-                         && p.Contains( x2, p.size( ) - x2.size( ) ) )
-                    {    int s1 = start1;
-                         for ( int64_t l = 0; l < p.isize( ) - 1; l++ )
-                              s1 -= hb.EdgeLengthKmers( p[l] );
-                         if ( start2 - s1 >= min_frag && start2 - s1 <= max_frag )
-                         {    good = True;
-                              goto done;    }    }    }
-               vec<vec<int>> paths2;
-               for ( int64_t j = 0; j < paths.isize( ); j++ )
-               {    int64_t v = to_right[ paths[j].back( ) ];
-                    for ( int l = 0; l < hb.From(v).isize( ); l++ )
-                    {    vec<int> x = paths[j];
-                         x.push_back( hb.EdgeObjectIndexByIndexFrom( v, l ) );
-                         int n = 0;
-                         for ( int m = 1; m < x.isize( ) - 1; m++ )
-                              n += hb.EdgeLengthKmers( x[m] );
-                         if ( n < max_frag ) paths2.push_back(x);    }    }
-               paths = paths2;
-               if ( paths.empty( ) ) break;
-               if ( e == max_exts ) good = True;    } // not good but giving up
-          done: if (good) continue;
-          if (verbose)
-          {    std::cout << "[" << pid << "] " << start1 << ":" << printSeq(x1) << ".."
-                    << start2 << ":" << printSeq(x2) << std::endl;    }
-          invalid[pid] = True;     }
-     //if (verbose) std::cout << "\n";
-     //PRINT2( Sum(invalid), npids );
+        const int max_exts = 10;
+        vec<vec<int>> paths = {x1};
+        Bool good = False;
+        for (int64_t e = 0; e <= max_exts; e++) {
+            for (int64_t j = 0; j < paths.isize(); j++) {
+                const vec<int> &p = paths[j];
+                if (x2.size() <= p.size()
+                    && p.Contains(x2, p.size() - x2.size())) {
+                    int s1 = start1;
+                    for (int64_t l = 0; l < p.isize() - 1; l++)
+                        s1 -= hb.EdgeLengthKmers(p[l]);
+                    if (start2 - s1 >= min_frag && start2 - s1 <= max_frag) {
+                        good = True;
+                        goto done;
+                    }
+                }
+            }
+            vec<vec<int>> paths2;
+            for (int64_t j = 0; j < paths.isize(); j++) {
+                int64_t v = to_right[paths[j].back()];
+                for (int l = 0; l < hb.From(v).isize(); l++) {
+                    vec<int> x = paths[j];
+                    x.push_back(hb.EdgeObjectIndexByIndexFrom(v, l));
+                    int n = 0;
+                    for (int m = 1; m < x.isize() - 1; m++)
+                        n += hb.EdgeLengthKmers(x[m]);
+                    if (n < max_frag) paths2.push_back(x);
+                }
+            }
+            paths = paths2;
+            if (paths.empty()) break;
+            if (e == max_exts) good = True;
+        } // not good but giving up
+        done:
+        if (good) continue;
+        if (verbose) {
+            std::cout << "[" << pid << "] " << start1 << ":" << printSeq(x1) << ".."
+                      << start2 << ":" << printSeq(x2) << std::endl;
+        }
+        invalid[pid] = True;
+    }
+    //if (verbose) std::cout << "\n";
+    //PRINT2( Sum(invalid), npids );
 
-     for ( int64_t pid = 0; pid < npids; pid++ )
-     {    if ( invalid[pid] )
-          {    paths[2*pid].resize(0);
-               paths[2*pid+1].resize(0);    }    }
-     //std::cout << Date() << ": "<<Sum(invalid)<< " / "<<npids<<" invalid pairs deleted"<<std::endl;
-     LogTime( clock, "finding funky pairs" );    }
+    for (int64_t pid = 0; pid < npids; pid++) {
+        if (invalid[pid]) {
+            paths[2 * pid].resize(0);
+            paths[2 * pid + 1].resize(0);
+        }
+    }
+    OutputLog(2) << Sum(invalid) << " / " << npids << " invalid pairs deleted" << std::endl;
+    //std::cout << Date() << ": "<<Sum(invalid)<< " / "<<npids<<" invalid pairs deleted"<<std::endl;
+    LogTime(clock, "finding funky pairs");
+}
 
 
 

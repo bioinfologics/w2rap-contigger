@@ -581,45 +581,49 @@ void ImprovePath(const vec<int> &rstarts,
     FinalPrint(pout);
 }
 
-template<int L> void ImprovePathsCoreCore( const vec<int>& to_left,
-     const vec<int>& to_right, const vec< triple<kmer<L>,int,int> >& kmers_plus,
-     const vec< std::pair<int64_t, std::pair<int,int> > >& locsx,
-     const vec<int>& rstarts,
-     ReadPathVec& paths, const HyperBasevector& hb,
-     const vec<int>& inv, const vecbasevector& bases, const VecPQVec& quals,
-     const vec<int64_t>& ids, const path_improver& pimp )
-{
-     // Improve paths.
+template<int L>
+void ImprovePathsCoreCore(const vec<int> &to_left,
+                          const vec<int> &to_right, const vec<triple<kmer<L>, int, int> > &kmers_plus,
+                          const vec<std::pair<int64_t, std::pair<int, int> > > &locsx,
+                          const vec<int> &rstarts,
+                          ReadPathVec &paths, const HyperBasevector &hb,
+                          const vec<int> &inv, const vecbasevector &bases, const VecPQVec &quals,
+                          const vec<int64_t> &ids, const path_improver &pimp) {
+    // Improve paths.
 
-     Bool track_results = pimp.Logging( );
-     int count_old_better = 0, count_new_better = 0;
-     int count_same = 0, count_indet = 0;
-     #pragma omp parallel for
-     for ( int64_t id = 0; id < (int64_t) bases.size( ); id++ )
-     {    path_improver::path_status status;
-          int64_t true_id = ( ids.empty( ) ? id : ids[id] );
+    Bool track_results = pimp.Logging();
+    int count_old_better = 0, count_new_better = 0;
+    int count_same = 0, count_indet = 0;
+#pragma omp parallel for reduction (+:count_old_better, count_new_better, count_same, count_indet)
+    for (int64_t id = 0; id < (int64_t) bases.size(); id++) {
+        path_improver::path_status status;
+        int64_t true_id = (ids.empty() ? id : ids[id]);
 
-          ImprovePath( rstarts, locsx, paths, id, paths[id], true_id, hb, inv,
-               to_left, to_right, bases[id], quals.begin()[id], kmers_plus, pimp,
-               status );
+        ImprovePath(rstarts, locsx, paths, id, paths[id], true_id, hb, inv,
+                    to_left, to_right, bases[id], quals.begin()[id], kmers_plus, pimp,
+                    status);
 
-          if (track_results) // slow
-          {
-               #pragma omp critical
-               {    if ( status == path_improver::old_better ) count_old_better++;
-                    if ( status == path_improver::new_better ) count_new_better++;
-                    if ( status == path_improver::same ) count_same++;
-                    if ( status == path_improver::indet ) count_indet++;
-                         }    }    }
+        if (track_results)
+        {
+            {
+                if (status == path_improver::old_better) count_old_better++;
+                if (status == path_improver::new_better) count_new_better++;
+                if (status == path_improver::same) count_same++;
+                if (status == path_improver::indet) count_indet++;
+            }
+        }
+    }
 
-     // Report results.
+    // Report results.
 
-     if (track_results)
-     {    std::cout << "\n";
-          PRINT(count_old_better);
-          PRINT(count_new_better);
-          PRINT(count_same);
-          PRINT(count_indet);    }    }
+    if (track_results) {
+        std::cout << "\n";
+        PRINT(count_old_better)
+        PRINT(count_new_better)
+        PRINT(count_same)
+        PRINT(count_indet)
+    }
+}
 
 template<int L> void BuildLookup( vec< triple<kmer<L>,int,int> >& kmers_plus,
      const HyperBasevector& hb )

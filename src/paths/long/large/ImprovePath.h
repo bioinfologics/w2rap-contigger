@@ -14,12 +14,8 @@ class path_improver {
 
      enum path_status { old_better, same, new_better, indet };
 
-     path_improver( )
-     {    show_old_better = False;
-          show_new_better = False;
-          show_same = False;
-          show_indet = False;
-          print_align = False;    }
+     path_improver(bool show_old=True, bool show_same=True, bool show_new=True, bool show_indet=True) :
+     show_old_better(show_old), show_same(show_same), show_new_better(show_new), show_indet(show_indet) {}
 
      Bool Logging( ) const 
      { return show_old_better || show_new_better || show_same || show_indet; }
@@ -28,7 +24,7 @@ class path_improver {
      Bool show_new_better;
      Bool show_same;
      Bool show_indet;
-     Bool print_align;
+     Bool print_align = False;
 };
 
 void ImprovePaths( ReadPathVec& paths, const HyperBasevector& hb,

@@ -53,7 +53,7 @@ void ReroutePaths(const HyperBasevector &hb, const vec<int> &inv,
         for (int j = 1; j < (int) p.size(); j++)
             s[j] = s[j - 1] - hb.EdgeLengthKmers(p[j - 1]);
         int n = bases[id].size();
-        if (s.back() + n > hb.EdgeLengthBases(p.back())) continue;
+        if (s.back() + n > hb.EdgeLengthBases(p.back())) continue; // Or the read end is hanging ======---
 
         // Find possible starts for the read.
 
