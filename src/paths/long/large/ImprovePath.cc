@@ -141,13 +141,13 @@ void ImprovePath(const vec<int> &rstarts,
     if (locs.empty()) {
         if (p.size() > 0) {
             status = path_improver::old_better;
-            if (pimp.show_old_better) {
-                *pout << "\nid = " << id << ", old better" << std::endl;
-                *pout << "was placed, but can't find seed" << std::endl;
-            }
+//            if (pimp.show_old_better) {
+//                *pout << "\nid = " << id << ", old better" << std::endl;
+//                *pout << "was placed, but can't find seed" << std::endl;
+//            }
         } else {
             status = path_improver::same;
-            if (pimp.show_same) *pout << "\nid = " << id << ", same" << std::endl;
+//            if (pimp.show_same) *pout << "\nid = " << id << ", same" << std::endl;
         }
         FinalPrint(pout);
         return;
@@ -160,7 +160,7 @@ void ImprovePath(const vec<int> &rstarts,
         && locs[0].second == p.getOffset()
         && hb.EdgeLengthBases(p[0]) - p.getOffset() >= b.isize()) {
         status = path_improver::same;
-        if (pimp.show_same) *pout << "\nid = " << id << ", same" << std::endl;
+//        if (pimp.show_same) *pout << "\nid = " << id << ", same" << std::endl;
         FinalPrint(pout);
         return;
     }
@@ -182,18 +182,18 @@ void ImprovePath(const vec<int> &rstarts,
         if (j > max_locs2) { // too many extensions - abandon attempts to find new paths
             if (p.size() > 0) {
                 status = path_improver::old_better;
-                if (pimp.show_old_better) {
-                    *pout << "\nid = " << id << ", old better" << std::endl;
-                    *pout << "was placed, but too many extensions"
-                          << std::endl;
-                }
+//                if (pimp.show_old_better) {
+//                    *pout << "\nid = " << id << ", old better" << std::endl;
+//                    *pout << "was placed, but too many extensions"
+//                          << std::endl;
+//                }
             } else {
                 status = path_improver::same;
-                if (pimp.show_same) {
-                    *pout << "\nid = " << id << ", same" << std::endl;
-                    *pout << "wasn't placed, and hit too many extensions"
-                          << std::endl;
-                }
+//                if (pimp.show_same) {
+//                    *pout << "\nid = " << id << ", same" << std::endl;
+//                    *pout << "wasn't placed, and hit too many extensions"
+//                          << std::endl;
+//                }
             }
             FinalPrint(pout);
             return;
@@ -205,17 +205,17 @@ void ImprovePath(const vec<int> &rstarts,
         {
             if (p.size() > 0) {
                 status = path_improver::old_better;
-                if (pimp.show_old_better) {
-                    *pout << "\nid = " << id << ", old better" << std::endl;
-                    *pout << "was placed, but found dead end" << std::endl;
-                }
+//                if (pimp.show_old_better) {
+//                    *pout << "\nid = " << id << ", old better" << std::endl;
+//                    *pout << "was placed, but found dead end" << std::endl;
+//                }
             } else {
                 status = path_improver::same;
-                if (pimp.show_same) {
-                    *pout << "\nid = " << id << ", same" << std::endl;
-                    *pout << "wasn't placed, and found dead end"
-                          << std::endl;
-                }
+//                if (pimp.show_same) {
+//                    *pout << "\nid = " << id << ", same" << std::endl;
+//                    *pout << "wasn't placed, and found dead end"
+//                          << std::endl;
+//                }
             }
             FinalPrint(pout);
             return;
@@ -241,17 +241,17 @@ void ImprovePath(const vec<int> &rstarts,
     if (exts.empty()) {
         if (p.size() > 0) {
             status = path_improver::old_better;
-            if (pimp.show_old_better) {
-                *pout << "\nid = " << id << ", old better" << std::endl;
-                *pout << "was placed, but found no extensions" << std::endl;
-            }
+//            if (pimp.show_old_better) {
+//                *pout << "\nid = " << id << ", old better" << std::endl;
+//                *pout << "was placed, but found no extensions" << std::endl;
+//            }
         } else {
             status = path_improver::same;
-            if (pimp.show_same) {
-                *pout << "\nid = " << id << ", same" << std::endl;
-                *pout << "wasn't placed, and found no extensions"
-                      << std::endl;
-            }
+//            if (pimp.show_same) {
+//                *pout << "\nid = " << id << ", same" << std::endl;
+//                *pout << "wasn't placed, and found no extensions"
+//                      << std::endl;
+//            }
         }
         FinalPrint(pout);
         return;
@@ -314,10 +314,10 @@ void ImprovePath(const vec<int> &rstarts,
     ReadPath pnew(starts[0], exts[0]);
     if (p == pnew) {
         status = path_improver::same;
-        if (pimp.show_same) {
-            *pout << "\nid = " << id << ", same" << std::endl;
-            *pout << "best path agrees with old path" << std::endl;
-        }
+//        if (pimp.show_same) {
+//            *pout << "\nid = " << id << ", same" << std::endl;
+//            *pout << "best path agrees with old path" << std::endl;
+//        }
         FinalPrint(pout);
         return;
     }
@@ -345,10 +345,10 @@ void ImprovePath(const vec<int> &rstarts,
     }
     if (!good && p.size() == 0) {
         status = path_improver::same;
-        if (pimp.show_same) {
-            *pout << "\nid = " << id << ", same" << std::endl;
-            *pout << "wasn't placed, but new placement looks bad" << std::endl;
-        }
+//        if (pimp.show_same) {
+//            *pout << "\nid = " << id << ", same" << std::endl;
+//            *pout << "wasn't placed, but new placement looks bad" << std::endl;
+//        }
         FinalPrint(pout);
         return;
     }
@@ -359,18 +359,18 @@ void ImprovePath(const vec<int> &rstarts,
         if (starts[m] != starts[0] || exts[m][0] != exts[0][0]) {
             if (p.size() > 0) {
                 status = path_improver::old_better;
-                if (pimp.show_old_better) {
-                    *pout << "\nid = " << id << ", old better" << std::endl;
-                    *pout << "was placed, but extensions inconsistent"
-                          << std::endl;
-                }
+//                if (pimp.show_old_better) {
+//                    *pout << "\nid = " << id << ", old better" << std::endl;
+//                    *pout << "was placed, but extensions inconsistent"
+//                          << std::endl;
+//                }
             } else {
                 status = path_improver::same;
-                if (pimp.show_same) {
-                    *pout << "\nid = " << id << ", same" << std::endl;
-                    *pout << "wasn't placed, but new extensions are "
-                          << "inconsistent" << std::endl;
-                }
+//                if (pimp.show_same) {
+//                    *pout << "\nid = " << id << ", same" << std::endl;
+//                    *pout << "wasn't placed, but new extensions are "
+//                          << "inconsistent" << std::endl;
+//                }
             }
             FinalPrint(pout);
             return;
@@ -424,10 +424,10 @@ void ImprovePath(const vec<int> &rstarts,
         py.push_back(p[j]);
     if (core == py && starts[0] == p.getOffset()) {
         status = path_improver::same;
-        if (pimp.show_same) {
-            *pout << "\nid = " << id << ", same" << std::endl;
-            *pout << "new = old" << std::endl;
-        }
+//        if (pimp.show_same) {
+//            *pout << "\nid = " << id << ", same" << std::endl;
+//            *pout << "new = old" << std::endl;
+//        }
         FinalPrint(pout);
         return;
     }
@@ -437,19 +437,19 @@ void ImprovePath(const vec<int> &rstarts,
     if (qsum[0] > max_ok) {
         if (p.size() == 0) {
             status = path_improver::same;
-            if (pimp.show_same) {
-                *pout << "\nid = " << id << ", same" << std::endl;
-                *pout << "wasn't placed, but new has high qsum"
-                      << std::endl;
-            }
+//            if (pimp.show_same) {
+//                *pout << "\nid = " << id << ", same" << std::endl;
+//                *pout << "wasn't placed, but new has high qsum"
+//                      << std::endl;
+//            }
         } else // calling old better, but not necessarily true
         {
             status = path_improver::old_better;
-            if (pimp.show_old_better) {
-                *pout << "\nid = " << id << ", old better" << std::endl;
-                *pout << "new path has high qsum (but perhaps the "
-                      << "old one does too)" << std::endl;
-            }
+//            if (pimp.show_old_better) {
+//                *pout << "\nid = " << id << ", old better" << std::endl;
+//                *pout << "new path has high qsum (but perhaps the "
+//                      << "old one does too)" << std::endl;
+//            }
         }
         FinalPrint(pout);
         return;
@@ -458,11 +458,11 @@ void ImprovePath(const vec<int> &rstarts,
     if (p.size() == 0) {
         status = path_improver::new_better;
         p = pnew;
-        if (pimp.show_new_better) {
-            *pout << "\nid = " << id << ", new better" << std::endl;
-            *pout << "old: empty" << std::endl;
-            *pout << "new: " << starts[0] << ": " << printSeq(core) << std::endl;
-        }
+//        if (pimp.show_new_better) {
+//            *pout << "\nid = " << id << ", new better" << std::endl;
+//            *pout << "old: empty" << std::endl;
+//            *pout << "new: " << starts[0] << ": " << printSeq(core) << std::endl;
+//        }
         FinalPrint(pout);
         return;
     }
@@ -504,42 +504,42 @@ void ImprovePath(const vec<int> &rstarts,
     Bool print = False;
     if (new_start > old_start || new_stop < old_stop) {
         status = path_improver::old_better; // Not necessarily!
-        if (pimp.show_old_better)
-            *pout << "\nid = " << id << ", old better" << std::endl;
+//        if (pimp.show_old_better)
+//            *pout << "\nid = " << id << ", old better" << std::endl;
     } else if (new_start == old_start && new_stop == old_stop) {
         if (new_qsum < old_qsum) {
             status = path_improver::new_better;
             p = pnew;
-            if (pimp.show_new_better) {
-                *pout << "\nid = " << id << ", new better" << std::endl;
-                print = True;
-            }
+//            if (pimp.show_new_better) {
+//                *pout << "\nid = " << id << ", new better" << std::endl;
+//                print = True;
+//            }
         } else if (old_qsum < new_qsum) {
             status = path_improver::old_better;
-            if (pimp.show_old_better) {
-                *pout << "\nid = " << id << ", old better" << std::endl;
-                print = True;
-            }
+//            if (pimp.show_old_better) {
+//                *pout << "\nid = " << id << ", old better" << std::endl;
+//                print = True;
+//            }
         } else {
             status = path_improver::same;
-            if (pimp.show_same) {
-                *pout << "\nid = " << id << ", same" << std::endl;
-                print = True;
-            }
+//            if (pimp.show_same) {
+//                *pout << "\nid = " << id << ", same" << std::endl;
+//                print = True;
+//            }
         }
     } else if (new_qsum <= old_qsum) {
         status = path_improver::new_better;
         p = pnew;
-        if (pimp.show_new_better) {
-            *pout << "\nid = " << id << ", new better" << std::endl;
-            print = True;
-        }
+//        if (pimp.show_new_better) {
+//            *pout << "\nid = " << id << ", new better" << std::endl;
+//            print = True;
+//        }
     } else {
         status = path_improver::indet;
-        if (pimp.show_indet) {
-            *pout << "\nid = " << id << ", indeterminate" << std::endl;
-            print = True;
-        }
+//        if (pimp.show_indet) {
+//            *pout << "\nid = " << id << ", indeterminate" << std::endl;
+//            print = True;
+//        }
     }
     if (print) {
         *pout << "old: " << p.getOffset() << ":" << printSeq(p) << std::endl;
@@ -618,10 +618,11 @@ void ImprovePathsCoreCore(const vec<int> &to_left,
 
     if (track_results) {
         std::cout << "\n";
-        PRINT(count_old_better)
-        PRINT(count_new_better)
-        PRINT(count_same)
-        PRINT(count_indet)
+        std::cout << bases.size() << " paths analysed" << std::endl;
+        std::cout << count_old_better << " old paths were better" << std::endl;
+        std::cout << count_same << " paths remained the same" << std::endl;
+        std::cout << count_new_better << " new paths were better" << std::endl;
+        std::cout << count_indet << " indeterminate paths" << std::endl;
     }
 }
 
