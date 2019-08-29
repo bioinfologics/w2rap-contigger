@@ -800,6 +800,19 @@ void SimplifyEXP(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     }
 }
 
+const vec<int> get_edges_support(const HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths) {
+    vec<int> support(hb.EdgeObjectCount(), 0);
+    for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+        for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+            int e = paths[id][j];
+            if (j >= 1) support[e]++;
+            if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
+                support[inv[e]]++;
+        }
+    }
+    return support;
+}
+
 void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,
               const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2,
@@ -813,9 +826,17 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     std::string name;
     // Improve read placements and delete funky pairs.
     OutputLog(2) << "rerouting paths" << std::endl;
+    vec<int> support = get_edges_support(hb, inv, paths);
+    std::cout << "Start, support for edge10797697: " << support[10797697] << std::endl;
 
     ReroutePaths(hb, inv, paths, bases, quals);
+    support = get_edges_support(hb, inv, paths);
+    std::cout << "After ReroutePaths, support for edge10797697: " << support[10797697] << std::endl;
+
     DeleteFunkyPathPairs(hb, inv, bases, paths, False);
+    support = get_edges_support(hb, inv, paths);
+    std::cout << "After DeleteFunkyPathPairs, support for edge10797697: " << support[10797697] << std::endl;
+
 
     if (IMPROVE_PATHS) {
         path_improver pimp;
@@ -824,6 +845,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                      IMPROVE_PATHS_LARGE, False);
         graph_path_pairs_status(hb,paths);
     }
+    support = get_edges_support(hb, inv, paths);
+    std::cout << "After ImprovePaths, support for edge10797697: " << support[10797697] << std::endl;
 
     // Remove unsupported edges in certain situations.
 
@@ -832,15 +855,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         const int min_mult = 10;
         vec<int> dels;
         {
-            vec<int> support(hb.EdgeObjectCount(), 0);
-            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-                    int e = paths[id][j];
-                    if (j >= 1) support[e]++;
-                    if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
-                        support[inv[e]]++;
-                }
-            }
+            vec<int> support=get_edges_support(hb,inv,paths);
 #pragma omp parallel for
             for (int v = 0; v < hb.N(); v++) {
                 if (hb.From(v).size() == 2) {
@@ -852,16 +867,6 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 #pragma omp critical
                         { dels.push_back(e1); }
                     }
-                }
-            }
-        }
-        {
-            vec<int> support(hb.EdgeObjectCount(), 0);
-            for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-                for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-                    int e = paths[id][j];
-                    if (j < (int64_t) paths[id].size() - 1) support[e]++;
-                    if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
                 }
             }
 #pragma omp parallel for
