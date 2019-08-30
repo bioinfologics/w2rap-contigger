@@ -284,6 +284,10 @@ add_executable(hbv2gfa src/modules/hbv2gfa.cc
         $<TARGET_OBJECTS:base_libs>
         )
 
+add_executable(edge_support src/modules/edge_support.cc
+               $<TARGET_OBJECTS:base_libs>
+               )
+
 add_executable(faKmerSpectra src/modules/faKmerSpectra.cc
         $<TARGET_OBJECTS:base_libs>
         $<TARGET_OBJECTS:specific_w2rap-contigger>
