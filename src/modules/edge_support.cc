@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     for (const auto &edge_paths : edges) {
         std::cout << "edge"<<edge_paths.first<<": " << supports[edge_paths.first] << " paths support this edge"<<std::endl;
         for (const auto &path : edge_paths.second) {
-            std::cout << path << bases[path].ToString() << "\n";
+            std::cout << path <<" " << bases[path].ToString() << "\n";
         }
         std::cout << std::endl;
     }
