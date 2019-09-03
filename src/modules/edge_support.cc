@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     bases.ReadAll(argv[3]);
 
     std::unordered_map<int, std::vector<int64_t>> edges;
-    for (int i=3; i < argc; i++) {
+    for (int i=4; i < argc; i++) {
         edges[std::stoi(argv[i])];
     }
     auto supports=get_supports(hbv,hbvinv,paths,edges);
