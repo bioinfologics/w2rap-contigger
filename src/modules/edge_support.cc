@@ -16,6 +16,7 @@ vec<int> get_supports(const HyperBasevector &hb, vec<int> &inv, ReadPathVec &pat
                 auto edge_lookup(edges.find(e));
                 if (edge_lookup != edges.cend()) {
                     edge_lookup->second.push_back(p);
+                }
             }
             if (inv[e] >= 0 && j < (int64_t) path.size() - 1) {
                 auto edge_lookup(edges.find(inv[e]));
