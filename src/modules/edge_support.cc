@@ -11,13 +11,19 @@ vec<int> get_supports(const HyperBasevector &hb, vec<int> &inv, ReadPathVec &pat
     for (const auto & path : paths) {
         for (int64_t j = 0; j < (int64_t) path.size(); j++) {
             int e = path[j];
-            auto edge_lookup(edges.find(e));
-            if (edge_lookup != edges.cend()) {
-                edge_lookup->second.push_back(p);
+            if (j >= 1) {
+                support[e]++;
+                auto edge_lookup(edges.find(e));
+                if (edge_lookup != edges.cend()) {
+                    edge_lookup->second.push_back(p);
             }
-            if (j >= 1) support[e]++;
-            if (inv[e] >= 0 && j < (int64_t) path.size() - 1)
+            if (inv[e] >= 0 && j < (int64_t) path.size() - 1) {
+                auto edge_lookup(edges.find(inv[e]));
+                if (edge_lookup != edges.cend()) {
+                    edge_lookup->second.push_back(p);
+                }
                 support[inv[e]]++;
+            }
         }
         p++;
     }
