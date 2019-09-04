@@ -826,16 +826,16 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     std::string name;
     // Improve read placements and delete funky pairs.
     OutputLog(2) << "rerouting paths" << std::endl;
-    vec<int> support = get_edges_support(hb, inv, paths);
-    std::cout << "Start, support for edge10797697: " << support[10797697] << std::endl;
+//    vec<int> support = get_edges_support(hb, inv, paths);
+//    std::cout << "Start, support for edge10797697: " << support[10797697] << std::endl;
 
     ReroutePaths(hb, inv, paths, bases, quals);
-    support = get_edges_support(hb, inv, paths);
-    std::cout << "After ReroutePaths, support for edge10797697: " << support[10797697] << std::endl;
+//    support = get_edges_support(hb, inv, paths);
+//    std::cout << "After ReroutePaths, support for edge10797697: " << support[10797697] << std::endl;
 
     DeleteFunkyPathPairs(hb, inv, bases, paths, False);
-    support = get_edges_support(hb, inv, paths);
-    std::cout << "After DeleteFunkyPathPairs, support for edge10797697: " << support[10797697] << std::endl;
+//    support = get_edges_support(hb, inv, paths);
+//    std::cout << "After DeleteFunkyPathPairs, support for edge10797697: " << support[10797697] << std::endl;
 
 
     if (IMPROVE_PATHS) {
@@ -845,8 +845,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                      IMPROVE_PATHS_LARGE, False);
         graph_path_pairs_status(hb,paths);
     }
-    support = get_edges_support(hb, inv, paths);
-    std::cout << "After ImprovePaths, support for edge10797697: " << support[10797697] << std::endl;
+//    support = get_edges_support(hb, inv, paths);
+//    std::cout << "After ImprovePaths, support for edge10797697: " << support[10797697] << std::endl;
 
     // Remove unsupported edges in certain situations.
 

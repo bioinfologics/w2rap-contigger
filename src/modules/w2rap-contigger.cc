@@ -480,6 +480,14 @@ int main( int argc,  char * argv[]) {
                 //This is handled in 3 parts now: produce supported sequences from places, make graph, translate paths
                 //Paths are loaded and unloaded to ease memory requirements
 
+                if (!file_exist(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[2] + ".paths")) {
+                    WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[2] + ".paths").c_str());
+                }
+
+                if ( !file_exist(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[2] + ".hbv")) {
+                    BinaryWriter::writeFile(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[2] + ".hbv", hbv);
+                }
+
                 // a - produce supported sequences from places (TODO: make this stream the paths?)
                 vecbasevector supseqs;
                 vec<vec<int>> places;
@@ -509,18 +517,19 @@ int main( int argc,  char * argv[]) {
                 // c - translate paths
                 //first reload the paths, as we'll need them for translation
                 {
-                    HyperBasevector old_graph;
-                    OutputLog(2) << "Loading old graph..." << std::endl;
-                    BinaryReader::readFile(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".hbv",&old_graph);
-                    auto old_graph_K=old_graph.K();
-                    std::vector<int> old_edge_sizes(old_graph.Edges().size());
-                    for (auto i=0;i<old_edge_sizes.size();++i) old_edge_sizes[i]=old_graph.Edges()[i].isize();
-                    vec<int> old_inv;
-                    old_graph.Involution(old_inv);
                     OutputLog(2) << "Loading old paths..." << std::endl;
                     ReadPathVec old_paths;
                     LoadReadPathVec(old_paths, (args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".paths").c_str());
                     paths.clear();paths.resize(old_paths.size());
+
+                    OutputLog(2) << "Loading old graph..." << std::endl;
+                    HyperBasevector old_graph;
+                    BinaryReader::readFile(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".hbv",&old_graph);
+                    std::vector<int> old_edge_sizes(old_graph.Edges().size());
+                    for (auto i=0;i<old_edge_sizes.size();++i) old_edge_sizes[i]=old_graph.Edges()[i].isize();
+                    vec<int> old_inv;
+                    old_graph.Involution(old_inv);
+
                     translate_paths(paths,hbv, hbvinv, xpaths, h2, old_graph.K(), old_edge_sizes, old_paths, old_inv,
                                          places, left_trunc,right_trunc);
                 }
