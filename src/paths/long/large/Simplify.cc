@@ -883,6 +883,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 }
             }
         }
+        // TODO: Print all dels here to check if all these edges are bogus
         auto before=hb.EdgeObjectCount();
         auto delcount=dels.size();
         hb.DeleteEdges(dels);

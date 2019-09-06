@@ -336,6 +336,9 @@ void AssembleGaps2(HyperBasevector &hb, vec<int> &inv2, ReadPathVec &paths2,
 
 
                 CreateLocalReadSet(gbases, gquals, gpairs, pids, bases, quals);
+//                if (std::find(pids.begin(), pids.end(), 37749842) != pids.cend()) {
+//                    std::cout << "Blob " << bl << " solving ROI" << std::endl;
+//                }
                 HyperBasevector *mhbp_t = &mhbp[bl];
 
                 //#pragma omp task shared(lefts,rights)
