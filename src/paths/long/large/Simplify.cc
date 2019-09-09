@@ -855,7 +855,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     {
         const int min_mult = 10;
         vec<int> dels;
-        std::unordered_set<int> edges_interest{12749117,inv[12749117], 9433377, inv[9433377], 10797697, inv[10797697], 14077243, inv[14077243], 512857, inv[512857]};
+        const std::unordered_set<int> edges_interest{12749117,inv[12749117], 9433377, inv[9433377], 10797697, inv[10797697], 14077243, inv[14077243], 512857, inv[512857]};
         {
             vec<int> support=get_edges_support(hb,inv,paths);
             for (int v = 0; v < hb.N(); v++) {
@@ -879,8 +879,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                         std::cout << "s1(" <<  s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2 << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
                     }
                     if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
-                        std::cout << "dels.push_back(" << e1 << ")" << std::endl;
-                        { dels.push_back(e1); }
+                        if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
+                        dels.push_back(e1);
                     }
                 }
             }
@@ -905,8 +905,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                         std::cout << "s1(" <<  s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2 << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
                     }
                     if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
-                        std::cout << "dels.push_back(" << e1 << ")" << std::endl;
-                        { dels.push_back(e1); }
+                        if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
+                        dels.push_back(e1);
                     }
                 }
             }
