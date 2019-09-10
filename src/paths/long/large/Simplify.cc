@@ -801,19 +801,6 @@ void SimplifyEXP(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     }
 }
 
-const vec<int> get_edges_support(const HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths) {
-    vec<int> support(hb.EdgeObjectCount(), 0);
-    for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
-        for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
-            int e = paths[id][j];
-            if (j >= 1) support[e]++;
-            if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
-                support[inv[e]]++;
-        }
-    }
-    return support;
-}
-
 void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
               ReadPathVec &paths, const vecbasevector &bases, const VecPQVec &quals,
               const int MAX_SUPP_DEL, const Bool TAMP_EARLY, const int MIN_RATIO2,
@@ -857,56 +844,83 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         vec<int> dels;
         {
             const std::unordered_set<int> edges_interest{12749117,inv[12749117], 9433377, inv[9433377], 10797697, inv[10797697], 14077243, inv[14077243], 512857, inv[512857]};
-            vec<int> support=get_edges_support(hb,inv,paths);
-            for (int v = 0; v < hb.N(); v++) {
-                bool to_print(false);
-                if (hb.From(v).size() == 2) {
-                    int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
-                    int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
-                    if (edges_interest.find(e1) != edges_interest.cend() or edges_interest.find(e2) != edges_interest.cend()){
-                        to_print = true;
+            {
+                vec<int> support(hb.EdgeObjectCount(), 0);
+                for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+                    for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+                        int e = paths[id][j];
+                        if (j >= 1) support[e]++;
+                        if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
+                            support[inv[e]]++;
                     }
-                    if (to_print) {
-                        std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
-                        std::cout << "Support(e1) = " << support[e1] << " Support(e2) = " << support[e2] << std::endl;
-                    }
-                    if (support[e1] > support[e2]) std::swap(e1, e2);
-                    int s1 = support[e1], s2 = support[e2];
-                    if (to_print) {
-                        std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
-                        std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
+                }
 
-                        std::cout << "s1(" <<  s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2 << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
-                    }
-                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
-                        if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
-                        dels.push_back(e1);
+                for (int v = 0; v < hb.N(); v++) {
+                    bool to_print(false);
+                    if (hb.From(v).size() == 2) {
+                        int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
+                        int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
+                        if (edges_interest.find(e1) != edges_interest.cend() or
+                            edges_interest.find(e2) != edges_interest.cend()) {
+                            to_print = true;
+                        }
+                        if (to_print) {
+                            std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
+                            std::cout << "Support(e1) = " << support[e1] << " Support(e2) = " << support[e2]
+                                      << std::endl;
+                        }
+                        if (support[e1] > support[e2]) std::swap(e1, e2);
+                        int s1 = support[e1], s2 = support[e2];
+                        if (to_print) {
+                            std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
+                            std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
+
+                            std::cout << "s1(" << s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2
+                                      << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
+                        }
+                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
+                            if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
+                            dels.push_back(e1);
+                        }
                     }
                 }
             }
-            for (int v = 0; v < hb.N(); v++) {
-                bool to_print(false);
-                if (hb.To(v).size() == 2) {
-                    int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
-                    int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
-                    if (edges_interest.find(e1) != edges_interest.cend() or edges_interest.find(e2) != edges_interest.cend()){
-                        to_print = true;
+            {
+                vec<int> support(hb.EdgeObjectCount(), 0);
+                for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
+                    for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
+                        int e = paths[id][j];
+                        if (j < (int64_t) paths[id].size() - 1) support[e]++;
+                        if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
                     }
-                    if (to_print) {
-                        std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
-                        std::cout << "Support(e1) = " << support[e1] << " Support(e2) = " << support[e2] << std::endl;
-                    }
-                    if (support[e1] > support[e2]) std::swap(e1, e2);
-                    int s1 = support[e1], s2 = support[e2];
-                    if (to_print) {
-                        std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
-                        std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
+                }
+                for (int v = 0; v < hb.N(); v++) {
+                    bool to_print(false);
+                    if (hb.To(v).size() == 2) {
+                        int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
+                        int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
+                        if (edges_interest.find(e1) != edges_interest.cend() or
+                            edges_interest.find(e2) != edges_interest.cend()) {
+                            to_print = true;
+                        }
+                        if (to_print) {
+                            std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
+                            std::cout << "Support(e1) = " << support[e1] << " Support(e2) = " << support[e2]
+                                      << std::endl;
+                        }
+                        if (support[e1] > support[e2]) std::swap(e1, e2);
+                        int s1 = support[e1], s2 = support[e2];
+                        if (to_print) {
+                            std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
+                            std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
 
-                        std::cout << "s1(" <<  s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2 << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
-                    }
-                    if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
-                        if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
-                        dels.push_back(e1);
+                            std::cout << "s1(" << s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2
+                                      << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
+                        }
+                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)) {
+                            if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
+                            dels.push_back(e1);
+                        }
                     }
                 }
             }
