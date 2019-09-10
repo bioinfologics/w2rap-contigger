@@ -855,8 +855,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     {
         const int min_mult = 10;
         vec<int> dels;
-        const std::unordered_set<int> edges_interest{12749117,inv[12749117], 9433377, inv[9433377], 10797697, inv[10797697], 14077243, inv[14077243], 512857, inv[512857]};
         {
+            const std::unordered_set<int> edges_interest{12749117,inv[12749117], 9433377, inv[9433377], 10797697, inv[10797697], 14077243, inv[14077243], 512857, inv[512857]};
             vec<int> support=get_edges_support(hb,inv,paths);
             for (int v = 0; v < hb.N(); v++) {
                 bool to_print(false);
@@ -914,6 +914,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         // TODO: Print all dels here to check if all these edges are bogus
         auto before=hb.EdgeObjectCount();
         auto delcount=dels.size();
+        std::cout << "Edges to delete: " <<std::endl;
+        for (const auto d:dels) {
+            std::cout << d << ", ";
+        }
+        std::cout << std::endl;
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
 
