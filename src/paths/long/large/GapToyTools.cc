@@ -154,7 +154,10 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
           std::vector<int>& p = paths[i];
           for ( int j = 0; j < (int) p.size( ); j++ )
           {    int n = to_new_id[ p[j] ];
-               if ( n < 0 ) to_delete[i] = True;
+               if ( n < 0 ) {
+                   // TODO: This function should either remove the paths or not create this object. These paths should be removed at some point.
+                   to_delete[i] = True;
+               }
                else p[j] = n;
           }
      }
