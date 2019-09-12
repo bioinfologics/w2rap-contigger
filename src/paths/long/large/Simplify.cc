@@ -815,68 +815,91 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     // Improve read placements and delete funky pairs.
     OutputLog(2) << "rerouting paths" << std::endl;
 
-    ReroutePaths(hb, inv, paths, bases, quals);
+    if (!std::ifstream("step7_rerouted.paths")){
+        ReroutePaths(hb, inv, paths, bases, quals);
 //    support = get_edges_support(hb, inv, paths);
 //    std::cout << "After ReroutePaths, support for edge10797697: " << support[10797697] << std::endl;
 
-    DeleteFunkyPathPairs(hb, inv, bases, paths, False);
+        DeleteFunkyPathPairs(hb, inv, bases, paths, False);
 //    support = get_edges_support(hb, inv, paths);
 //    std::cout << "After DeleteFunkyPathPairs, support for edge10797697: " << support[10797697] << std::endl;
 
 
-    if (IMPROVE_PATHS) {
-        path_improver pimp;
-        vec<int64_t> ids;
-        ImprovePaths(paths, hb, inv, bases, quals, ids, pimp,
-                     IMPROVE_PATHS_LARGE, False);
-        graph_path_pairs_status(hb,paths);
+        if (IMPROVE_PATHS) {
+            path_improver pimp;
+            vec<int64_t> ids;
+            ImprovePaths(paths, hb, inv, bases, quals, ids, pimp,
+                         IMPROVE_PATHS_LARGE, False);
+            graph_path_pairs_status(hb, paths);
+        }
+        WriteReadPathVec(paths, "step7_rerouted.paths");
+    } else {
+        LoadReadPathVec(paths,"step7_rerouted.paths");
     }
+
 //    support = get_edges_support(hb, inv, paths);
 //    std::cout << "After ImprovePaths, support for edge10797697: " << support[10797697] << std::endl;
 
     // Tip clipping in situations where a small tip ( size < 2*K ) is adjacent to a large contig ( size >= 5*K )
     // TODO: Explore doing this before/after updating the paths, this should confirm suspicions of poorly rerouted paths before this step!
     {
+        vec<int> to_left, to_right;
+        hb.ToLeft(to_left), hb.ToRight(to_right);
+
         vec<int> dels;
 
         // Cleanup of "From" edges
         for (int v = 0; v < hb.N(); v++) {
-            bool to_print(true);
             if (hb.From(v).size() == 2) {
                 int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
                 int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
-                if (to_print) {
-                    std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
-                    std::cout << "Length(e1) = " << hb.EdgeObject(e1).size() << " Length(e2) = " << hb.EdgeObject(e2).size()
-                              << std::endl;
-                }
-                if (hb.EdgeObject(e1).size() > hb.EdgeObject(e2).size()) std::swap(e1, e2);
-                if (hb.EdgeObject(e1).size() <= 2*hb.K() && hb.EdgeObject(e2).size() >= 5*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
-                    dels.push_back(e1);
+                if (hb.EdgeObject(e1).size() < hb.EdgeObject(e2).size()) std::swap(e1, e2);
+                if (hb.EdgeObject(e1).size() >= 5*hb.K() && hb.EdgeObject(e2).size() <= 2*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                    if (hb.FromSize( to_right[ e2 ] ) == 0) {
+                        dels.push_back(e2);
+                    }
                 }
             }
         }
 
         // Cleanup of "To" edges
         for (int v = 0; v < hb.N(); v++) {
-            bool to_print(true);
-            if (hb.From(v).size() == 2) {
-                int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
-                int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
-                if (to_print) {
-                    std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
-                    std::cout << "Length(e1) = " << hb.EdgeObject(e1).size() << " Length(e2) = " << hb.EdgeObject(e2).size()
-                              << std::endl;
-                }
-                if (hb.EdgeObject(e1).size() > hb.EdgeObject(e2).size()) std::swap(e1, e2);
-                if (hb.EdgeObject(e1).size() <= 2*hb.K() && hb.EdgeObject(e2).size() >= 5*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
-                    dels.push_back(e1);
+            if (hb.To(v).size() == 2) {
+                int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
+                int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
+                if (hb.EdgeObject(e1).size() < hb.EdgeObject(e2).size()) std::swap(e1, e2);
+                if (hb.EdgeObject(e1).size() >= 5*hb.K() && hb.EdgeObject(e2).size() <= 2*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                    if (hb.ToSize(to_left[e2]) == 0) {
+                        dels.push_back(e2);
+                    }
                 }
             }
         }
 
+        {
+            std::ofstream to_delete("size_tip_clipping.edges");
+            int i = 0;
+            for (const auto d:dels) {
+                if (d % 2 == 0) { // Only output the canonical edges, the u
+                    to_delete << "edge" << d << "\n";
+                } else {
+                    to_delete << "edge" << inv[d] << "\n";
+                }
+                ++i;
+            }
+            to_delete << std::endl;
+            std::cout << "There were " << i << " small tip edges" << std::endl;
+        }
+
+        UniqueSort(dels);
         hb.DeleteEdges(dels);
         Cleanup(hb, inv, paths);
+
+        name = "step7_small_tip_cleanup";
+        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
+        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
+        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     }
 
 
@@ -892,6 +915,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
                     for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
                         int e = paths[id][j];
+                        if (e<0) continue;
                         if (j >= 1) support[e]++;
                         if (inv[e] >= 0 && j < (int64_t) paths[id].size() - 1)
                             support[inv[e]]++;
@@ -930,6 +954,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
                     for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
                         int e = paths[id][j];
+                        if (e<0) continue;
                         if (j < (int64_t) paths[id].size() - 1) support[e]++;
                         if (inv[e] >= 0 && j >= 1) support[inv[e]]++;
                     }
@@ -972,6 +997,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             for (const auto d:dels) {
                 if (d % 2 == 0) { // Only output the canonical edges, the u
                     to_delete << "edge" << d << "\n";
+                } else {
+                    to_delete << "edge" << inv[d] << "\n";
                 }
             }
             to_delete << std::endl;
