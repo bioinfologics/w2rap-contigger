@@ -854,7 +854,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
                 int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
                 if (hb.EdgeObject(e1).size() < hb.EdgeObject(e2).size()) std::swap(e1, e2);
-                if (hb.EdgeObject(e1).size() >= 5*hb.K() && hb.EdgeObject(e2).size() <= 2*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                if (hb.EdgeObject(e1).size() >= 5*hb.K() && hb.EdgeObject(e2).size() <= 2*hb.K() ) {
                     if (hb.FromSize( to_right[ e2 ] ) == 0) {
                         dels.push_back(e2);
                     }
@@ -868,7 +868,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
                 int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
                 if (hb.EdgeObject(e1).size() < hb.EdgeObject(e2).size()) std::swap(e1, e2);
-                if (hb.EdgeObject(e1).size() >= 5*hb.K() && hb.EdgeObject(e2).size() <= 2*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                if (hb.EdgeObject(e1).size() >= 5*hb.K() && hb.EdgeObject(e2).size() <= 2*hb.K() ) {
                     if (hb.ToSize(to_left[e2]) == 0) {
                         dels.push_back(e2);
                     }
@@ -941,7 +941,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                             std::cout << "s1(" << s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2
                                       << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
                         }
-                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) && hb.EdgeObject(e1).size() < 2*hb.K()) {
                             if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
                             dels.push_back(e1);
                             unsupported_edges_sizes << e1 << "\t" << hb.EdgeObject(e1).size() << "\n";
@@ -978,7 +978,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                             std::cout << "s1(" << s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2
                                       << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
                         }
-                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) /* && hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1)  && hb.EdgeObject(e1).size() < 2*hb.K()) {
                             if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
                             dels.push_back(e1);
                             unsupported_edges_sizes << e1 << "\t" << hb.EdgeObject(e1).size() << "\n";
