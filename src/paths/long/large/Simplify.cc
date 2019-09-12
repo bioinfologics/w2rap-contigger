@@ -834,8 +834,53 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 //    support = get_edges_support(hb, inv, paths);
 //    std::cout << "After ImprovePaths, support for edge10797697: " << support[10797697] << std::endl;
 
-    // Remove unsupported edges in certain situations.
+    // Tip clipping in situations where a small tip ( size < 2*K ) is adjacent to a large contig ( size >= 5*K )
+    // TODO: Explore doing this before/after updating the paths, this should confirm suspicions of poorly rerouted paths before this step!
+    {
+        vec<int> dels;
 
+        // Cleanup of "From" edges
+        for (int v = 0; v < hb.N(); v++) {
+            bool to_print(true);
+            if (hb.From(v).size() == 2) {
+                int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
+                int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
+                if (to_print) {
+                    std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
+                    std::cout << "Length(e1) = " << hb.EdgeObject(e1).size() << " Length(e2) = " << hb.EdgeObject(e2).size()
+                              << std::endl;
+                }
+                if (hb.EdgeObject(e1).size() > hb.EdgeObject(e2).size()) std::swap(e1, e2);
+                if (hb.EdgeObject(e1).size() <= 2*hb.K() && hb.EdgeObject(e2).size() >= 5*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                    dels.push_back(e1);
+                }
+            }
+        }
+
+        // Cleanup of "To" edges
+        for (int v = 0; v < hb.N(); v++) {
+            bool to_print(true);
+            if (hb.From(v).size() == 2) {
+                int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
+                int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
+                if (to_print) {
+                    std::cout << "e1 = " << e1 << " e2 = " << e2 << std::endl;
+                    std::cout << "Length(e1) = " << hb.EdgeObject(e1).size() << " Length(e2) = " << hb.EdgeObject(e2).size()
+                              << std::endl;
+                }
+                if (hb.EdgeObject(e1).size() > hb.EdgeObject(e2).size()) std::swap(e1, e2);
+                if (hb.EdgeObject(e1).size() <= 2*hb.K() && hb.EdgeObject(e2).size() >= 5*hb.K() /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
+                    dels.push_back(e1);
+                }
+            }
+        }
+
+        hb.DeleteEdges(dels);
+        Cleanup(hb, inv, paths);
+    }
+
+
+    // Remove unsupported edges in certain situations.
     OutputLog(2) << "removing unsupported edges" << std::endl;
     {
         const int min_mult = 10;
@@ -872,7 +917,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                             std::cout << "s1(" << s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2
                                       << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
                         }
-                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) && hb.EdgeObject(e1).size() < 2*hb.K() ) {
+                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) /*&& hb.EdgeObject(e1).size() < 2*hb.K() */) {
                             if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
                             dels.push_back(e1);
                             unsupported_edges_sizes << e1 << "\t" << hb.EdgeObject(e1).size() << "\n";
@@ -908,7 +953,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                             std::cout << "s1(" << s1 << ") <= MAX_SUPP_DEL(" << MAX_SUPP_DEL << ") && s2(" << s2
                                       << ") >= " << min_mult << " * Max(1, " << s1 << ")" << std::endl;
                         }
-                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) && hb.EdgeObject(e1).size() < 2*hb.K() ) {
+                        if (s1 <= MAX_SUPP_DEL && s2 >= min_mult * Max(1, s1) /* && hb.EdgeObject(e1).size() < 2*hb.K() */) {
                             if (to_print) std::cout << "dels.push_back(" << e1 << ")" << std::endl;
                             dels.push_back(e1);
                             unsupported_edges_sizes << e1 << "\t" << hb.EdgeObject(e1).size() << "\n";
@@ -926,12 +971,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             int i = 0;
             for (const auto d:dels) {
                 if (d % 2 == 0) { // Only output the canonical edges, the u
-                    to_delete << "edge" << d << ", ";
-                    if (i++ % 50 == 0) to_delete << std::endl;
+                    to_delete << "edge" << d << "\n";
                 }
             }
             to_delete << std::endl;
-            std::cout << "There were " << i << "deleted edges" << std::endl;
+            std::cout << "There were " << i << " deleted edges" << std::endl;
         }
 
         name = "step7_before_DeleteEdges";
@@ -945,22 +989,22 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
         SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
-
-        {
-            vec<Bool> used;
-            std::ofstream non_deleted("non_deleted.edges");
-            hb.Used(used);
-            uint count=0;
-            for (const auto d:dels) {
-                if (d%2==0 && used[d]) {
-                    non_deleted << "edge" << d << "\n";
-                    count++;
+        { // Cleanup (inlined)
+            {
+                vec<Bool> used;
+                hb.Used(used);
+                for (int64_t i = 0; i < (int64_t) paths.size(); i++) {
+                    for (int64_t j = 0; j < (int64_t) paths[i].size(); j++) {
+                        if (paths[i][j] < 0 || paths[i][j] >= hb.EdgeObjectCount() || !used[paths[i][j]]) {
+                            paths[i].resize(j);
+                            break;
+                        }
+                    }
                 }
             }
-            std::cout << count << " edges marked for deletion remain supported through the graph" << std::endl;
+            RemoveUnneededVertices2(hb, inv, paths, true);
+            CleanupCore(hb, inv, paths);
         }
-
-        Cleanup(hb, inv, paths);
 
         OutputLog(2) << delcount << " / " <<before<<" edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
         name = "step7_edge_cleanup";

@@ -132,6 +132,16 @@ void CleanupCore( HyperBasevector& hb, vec<int>& inv, ReadPathVec& paths )
 {
      vec<Bool> used;
      hb.Used(used);
+
+    {
+        std::ofstream cleanup_core("cleanup_core.edges");
+        for (uint64_t i = 0; i < hb.Edges().size(); i++) {
+            if (i%2==0 && !used[i]) {
+                cleanup_core << "edges" << i << std::endl;
+            }
+        }
+    }
+
      vec<int> to_new_id( used.size( ), -1 );
      {    int count = 0;
           for ( int i = 0; i < used.isize( ); i++ )

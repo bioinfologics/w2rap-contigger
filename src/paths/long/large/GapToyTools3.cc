@@ -76,7 +76,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
     debug_fnam_head << "graph." << std::setprecision(3) << debug_serial;
 
 
-    if ( debug ) BinaryWriter::writeFile( debug_fnam_head.str() + ".BEFORE.hbv", hbv );
+//    if ( debug ) BinaryWriter::writeFile( debug_fnam_head.str() + ".BEFORE.hbv", hbv );
 
     // new algorithm
     // 1. make a list of vertices to kill
@@ -122,7 +122,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
         int vleft = v;
         size_t runsize = 0;
         do {
-            if ( debug ) std::cout << "vleft = " << vleft << std::endl;
+//            if ( debug ) std::cout << "vleft = " << vleft << std::endl;
             runsize++;
             vertex_kill[vleft] = false;
             eleft = hbv.EdgeObjectIndexByIndexTo(vleft,0);
@@ -131,7 +131,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
         int eright;
         int vright = v;
         do {
-            if ( debug ) std::cout << "vright = " << vright << std::endl;
+//            if ( debug ) std::cout << "vright = " << vright << std::endl;
             runsize++;
             vertex_kill[vright] = false;
             eright = hbv.EdgeObjectIndexByIndexFrom(vright,0);
@@ -150,7 +150,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
             bound.push(eleft,eright);
             bound.push(inv[eright], inv[eleft]);
 
-            if ( debug ) {
+            if ( 0 ) {
                 std::cout << "eleft = " << eleft << ", eright = " << eright << std::endl;
                 std::cout << "inv eleft = " << inv[eleft] <<
                         ", inv eright = " << inv[eright] << std::endl;
@@ -159,7 +159,7 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
             }
         }
     }
-    if ( debug ) PRINT(bound.size());
+    if ( 0 ) PRINT(bound.size());
 
     //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Step3"<< std::endl;
     // steps 3 and 4
@@ -234,11 +234,23 @@ void RemoveUnneededVertices2( HyperBasevector& hbv, vec<int>& inv, ReadPathVec& 
     //time(&rawtime);
     //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 edges before deletion: "<<hbv.EdgeObjectCount()<< std::endl;
     hbv.DeleteEdges(to_delete);
+
+
+    if (debug) {
+        std::ofstream to_delete_file("really_deleted.edges");
+        int i = 0;
+        for (const auto d:to_delete) {
+            if (d % 2 == 0) { // Only output the canonical edges, the u
+                to_delete_file << "edge" << d << "\n";
+            }
+        }
+        to_delete_file << std::endl;
+        std::cout << "There were " << i << " deleted edges" << std::endl;
+    }
     //time(&rawtime);
     //std::cout << "[GapToyTools3.cc]          RemoveUnneededVertices2 edges after deletion: "<<hbv.EdgeObjectCount()<< std::endl;
 
-    if ( debug )
-        BinaryWriter::writeFile( debug_fnam_head.str() + ".AFTER.hbv", hbv );
+//    if ( debug ) BinaryWriter::writeFile( debug_fnam_head.str() + ".AFTER.hbv", hbv );
 
     //std::cout << "[GapToyTools3.cc] Begining RemoveUnneededVertices2 Updating inv[x]"<< std::endl;
     // for each pair of newly created edges, update mInv
