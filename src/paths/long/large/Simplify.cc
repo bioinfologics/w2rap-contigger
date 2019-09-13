@@ -837,11 +837,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         LoadReadPathVec(paths,"step7_rerouted.paths");
     }
 
-//    support = get_edges_support(hb, inv, paths);
-//    std::cout << "After ImprovePaths, support for edge10797697: " << support[10797697] << std::endl;
-
-    // Tip clipping in situations where a small tip ( size < 2*K ) is adjacent to a large contig ( size >= 5*K )
-    // TODO: Explore doing this before/after updating the paths, this should confirm suspicions of poorly rerouted paths before this step!
+    // TODO: Explore doing this before/after updating the paths, this should confirm suspicions of poorly rerouted paths.
+    // NOTE: Tip clipping in situations where a small tip ( size < 2*K ) is adjacent to a large contig ( size >= 5*K )
     {
         vec<int> to_left, to_right;
         hb.ToLeft(to_left), hb.ToRight(to_right);
@@ -911,6 +908,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         std::ofstream unsupported_edges_sizes("unsupported.sizes");
         {
             {
+                /*
+                 * TODO: This definition of support does not work in all situations, hence the previous algorithm for
+                 * tip clipping based on the graph topology
+                 */
                 vec<int> support(hb.EdgeObjectCount(), 0);
                 for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
                     for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
@@ -923,7 +924,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 }
 
                 for (int v = 0; v < hb.N(); v++) {
-                    bool to_print(true);
+                    bool to_print(false);
                     if (hb.From(v).size() == 2) {
                         int e1 = hb.EdgeObjectIndexByIndexFrom(v, 0);
                         int e2 = hb.EdgeObjectIndexByIndexFrom(v, 1);
@@ -950,6 +951,10 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                 }
             }
             {
+                /*
+                 * TODO: This definition of support does not work in all situations, hence the previous algorithm for
+                 * tip clipping based on the graph topology
+                 */
                 vec<int> support(hb.EdgeObjectCount(), 0);
                 for (int64_t id = 0; id < (int64_t) paths.size(); id++) {
                     for (int64_t j = 0; j < (int64_t) paths[id].size(); j++) {
@@ -960,7 +965,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
                     }
                 }
                 for (int v = 0; v < hb.N(); v++) {
-                    bool to_print(true);
+                    bool to_print(false);
                     if (hb.To(v).size() == 2) {
                         int e1 = hb.EdgeObjectIndexByIndexTo(v, 0);
                         int e2 = hb.EdgeObjectIndexByIndexTo(v, 1);
@@ -1005,33 +1010,9 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
             std::cout << "There were " << i << " deleted edges" << std::endl;
         }
 
-        name = "step7_before_DeleteEdges";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
         hb.DeleteEdges(dels);
-
-        name = "step7_before_Cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
-        { // Cleanup (inlined)
-            {
-                vec<Bool> used;
-                hb.Used(used);
-                for (int64_t i = 0; i < (int64_t) paths.size(); i++) {
-                    for (int64_t j = 0; j < (int64_t) paths[i].size(); j++) {
-                        if (paths[i][j] < 0 || paths[i][j] >= hb.EdgeObjectCount() || !used[paths[i][j]]) {
-                            paths[i].resize(j);
-                            break;
-                        }
-                    }
-                }
-            }
-            RemoveUnneededVertices2(hb, inv, paths, true);
-            CleanupCore(hb, inv, paths);
-        }
+        Cleanup(hb, inv, paths);
 
         OutputLog(2) << delcount << " / " <<before<<" edges removed, "<<hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
         name = "step7_edge_cleanup";
@@ -1047,10 +1028,7 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
-    name = "step7_removesmallcomponents1_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
+
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
 
@@ -1060,21 +1038,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         OutputLog(2) << "early tamping" << std::endl;
         Tamp(hb, inv, paths, 0);
 
-        name = "step7_tamp0_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
         graph_path_pairs_status(hb,paths);
     }
 
     RemoveHangs(hb, inv, paths, 100);
     Cleanup(hb, inv, paths);
-
-    name = "step7_removehangs_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) <<hb.EdgeObjectCount()<<" edges after removing hangs"<<std::endl;
     graph_path_pairs_status(hb,paths);
@@ -1085,37 +1053,17 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     AnalyzeBranches(hb, to_right, inv, paths, True, MIN_RATIO2, ANALYZE_BRANCHES_VERBOSE2);
     Cleanup(hb, inv, paths);
 
-    name = "step7_analysebranches_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
     RemoveHangs(hb, inv, paths, MAX_DEL2);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removehangs_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
-
-    name = "step7_removesmallcomponents2_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after branch analysis and cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
     OutputLog(2) << "popping bubbles" << std::endl;
     PopBubbles(hb, inv, bases, quals, paths);
     Cleanup(hb, inv, paths);
-
-    name = "step7_popbubbles_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after bubble popping and cleanup"<<std::endl;
     graph_path_pairs_status(hb,paths);
@@ -1125,26 +1073,11 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
 
     Tamp(hb, inv, paths, 10);
 
-    name = "step7_tamp10_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
     RemoveHangs(hb, inv, paths, 700);
     Cleanup(hb, inv, paths);
 
-    name = "step7_removehangs2_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
     RemoveSmallComponents3(hb);
     Cleanup(hb, inv, paths);
-
-    name = "step7_removesmallcomponents3_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     OutputLog(2) << hb.EdgeObjectCount()<<" edges after tamping, re-removing small components and cleanup"<<std::endl;
     // Pull apart.
@@ -1155,11 +1088,6 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         invert(paths, invPaths, hb.EdgeObjectCount());
         PullAparter pa(hb, inv, paths, invPaths, PULL_APART_TRACE, PULL_APART_VERBOSE, 5, 5.0);
         size_t count = pa.SeparateAll();
-
-        name = "step7_pull_apart";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         OutputLog(2) << count << " repeats pulled apart." << std::endl;
         OutputLog(2) << ": there were " << pa.getRemovedReadPaths() << " read paths removed during separation."<< std::endl;
@@ -1176,11 +1104,6 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
 
-    name = "step7_pathfinder_unroll_loops_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
     invPaths.clear();
     invert( paths, invPaths, hb.EdgeObjectCount( ) );
     OutputLog(2) << "PathFinder: analysing single-direction repeats" << std::endl;
@@ -1188,11 +1111,6 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
     OutputLog(2) << "Removing unneeded Vertices" << std::endl;
     RemoveUnneededVertices2(hb, inv, paths);
     Cleanup(hb, inv, paths);
-
-    name = "step7_pathfinder_complex_in_out_cleanup";
-    BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-    GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-    SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
     graph_path_pairs_status(hb,paths);
 
@@ -1234,11 +1152,6 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         RemoveHangs(hb, inv, paths, 700);
         Cleanup(hb, inv, paths);
 
-        name = "step7_degloop_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
         graph_path_pairs_status(hb,paths);
 
     }
@@ -1254,18 +1167,8 @@ void Simplify(const String &fin_dir, HyperBasevector &hb, vec<int> &inv,
         RemoveSmallComponents3(hb, True);
         Cleanup(hb, inv, paths);
 
-        name = "step7_removesmallcomponents_final_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
-
         CleanupLoops(hb, inv, paths);
         RemoveUnneededVerticesGeneralizedLoops(hb, inv, paths);
-
-        name = "unneded_generalised_cleanup";
-        BinaryWriter::writeFile(fin_dir + "/" + name + ".hbv", hb);
-        GFADump(std::string(fin_dir + "/" + name), hb, inv, paths, 0, 0, false);
-        SpectraCN::DumpSpectraCN(hb, inv, fin_dir,  name);
 
         graph_path_pairs_status(hb,paths);
     }
