@@ -306,7 +306,7 @@ std::string step_outputg_prefix[8]={
         "C_large_K_clean",
         "D_large_K_patched",
         "E_contigs",
-        ""
+        "F_scaffolds"
 };
 
 std::string step_inputg_prefix[8]={
