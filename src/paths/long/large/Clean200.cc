@@ -206,6 +206,7 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                         std::cout << s << ", ";
                     }
                     std::cout << std::endl;
+                    i++;
                 }
                 std::cout << std::endl;
             }
