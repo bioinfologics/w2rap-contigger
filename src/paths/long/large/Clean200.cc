@@ -236,9 +236,6 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                 if (hb.From(w).nonempty()) continue;
                 int e = hb.IFrom(v, 0);
                 if (hb.EdgeLengthKmers(e) > min_size) continue;
-                if (e == 2707513 || inv[e] == 2707513) {
-                    std::cout << "found edge2707513 at min_size>0 " << std::endl;
-                }
                 to_delete.push_back(e);
             }
         }
@@ -287,7 +284,7 @@ void AnalyzeScores(const HyperBasevectorX &hb, const vec<int> &inv, const int v,
                             std::cout << qsum[0] << " >= min_win(" << min_win << ")" << std::endl;
                             std::cout << qsum[r] << " <= max_lose(" << max_lose << ")" << std::endl;
                             std::cout << qsum[0] << " >= min_ratio(" << min_ratio << ") * qsum[r](" << qsum[r] << ")" << std::endl;
-                            std::cout << "found edge2707513 at iteration " << r << std::endl;
+                            std::cout << "found edge2707513 at iteration " << r  << " on vertex " << v << std::endl;
                         }
                         to_delete.push_back(e2, inv[e2]);
                     }
@@ -299,29 +296,40 @@ void AnalyzeScores(const HyperBasevectorX &hb, const vec<int> &inv, const int v,
     }
 }
 
-void GetExtensions( const HyperBasevectorX& hb, const int v,
-     const int max_exts, vec<vec<int>>& exts, int& depth )
-{    int n = hb.From(v).size( );
-     exts.clear( );
-     for ( int pass = 1; pass <= 2; pass++ )
-     {    exts.clear( );
-          for ( int j = 0; j < n; j++ )
-          {    vec<int> x = { hb.IFrom( v, j ) };
-               exts.push_back(x);    }
-          for ( int i = 0; i < exts.isize( ); i++ )
-          {    if ( i >= max_exts ) break;
-               int len = 0;
-               for ( int l = 0; l < exts[i].isize( ); l++ )
-                    len += hb.Kmers( exts[i][l] );
-               if ( len >= depth ) continue;
-               int w = hb.ToRight( exts[i].back( ) );
-               if ( hb.From(w).empty( ) ) 
-               {    depth = Min( depth, len );
-                    continue;    }
-               vec<int> p = exts[i];
-               for ( int m = 0; m < (int) hb.From(w).size( ); m++ )
-               {    vec<int> q(p);
-                    q.push_back( hb.IFrom( w, m ) );
-                    if ( m == 0 ) exts[i] = q;
-                    else exts.push_back(q);    }
-               i--;    }    }    }
+/**
+ * @brief
+ * This function keeps the minimum depth to a tip found from vertex "v" considering up to max_exts
+ * and an initial depth
+ */
+void GetExtensions(const HyperBasevectorX &hb, const int v,
+                   const int max_exts, vec<vec<int>> &exts, int &depth) {
+    int n = hb.From(v).size();
+    exts.clear();
+    for (int pass = 1; pass <= 2; pass++) {
+        exts.clear();
+        for (int j = 0; j < n; j++) {
+            vec<int> x = {hb.IFrom(v, j)};
+            exts.push_back(x);
+        }
+        for (int i = 0; i < exts.isize(); i++) {
+            if (i >= max_exts) break;
+            int len = 0;
+            for (int l = 0; l < exts[i].isize(); l++)
+                len += hb.Kmers(exts[i][l]);
+            if (len >= depth) continue;
+            int w = hb.ToRight(exts[i].back());
+            if (hb.From(w).empty()) {
+                depth = Min(depth, len);
+                continue;
+            }
+            vec<int> p = exts[i];
+            for (int m = 0; m < (int) hb.From(w).size(); m++) {
+                vec<int> q(p);
+                q.push_back(hb.IFrom(w, m));
+                if (m == 0) exts[i] = q;
+                else exts.push_back(q);
+            }
+            i--;
+        }
+    }
+}
