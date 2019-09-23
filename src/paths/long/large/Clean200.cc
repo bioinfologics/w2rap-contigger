@@ -31,6 +31,24 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
         HyperBasevectorX hbx(hb);
         VecULongVec paths_index;
         invert(paths, paths_index, hb.EdgeObjectCount());
+
+        if (zpass==1) {
+            std::cout << "ZPASS= " << zpass << " Paths for edge 2707513" << std::endl;
+            for (const auto &ps: paths_index[2707513]) {
+                std::cout << ps << ", ";
+            }
+            std::cout << std::endl;
+            std::cout << std::endl;
+
+            std::cout << "ZPASS= " << zpass << " Paths for edge inv[2707513]" << std::endl;
+            for (const auto &ps: paths_index[inv[2707513]]) {
+                std::cout << ps << ", ";
+            }
+            std::cout << std::endl;
+            std::cout << std::endl;
+
+        }
+
         // Look for weak branches.
 
         //std::cout << Date( ) << ": start walking" << std::endl;
