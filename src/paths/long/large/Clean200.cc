@@ -12,6 +12,8 @@
 
 void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                const vecbasevector &bases, const VecPQVec &quals, const uint min_size) {
+
+    std::cout << "Clean200x!" << std::endl;
     // Start.
     // Heuristics.
 
