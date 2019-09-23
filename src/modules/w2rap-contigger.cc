@@ -480,12 +480,12 @@ int main( int argc,  char * argv[]) {
                 //This is handled in 3 parts now: produce supported sequences from places, make graph, translate paths
                 //Paths are loaded and unloaded to ease memory requirements
 
-                if (!file_exist(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[2] + ".paths")) {
-                    WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[2] + ".paths").c_str());
+                if (!file_exist(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".paths")) {
+                    WriteReadPathVec(paths, (args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".paths").c_str());
                 }
 
-                if ( !file_exist(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[2] + ".hbv")) {
-                    BinaryWriter::writeFile(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[2] + ".hbv", hbv);
+                if ( !file_exist(args.out_dir + "/" + args.prefix + "." + step_inputg_prefix[ostep] + ".hbv")) {
+                    BinaryWriter::writeFile(args.out_dir + "/" + args.prefix + "." + step_outputg_prefix[ostep] + ".hbv", hbv);
                 }
 
                 // a - produce supported sequences from places (TODO: make this stream the paths?)

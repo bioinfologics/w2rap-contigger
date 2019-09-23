@@ -207,6 +207,9 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                 if (hb.From(w).nonempty()) continue;
                 int e = hb.IFrom(v, 0);
                 if (hb.EdgeLengthKmers(e) > min_size) continue;
+                if (e == 2707513 || inv[e] == 2707513) {
+                    std::cout << "found edge2707513 at min_size>0 " << std::endl;
+                }
                 to_delete.push_back(e);
             }
         }
@@ -251,6 +254,9 @@ void AnalyzeScores(const HyperBasevectorX &hb, const vec<int> &inv, const int v,
                 {
                     for (int j = r; j < n; j++) {
                         int e2 = hb.IFrom(v, ids[j]);
+                        if (e2 == 2707513 || inv[e2] == 2707513) {
+                            std::cout << "found edge2707513 at iteration " << r << std::endl;
+                        }
                         to_delete.push_back(e2, inv[e2]);
                     }
                 }
