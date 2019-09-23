@@ -32,23 +32,6 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
         VecULongVec paths_index;
         invert(paths, paths_index, hb.EdgeObjectCount());
 
-        if (zpass==1) {
-            std::cout << "ZPASS= " << zpass << " Paths for edge 2707513" << std::endl;
-            for (const auto &ps: paths_index[2707513]) {
-                std::cout << ps << ", ";
-            }
-            std::cout << std::endl;
-            std::cout << std::endl;
-
-            std::cout << "ZPASS= " << zpass << " Paths for edge inv[2707513]" << std::endl;
-            for (const auto &ps: paths_index[inv[2707513]]) {
-                std::cout << ps << ", ";
-            }
-            std::cout << std::endl;
-            std::cout << std::endl;
-
-        }
-
         // Look for weak branches.
 
         //std::cout << Date( ) << ": start walking" << std::endl;
@@ -65,16 +48,6 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
             int depth = max_rl;
             vec<vec<int> > exts;
             GetExtensions(hbx, v, max_exts, exts, depth);
-//            std::cout << "Extensions for 2707513" << std::endl;
-//            for (const auto &e : exts[2707513]) {
-//                std::cout << e << ", " << std::endl;
-//            }
-//            std::cout << std::endl;
-//            std::cout << "Extensions for inv[2707513]" << std::endl;
-//            for (const auto &e : exts[inv[2707513]]) {
-//                std::cout << e << ", " << std::endl;
-//            }
-//            std::cout << std::endl;
             if (exts.isize() > max_exts) continue;
             int N = exts.size();
             vec<int> ei(N);
@@ -83,7 +56,6 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                     if (exts[i][0] == hb.IFrom(v, j)) ei[i] = j;
 
             // Convert to basevectors.
-
             vec<basevector> bexts, rbexts;
             for (int i = 0; i < N; i++) {
                 const vec<int> &x = exts[i];
@@ -215,6 +187,27 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                 vec<int> idx(n, vec<int>::IDENTITY);
                 SortSync(qq, idx);
                 if (qq[0] < qq[1]) scores[idx[0]].push_back(qq[1] - qq[0]);
+            }
+
+            if (v == 3390622) {
+                int i(0);
+                for (const auto &ext : exts) {
+                    std::cout << "Extension " << i << " for vertex 3390622" << std::endl << "\t";
+                    for (const auto &e:ext) {
+                        std::cout << e << ", ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl;
+                i = 0;
+                for (const auto& score : scores) {
+                    std::cout << "Score for extensions From(3390622, " << i << ") " << hb.IFrom(v, i) << std::endl;
+                    for (const auto &s : score) {
+                        std::cout << s << ", ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl;
             }
 
             // Analyze scores.
