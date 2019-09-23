@@ -46,6 +46,16 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
             int depth = max_rl;
             vec<vec<int> > exts;
             GetExtensions(hbx, v, max_exts, exts, depth);
+            std::cout << "Extensions for 2707513" << std::endl;
+            for (const auto &e : exts[2707513]) {
+                std::cout << e << ", " << std::endl;
+            }
+            std::cout << std::endl;
+            std::cout << "Extensions for inv[2707513]" << std::endl;
+            for (const auto &e : exts[inv[2707513]]) {
+                std::cout << e << ", " << std::endl;
+            }
+            std::cout << std::endl;
             if (exts.isize() > max_exts) continue;
             int N = exts.size();
             vec<int> ei(N);
