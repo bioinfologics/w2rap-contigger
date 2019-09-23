@@ -284,6 +284,9 @@ void AnalyzeScores(const HyperBasevectorX &hb, const vec<int> &inv, const int v,
                     for (int j = r; j < n; j++) {
                         int e2 = hb.IFrom(v, ids[j]);
                         if (e2 == 2707513 || inv[e2] == 2707513) {
+                            std::cout << qsum[0] << " >= min_win(" << min_win << ")" << std::endl;
+                            std::cout << qsum[r] << " <= max_lose(" << max_lose << ")" << std::endl;
+                            std::cout << qsum[0] << " >= min_ratio(" << min_ratio << ") * qsum[r](" << qsum[r] << ")" << std::endl;
                             std::cout << "found edge2707513 at iteration " << r << std::endl;
                         }
                         to_delete.push_back(e2, inv[e2]);
