@@ -192,7 +192,7 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
             if (v == 3390622) {
                 int i(0);
                 for (const auto &ext : exts) {
-                    std::cout << "Extension " << i << " for vertex 3390622" << std::endl << "\t";
+                    std::cout << "Extension " << i++ << " for vertex 3390622" << std::endl << "\t";
                     for (const auto &e:ext) {
                         std::cout << e << ", ";
                     }
@@ -280,6 +280,7 @@ void AnalyzeScores(const HyperBasevectorX &hb, const vec<int> &inv, const int v,
                             std::cout << qsum[0] << " >= min_ratio(" << min_ratio << ") * qsum[r](" << qsum[r] << ")" << std::endl;
                             std::cout << "found edge2707513 at iteration " << r  << " on vertex " << v << std::endl;
                         }
+                        // TODO: Make sure the edge that is being removed is not in a tip vs large contig scenario!
                         to_delete.push_back(e2, inv[e2]);
                     }
                 }
