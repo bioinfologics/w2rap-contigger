@@ -56,7 +56,7 @@ int main(const int argc, const char * argv[]) {
 
     std::cout<<"=== Graph stats === "<<std::endl;
     std::vector<uint64_t> e_sizes;
-    uint64_t total_size,canonical_size;
+    uint64_t total_size(0),canonical_size(0);
 
     for (int e=0;e<hbv.EdgeObjectCount();e++){
         auto eo=hbv.EdgeObject(e);
