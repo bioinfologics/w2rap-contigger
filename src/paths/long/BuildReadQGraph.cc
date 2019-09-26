@@ -1441,7 +1441,8 @@ void buildReadQGraph( std::string out_dir,
     collectTips(*pDict, to_remove);
 
     for (const auto &entry : to_remove) {
-        pDict->remove(BRQ_Kmer(entry));
+        if (!pDict->findEntry(entry))
+            pDict->remove(BRQ_Kmer(entry));
     }
 
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
