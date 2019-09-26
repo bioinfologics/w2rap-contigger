@@ -403,11 +403,11 @@ namespace
             return result;
         }
 
-        void placeToDelete(std::vector<BRQ_Entry> dels_local) {
+        void placeToDelete(const std::vector<BRQ_Entry> &dels_local) {
             if (dels_local.size() <= 4) {
 #pragma omp critical (add_to_delete)
                 {
-                    dels.insert(dels.begin(), dels_local.begin(), dels_local.end());
+                    dels.insert(dels.begin(), dels_local.cbegin(), dels_local.cend());
                 }
             }
         }
