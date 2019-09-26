@@ -1384,6 +1384,8 @@ void buildReadQGraph( std::string out_dir,
 
         OutputLog(2) << "Graph Cleanup" << std::endl;
         pHBV->RemoveUnneededVertices();
+        pHBV->RemoveDeadEdgeObjects();
+        pHBV->RemoveEdgelessVertices();
 
         // Recalculate pDict!
         {
