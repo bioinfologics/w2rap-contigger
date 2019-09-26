@@ -307,7 +307,7 @@ namespace
         void calculateTipKmers(BRQ_Entry const &entry) {
             std::vector<BRQ_Entry> dels_local{entry};
             if (upstreamTip(entry)) {
-                BRQ_Entry next(BRQ_Kmer(entry), entry.getKDef().getContext().rc());
+                BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
                 while (downstreamExtensionPossible(next)) {
                     KMerContext context(next.getKDef().getContext());
                     unsigned char succCode = context.getSingleSuccessor();
