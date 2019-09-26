@@ -320,6 +320,7 @@ namespace
                     dels_local.emplace_back(next);
                     if (dels_local.size() > 4) break;
                 }
+                placeToDelete(dels_local);
             } else if (downstreamTip(entry)) {
                 BRQ_Entry next(entry);
                 while(upstreamExtensionPossible(next)) {
@@ -334,9 +335,8 @@ namespace
                     dels_local.emplace_back(next);
                     if (dels_local.size()>4) break;
                 }
+                placeToDelete(dels_local);
             }
-
-            placeToDelete(dels_local);
         }
 
         bool isPalindrome(BRQ_Kmer const &kmer) {
