@@ -1389,7 +1389,7 @@ void buildReadQGraph( std::string out_dir,
 
         pHBV->RemoveUnneededVertices();
 
-        // TODO: Recalculate pDict!
+        // Recalculate pDict!
         {
             std::vector<KMerNodeFreq> kmers;
             kmers.reserve(numKmers);
@@ -1431,7 +1431,13 @@ void buildReadQGraph( std::string out_dir,
                 pDict->insertEntryNoLocking(BRQ_Entry ( (BRQ_Kmer)k, k.kc ));
             }
         }
-
+        // Recalculate edges
+        {
+            edges.clear();
+            for (int e = 0; e < pHBV->E(); e++) {
+                edges.push_back(pHBV->EdgeObject(e));
+            }
+        }
 
         pPaths->clear();
         pPaths->resize(reads.size());
