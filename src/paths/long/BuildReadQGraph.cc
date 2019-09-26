@@ -404,10 +404,11 @@ namespace
         }
 
         void placeToDelete(std::vector<BRQ_Entry> dels_local) {
-            static SpinLockedData gLock;
             if (dels_local.size() <= 4) {
-                SpinLocker lock(gLock);
-                dels.insert(dels.begin(), dels_local.begin(), dels_local.end());
+#pragma omp critical (add_to_delete)
+                {
+                    dels.insert(dels.begin(), dels_local.begin(), dels_local.end());
+                }
             }
         }
     };
@@ -1433,11 +1434,6 @@ void buildReadQGraph( std::string out_dir,
     }
     OutputLog(2) << usedKmers << "/" << numKmers <<" kmers with freq >= "<< minFreq << std::endl;
     pDict->recomputeAdjacencies();
-
-    // TODO: Build tips from adjacencies and remove them from pDict
-    // TODO: For each kmer identify if there are no extensions either fwd/bwd
-    // TODO: Go in the alternative direction of no extension whilst there are possible extensions
-    // TODO: Stop after there have been more than X kmers in the "tip"
 
     std::vector<BRQ_Entry> to_remove;
     collectTips(*pDict, to_remove);
