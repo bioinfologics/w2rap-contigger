@@ -156,7 +156,7 @@ namespace
             pred.toPredecessor(context.getSinglePredecessor());
             if (isPalindrome(pred))
                 return false;
-            lookup(pred, &context);
+            if(!lookup(pred, &context)) return false;
             return context.getSuccessorCount() == 1;
         }
 
@@ -168,7 +168,7 @@ namespace
             succ.toSuccessor(context.getSingleSuccessor());
             if (isPalindrome(succ))
                 return false;
-            lookup(succ, &context);
+            if (!lookup(succ, &context)) return false;
             return context.getPredecessorCount() == 1;
         }
 
@@ -198,7 +198,7 @@ namespace
                 if (isPalindrome(next))
                     break;
                 BRQ_Entry const *pEntry = lookup(next, &context);
-                if (context.getPredecessorCount() != 1)
+                if (!pEntry or context.getPredecessorCount() != 1)
                     break;
                 mEdgeSeq.push_back(succCode);
                 mEdgeEntries.push_back(pEntry);
@@ -221,10 +221,12 @@ namespace
             BRQ_Entry const *result;
             if (kmer.isRev()) {
                 result = mDict.findEntryCanonical(BRQ_Kmer(kmer).rc());
+                if (!result) return 0;
                 ForceAssert(result);
                 *pContext = result->getKDef().getContext().rc();
             } else {
                 result = mDict.findEntryCanonical(kmer);
+                if (!result) return 0;
                 ForceAssert(result);
                 *pContext = result->getKDef().getContext();
             }
@@ -1440,9 +1442,9 @@ void buildReadQGraph( std::string out_dir,
     std::vector<BRQ_Entry> to_remove;
     collectTips(*pDict, to_remove);
 
+    OutputLog(2) << "Cleaning " << to_remove.size() << " tip kmers" << std::endl;
     for (const auto &entry : to_remove) {
-        if (!pDict->findEntry(entry))
-            pDict->remove(BRQ_Kmer(entry));
+        pDict->removeNoLocking(BRQ_Kmer(entry));
     }
 
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
