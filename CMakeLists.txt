@@ -19,6 +19,7 @@ ENDIF ()
 
 project (w2rap-contigger)
 
+set(CMAKE_CXX_STANDARD 14)
 # Set a default build type if none was specified
 set(default_build_type "Release")
 
@@ -293,12 +294,17 @@ add_executable(faKmerSpectra src/modules/faKmerSpectra.cc
         $<TARGET_OBJECTS:specific_w2rap-contigger>
         )
 
+add_executable(outputQuals src/modules/outputQuals.cc
+               $<TARGET_OBJECTS:base_libs>
+               $<TARGET_OBJECTS:specific_w2rap-contigger>
+               )
 ##Zlib link
 if (ZLIB_FOUND)
   set(ZLIB libz.so)
   target_link_libraries(w2rap-contigger ${ZLIB_LIBRARIES})
   target_link_libraries(hbv2gfa ${ZLIB_LIBRARIES})
   target_link_libraries(faKmerSpectra ${ZLIB_LIBRARIES})
+  target_link_libraries(outputQuals ${ZLIB_LIBRARIES})
 endif()
 
 #Have the malloc library linked at the end, for compatibility issues with gperftools/tcmalloc

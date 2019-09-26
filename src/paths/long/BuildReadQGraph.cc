@@ -1391,8 +1391,8 @@ void buildReadQGraph( std::string out_dir,
 
         // TODO: Recalculate pDict!
         {
-            delete pDict;
-            pDict = new BRQ_Dict(numKmers);
+            std::vector<KMerNodeFreq> kmers;
+            kmers.reserve(numKmers);
             for (int edge=0; edge < pHBV->E(); edge++) {
                 auto edgeObject(pHBV->EdgeObject(edge));
                 unsigned len = edgeObject.size();
@@ -1402,20 +1402,33 @@ void buildReadQGraph( std::string out_dir,
                     kkk.hash();
                     kkk.kc = KMerContext::initialContext(*itr);
                     kkk.count = 1;
-                    (kkk.isRev()) ? pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) kkk.rc(), kkk.kc.rc())) : pDict->insertEntryNoLocking(BRQ_Entry( (BRQ_Kmer)(kkk), kkk.kc));
+                    (kkk.isRev()) ? kmers.emplace_back(kkk, true): kmers.emplace_back(kkk);
 
                     while (itr != last) {
                         unsigned char pred = kkk.front();
                         kkk.toSuccessor(*itr);
                         ++itr;
                         kkk.kc = KMerContext(pred, *itr);
-                        (kkk.isRev()) ? pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) kkk.rc(), kkk.kc.rc())) : pDict->insertEntryNoLocking(BRQ_Entry( (BRQ_Kmer)(kkk), kkk.kc));
+                        (kkk.isRev()) ? kmers.emplace_back(kkk, true): kmers.emplace_back(kkk);
 
                     }
                     kkk.kc = KMerContext::finalContext(kkk.front());
                     kkk.toSuccessor(*last);
-                    (kkk.isRev()) ? pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) kkk.rc(), kkk.kc.rc())) : pDict->insertEntryNoLocking(BRQ_Entry( (BRQ_Kmer)(kkk), kkk.kc));
+                    (kkk.isRev()) ? kmers.emplace_back(kkk, true): kmers.emplace_back(kkk);
                 }
+            }
+            std::sort(kmers.begin(), kmers.end());
+            auto iter = std::unique(kmers.begin(), kmers.end());
+            // Now v becomes {1 2 3 7 8 10 * * * * * *}
+            // * means undefined
+
+            // Resizing the vector so as to remove the undefined terms
+            kmers.resize(std::distance(kmers.begin(), iter));
+
+            delete pDict;
+            pDict = new BRQ_Dict(kmers.size());
+            for (const auto & k : kmers) {
+                pDict->insertEntryNoLocking(BRQ_Entry ( (BRQ_Kmer)k, k.kc ));
             }
         }
 
