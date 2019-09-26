@@ -1344,14 +1344,9 @@ void buildReadQGraph( std::string out_dir,
         OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
 
-        if (reads.size()==0) {
-            OutputLog(2) << "Loading bases..." << std::endl;
-            reads.ReadAll(out_dir + "/pe_data.fastb");
-        }
-
-
         // TODO: Cleanup tips shorter than K+5, these won't be used for pathing the reads anyway
         {
+            OutputLog(2) << "Cleaning tips" << std::endl;
             vec<int> to_left, to_right;
             pHBV->ToLeft(to_left), pHBV->ToRight(to_right);
 
@@ -1387,10 +1382,12 @@ void buildReadQGraph( std::string out_dir,
             pHBV->DeleteEdges(dels);
         }
 
+        OutputLog(2) << "Graph Cleanup" << std::endl;
         pHBV->RemoveUnneededVertices();
 
         // Recalculate pDict!
         {
+            OutputLog(2) << "Recalculating kmers" << std::endl;
             std::vector<KMerNodeFreq> kmers;
             kmers.reserve(numKmers);
             for (int edge=0; edge < pHBV->E(); edge++) {
@@ -1419,24 +1416,46 @@ void buildReadQGraph( std::string out_dir,
             }
             std::sort(kmers.begin(), kmers.end());
             auto iter = std::unique(kmers.begin(), kmers.end());
-            // Now v becomes {1 2 3 7 8 10 * * * * * *}
-            // * means undefined
 
-            // Resizing the vector so as to remove the undefined terms
             kmers.resize(std::distance(kmers.begin(), iter));
 
             delete pDict;
             pDict = new BRQ_Dict(kmers.size());
+            OutputLog(2) << "Building new edges" << std::endl;
             for (const auto & k : kmers) {
                 pDict->insertEntryNoLocking(BRQ_Entry ( (BRQ_Kmer)k, k.kc ));
             }
-        }
-        // Recalculate edges
-        {
+
+            pDict->recomputeAdjacencies();
+            OutputLog(2) << "finding edges (unique paths)" << std::endl;
+            // figure out the complete base sequence of each edge
             edges.clear();
-            for (int e = 0; e < pHBV->E(); e++) {
-                edges.push_back(pHBV->EdgeObject(e));
+            buildEdges(*pDict,&edges);
+            uint64_t totalk=0;
+            for (auto &e:edges) totalk+=e.size()+1-_K;
+            OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<_K<<"-mers"<<std::endl;
+
+            unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
+
+            if ( doFillGaps ) { // Off by default
+                OutputLog(2) << "filling gaps." << std::endl;
+                fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
             }
+
+            if ( doJoinOverlaps ) { // Off by default
+                OutputLog(2) << "joining Overlaps." << std::endl;
+                joinOverlaps(reads, _K / 2, minFreq2, &edges, pDict);
+            }
+
+            fwdEdgeXlat.clear();
+            revEdgeXlat.clear();
+            buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
+        }
+
+
+        if (reads.size()==0) {
+            OutputLog(2) << "Loading bases..." << std::endl;
+            reads.ReadAll(out_dir + "/pe_data.fastb");
         }
 
         pPaths->clear();
