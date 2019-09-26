@@ -308,7 +308,7 @@ namespace
             std::vector<BRQ_Entry> dels_local{entry};
             if (upstreamTip(entry)) {
                 BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
-                while (downstreamExtensionPossible(next)) {
+                while (upstreamExtensionPossible(next)) {
                     KMerContext context(next.getKDef().getContext());
                     unsigned char succCode = context.getSingleSuccessor();
                     next.toSuccessor(succCode);
