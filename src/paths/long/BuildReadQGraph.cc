@@ -310,7 +310,7 @@ namespace
             if (upstreamTip(entry)) {
                 BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
                 while ( downstreamExtensionPossible(next) ) {
-                    KMerContext context(entry.getKDef().getContext());
+                    KMerContext context(next.getKDef().getContext());
                     unsigned char succCode = context.getSingleSuccessor();
                     next.toSuccessor(succCode);
                     if (isPalindrome(next))
@@ -324,7 +324,7 @@ namespace
             } else if (downstreamTip(entry)) {
                 BRQ_Entry next(entry);
                 while(upstreamExtensionPossible(next)) {
-                    KMerContext context(entry.getKDef().getContext());
+                    KMerContext context(next.getKDef().getContext());
                     unsigned char succCode = context.getSingleSuccessor();
                     next.toSuccessor(succCode);
                     if (isPalindrome(next))
