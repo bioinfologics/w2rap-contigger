@@ -306,10 +306,9 @@ namespace
 
         void calculateTipKmers(BRQ_Entry const &entry) {
             std::vector<BRQ_Entry> dels_local{entry};
-
             if (upstreamTip(entry)) {
-                BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
-                while ( downstreamExtensionPossible(next) ) {
+                BRQ_Entry next(BRQ_Kmer(entry), entry.getKDef().getContext().rc());
+                while (downstreamExtensionPossible(next)) {
                     KMerContext context(next.getKDef().getContext());
                     unsigned char succCode = context.getSingleSuccessor();
                     next.toSuccessor(succCode);
@@ -319,7 +318,7 @@ namespace
                     if (context.getPredecessorCount() != 1)
                         break;
                     dels_local.emplace_back(next);
-                    if (dels_local.size()>4) break;
+                    if (dels_local.size() > 4) break;
                 }
             } else if (downstreamTip(entry)) {
                 BRQ_Entry next(entry);
@@ -376,26 +375,16 @@ namespace
 
         bool upstreamTip(BRQ_Entry const &entry) {
             KMerContext context = entry.getKDef().getContext();
-            if (context.getPredecessorCount() == 0)
-                return false;
-            BRQ_Kmer pred(entry);
-            pred.toPredecessor(context.getSinglePredecessor());
-            if (isPalindrome(pred))
-                return false;
-            lookup(pred, &context);
-            return context.getSuccessorCount() == 1;
+            if (context.getSuccessorCount() == 0)
+                return true;
+            return false;
         }
 
         bool downstreamTip(BRQ_Entry const &entry) {
             KMerContext context = entry.getKDef().getContext();
-            if (context.getSuccessorCount() == 0)
-                return false;
-            BRQ_Kmer succ(entry);
-            succ.toSuccessor(context.getSingleSuccessor());
-            if (isPalindrome(succ))
-                return false;
-            lookup(succ, &context);
-            return context.getPredecessorCount() == 1;
+            if (context.getPredecessorCount() == 0)
+                return true;
+            return false;
         }
 
         BRQ_Entry const *lookup(BRQ_Kmer const &kmer, KMerContext *pContext) {
