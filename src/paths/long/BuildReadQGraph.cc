@@ -297,6 +297,141 @@ namespace
                   << pEdges->SizeSum()-nTotalLength << std::endl;
     }
 
+    class TipCollector {
+        BRQ_Dict const &mDict;
+        std::vector<BRQ_Entry> &dels;
+    public:
+
+        TipCollector( BRQ_Dict const &dict, std::vector<BRQ_Entry> &to_delete ) : mDict(dict), dels(to_delete) {}
+
+        void calculateTipKmers(BRQ_Entry const &entry) {
+            std::vector<BRQ_Entry> dels_local{entry};
+
+            if (upstreamTip(entry)) {
+                BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
+                while ( downstreamExtensionPossible(next) ) {
+                    KMerContext context(entry.getKDef().getContext());
+                    unsigned char succCode = context.getSingleSuccessor();
+                    next.toSuccessor(succCode);
+                    if (isPalindrome(next))
+                        break;
+                    BRQ_Entry const *pEntry = lookup(next, &context);
+                    if (context.getPredecessorCount() != 1)
+                        break;
+                    dels_local.emplace_back(next);
+                    if (dels_local.size()>4) break;
+                }
+            } else if (downstreamTip(entry)) {
+                BRQ_Entry next(entry);
+                while(upstreamExtensionPossible(next)) {
+                    KMerContext context(entry.getKDef().getContext());
+                    unsigned char succCode = context.getSingleSuccessor();
+                    next.toSuccessor(succCode);
+                    if (isPalindrome(next))
+                        break;
+                    BRQ_Entry const *pEntry = lookup(next, &context);
+                    if (context.getPredecessorCount() != 1)
+                        break;
+                    dels_local.emplace_back(next);
+                    if (dels_local.size()>4) break;
+                }
+            }
+
+            placeToDelete(dels_local);
+        }
+
+        bool isPalindrome(BRQ_Kmer const &kmer) {
+            if (!(K & 1))
+                return kmer.isPalindrome();
+            BRQ_SubKmer subKmer(kmer);
+            if (subKmer.isPalindrome())
+                return true;
+            subKmer.toSuccessor(kmer.back());
+            return subKmer.isPalindrome();
+        }
+
+        bool upstreamExtensionPossible(BRQ_Entry const &entry) {
+            KMerContext context = entry.getKDef().getContext();
+            if (context.getPredecessorCount() != 1)
+                return false;
+            BRQ_Kmer pred(entry);
+            pred.toPredecessor(context.getSinglePredecessor());
+            if (isPalindrome(pred))
+                return false;
+            lookup(pred, &context);
+            return context.getSuccessorCount() == 1;
+        }
+
+        bool downstreamExtensionPossible(BRQ_Entry const &entry) {
+            KMerContext context = entry.getKDef().getContext();
+            if (context.getSuccessorCount() != 1)
+                return false;
+            BRQ_Kmer succ(entry);
+            succ.toSuccessor(context.getSingleSuccessor());
+            if (isPalindrome(succ))
+                return false;
+            lookup(succ, &context);
+            return context.getPredecessorCount() == 1;
+        }
+
+        bool upstreamTip(BRQ_Entry const &entry) {
+            KMerContext context = entry.getKDef().getContext();
+            if (context.getPredecessorCount() == 0)
+                return false;
+            BRQ_Kmer pred(entry);
+            pred.toPredecessor(context.getSinglePredecessor());
+            if (isPalindrome(pred))
+                return false;
+            lookup(pred, &context);
+            return context.getSuccessorCount() == 1;
+        }
+
+        bool downstreamTip(BRQ_Entry const &entry) {
+            KMerContext context = entry.getKDef().getContext();
+            if (context.getSuccessorCount() == 0)
+                return false;
+            BRQ_Kmer succ(entry);
+            succ.toSuccessor(context.getSingleSuccessor());
+            if (isPalindrome(succ))
+                return false;
+            lookup(succ, &context);
+            return context.getPredecessorCount() == 1;
+        }
+
+        BRQ_Entry const *lookup(BRQ_Kmer const &kmer, KMerContext *pContext) {
+            BRQ_Entry const *result;
+            if (kmer.isRev()) {
+                result = mDict.findEntryCanonical(BRQ_Kmer(kmer).rc());
+                ForceAssert(result);
+                *pContext = result->getKDef().getContext().rc();
+            } else {
+                result = mDict.findEntryCanonical(kmer);
+                ForceAssert(result);
+                *pContext = result->getKDef().getContext();
+            }
+            return result;
+        }
+
+        void placeToDelete(std::vector<BRQ_Entry> dels_local) {
+            static SpinLockedData gLock;
+            if (dels_local.size() <= 4) {
+                SpinLocker lock(gLock);
+                dels.insert(dels.begin(), dels_local.begin(), dels_local.end());
+            }
+        }
+    };
+
+    void collectTips(BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
+        TipCollector clipper(dict,to_delete);
+        dict.parallelForEachHHS(
+                [clipper]( BRQ_Dict::Set::HHS const& hhs ) mutable
+                {
+                    for ( BRQ_Entry const& entry : hhs )
+                        clipper.calculateTipKmers(entry);
+                });
+
+    }
+
     template <class Itr1, class Itr2>
     size_t matchLen( Itr1 itr1, Itr1 end1, Itr2 itr2, Itr2 end2 )
     {
@@ -1307,11 +1442,25 @@ void buildReadQGraph( std::string out_dir,
     }
     OutputLog(2) << usedKmers << "/" << numKmers <<" kmers with freq >= "<< minFreq << std::endl;
     pDict->recomputeAdjacencies();
+
+    // TODO: Build tips from adjacencies and remove them from pDict
+    // TODO: For each kmer identify if there are no extensions either fwd/bwd
+    // TODO: Go in the alternative direction of no extension whilst there are possible extensions
+    // TODO: Stop after there have been more than X kmers in the "tip"
+
+    std::vector<BRQ_Entry> to_remove;
+    collectTips(*pDict, to_remove);
+
+    for (const auto &entry : to_remove) {
+        pDict->remove(BRQ_Kmer(entry));
+    }
+
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
     edges.reserve(pDict->size()/100); //TODO: this is probably WAY too much in most scenarios
     buildEdges(*pDict,&edges);
+
     uint64_t totalk=0;
     for (auto &e:edges) totalk+=e.size()+1-_K;
     OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<_K<<"-mers"<<std::endl;
@@ -1343,117 +1492,6 @@ void buildReadQGraph( std::string out_dir,
     {
         OutputLog(2) << "building graph..." << std::endl;
         buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
-
-        // TODO: Cleanup tips shorter than K+5, these won't be used for pathing the reads anyway
-        {
-            OutputLog(2) << "Cleaning tips" << std::endl;
-            vec<int> to_left, to_right;
-            pHBV->ToLeft(to_left), pHBV->ToRight(to_right);
-
-            vec<int> dels;
-
-            // Cleanup of "From" edges
-            for (int v = 0; v < pHBV->N(); v++) {
-                int num_from(pHBV->From(v).size());
-                if (num_from > 0) {
-                    for (int ei = 0; ei < num_from; ei++) {
-                        int e = pHBV->EdgeObjectIndexByIndexFrom(v, ei);
-                        if (pHBV->EdgeObject(e).size() < pHBV->K()+5 && pHBV->FromSize(to_right[e]) == 0) {
-                            dels.emplace_back(e);
-                        }
-                    }
-                }
-            }
-
-            // Cleanup of "To" edges
-            for (int v = 0; v < pHBV->N(); v++) {
-                int num_to(pHBV->To(v).size());
-                if (num_to > 0) {
-                    for (int ei = 0; ei < num_to; ei++) {
-                        int e = pHBV->EdgeObjectIndexByIndexTo(v, ei);
-                        if (pHBV->EdgeObject(e).size() < pHBV->K()+5 && pHBV->ToSize(to_left[e]) == 0) {
-                            dels.emplace_back(e);
-                        }
-                    }
-                }
-            }
-
-            UniqueSort(dels);
-            pHBV->DeleteEdges(dels);
-        }
-
-        OutputLog(2) << "Graph Cleanup" << std::endl;
-        pHBV->RemoveUnneededVertices();
-        pHBV->RemoveDeadEdgeObjects();
-        pHBV->RemoveEdgelessVertices();
-
-        // Recalculate pDict!
-        {
-            OutputLog(2) << "Recalculating kmers" << std::endl;
-            std::vector<KMerNodeFreq> kmers;
-            kmers.reserve(numKmers);
-            for (int edge=0; edge < pHBV->E(); edge++) {
-                auto edgeObject(pHBV->EdgeObject(edge));
-                unsigned len = edgeObject.size();
-                if (len > K) {
-                    auto beg = edgeObject.begin(), itr = beg + K, last = beg + (len - 1);
-                    KMerNodeFreq kkk(beg);
-                    kkk.hash();
-                    kkk.kc = KMerContext::initialContext(*itr);
-                    kkk.count = 1;
-                    (kkk.isRev()) ? kmers.emplace_back(kkk, true): kmers.emplace_back(kkk);
-
-                    while (itr != last) {
-                        unsigned char pred = kkk.front();
-                        kkk.toSuccessor(*itr);
-                        ++itr;
-                        kkk.kc = KMerContext(pred, *itr);
-                        (kkk.isRev()) ? kmers.emplace_back(kkk, true): kmers.emplace_back(kkk);
-
-                    }
-                    kkk.kc = KMerContext::finalContext(kkk.front());
-                    kkk.toSuccessor(*last);
-                    (kkk.isRev()) ? kmers.emplace_back(kkk, true): kmers.emplace_back(kkk);
-                }
-            }
-            std::sort(kmers.begin(), kmers.end());
-            auto iter = std::unique(kmers.begin(), kmers.end());
-
-            kmers.resize(std::distance(kmers.begin(), iter));
-
-            delete pDict;
-            pDict = new BRQ_Dict(kmers.size());
-            OutputLog(2) << "Building new edges" << std::endl;
-            for (const auto & k : kmers) {
-                pDict->insertEntryNoLocking(BRQ_Entry ( (BRQ_Kmer)k, k.kc ));
-            }
-
-            pDict->recomputeAdjacencies();
-            OutputLog(2) << "finding edges (unique paths)" << std::endl;
-            // figure out the complete base sequence of each edge
-            edges.clear();
-            buildEdges(*pDict,&edges);
-            uint64_t totalk=0;
-            for (auto &e:edges) totalk+=e.size()+1-_K;
-            OutputLog(2) <<edges.size()<<" edges with "<<totalk<<" "<<_K<<"-mers"<<std::endl;
-
-            unsigned minFreq2 = std::max(2u,unsigned(minFreq2Fract*minFreq+.5));
-
-            if ( doFillGaps ) { // Off by default
-                OutputLog(2) << "filling gaps." << std::endl;
-                fillGaps(reads, maxGapSize, minFreq2, &edges, pDict);
-            }
-
-            if ( doJoinOverlaps ) { // Off by default
-                OutputLog(2) << "joining Overlaps." << std::endl;
-                joinOverlaps(reads, _K / 2, minFreq2, &edges, pDict);
-            }
-
-            fwdEdgeXlat.clear();
-            revEdgeXlat.clear();
-            buildHBVFromEdges(edges,_K,pHBV,fwdEdgeXlat,revEdgeXlat);
-        }
-
 
         if (reads.size()==0) {
             OutputLog(2) << "Loading bases..." << std::endl;
