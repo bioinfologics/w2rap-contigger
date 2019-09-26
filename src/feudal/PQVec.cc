@@ -28,7 +28,7 @@ void load_quals(VecPQVec &pqv, std::string filename){
         batch_file.read(( char *)&(pq.mSize), sizeof(pq.mSize));
         pq.mData=(uint8_t *) malloc(pq.mSize);
         batch_file.read(( char *) pq.mData, pq.mSize);
-        pqv.push_back(std::move(pq));
+        pqv.emplace_back(pq);
     }
     batch_file.close();
 

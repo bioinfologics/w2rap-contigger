@@ -114,6 +114,7 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                     int rpos = pos - start;
                     if (rpos < 0 || rpos >= bases[id].isize()) continue;
                     for (int l = 0; l < N; l++) {
+                        // TODO: When bases are different between extensions q[l] only is increased by the quality of the vector that's different
                         if (bexts[l][pos] != bases[id][rpos])
                             q[l] += qv[rpos];
                     }

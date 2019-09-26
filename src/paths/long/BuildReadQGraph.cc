@@ -749,9 +749,11 @@ namespace
 
             #pragma omp for
             for (size_t readId=0;readId<reads.size();++readId){
+                //this brings parts as sections of perfect matches to an edge. gaps are represented as 0 with len 0 on edge, and gap size on read
                 std::vector<PathPart> parts = mPather.path(reads[readId]);     // needs to become a forward_list
 
-                // convert any seeds on hanging edges to gaps
+                // convert any seeds on TIPS smaller than 100bp to gaps, then add them to previous gaps if needed.
+                //TODO: XXX shouldnt the tip size be read sie (i.e. 250)
                 std::vector<PathPart> new_parts;
                 for ( auto part : parts ) {
                     if ( !part.isGap() ) {
@@ -1346,6 +1348,78 @@ void buildReadQGraph( std::string out_dir,
             OutputLog(2) << "Loading bases..." << std::endl;
             reads.ReadAll(out_dir + "/pe_data.fastb");
         }
+
+
+        // TODO: Cleanup tips shorter than K+5, these won't be used for pathing the reads anyway
+        {
+            vec<int> to_left, to_right;
+            pHBV->ToLeft(to_left), pHBV->ToRight(to_right);
+
+            vec<int> dels;
+
+            // Cleanup of "From" edges
+            for (int v = 0; v < pHBV->N(); v++) {
+                int num_from(pHBV->From(v).size());
+                if (num_from > 0) {
+                    for (int ei = 0; ei < num_from; ei++) {
+                        int e = pHBV->EdgeObjectIndexByIndexFrom(v, ei);
+                        if (pHBV->EdgeObject(e).size() < pHBV->K()+5 && pHBV->FromSize(to_right[e]) == 0) {
+                            dels.emplace_back(e);
+                        }
+                    }
+                }
+            }
+
+            // Cleanup of "To" edges
+            for (int v = 0; v < pHBV->N(); v++) {
+                int num_to(pHBV->To(v).size());
+                if (num_to > 0) {
+                    for (int ei = 0; ei < num_to; ei++) {
+                        int e = pHBV->EdgeObjectIndexByIndexTo(v, ei);
+                        if (pHBV->EdgeObject(e).size() < pHBV->K()+5 && pHBV->ToSize(to_left[e]) == 0) {
+                            dels.emplace_back(e);
+                        }
+                    }
+                }
+            }
+
+            UniqueSort(dels);
+            pHBV->DeleteEdges(dels);
+        }
+
+        pHBV->RemoveUnneededVertices();
+
+        // TODO: Recalculate pDict!
+        {
+            delete pDict;
+            pDict = new BRQ_Dict(numKmers);
+            for (int edge=0; edge < pHBV->E(); edge++) {
+                auto edgeObject(pHBV->EdgeObject(edge));
+                unsigned len = edgeObject.size();
+                if (len > K) {
+                    auto beg = edgeObject.begin(), itr = beg + K, last = beg + (len - 1);
+                    KMerNodeFreq kkk(beg);
+                    kkk.hash();
+                    kkk.kc = KMerContext::initialContext(*itr);
+                    kkk.count = 1;
+                    (kkk.isRev()) ? pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) kkk.rc(), kkk.kc.rc())) : pDict->insertEntryNoLocking(BRQ_Entry( (BRQ_Kmer)(kkk), kkk.kc));
+
+                    while (itr != last) {
+                        unsigned char pred = kkk.front();
+                        kkk.toSuccessor(*itr);
+                        ++itr;
+                        kkk.kc = KMerContext(pred, *itr);
+                        (kkk.isRev()) ? pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) kkk.rc(), kkk.kc.rc())) : pDict->insertEntryNoLocking(BRQ_Entry( (BRQ_Kmer)(kkk), kkk.kc));
+
+                    }
+                    kkk.kc = KMerContext::finalContext(kkk.front());
+                    kkk.toSuccessor(*last);
+                    (kkk.isRev()) ? pDict->insertEntryNoLocking(BRQ_Entry((BRQ_Kmer) kkk.rc(), kkk.kc.rc())) : pDict->insertEntryNoLocking(BRQ_Entry( (BRQ_Kmer)(kkk), kkk.kc));
+                }
+            }
+        }
+
+
         pPaths->clear();
         pPaths->resize(reads.size());
         OutputLog(2) << "pathing "<<reads.size()<<" reads into graph..." << std::endl;
