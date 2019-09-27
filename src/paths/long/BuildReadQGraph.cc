@@ -301,12 +301,11 @@ namespace
 
     class TipCollector {
         BRQ_Dict const &mDict;
-        std::vector<BRQ_Entry> &dels;
     public:
 
-        TipCollector( BRQ_Dict const &dict, std::vector<BRQ_Entry> &to_delete ) : mDict(dict), dels(to_delete) {}
+        TipCollector( BRQ_Dict const &dict) : mDict(dict) {}
 
-        void calculateTipKmers(BRQ_Entry const &entry) {
+        void calculateTipKmers(BRQ_Entry const &entry, std::vector<BRQ_Entry> &dels) {
             std::vector<BRQ_Entry> dels_local{entry};
             if (upstreamTip(entry)) {
                 BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
@@ -322,7 +321,7 @@ namespace
                     dels_local.emplace_back(next);
                     if (dels_local.size() > 4) break;
                 }
-                placeToDelete(dels_local);
+                placeToDelete(dels_local, dels);
             } else if (downstreamTip(entry)) {
                 BRQ_Entry next(entry);
                 while(upstreamExtensionPossible(next)) {
@@ -337,7 +336,7 @@ namespace
                     dels_local.emplace_back(next);
                     if (dels_local.size()>4) break;
                 }
-                placeToDelete(dels_local);
+                placeToDelete(dels_local, dels);
             }
         }
 
@@ -403,23 +402,26 @@ namespace
             return result;
         }
 
-        void placeToDelete(const std::vector<BRQ_Entry> &dels_local) {
+        void placeToDelete(const std::vector<BRQ_Entry> &dels_local, std::vector<BRQ_Entry> &dels) {
             if (dels_local.size() <= 4) {
-#pragma omp critical (add_to_delete)
-                {
-                    dels.insert(dels.begin(), dels_local.cbegin(), dels_local.cend());
-                }
+                dels.insert(dels.begin(), dels_local.cbegin(), dels_local.cend());
             }
         }
     };
 
     void collectTips(BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
-        TipCollector clipper(dict,to_delete);
+        TipCollector clipper(dict);
         dict.parallelForEachHHS(
-                [clipper]( BRQ_Dict::Set::HHS const& hhs ) mutable
+                [clipper, &to_delete]( BRQ_Dict::Set::HHS const& hhs ) mutable
                 {
-                    for ( BRQ_Entry const& entry : hhs )
-                        clipper.calculateTipKmers(entry);
+                    std::vector<BRQ_Entry> local_delete;
+                    for ( BRQ_Entry const& entry : hhs ) {
+                        clipper.calculateTipKmers(entry, local_delete);
+                    }
+#pragma omp critical (merge_dels)
+                    {
+                        to_delete.insert(to_delete.begin(), local_delete.begin(), local_delete.end());
+                    }
                 });
 
     }
@@ -1442,6 +1444,9 @@ void buildReadQGraph( std::string out_dir,
     for (const auto &entry : to_remove) {
         pDict->removeNoLocking(BRQ_Kmer(entry));
     }
+
+    OutputLog(2) << "Recalculating adjacencies" << std::endl;
+    pDict->recomputeAdjacencies();
 
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge

@@ -190,28 +190,6 @@ void Clean200x(HyperBasevector &hb, vec<int> &inv, ReadPathVec &paths,
                 if (qq[0] < qq[1]) scores[idx[0]].push_back(qq[1] - qq[0]);
             }
 
-            if (v == 3390622) {
-                int i(0);
-                for (const auto &ext : exts) {
-                    std::cout << "Extension " << i++ << " for vertex 3390622" << std::endl << "\t";
-                    for (const auto &e:ext) {
-                        std::cout << e << ", ";
-                    }
-                    std::cout << std::endl;
-                }
-                std::cout << std::endl;
-                i = 0;
-                for (const auto& score : scores) {
-                    std::cout << "Score for extensions From(3390622, " << i << ") " << hb.IFrom(v, i) << std::endl;
-                    for (const auto &s : score) {
-                        std::cout << s << ", ";
-                    }
-                    std::cout << std::endl;
-                    i++;
-                }
-                std::cout << std::endl;
-            }
-
             // Analyze scores.
 
             for (int j = 0; j < n; j++)
@@ -275,13 +253,6 @@ void AnalyzeScores(const HyperBasevectorX &hb, const vec<int> &inv, const int v,
                 {
                     for (int j = r; j < n; j++) {
                         int e2 = hb.IFrom(v, ids[j]);
-                        if (e2 == 2707513 || inv[e2] == 2707513) {
-                            std::cout << qsum[0] << " >= min_win(" << min_win << ")" << std::endl;
-                            std::cout << qsum[r] << " <= max_lose(" << max_lose << ")" << std::endl;
-                            std::cout << qsum[0] << " >= min_ratio(" << min_ratio << ") * qsum[r](" << qsum[r] << ")" << std::endl;
-                            std::cout << "found edge2707513 at iteration " << r  << " on vertex " << v << std::endl;
-                        }
-                        // TODO: Make sure the edge that is being removed is not in a tip vs large contig scenario!
                         to_delete.push_back(e2, inv[e2]);
                     }
                 }
