@@ -258,8 +258,8 @@ public:
 
     size_t size() const { return mKSet.size(); }
 
-    void removeNoLocking( KMer<K> const &kmer) {
-        mKSet.removeNoLocking(kmer.getCanonicalForm() == CanonicalForm::REV ?
+    bool removeNoLocking( KMer<K> const &kmer) {
+        return mKSet.removeNoLocking(kmer.getCanonicalForm() == CanonicalForm::REV ?
                               KMer<K>(kmer).rc() : kmer );
     }
     void remove( KMer<K> const& kmer )

@@ -303,110 +303,54 @@ namespace
         BRQ_Dict const &mDict;
     public:
 
-        TipCollector( BRQ_Dict const &dict) : mDict(dict) {}
+        explicit TipCollector( BRQ_Dict const &dict) : mDict(dict) {}
 
-        void calculateTipKmers(BRQ_Entry const &entry, std::vector<BRQ_Entry> &dels) {
-            std::vector<BRQ_Entry> dels_local{entry};
-            if (upstreamTip(entry)) {
-                BRQ_Entry next(BRQ_Kmer(entry).rc(), entry.getKDef().getContext().rc());
-                while (upstreamExtensionPossible(next)) {
-                    KMerContext context(next.getKDef().getContext());
-                    unsigned char succCode = context.getSingleSuccessor();
-                    next.toSuccessor(succCode);
-                    if (isPalindrome(next))
-                        break;
-                    BRQ_Entry const *pEntry = lookup(next, &context);
-                    if (context.getPredecessorCount() != 1)
-                        break;
-                    dels_local.emplace_back(next);
-                    if (dels_local.size() > 4) break;
-                }
-                placeToDelete(dels_local, dels);
-            } else if (downstreamTip(entry)) {
-                BRQ_Entry next(entry);
-                while(upstreamExtensionPossible(next)) {
-                    KMerContext context(next.getKDef().getContext());
-                    unsigned char succCode = context.getSingleSuccessor();
-                    next.toSuccessor(succCode);
-                    if (isPalindrome(next))
-                        break;
-                    BRQ_Entry const *pEntry = lookup(next, &context);
-                    if (context.getPredecessorCount() != 1)
-                        break;
-                    dels_local.emplace_back(next);
-                    if (dels_local.size()>4) break;
-                }
-                placeToDelete(dels_local, dels);
+        void calculateTipKmers(BRQ_Entry const &_entry, std::vector<BRQ_Entry> &dels) {
+            std::vector<BRQ_Entry> dels_local{};
+            BRQ_Entry entry=_entry;
+            if (0==entry.getKDef().getContext().getSuccessorCount()) { // Can't extend upstream
+                //Dar vuelta
+                entry.rc();
+                entry.getKDef().setContext(entry.getKDef().getContext().rc());
             }
-        }
+            if (0!=entry.getKDef().getContext().getPredecessorCount()) return;
+            dels_local.emplace_back(entry);
+            while (1==entry.getKDef().getContext().getSuccessorCount()){
+                //If palindrome, clear dels_local and break
+                if (entry.isPalindrome() or dels_local.size()>5) {
+                    dels_local.clear();
+                    break;
+                }
 
-        bool isPalindrome(BRQ_Kmer const &kmer) {
-            if (!(K & 1))
-                return kmer.isPalindrome();
-            BRQ_SubKmer subKmer(kmer);
-            if (subKmer.isPalindrome())
-                return true;
-            subKmer.toSuccessor(kmer.back());
-            return subKmer.isPalindrome();
-        }
-
-        bool upstreamExtensionPossible(BRQ_Entry const &entry) {
-            KMerContext context = entry.getKDef().getContext();
-            if (context.getPredecessorCount() != 1)
-                return false;
-            BRQ_Kmer pred(entry);
-            pred.toPredecessor(context.getSinglePredecessor());
-            if (isPalindrome(pred))
-                return false;
-            lookup(pred, &context);
-            return context.getSuccessorCount() == 1;
-        }
-
-        bool downstreamExtensionPossible(BRQ_Entry const &entry) {
-            KMerContext context = entry.getKDef().getContext();
-            if (context.getSuccessorCount() != 1)
-                return false;
-            BRQ_Kmer succ(entry);
-            succ.toSuccessor(context.getSingleSuccessor());
-            if (isPalindrome(succ))
-                return false;
-            lookup(succ, &context);
-            return context.getPredecessorCount() == 1;
-        }
-
-        bool upstreamTip(BRQ_Entry const &entry) {
-            KMerContext context = entry.getKDef().getContext();
-            if (context.getSuccessorCount() == 0)
-                return true;
-            return false;
-        }
-
-        bool downstreamTip(BRQ_Entry const &entry) {
-            KMerContext context = entry.getKDef().getContext();
-            if (context.getPredecessorCount() == 0)
-                return true;
-            return false;
+                //move to next kmer
+                unsigned char succCode = entry.getKDef().getContext().getSingleSuccessor();
+                entry.toSuccessor(succCode);
+                KMerContext context;
+                BRQ_Entry const *pEntry = lookup(entry, &context);
+                entry.getKDef().setContext(context);
+                if (entry.getKDef().getContext().getPredecessorCount()>1) break;
+                //add to dels_local, check dels_local size and break if needed
+                dels_local.emplace_back(entry);
+            }
+            dels.insert(dels.begin(), dels_local.cbegin(), dels_local.cend());
         }
 
         BRQ_Entry const *lookup(BRQ_Kmer const &kmer, KMerContext *pContext) {
             BRQ_Entry const *result;
             if (kmer.isRev()) {
                 result = mDict.findEntryCanonical(BRQ_Kmer(kmer).rc());
+                if (!result) return nullptr;
                 ForceAssert(result);
                 *pContext = result->getKDef().getContext().rc();
             } else {
                 result = mDict.findEntryCanonical(kmer);
+                if (!result) return nullptr;
                 ForceAssert(result);
                 *pContext = result->getKDef().getContext();
             }
             return result;
         }
 
-        void placeToDelete(const std::vector<BRQ_Entry> &dels_local, std::vector<BRQ_Entry> &dels) {
-            if (dels_local.size() <= 4) {
-                dels.insert(dels.begin(), dels_local.cbegin(), dels_local.cend());
-            }
-        }
     };
 
     void collectTips(BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
@@ -423,7 +367,6 @@ namespace
                         to_delete.insert(to_delete.begin(), local_delete.begin(), local_delete.end());
                     }
                 });
-
     }
 
     template <class Itr1, class Itr2>
@@ -1437,17 +1380,22 @@ void buildReadQGraph( std::string out_dir,
     OutputLog(2) << usedKmers << "/" << numKmers <<" kmers with freq >= "<< minFreq << std::endl;
     pDict->recomputeAdjacencies();
 
-    std::vector<BRQ_Entry> to_remove;
-    collectTips(*pDict, to_remove);
+    if (true) {
+        std::vector<BRQ_Entry> to_remove;
+        collectTips(*pDict, to_remove);
+        OutputLog(2) << "Cleaning " << to_remove.size() << " tip kmers" << std::endl;
+        for (const auto &entry : to_remove) {
+            if (!pDict->removeNoLocking(BRQ_Kmer(entry))) {
+//                std::cerr << "Removed KMER = " << entry << std::endl;
+            } else {
+//                std::cout << "Removed KMER = " << entry << std::endl;
+            }
+        }
 
-    OutputLog(2) << "Cleaning " << to_remove.size() << " tip kmers" << std::endl;
-    for (const auto &entry : to_remove) {
-        pDict->removeNoLocking(BRQ_Kmer(entry));
+        OutputLog(2) << "Recalculating adjacencies" << std::endl;
+        pDict->recomputeAdjacencies();
+
     }
-
-    OutputLog(2) << "Recalculating adjacencies" << std::endl;
-    pDict->recomputeAdjacencies();
-
     OutputLog(2) << "finding edges (unique paths)" << std::endl;
     // figure out the complete base sequence of each edge
     vecbvec edges;
