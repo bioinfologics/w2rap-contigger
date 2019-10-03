@@ -301,9 +301,10 @@ namespace
 
     class TipCollector {
         BRQ_Dict const &mDict;
+        const int max_kmers_in_tip;
     public:
 
-        explicit TipCollector( BRQ_Dict const &dict) : mDict(dict) {}
+        explicit TipCollector( BRQ_Dict const &dict, const int max_kmers_in_tip) : mDict(dict), max_kmers_in_tip(max_kmers_in_tip) {}
 
         void calculateTipKmers(BRQ_Entry const &_entry, std::vector<BRQ_Entry> &dels) {
             std::vector<BRQ_Entry> dels_local{};
@@ -317,7 +318,7 @@ namespace
             dels_local.emplace_back(entry);
             while (1==entry.getKDef().getContext().getSuccessorCount()){
                 //If palindrome, clear dels_local and break
-                if (entry.isPalindrome() or dels_local.size()>5) {
+                if (entry.isPalindrome() or dels_local.size()>max_kmers_in_tip) {
                     dels_local.clear();
                     break;
                 }
@@ -353,8 +354,8 @@ namespace
 
     };
 
-    void collectTips(BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
-        TipCollector clipper(dict);
+    void collectTips(const int max_kmers_in_tip, BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
+        TipCollector clipper(dict, max_kmers_in_tip);
         dict.parallelForEachHHS(
                 [clipper, &to_delete]( BRQ_Dict::Set::HHS const& hhs ) mutable
                 {
@@ -1382,7 +1383,7 @@ void buildReadQGraph( std::string out_dir,
 
     if (true) {
         std::vector<BRQ_Entry> to_remove;
-        collectTips(*pDict, to_remove);
+        collectTips(5, *pDict, to_remove);
         OutputLog(2) << "Cleaning " << to_remove.size() << " tip kmers" << std::endl;
         for (const auto &entry : to_remove) {
             if (!pDict->removeNoLocking(BRQ_Kmer(entry))) {
