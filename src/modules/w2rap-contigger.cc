@@ -149,6 +149,7 @@ struct cmdline_args {
     unsigned int threads=4;
     unsigned int minFreq=4;
     unsigned int minQual=0;
+    unsigned int minTipKmers=20;
     int max_mem=10;
     uint64_t count_batch_size=0;
     unsigned int small_K=60;
@@ -194,6 +195,7 @@ struct cmdline_args parse_cmdline_args( int argc,  char* argv[]) {
                 ("max_memory","memory soft limit, in GB (default: 10)",cxxopts::value(parsed_args.max_mem))
                 ("min_freq","minimum frequency for k-mers on first DBG",cxxopts::value(parsed_args.minFreq))
                 ("min_qual","quality to trim read ends on first DBG (default: 0 - don't trim)",cxxopts::value(parsed_args.minQual))
+                ("min_tip_kmers","size in kmers of tips to clip at small_K stage",cxxopts::value(parsed_args.minTipKmers)->default_value("20"))
                 ("small_k","k for first DBG",cxxopts::value(parsed_args.small_K))
                 ("large_K","k for second DBG",cxxopts::value(parsed_args.large_K))
                 ("paired_repath","(EXPERIMENTAL) use pairs when repathing from first to second DBG",cxxopts::value(parsed_args.paired_repath))
@@ -467,7 +469,7 @@ int main( int argc,  char * argv[]) {
             //===== STEP 3 (kmers -> small_k graph) =====
             case 3: {
                 bool FILL_JOIN = False;
-                buildReadQGraph(args.out_dir, FILL_JOIN, FILL_JOIN, args.minFreq, .75, 0, &hbv, &paths,
+                buildReadQGraph(args.out_dir, FILL_JOIN, FILL_JOIN, args.minFreq, .75, args.minTipKmers, 0, &hbv, &paths,
                                 args.small_K);
                 OutputLog(2) << "computing graph involution and fragment sizes" << std::endl;
                 hbvinv.clear();

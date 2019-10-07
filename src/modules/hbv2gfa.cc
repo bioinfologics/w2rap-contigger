@@ -26,7 +26,7 @@ int main( int argc, char * argv[]) {
                 ("o,out_prefix", "Prefix for output files", cxxopts::value(out_prefix))
                 ("g,genome_size", "Genome size for NGXX stats in Kbp (default: 0, no NGXX stats)", cxxopts::value(genome_size)->default_value("0"))
                 ("l,find_lines", "Find lines", cxxopts::value(find_lines))
-                ("t,translate_paths", "Write translated paths", cxxopts::value(translated_paths))
+                ("t,translate_paths", "Write translated paths", cxxopts::value(translated_paths)->default_value("true"))
                 ("stats_only", "Compute stats only (do not dump GFA)", cxxopts::value(stats_only))
                 ("dump_detailed_gfa", "Dump detailed GFA for every graph (default: basic)", cxxopts::value(dump_detailed_gfa)->default_value("basic"))
                 ("h,help","show help message")
@@ -122,7 +122,7 @@ int main( int argc, char * argv[]) {
         else if (validGFAOpts[1] == dump_detailed_gfa) {GFADumpAbyss(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
     }
 
-    if (/*translated_paths*/ true) {
+    if (translated_paths) {
         std::vector<int> edge_id(num_edges);
 
         for (int64_t edge=0; edge < num_edges; edge++){
@@ -134,10 +134,11 @@ int main( int argc, char * argv[]) {
             }
         }
         std::string filename(out_prefix+".tpaths");
-
         std::ofstream f(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+        std::ofstream text_paths(filename+".txt", std::ios::out | std::ios::trunc);
         uint64_t pathcount=paths.size();
         f.write((const char *) &pathcount, sizeof(pathcount));
+        text_paths << pathcount << std::endl;
         uint16_t ps;
         int mOffset;
         for (int64_t rpidx=0; rpidx < paths.size(); rpidx++){
@@ -146,12 +147,17 @@ int main( int argc, char * argv[]) {
             ps=rp.size();
             f.write((const char *) &mOffset, sizeof(mOffset));
             f.write((const char *) &ps, sizeof(ps));
-            for (int i = 0; i < ps; i++) {
-                f.write((const char *) &edge_id[rp[i]], sizeof(int));
+            text_paths << mOffset << " ";
+            if (ps > 0) {
+                text_paths << edge_id[rp[0]];
+                f.write((const char *) &edge_id[rp[0]], sizeof(int));
+                for (int i = 1; i < ps; i++) {
+                    text_paths << " " << edge_id[rp[i]];
+                    f.write((const char *) &edge_id[rp[i]], sizeof(int));
+                }
             }
+            text_paths<<std::endl;
         }
-        f.close();
-
     }
 
     return 0;

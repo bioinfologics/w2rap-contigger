@@ -117,10 +117,8 @@ public:
 
 void create_read_lengths(std::vector<uint16_t> & rlen, VecPQVec const& quals, unsigned minQual);
 
-void buildReadQGraph( std::string out_dir,
-                      bool doFillGaps, bool doJoinOverlaps,
-                      unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
-                      ReadPathVec* pPaths, int _K);
+void buildReadQGraph(std::string out_dir, bool doFillGaps, bool doJoinOverlaps, unsigned minFreq, double minFreq2Fract,
+                     unsigned int minTipKmers, unsigned maxGapSize, HyperBasevector *pHBV, ReadPathVec *pPaths, int _K);
 
 std::shared_ptr<KmerList> buildKMerCount( vecbvec const& reads,
                                                              std::vector<uint16_t> & rlen, unsigned minCount,

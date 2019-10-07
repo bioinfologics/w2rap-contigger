@@ -304,7 +304,7 @@ namespace
         const int max_kmers_in_tip;
     public:
 
-        explicit TipCollector( BRQ_Dict const &dict, const int max_kmers_in_tip) : mDict(dict), max_kmers_in_tip(max_kmers_in_tip) {}
+        explicit TipCollector( BRQ_Dict const &dict, const unsigned int max_kmers_in_tip) : mDict(dict), max_kmers_in_tip(max_kmers_in_tip) {}
 
         void calculateTipKmers(BRQ_Entry const &_entry, std::vector<BRQ_Entry> &dels) {
             std::vector<BRQ_Entry> dels_local{};
@@ -354,7 +354,7 @@ namespace
 
     };
 
-    void collectTips(const int max_kmers_in_tip, BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
+    void collectTips(const unsigned int max_kmers_in_tip, BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
         TipCollector clipper(dict, max_kmers_in_tip);
         dict.parallelForEachHHS(
                 [clipper, &to_delete]( BRQ_Dict::Set::HHS const& hhs ) mutable
@@ -1349,10 +1349,8 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename) {
     return kmercounts;
 }
 
-void buildReadQGraph( std::string out_dir,
-                      bool doFillGaps, bool doJoinOverlaps,
-                      unsigned minFreq, double minFreq2Fract, unsigned maxGapSize,  HyperBasevector* pHBV,
-                      ReadPathVec* pPaths, int _K)
+void buildReadQGraph(std::string out_dir, bool doFillGaps, bool doJoinOverlaps, unsigned minFreq, double minFreq2Fract,
+                     unsigned int minTipKmers, unsigned maxGapSize, HyperBasevector *pHBV, ReadPathVec *pPaths, int _K)
 {
 
 
@@ -1383,14 +1381,10 @@ void buildReadQGraph( std::string out_dir,
 
     if (true) {
         std::vector<BRQ_Entry> to_remove;
-        collectTips(5, *pDict, to_remove);
+        collectTips(minTipKmers, *pDict, to_remove);
         OutputLog(2) << "Cleaning " << to_remove.size() << " tip kmers" << std::endl;
         for (const auto &entry : to_remove) {
-            if (!pDict->removeNoLocking(BRQ_Kmer(entry))) {
-//                std::cerr << "Removed KMER = " << entry << std::endl;
-            } else {
-//                std::cout << "Removed KMER = " << entry << std::endl;
-            }
+            pDict->removeNoLocking(BRQ_Kmer(entry));
         }
 
         OutputLog(2) << "Recalculating adjacencies" << std::endl;
