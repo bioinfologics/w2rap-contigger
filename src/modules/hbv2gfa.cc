@@ -147,9 +147,9 @@ int main( int argc, char * argv[]) {
             ps=rp.size();
             f.write((const char *) &mOffset, sizeof(mOffset));
             f.write((const char *) &ps, sizeof(ps));
-            text_paths << mOffset << " ";
+            text_paths << mOffset << " " << ps;
             if (ps > 0) {
-                text_paths << edge_id[rp[0]];
+                text_paths << " " << edge_id[rp[0]];
                 f.write((const char *) &edge_id[rp[0]], sizeof(int));
                 for (int i = 1; i < ps; i++) {
                     text_paths << " " << edge_id[rp[i]];
