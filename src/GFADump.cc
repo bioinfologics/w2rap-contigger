@@ -197,7 +197,7 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
                           if (canonical_included[edge] == -1) {
                               uint64_t ce = edge;
                               auto eo=hb.EdgeObject(edge);
-                              if (eo.getCanonicalForm()==CanonicalForm::REV) {
+                              if (eo.getFullCanonicalForm()==CanonicalForm::REV) {
                                   ce = inv[edge];
                                   eo=hb.EdgeObject(ce);
                               }
@@ -265,7 +265,7 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
   std::set<int> forbidden_nodes;
   for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
       auto eo=hb.EdgeObject(ei);
-      if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
+      if (eo.getFullCanonicalForm()==CanonicalForm::REV) continue;
 
       if (0 != eo.isize()){
         gfa_raw_out << "S\t" << ei << "\t*"
@@ -307,7 +307,7 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
   for (uint64_t e=0;e<next_edges.size();e++) {
       //only process the canonical edge
       auto eo=hb.EdgeObject(e);
-      if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
+      if (eo.getFullCanonicalForm()==CanonicalForm::REV) continue;
 
       std::set<uint64_t> all_next;
       all_next.insert(next_edges[e].begin(),next_edges[e].end());
@@ -316,7 +316,7 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
       for (auto n:all_next){
           //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
 
-          uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
+          uint64_t cn=(hb.EdgeObject(n).getFullCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
           if (cn<e) continue;
           if (forbidden_nodes.find(e) == forbidden_nodes.end()
               && forbidden_nodes.find(cn) == forbidden_nodes.end()) {
@@ -330,7 +330,7 @@ void GFADumpAbyss(std::string filename, const HyperBasevector &hb, const vec<int
 
       for (auto p:all_prev){
           //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
-          uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
+          uint64_t cp=(hb.EdgeObject(p).getFullCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
           if (cp<e) continue;
           if (forbidden_nodes.find(e) == forbidden_nodes.end()
               && forbidden_nodes.find(cp) == forbidden_nodes.end()) {
@@ -533,7 +533,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
                           if (canonical_included[edge] == -1) {
                               uint64_t ce = edge;
                               auto eo=hb.EdgeObject(edge);
-                              if (eo.getCanonicalForm()==CanonicalForm::REV) {
+                              if (eo.getFullCanonicalForm()==CanonicalForm::REV) {
                                   ce = inv[edge];
                                   eo=hb.EdgeObject(ce);
                               }
@@ -600,7 +600,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
   for (auto ei=0;ei<hb.EdgeObjectCount();++ei){
       auto eo=hb.EdgeObject(ei);
-      if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
+      if (eo.getFullCanonicalForm()==CanonicalForm::REV) continue;
 
       gfa_raw_out << "S\tedge" << ei << "\t*"
       << "\tLN:i:" << eo.isize()
@@ -637,7 +637,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
   for (uint64_t e=0;e<next_edges.size();e++) {
       //only process the canonical edge
       auto eo=hb.EdgeObject(e);
-      if (eo.getCanonicalForm()==CanonicalForm::REV) continue;
+      if (eo.getFullCanonicalForm()==CanonicalForm::REV) continue;
 
       std::set<uint64_t> all_next;
       all_next.insert(next_edges[e].begin(),next_edges[e].end());
@@ -646,7 +646,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
       for (auto n:all_next){
           //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
 
-          uint64_t cn=(hb.EdgeObject(n).getCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
+          uint64_t cn=(hb.EdgeObject(n).getFullCanonicalForm()!=CanonicalForm ::REV ? n:inv[n]);
           if (cn<e) continue;
           gfa_raw_out << "L\tedge" << e << "\t+\tedge" << cn << (cn==n ? "\t+" : "\t-") << "\t" << overlap_length << "M" << std::endl;
       }
@@ -657,7 +657,7 @@ ReadPathVec &paths, const int MAX_CELL_PATHS, const int MAX_DEPTH, bool find_lin
 
       for (auto p:all_prev){
           //only process if the canonical of the connection is greater (i.e. only processing "canonical connections")
-          uint64_t cp=(hb.EdgeObject(p).getCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
+          uint64_t cp=(hb.EdgeObject(p).getFullCanonicalForm()!=CanonicalForm ::REV?p:inv[p]);
           if (cp<e) continue;
           gfa_raw_out << "L\tedge" << e << "\t-\tedge" << cp << (cp==p ? "\t-" : "\t+") << "\t" << overlap_length << "M" << std::endl;
       }
@@ -829,7 +829,7 @@ void GFADumpDetail (std::string filename, const HyperBasevector &hb, const vec<i
     std::vector<int64_t> vertex_colour(hb.N(), -1);
     for (auto &e:marked_edges) {
         auto eo=hb.EdgeObject(e);
-        if (eo.getCanonicalForm()==CanonicalForm::REV) {
+        if (eo.getFullCanonicalForm()==CanonicalForm::REV) {
             edge_colour[e] = 420;//pink for reverse edges
         } else {
             edge_colour[e] = 112;
@@ -851,7 +851,7 @@ void GFADumpDetail (std::string filename, const HyperBasevector &hb, const vec<i
 
         gfa_raw_out << "S\tedge" << ei << "\t*"
                     << "\tLN:i:" << eo.isize()
-                    << "\tCL:Z:" << (edge_colour[ei]>0 ? colour_names[edge_colour[ei]%colour_names.size()] : (eo.getCanonicalForm()==CanonicalForm::REV ? "grey" : "black" ))
+                    << "\tCL:Z:" << (edge_colour[ei]>0 ? colour_names[edge_colour[ei]%colour_names.size()] : (eo.getFullCanonicalForm()==CanonicalForm::REV ? "grey" : "black" ))
                     << "\tUR:Z:" << prefix << "_raw.fasta"
                     << std::endl;
 

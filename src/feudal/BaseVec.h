@@ -318,6 +318,9 @@ public:
     CanonicalForm getCanonicalForm() const
     { return ::getCanonicalForm(begin(),end()); }
 
+    CanonicalForm getFullCanonicalForm() const
+    { return ::getFullCanonicalForm(begin(),end()); }
+
     /// Turn this basevector into its canonical form.
     /// I.e., reverse-complement this bvec if its REV.
     CanonicalForm Canonicalize()

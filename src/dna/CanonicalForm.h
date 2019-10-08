@@ -38,6 +38,16 @@ inline CanonicalForm getCanonicalForm( Itr beg, Itr end )
     ++beg; }
   return CanonicalForm::PALINDROME; }
 
+template <class Itr>
+inline CanonicalForm getFullCanonicalForm( Itr beg, Itr end )
+{ while ( beg < end )
+    { auto f = *beg;
+        auto r = *--end ^ 3;
+        if ( f < r ) return CanonicalForm::FWD;
+        if ( r < f ) return CanonicalForm::REV;
+        ++beg; }
+    return CanonicalForm::PALINDROME; }
+
 inline std::ostream& operator<<( std::ostream& os, CanonicalForm form )
 { return os << "+-|"[int(form)]; }
 
