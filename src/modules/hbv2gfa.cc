@@ -85,7 +85,7 @@ int main( int argc, char * argv[]) {
     for (int e=0; e<num_edges ;e++){
         const auto& eo=hbv.EdgeObject(e);
         total_size+=eo.size();
-        if (eo.getCanonicalForm()==CanonicalForm::FWD or eo.getCanonicalForm()==CanonicalForm::PALINDROME){
+        if (eo.getFullCanonicalForm()==CanonicalForm::FWD or eo.getFullCanonicalForm()==CanonicalForm::PALINDROME){
             canonical_size+=eo.size();
             e_sizes.push_back(eo.size());
         }
@@ -127,7 +127,7 @@ int main( int argc, char * argv[]) {
 
         for (int64_t edge=0; edge < num_edges; edge++){
             auto eo = hbv.EdgeObject(edge);
-            if (eo.getCanonicalForm()==CanonicalForm::REV){
+            if (eo.getFullCanonicalForm()==CanonicalForm::REV){
                 edge_id[edge] = -inv[edge];
             } else {
                 edge_id[edge] = edge;
