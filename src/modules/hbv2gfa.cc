@@ -124,15 +124,19 @@ int main( int argc, char * argv[]) {
 
     if (translated_paths) {
         std::vector<int> edge_id(num_edges);
-
-        for (int64_t edge=0; edge < num_edges; edge++){
+        int palindrome_count=0;
+        for (int64_t edge=0; edge < num_edges; edge++) {
             auto eo = hbv.EdgeObject(edge);
-            if (eo.getCanonicalForm()==CanonicalForm::REV){
-                edge_id[edge] = -inv[edge];
+            if (eo.getCanonicalForm()==CanonicalForm::REV) {
+                edge_id[edge] = - ( (inv[edge]+palindrome_count)/2 + 1);
+            } else if (eo.getCanonicalForm() == CanonicalForm::FWD){
+                edge_id[edge] = (edge+palindrome_count)/2 + 1;
             } else {
-                edge_id[edge] = edge;
+                edge_id[edge] = (edge+palindrome_count)/2 + 1;
+                palindrome_count++;
             }
         }
+        std::cout << "Palindrome count: " << palindrome_count << std::endl;
         std::string filename(out_prefix+".tpaths");
         std::ofstream f(filename, std::ios::out | std::ios::trunc | std::ios::binary);
         std::ofstream text_paths(filename+".txt", std::ios::out | std::ios::trunc);
