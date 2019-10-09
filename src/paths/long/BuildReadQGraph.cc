@@ -301,7 +301,7 @@ namespace
 
     class TipCollector {
         BRQ_Dict const &mDict;
-        const int max_kmers_in_tip;
+        const unsigned int max_kmers_in_tip;
     public:
 
         explicit TipCollector( BRQ_Dict const &dict, const unsigned int max_kmers_in_tip) : mDict(dict), max_kmers_in_tip(max_kmers_in_tip) {}
@@ -1350,7 +1350,7 @@ std::shared_ptr<std::vector<KMerNodeFreq_s>> loadkmers( std::string filename) {
 }
 
 void buildReadQGraph(std::string out_dir, bool doFillGaps, bool doJoinOverlaps, unsigned minFreq, double minFreq2Fract,
-                     unsigned int minTipKmers, unsigned maxGapSize, HyperBasevector *pHBV, ReadPathVec *pPaths, int _K)
+                     unsigned int maxTipKmers, unsigned maxGapSize, HyperBasevector *pHBV, ReadPathVec *pPaths, int _K)
 {
 
 
@@ -1381,8 +1381,8 @@ void buildReadQGraph(std::string out_dir, bool doFillGaps, bool doJoinOverlaps, 
 
     if (true) {
         std::vector<BRQ_Entry> to_remove;
-        collectTips(minTipKmers, *pDict, to_remove);
-        OutputLog(2) << "Cleaning " << to_remove.size() << " tip kmers" << std::endl;
+        collectTips(maxTipKmers, *pDict, to_remove);
+        OutputLog(2) << "Cleaning " << to_remove.size() << " kmers in tips of up to "<<maxTipKmers << " kmers" << std::endl;
         for (const auto &entry : to_remove) {
             pDict->removeNoLocking(BRQ_Kmer(entry));
         }
