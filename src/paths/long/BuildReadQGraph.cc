@@ -301,12 +301,13 @@ namespace
 
     class TipCollector {
         BRQ_Dict const &mDict;
+        std::vector<BRQ_Entry> &mTo_Delete;
         const unsigned int max_kmers_in_tip;
     public:
 
-        explicit TipCollector( BRQ_Dict const &dict, const unsigned int max_kmers_in_tip) : mDict(dict), max_kmers_in_tip(max_kmers_in_tip) {}
+        explicit TipCollector( BRQ_Dict const &dict, std::vector<BRQ_Entry> &to_delete, const unsigned int max_kmers_in_tip) : mDict(dict), mTo_Delete(to_delete), max_kmers_in_tip(max_kmers_in_tip) {}
 
-        void calculateTipKmers(BRQ_Entry const &_entry, std::vector<BRQ_Entry> &dels) {
+        void calculateTipKmers(BRQ_Entry const &_entry) {
             std::vector<BRQ_Entry> dels_local{};
             BRQ_Entry entry=_entry;
             if (0==entry.getKDef().getContext().getSuccessorCount()) { // Can't extend upstream
@@ -333,7 +334,12 @@ namespace
                 //add to dels_local, check dels_local size and break if needed
                 dels_local.emplace_back(entry);
             }
-            dels.insert(dels.begin(), dels_local.cbegin(), dels_local.cend());
+            if (!dels_local.empty()) {
+#pragma omp critical (dels_insert)
+                {
+                    mTo_Delete.insert(mTo_Delete.end(), dels_local.begin(), dels_local.end());
+                }
+            }
         }
 
         BRQ_Entry const *lookup(BRQ_Kmer const &kmer, KMerContext *pContext) {
@@ -355,17 +361,12 @@ namespace
     };
 
     void collectTips(const unsigned int max_kmers_in_tip, BRQ_Dict const & dict, std::vector<BRQ_Entry> &to_delete) {
-        TipCollector clipper(dict, max_kmers_in_tip);
+        TipCollector clipper(dict, to_delete, max_kmers_in_tip);
         dict.parallelForEachHHS(
-                [clipper, &to_delete]( BRQ_Dict::Set::HHS const& hhs ) mutable
+                [clipper]( BRQ_Dict::Set::HHS const& hhs ) mutable
                 {
-                    std::vector<BRQ_Entry> local_delete;
                     for ( BRQ_Entry const& entry : hhs ) {
-                        clipper.calculateTipKmers(entry, local_delete);
-                    }
-#pragma omp critical (merge_dels)
-                    {
-                        to_delete.insert(to_delete.begin(), local_delete.begin(), local_delete.end());
+                        clipper.calculateTipKmers(entry);
                     }
                 });
     }
