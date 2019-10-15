@@ -11,7 +11,8 @@ int main( int argc, char * argv[]) {
 
     std::string out_prefix;
     std::string in_prefix;
-    bool find_lines=false, stats_only=false, translated_paths=false;
+    std::string translate_paths;
+    bool find_lines=false, stats_only=false;
     std::string dump_detailed_gfa;
 
     uint64_t genome_size=0;
@@ -26,7 +27,7 @@ int main( int argc, char * argv[]) {
                 ("o,out_prefix", "Prefix for output files", cxxopts::value(out_prefix))
                 ("g,genome_size", "Genome size for NGXX stats in Kbp (default: 0, no NGXX stats)", cxxopts::value(genome_size)->default_value("0"))
                 ("l,find_lines", "Find lines", cxxopts::value(find_lines))
-                ("t,translate_paths", "Write translated paths", cxxopts::value(translated_paths)->default_value("true"))
+                ("t,translate_paths", "Translate paths in file", cxxopts::value(translate_paths))
                 ("stats_only", "Compute stats only (do not dump GFA)", cxxopts::value(stats_only))
                 ("dump_detailed_gfa", "Dump detailed GFA for every graph (default: basic)", cxxopts::value(dump_detailed_gfa)->default_value("basic"))
                 ("h,help","show help message")
@@ -122,7 +123,9 @@ int main( int argc, char * argv[]) {
         else if (validGFAOpts[1] == dump_detailed_gfa) {GFADumpAbyss(out_prefix, hbv, inv, paths, MAX_CELL_PATHS, MAX_DEPTH, find_lines);}
     }
 
-    if (translated_paths) {
+    if (!translate_paths.empty()) {
+        LoadReadPathVec(paths,translate_paths.c_str());
+
         std::vector<int> edge_id(num_edges);
 
         for (int64_t edge=0; edge < num_edges; edge++){
@@ -133,7 +136,8 @@ int main( int argc, char * argv[]) {
                 edge_id[edge] = edge;
             }
         }
-        std::string filename(out_prefix+".tpaths");
+        std::string filename(translate_paths.substr(0,translate_paths.rfind("."))+".tpaths");
+        std::cout << "Printing paths to: "<< filename << std::endl;
         std::ofstream f(filename, std::ios::out | std::ios::trunc | std::ios::binary);
         std::ofstream text_paths(filename+".txt", std::ios::out | std::ios::trunc);
         uint64_t pathcount=paths.size();

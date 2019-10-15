@@ -1449,6 +1449,8 @@ void buildReadQGraph(std::string out_dir, bool doFillGaps, bool doJoinOverlaps, 
         improve_read_paths_OMP(reads,quals,*pHBV,*pPaths);
         OutputLog(2) << "reads pathed"<<std::endl;
 
+        WriteReadPathVec(*pPaths, "before_truncating.paths");
+
         if (true){
             vec<int> to_right, to_left;
             pHBV->ToRight(to_right);
