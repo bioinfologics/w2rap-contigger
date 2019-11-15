@@ -1,0 +1,42 @@
+language: c++
+sudo: false
+jobs:
+  include:
+  - stage: compile osx
+    os: osx
+    osx_image: xcode10.1
+    before_install:
+    - brew install gcc@6
+    env:
+    - CMAKE_OPTIONS="-DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6"
+    deploy:
+      provider: releases
+      api_key: "${GITHUB_DEPLOY_KEY}"
+      skip_cleanup: true
+      file: build/w2rap-contigger-${TRAVIS_OS_NAME}.tar.gz
+      on:
+        branch: bj
+        tags: true
+  - stage: compile linux
+    os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-6
+    env:
+    - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+    - CMAKE_OPTIONS="-DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6"
+    deploy:
+      provider: releases
+      api_key: "${GITHUB_DEPLOY_KEY}"
+      skip_cleanup: true
+      file: build/w2rap-contigger-${TRAVIS_OS_NAME}.tar.gz
+      on:
+        branch: bj
+        tags: true
+before_install:
+- eval "${MATRIX_EVAL}"
+script:
+- ".travis/build.sh"

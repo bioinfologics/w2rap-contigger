@@ -5,14 +5,26 @@ An Illumina PE genome contig assembler, can handle large (17Gbp) complex (hexapl
 http://bioinfologics.github.io/the-w2rap-contigger/ 
 
 ## Installation
-### Pre-requisites
+
+### Download pre-compiled binaries
+
+You can download a pre compiled binary from the [releases page](https://github.com/bioinfologics/w2rap-contigger/releases).
+Simply download and unpack the zipped archive for your system, to get an executable binary.
+
+### Compiling from source
+
+#### Pre-requisites
 
 * Cmake 2.8.0+  
 * GCC 5.2.0+ (you can also use ICC)
 * (Optional) jemalloc or another malloc library (intel's work too).
 
-### Compilation instructions
-This is a big-ish codebase to compile, so we recomment using the `-j` flag on make to use multiplr processors (the examples use 4, but more is better).
+#### Compilation instructions
+
+This is a big codebase, so we recommend using the `-j` flag on make to use
+multiple processors (the examples use 4, but more is better).
+
+The basic process requires use of `cmake` followed by `make`:
 
 ```
 git clone https://github.com/gonzalogacc/w2rap-contigger.git
@@ -30,7 +42,10 @@ cmake -D CMAKE_CXX_COMPILER=g++ -D MALLOC_LIBRARY=<path_to_library.so> .
 make -j 4
 ```
 
-Right now Intel's tbbmalloc have the best performance in our systems. Jemalloc ha also improved performance in the past. In both cases it is a small gain and varies from system to system, it can even turn into a loss, so beware.
+Intel's tbbmalloc had the best performance on our system.
+Jemalloc has also improved performance in the past.
+In both cases it is a small gain and varies from system to system.
+It can even turn into a loss, so beware.
 
 *Note:* for older versions, due to inneficient allocation patterns, jemalloc used to have quite a positive impact in some scenarios, so if you're using any of the "6 binaries" versions, do link with jemalloc.
 
@@ -59,7 +74,7 @@ The code has been optimised with local process binning. You should make sure you
 In most systems (specially most NUMA systems), using thread-local allocation should have a positive impact on performance. Whilst many systems will use thread-local by default, or have some smart policy, you should consider setting the `MALLOC_PER_THREAD=1` variable if that improves performance on your system (i.e. linux's default malloc can have a good gain from this).
 
 
-###Examples
+### Examples
 Example run with input bam file, K=260:
 
 ```

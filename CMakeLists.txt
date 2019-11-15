@@ -306,3 +306,7 @@ if (DEFINED MALLOC_LIBRARY)
         target_link_libraries(w2rap-contigger ${LIBSO_NAME})
     endif()
 endif()
+
+install(TARGETS
+    w2rap-contigger
+    RUNTIME DESTINATION bin)
