@@ -1868,8 +1868,8 @@ void EdgesOnRef::FilterAndModifyEdits( vec<triple<int,int,String>>& edits,
         bool i_is_indel = (change[i].first.size() != change[i].second.size());
         if (i_is_indel) inserted_base += change[i].second.size()-1;
         size_t j = i + 1;
-        while (j < edits.size() && abs(edits[j].second - edits[j-1].second 
-                    - change[j-1].first.size()) < MinClumpSep) {
+        while (j < edits.size() && abs((int) (edits[j].second - edits[j-1].second 
+                    - change[j-1].first.size())) < MinClumpSep) {
             nmatch += edits[j].second - edits[j-1].second - change[j-1].first.size();
             bool j_is_indel = (change[j].first.size() != change[j].second.size());
             if (j_is_indel) 

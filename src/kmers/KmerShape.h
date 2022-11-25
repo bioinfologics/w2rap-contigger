@@ -225,7 +225,7 @@ class KmerShapeId {
   //        K - the default kmer form of size K
   //        KgG - kmer of size K with gap of size G in the middle
   //        Kz - "zebra" kmer of size K, extracting every other base.
-  explicit KmerShapeId(const String& id): id_(id) {
+  KmerShapeId(const String& id): id_(id) {
     // check that this id is a valid designator.
     extractKmerSize_();
   }

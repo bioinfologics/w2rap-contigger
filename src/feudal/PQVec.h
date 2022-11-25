@@ -50,7 +50,6 @@ public:
 
     static void decode( byte const* pqBuf, byte* pQs );
 
-private:
     struct Block
     { Block( byte nQs, byte bits, byte minQ )
       : mNQs(nQs), mBits(bits), mMinQ(minQ) {}
@@ -59,6 +58,7 @@ private:
       { return (nQs*nBits+17+7)>>3; }
       byte mNQs; byte mBits; byte mMinQ; };
 
+private:
     std::vector<Block> mBlocks;
     std::vector<unsigned> mCosts;
     qvec const* mpQV;

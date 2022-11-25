@@ -10,6 +10,8 @@
 #include "paths/long/large/GapToyTools.h"
 
 #include "Vec.h"
+#include <array>
+
 
 
 class PathFinder {
